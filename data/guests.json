@@ -1,0 +1,22 @@
+[
+  {
+    "firstName": "Tatiana",
+    "lastName": "Mendez",
+    "table": "Mesa 1"
+  },
+  {
+    "firstName": "Sebastian",
+    "lastName": "Maza",
+    "table": "Mesa 1"
+  },
+  {
+    "firstName": "Enzo",
+    "lastName": "Diaz",
+    "table": "Mesa 2"
+  },
+  {
+    "firstName": "Marcos",
+    "lastName": "Sosa",
+    "table": "Mesa 3"
+  }
+]

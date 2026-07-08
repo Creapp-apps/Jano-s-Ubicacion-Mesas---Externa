@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel de Administración | Jano's Eventos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+
+  <!-- Screen Content -->
+  <div class="admin-container">
+    <header>
+      <div class="logo-group">
+        <img src="/assets/LOGO_JANOS.png" alt="Logo Jano's Eventos">
+        <h1>Panel de Control</h1>
+      </div>
+      <div style="display: flex; gap: 15px; align-items: center;">
+        <a href="/" target="_blank" class="btn-header-action">Ver Vista Invitados &rarr;</a>
+        <button class="btn-header-action" id="btn-logout" style="border-color: var(--error); color: var(--error);">Salir</button>
+      </div>
+    </header>
+
+    <div class="admin-grid">
+      <!-- Left Column: Settings & Load Guests -->
+      <div>
+        <!-- Event Configuration panel -->
+        <div class="panel">
+          <h2>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Personalización del Evento
+          </h2>
+          <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; margin-bottom: 20px;">
+            Define el nombre del evento que se mostrará en el buscador de los invitados y en el póster del QR.
+          </p>
+          <div class="form-group-inline" style="display: flex; gap: 10px; margin-bottom: 10px;">
+            <input type="text" id="event-title-input" class="form-control-admin" placeholder="Ej. Boda de Laura & Martín" style="flex: 1; padding: 12px 18px; border-radius: 20px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif;">
+            <button class="btn btn-primary" id="btn-save-title" style="flex: none; padding: 12px 25px; border-radius: 20px; font-size: 0.8rem;">Guardar</button>
+          </div>
+          <div class="status-msg" id="title-status"></div>
+        </div>
+
+        <!-- Upload Excel/CSV panel -->
+        <div class="panel">
+          <h2>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+            Cargar Lista de Invitados
+          </h2>
+          <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; margin-bottom: 20px;">
+            Sube un archivo Excel (.xlsx, .xls) o CSV. El sistema leerá las columnas: <strong>Nombre</strong>, <strong>Apellido</strong> y <strong>Numero de Mesa</strong> para asignar ubicaciones.
+          </p>
+
+          <div class="drop-zone" id="file-drop-zone">
+            <div class="drop-zone-icon">&uarr;</div>
+            <div class="drop-zone-text">Arrastra tu archivo aquí o haz click para explorar</div>
+            <div class="drop-zone-subtext">Formatos permitidos: .xlsx, .xls, .csv</div>
+            <input type="file" id="excel-file-input" class="file-input" accept=".xlsx, .xls, .csv">
+          </div>
+
+          <div class="status-msg" id="upload-status"></div>
+        </div>
+
+        <!-- System Reset panel -->
+        <div class="panel">
+          <h2>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>
+            Acciones del Servidor
+          </h2>
+          <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; margin-bottom: 20px;">
+            Al subir un nuevo Excel se sobrescribirá la base de datos de invitados actual. Si deseas limpiar todo el listado de forma manual, utiliza la opción a continuación.
+          </p>
+          <div class="panel-actions">
+            <button class="btn btn-danger" id="btn-clear-db">Limpiar Base de Datos</button>
+            <a href="/assets/plantilla_invitados.xlsx" download class="btn btn-header-action" style="text-align: center; text-decoration: none; padding-top: 14px; font-size: 0.8rem; display: flex; align-items: center; justify-content: center;">Descargar Plantilla</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Stats & QR Poster -->
+      <div>
+        <!-- Stats panel -->
+        <div class="panel">
+          <h2>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+            Estadísticas del Evento
+          </h2>
+          
+          <div class="stats-container">
+            <div class="stat-card">
+              <div class="stat-value" id="stat-guests">0</div>
+              <div class="stat-label">Invitados</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="stat-tables">0</div>
+              <div class="stat-label">Mesas</div>
+            </div>
+          </div>
+
+          <h3 style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: var(--gold-primary); margin-bottom: 12px;">Capacidad por Mesa</h3>
+          <div class="tables-list-container" id="tables-breakdown-list">
+            <div style="padding: 20px; text-align: center; color: var(--text-muted); font-size: 0.85rem;">
+              No hay datos de mesas disponibles.
+            </div>
+          </div>
+        </div>
+
+        <!-- QR Generator panel -->
+        <div class="panel">
+          <h2>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            Código QR de Entrada
+          </h2>
+          
+          <div class="qr-preview-box">
+            <div class="qr-code-wrapper" id="qr-code-container">
+              <div style="width: 150px; height: 150px; background: #eee; display: flex; align-items: center; justify-content: center; color: #666; font-size: 0.8rem;">Cargando...</div>
+            </div>
+            <p class="qr-instructions">
+              Imprime el cartel con el QR oficial para ubicarlo en la recepción del salón. Los invitados podrán escanearlo al llegar.
+            </p>
+            <button class="btn btn-primary" id="btn-print-qr" style="width: auto; padding-left: 30px; padding-right: 30px;">Imprimir Cartel QR</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Full Width: Interactive Guest List CRUD -->
+    <div class="panel" style="margin-top: 10px;">
+      <div class="panel-header-flex" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+        <h2>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Listado de Invitados
+        </h2>
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-left: auto;">
+          <input type="text" id="admin-guest-search" class="form-control-admin" placeholder="Buscar por nombre o mesa..." style="padding: 10px 15px; font-size: 0.85rem; border-radius: 15px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif; width: 220px;">
+          <button class="btn btn-primary" id="btn-add-guest" style="padding: 10px 20px; font-size: 0.8rem; border-radius: 20px; flex: none;">+ Agregar Invitado</button>
+          <button class="btn btn-header-action" id="btn-export-excel" style="padding: 10px 20px; font-size: 0.8rem; border-radius: 20px; flex: none; text-transform: uppercase;">Exportar Excel</button>
+        </div>
+      </div>
+
+      <div class="table-wrapper" style="margin-top: 25px; overflow-x: auto; max-height: 400px; overflow-y: auto;">
+        <table class="guests-table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Apellido</th>
+              <th>Mesa</th>
+              <th style="width: 150px; text-align: center;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="guests-table-body">
+            <tr>
+              <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 30px;">Cargando listado de invitados...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal for Add/Edit Guest -->
+  <div class="modal-backdrop" id="guest-modal">
+    <div class="modal-content panel">
+      <h2 id="modal-title">Agregar Invitado</h2>
+      <form id="guest-form">
+        <input type="hidden" id="guest-index">
+        <div style="margin-bottom: 20px; text-align: left;">
+          <label style="display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Nombre</label>
+          <input type="text" id="modal-first-name" class="form-control-admin" placeholder="Ej. Juan" required style="width: 100%; padding: 12px 18px; border-radius: 20px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif;">
+        </div>
+        <div style="margin-bottom: 20px; text-align: left;">
+          <label style="display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Apellido</label>
+          <input type="text" id="modal-last-name" class="form-control-admin" placeholder="Ej. Pérez" required style="width: 100%; padding: 12px 18px; border-radius: 20px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif;">
+        </div>
+        <div style="margin-bottom: 20px; text-align: left;">
+          <label style="display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Número de Mesa</label>
+          <input type="text" id="modal-table" class="form-control-admin" placeholder="Ej. 12" required style="width: 100%; padding: 12px 18px; border-radius: 20px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif;">
+        </div>
+        <div class="modal-actions" style="display: flex; gap: 15px; margin-top: 30px;">
+          <button type="button" class="btn btn-danger" id="btn-close-modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="btn-save-guest">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Custom Confirmation Modal -->
+  <div class="modal-backdrop" id="confirm-modal">
+    <div class="modal-content panel" style="max-width: 420px; text-align: center; border: 1px solid var(--card-border);">
+      <h2 id="confirm-modal-title" style="color: var(--gold-primary); margin-bottom: 15px; font-family: 'Cinzel', serif; font-size: 1.3rem;">¿Confirmar Acción?</h2>
+      <p id="confirm-modal-message" style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.6; margin: 15px 0 25px 0; font-family: 'Montserrat', sans-serif;">
+        ¿Estás seguro de que deseas continuar con esta acción?
+      </p>
+      <div class="modal-actions" style="display: flex; gap: 15px; justify-content: center;">
+        <button type="button" class="btn btn-danger" id="btn-confirm-cancel" style="flex: 1; padding: 12px 20px; border-radius: 20px; font-size: 0.8rem;">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btn-confirm-accept" style="flex: 1; padding: 12px 20px; border-radius: 20px; font-size: 0.8rem;">Aceptar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Printable Area (Hidden on screen, customized via @media print) -->
+  <div id="print-area">
+    <div class="print-poster">
+      <h1 class="print-title">JANO'S</h1>
+      <div class="print-subtitle" id="print-event-title">Ubicación de Mesas</div>
+      
+      <!-- Larger QR for scanning -->
+      <img src="" alt="Código QR del Evento" class="print-qr-code" id="print-qr-img">
+      
+      <div class="print-instructions">
+        Escanée este código QR con la cámara de su celular para encontrar exactamente la mesa que tiene asignada.
+      </div>
+      
+      <div class="print-footer">
+        Bienvenidos a la Fiesta
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/admin.js"></script>
+</body>
+</html>

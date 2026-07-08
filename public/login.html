@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Acceso Admin | Jano's Eventos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/admin.css">
+  <style>
+    .login-wrapper {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: calc(100vh - 80px);
+    }
+    .login-card {
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+    .login-logo {
+      height: 70px;
+      margin-bottom: 20px;
+    }
+    .login-title {
+      font-family: 'Cinzel', serif;
+      font-size: 1.5rem;
+      letter-spacing: 2px;
+      background: var(--gold-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 10px;
+    }
+    .login-subtitle {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 30px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .form-group {
+      margin-bottom: 25px;
+      text-align: left;
+    }
+    .form-group label {
+      display: block;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--gold-primary);
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+    .form-control {
+      width: 100%;
+      padding: 14px 20px;
+      border-radius: 25px;
+      border: 1px solid var(--card-border);
+      background: rgba(0, 0, 0, 0.4);
+      color: var(--text-main);
+      font-family: 'Montserrat', sans-serif;
+      font-size: 1rem;
+      outline: none;
+      transition: all 0.3s ease;
+      text-align: center;
+      box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5);
+    }
+    .form-control:focus {
+      border-color: var(--gold-primary);
+      box-shadow: 0 0 15px rgba(212, 175, 55, 0.2), inset 0 2px 5px rgba(0, 0, 0, 0.5);
+    }
+    .login-error {
+      color: var(--error);
+      font-size: 0.85rem;
+      margin-top: 15px;
+      min-height: 20px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .login-error.visible {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-wrapper">
+    <div class="panel login-card">
+      <img src="/assets/LOGO_JANOS.png" alt="Logo Jano's" class="login-logo">
+      <h1 class="login-title">Administración</h1>
+      <div class="login-subtitle">Acceso al Panel de Control</div>
+      
+      <form id="login-form">
+        <div class="form-group">
+          <label for="password">Contraseña de Acceso</label>
+          <input type="password" id="password" class="form-control" placeholder="••••••••" required autocomplete="current-password">
+        </div>
+        
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Ingresar</button>
+        <div id="error-message" class="login-error">Contraseña incorrecta</div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const password = document.getElementById('password').value;
+      const errorMsg = document.getElementById('error-message');
+      
+      errorMsg.classList.remove('visible');
+      
+      try {
+        const response = await fetch('/api/admin/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ password })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+          // Redirect to admin panel
+          window.location.href = '/admin';
+        } else {
+          errorMsg.textContent = data.error || 'Error al iniciar sesión';
+          errorMsg.classList.add('visible');
+        }
+      } catch (err) {
+        errorMsg.textContent = 'Error de conexión con el servidor';
+        errorMsg.classList.add('visible');
+      }
+    });
+  </script>
+</body>
+</html>
