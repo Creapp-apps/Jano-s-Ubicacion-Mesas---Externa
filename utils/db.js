@@ -25,14 +25,22 @@ if (isSupabaseEnabled) {
 // Local File Paths
 const DATA_DIR = path.join(__dirname, '..', 'data');
 if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
+  try {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  } catch (err) {
+    console.warn('[JANO\'S DB] Local DATA_DIR creation ignored/failed (read-only filesystem):', err.message);
+  }
 }
 const EVENTS_FILE = path.join(DATA_DIR, 'events.json');
 
 function getLocalEvents() {
   if (!fs.existsSync(EVENTS_FILE)) {
     const defaultEvents = [{ id: 'default', clientName: 'Default Event', active: true, createdAt: new Date().toISOString() }];
-    fs.writeFileSync(EVENTS_FILE, JSON.stringify(defaultEvents, null, 2), 'utf8');
+    try {
+      fs.writeFileSync(EVENTS_FILE, JSON.stringify(defaultEvents, null, 2), 'utf8');
+    } catch (err) {
+      console.warn('[JANO\'S DB] Local events.json write failed:', err.message);
+    }
     return defaultEvents;
   }
   try {
@@ -44,30 +52,46 @@ function getLocalEvents() {
 }
 
 function saveLocalEvents(events) {
-  fs.writeFileSync(EVENTS_FILE, JSON.stringify(events, null, 2), 'utf8');
+  try {
+    fs.writeFileSync(EVENTS_FILE, JSON.stringify(events, null, 2), 'utf8');
+  } catch (err) {
+    console.error('[JANO\'S DB] Local saveLocalEvents write failed:', err.message);
+  }
 }
 
 const LOCAL_PHOTOS_DIR = path.join(__dirname, '..', 'public', 'uploads', 'photos');
 if (!isSupabaseEnabled && !fs.existsSync(LOCAL_PHOTOS_DIR)) {
-  fs.mkdirSync(LOCAL_PHOTOS_DIR, { recursive: true });
+  try {
+    fs.mkdirSync(LOCAL_PHOTOS_DIR, { recursive: true });
+  } catch (err) {
+    console.warn('[JANO\'S DB] Local LOCAL_PHOTOS_DIR creation ignored/failed:', err.message);
+  }
 }
 
 // Migration logic for old/legacy flat files structure (copying to data/default/)
 const defaultDir = path.join(DATA_DIR, 'default');
 if (!fs.existsSync(defaultDir)) {
-  fs.mkdirSync(defaultDir, { recursive: true });
+  try {
+    fs.mkdirSync(defaultDir, { recursive: true });
+  } catch (err) {
+    console.warn('[JANO\'S DB] Local defaultDir creation failed:', err.message);
+  }
 }
 const oldGuests = path.join(DATA_DIR, 'guests.json');
 const oldConfig = path.join(DATA_DIR, 'config.json');
 const oldPhotos = path.join(DATA_DIR, 'photos.json');
-if (fs.existsSync(oldGuests) && !fs.existsSync(path.join(defaultDir, 'guests.json'))) {
-  fs.copyFileSync(oldGuests, path.join(defaultDir, 'guests.json'));
-}
-if (fs.existsSync(oldConfig) && !fs.existsSync(path.join(defaultDir, 'config.json'))) {
-  fs.copyFileSync(oldConfig, path.join(defaultDir, 'config.json'));
-}
-if (fs.existsSync(oldPhotos) && !fs.existsSync(path.join(defaultDir, 'photos.json'))) {
-  fs.copyFileSync(oldPhotos, path.join(defaultDir, 'photos.json'));
+try {
+  if (fs.existsSync(oldGuests) && !fs.existsSync(path.join(defaultDir, 'guests.json'))) {
+    fs.copyFileSync(oldGuests, path.join(defaultDir, 'guests.json'));
+  }
+  if (fs.existsSync(oldConfig) && !fs.existsSync(path.join(defaultDir, 'config.json'))) {
+    fs.copyFileSync(oldConfig, path.join(defaultDir, 'config.json'));
+  }
+  if (fs.existsSync(oldPhotos) && !fs.existsSync(path.join(defaultDir, 'photos.json'))) {
+    fs.copyFileSync(oldPhotos, path.join(defaultDir, 'photos.json'));
+  }
+} catch (err) {
+  console.warn('[JANO\'S DB] Legacy migration files copy ignored/failed:', err.message);
 }
 
 /**
@@ -77,7 +101,11 @@ function getEventFiles(eventId) {
   const cleanId = (eventId || 'default').replace(/[^a-zA-Z0-9_-]/g, '');
   const eventDir = path.join(DATA_DIR, cleanId);
   if (!fs.existsSync(eventDir)) {
-    fs.mkdirSync(eventDir, { recursive: true });
+    try {
+      fs.mkdirSync(eventDir, { recursive: true });
+    } catch (err) {
+      console.warn('[JANO\'S DB] Local eventDir creation ignored/failed:', err.message);
+    }
   }
   return {
     guestsFile: path.join(eventDir, 'guests.json'),

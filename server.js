@@ -20,7 +20,11 @@ const SUPERADMIN_SESSION_TOKEN = 'super_' + Math.random().toString(36).substring
 
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
 if (!fs.existsSync(UPLOADS_DIR)) {
-  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+  try {
+    fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+  } catch (err) {
+    console.warn('[JANO\'S SERVER] Local UPLOADS_DIR creation ignored/failed (read-only filesystem):', err.message);
+  }
 }
 
 // Custom Cookie Parser middleware
