@@ -9,6 +9,7 @@
     "test": "node tests/server.test.js"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.110.1",
     "csv-parser": "^3.0.0",
     "dotenv": "^16.4.5",
     "exceljs": "^4.4.0",

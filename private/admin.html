@@ -19,12 +19,27 @@
         <h1>Panel de Control</h1>
       </div>
       <div style="display: flex; gap: 15px; align-items: center;">
-        <a href="/" target="_blank" class="btn-header-action">Ver Vista Invitados &rarr;</a>
+        <a href="/" target="_blank" class="btn-header-action" id="btn-view-guest-view">Ver Vista Invitados &rarr;</a>
         <button class="btn-header-action" id="btn-logout" style="border-color: var(--error); color: var(--error);">Salir</button>
       </div>
     </header>
 
-    <div class="admin-grid">
+
+    <!-- Tabs Navigation -->
+    <div class="admin-nav">
+      <button class="nav-tab active" id="tab-btn-mesas">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 5px;"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+        Mesas e Invitados
+      </button>
+      <button class="nav-tab" id="tab-btn-fotos">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 5px;"><path d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+        Moderación de Fotos
+      </button>
+    </div>
+
+    <!-- TABLES & GUESTS TAB -->
+    <div id="tab-mesas" class="tab-content active">
+      <div class="admin-grid">
       <!-- Left Column: Settings & Load Guests -->
       <div>
         <!-- Event Configuration panel -->
@@ -111,15 +126,15 @@
         <div class="panel">
           <h2>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-            Código QR de Entrada
+            Código QR del Localizador
           </h2>
           
-          <div class="qr-preview-box">
+          <div class="qr-preview-box" style="margin-top: 15px;">
             <div class="qr-code-wrapper" id="qr-code-container">
               <div style="width: 150px; height: 150px; background: #eee; display: flex; align-items: center; justify-content: center; color: #666; font-size: 0.8rem;">Cargando...</div>
             </div>
-            <p class="qr-instructions">
-              Imprime el cartel con el QR oficial para ubicarlo en la recepción del salón. Los invitados podrán escanearlo al llegar.
+            <p class="qr-instructions" id="qr-instructions-text">
+              Imprime el cartel con el QR oficial para ubicarlo en la recepción del salón. Los invitados podrán escanearlo al llegar para encontrar su mesa asignada.
             </p>
             <button class="btn btn-primary" id="btn-print-qr" style="width: auto; padding-left: 30px; padding-right: 30px;">Imprimir Cartel QR</button>
           </div>
@@ -159,7 +174,98 @@
         </table>
       </div>
     </div>
-  </div>
+    </div> <!-- Close tab-mesas -->
+
+    <!-- PHOTOS MODERATION TAB -->
+    <div id="tab-fotos" class="tab-content">
+      <div class="admin-grid">
+        <!-- Left Column: Settings -->
+        <div>
+          <!-- Event Configuration panel (Photos specific) -->
+          <div class="panel">
+            <h2>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              Personalización del Muro
+            </h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; margin-bottom: 20px;">
+              Define el nombre del evento que se mostrará en la pantalla gigante y en la página de carga de fotos de los invitados.
+            </p>
+            <div class="form-group-inline" style="display: flex; gap: 10px; margin-bottom: 10px;">
+              <input type="text" id="event-title-photos-input" class="form-control-admin" placeholder="Ej. XV de Mica" style="flex: 1; padding: 12px 18px; border-radius: 20px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif;">
+              <button class="btn btn-primary" id="btn-save-photos-title" style="flex: none; padding: 12px 25px; border-radius: 20px; font-size: 0.8rem;">Guardar</button>
+            </div>
+            <div class="status-msg" id="photos-title-status"></div>
+          </div>
+
+          <!-- Server Actions for Photos -->
+          <div class="panel">
+            <h2>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>
+              Acciones de Galería
+            </h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; margin-bottom: 20px;">
+              Si deseas reiniciar la galería de fotos del muro eliminando todas las fotos (tanto pendientes como aprobadas), utiliza esta opción.
+            </p>
+            <button class="btn btn-danger" id="btn-clear-photos" style="width: 100%;">Limpiar Galería de Fotos</button>
+          </div>
+
+          <!-- QR Generator panel (Photos specific) -->
+          <div class="panel">
+            <h2>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+              Código QR del Muro de Fotos
+            </h2>
+            
+            <div class="qr-preview-box" style="margin-top: 15px;">
+              <div class="qr-code-wrapper" id="qr-photos-code-container">
+                <div style="width: 150px; height: 150px; background: #eee; display: flex; align-items: center; justify-content: center; color: #666; font-size: 0.8rem;">Cargando...</div>
+              </div>
+              <p class="qr-instructions" id="qr-photos-instructions-text">
+                Imprime el cartel con el QR oficial para ubicarlo en las mesas o recepción. Los invitados podrán escanearlo para subir sus fotos directamente.
+              </p>
+              <button class="btn btn-primary" id="btn-print-photos-qr" style="width: auto; padding-left: 30px; padding-right: 30px;">Imprimir Cartel QR</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Moderation Grids -->
+        <div>
+          <div class="panel">
+            <h2>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+              Moderación de Fotos
+            </h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; margin-bottom: 20px;">
+              Aprueba las fotos que suben los invitados para que se proyecten en tiempo real en la pantalla gigante del salón, o rechaza aquellas que no consideres adecuadas.
+            </p>
+
+            <!-- Moderation Sections -->
+            <div class="moderation-section-header">
+              <h3>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+                Pendientes de Aprobación
+              </h3>
+            </div>
+            <div class="photos-moderation-grid" id="pending-photos-grid">
+              <div class="no-photos-msg">Cargando fotos pendientes...</div>
+            </div>
+
+            <div class="moderation-section-header">
+              <h3>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+                Fotos Aprobadas
+              </h3>
+            </div>
+            <div class="photos-moderation-grid" id="approved-photos-grid">
+              <div class="no-photos-msg">Cargando fotos aprobadas...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+  </div> <!-- Close admin-container -->
 
   <!-- Modal for Add/Edit Guest -->
   <div class="modal-backdrop" id="guest-modal">
@@ -204,22 +310,93 @@
   <!-- Printable Area (Hidden on screen, customized via @media print) -->
   <div id="print-area">
     <div class="print-poster">
-      <h1 class="print-title">JANO'S</h1>
-      <div class="print-subtitle" id="print-event-title">Ubicación de Mesas</div>
+      <div class="print-header">
+        <img src="/assets/LOGO_JANOS.png" alt="Logo Jano's" class="print-logo">
+      </div>
       
-      <!-- Larger QR for scanning -->
-      <img src="" alt="Código QR del Evento" class="print-qr-code" id="print-qr-img">
-      
-      <div class="print-instructions">
-        Escanée este código QR con la cámara de su celular para encontrar exactamente la mesa que tiene asignada.
+      <div class="print-body">
+        <div class="print-tagline">Bienvenidos a la celebración de</div>
+        <h1 class="print-title" id="print-event-title">Ubicación de Mesas</h1>
+        <div class="print-divider">
+          <span class="gold-diamond">♦</span>
+        </div>
+        <div class="print-subtitle">Encuentra tu Mesa</div>
+        
+        <div class="print-qr-container">
+          <img src="" alt="Código QR del Evento" class="print-qr-code" id="print-qr-img">
+        </div>
+        
+        <p class="print-instructions">
+          Escanéa este código con la cámara de tu celular<br>para consultar tu mesa asignada.
+        </p>
       </div>
       
       <div class="print-footer">
-        Bienvenidos a la Fiesta
+        Jano's Eventos &copy; Todos los derechos reservados
       </div>
     </div>
   </div>
 
+  <!-- Onboarding Modal -->
+  <div class="modal-backdrop" id="onboarding-modal">
+    <div class="modal-content panel onboarding-panel" style="max-width: 900px; width: 95%; border: 1px solid var(--card-border); padding: 30px;">
+      <h2 style="color: var(--gold-primary); text-align: center; font-family: 'Cinzel', serif; font-size: 1.8rem; margin-bottom: 5px;">¡Bienvenido al Combo Digital!</h2>
+      <p style="color: var(--text-muted); text-align: center; font-family: 'Montserrat', sans-serif; font-size: 0.9rem; margin-bottom: 30px;">
+        Aquí tienes una guía rápida de cómo funciona el servicio para tus invitados y cómo puedes administrarlo.
+      </p>
+      
+      <div class="onboarding-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px; text-align: left;">
+        <!-- Left: Guest explanation -->
+        <div style="border-right: 1px solid var(--card-border); padding-right: 30px;">
+          <h3 style="color: var(--gold-light); font-family: 'Cinzel', serif; font-size: 1.2rem; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            Para tus Invitados
+          </h3>
+          <ul style="color: var(--text-muted); font-family: 'Montserrat', sans-serif; font-size: 0.85rem; line-height: 1.7; padding-left: 20px; margin: 0;">
+            <li style="margin-bottom: 12px;"><strong>Escanear QR:</strong> Los invitados escanean el código QR en la recepción para acceder al portal.</li>
+            <li style="margin-bottom: 12px;"><strong>Buscar su Mesa:</strong> Ingresan su nombre en el buscador para saber instantáneamente qué mesa tienen asignada.</li>
+            <li style="margin-bottom: 12px;"><strong>Subir Fotos y Mensajes:</strong> Pueden subir fotos tomadas en el momento directamente a la pantalla gigante del salón.</li>
+            <li style="margin-bottom: 12px;"><strong>Ver Invitación:</strong> Tienen a mano toda la información, itinerarios y mapas del evento.</li>
+          </ul>
+        </div>
+        
+        <!-- Right: Admin explanation -->
+        <div>
+          <h3 style="color: var(--gold-light); font-family: 'Cinzel', serif; font-size: 1.2rem; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1-2 2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            Administración del Servicio
+          </h3>
+          <ul style="color: var(--text-muted); font-family: 'Montserrat', sans-serif; font-size: 0.85rem; line-height: 1.7; padding-left: 20px; margin: 0;">
+            <li style="margin-bottom: 12px;"><strong>Cargar Lista (Excel):</strong> Sube la lista de invitados usando nuestra plantilla Excel para que puedan encontrarse de forma automática.</li>
+            <li style="margin-bottom: 12px;"><strong>Moderar Fotos:</strong> Revisa y aprueba o rechaza las fotos que suben los invitados antes de proyectarse.</li>
+            <li style="margin-bottom: 12px;"><strong>Personalizar Nombre:</strong> Escribe y edita el nombre del evento que verán los invitados al ingresar.</li>
+            <li style="margin-bottom: 12px;"><strong>Imprimir QR:</strong> Genera y descarga el cartel con el código QR listo para colocar en la recepción.</li>
+          </ul>
+        </div>
+      </div>
+      
+      <div style="display: flex; justify-content: center; gap: 15px;">
+        <button type="button" class="btn btn-primary" id="btn-close-onboarding" style="padding: 12px 40px; border-radius: 20px; font-size: 0.9rem;">Entendido, Comenzar</button>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    @media (max-width: 768px) {
+      .onboarding-grid {
+        grid-template-columns: 1fr !important;
+        gap: 20px !important;
+      }
+      .onboarding-grid > div:first-child {
+        border-right: none !important;
+        border-bottom: 1px solid var(--card-border);
+        padding-right: 0 !important;
+        padding-bottom: 20px !important;
+      }
+    }
+  </style>
+
+  <script src="/js/alerts.js"></script>
   <script src="/js/admin.js"></script>
 </body>
 </html>

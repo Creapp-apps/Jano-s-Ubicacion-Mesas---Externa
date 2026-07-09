@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Compartir Foto | Jano's Eventos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/fotos.css">
+  <style>
+    /* Premium layout for double onboarding cards */
+    .onboarding-container {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 25px;
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
+      transition: all 0.4s ease-in-out;
+      background: transparent !important;
+      box-shadow: none !important;
+      border: none !important;
+      padding: 0 !important;
+    }
+    
+    .onboarding-card {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 100%;
+      text-align: center;
+    }
+    
+    .btn-admin-action {
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      background: transparent;
+      color: #ffffff;
+      padding: 14px 20px;
+      border-radius: 30px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-top: 15px;
+      width: 100%;
+      display: block;
+      text-decoration: none;
+      text-align: center;
+    }
+    
+    .btn-admin-action:hover {
+      border-color: #d4af37;
+      color: #d4af37;
+      box-shadow: 0 0 15px rgba(212, 175, 55, 0.4);
+      background: rgba(212, 175, 55, 0.05);
+    }
+    
+    @media (min-width: 768px) {
+      main {
+        max-width: 950px;
+      }
+      .onboarding-container {
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+      }
+    }
+  </style>
+</head>
+<body>
+  
+  <header>
+    <div class="logo-container">
+      <img src="/assets/LOGO_JANOS.png" alt="Logo Jano's Eventos">
+    </div>
+    <div class="subtitle" id="event-subtitle">Cargando evento...</div>
+  </header>
+
+  <main>
+    <!-- Double Onboarding Cards Container -->
+    <div class="onboarding-container" id="onboarding-card">
+      
+      <!-- Card 1: Guest upload explanation -->
+      <div class="card onboarding-card">
+        <div>
+          <h2>Subir Fotos al Muro</h2>
+          <p class="instructions" style="margin-bottom: 25px;">Compartí tus recuerdos y deseos en la pantalla gigante de la fiesta en tres simples pasos:</p>
+          
+          <div class="steps-container">
+            <div class="step-item">
+              <div class="step-num">1</div>
+              <div class="step-text"><strong>Capturá el momento</strong> tomándote una foto con tu cámara o seleccionándola de tu galería.</div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">2</div>
+              <div class="step-text"><strong>Escribí una dedicatoria</strong> con tus mejores deseos para los agasajados.</div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">3</div>
+              <div class="step-text"><strong>Mírala en la pantalla</strong> gigante del salón en tiempo real tras ser validada.</div>
+            </div>
+          </div>
+        </div>
+        
+        <button class="btn-select-photo" id="btn-start-upload" style="margin-top: 15px; width: 100%; border: none;">Comenzar a Subir</button>
+      </div>
+
+      <!-- Card 2: Organizer/Admin explanation -->
+      <div class="card onboarding-card">
+        <div>
+          <h2>Moderar Fotos</h2>
+          <p class="instructions" style="margin-bottom: 25px;">Si sos el coordinador o anfitrión, podés administrar y moderar las fotos que suben los invitados:</p>
+          
+          <div class="steps-container">
+            <div class="step-item">
+              <div class="step-num">1</div>
+              <div class="step-text"><strong>Visualizá en tiempo real</strong> todas las fotos y dedicatorias que envían los invitados.</div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">2</div>
+              <div class="step-text"><strong>Aprobá los contenidos</strong> adecuados para que se muestren de inmediato en la pantalla.</div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">3</div>
+              <div class="step-text"><strong>Rechazá o eliminá</strong> las fotos no deseadas para mantener el muro limpio y seguro.</div>
+            </div>
+          </div>
+        </div>
+        
+        <button class="btn-admin-action" id="btn-go-admin">Ir a Moderar Fotos</button>
+      </div>
+      
+    </div>
+
+    <div class="card" id="upload-card" style="display: none; opacity: 0;">
+      <h2>Pantalla Gigante</h2>
+      <p class="instructions">Sube una foto y déjales un mensaje a los agasajados para que aparezca proyectado en tiempo real en la pantalla del salón.</p>
+      
+      <form id="photo-upload-form">
+        <!-- Guest Name -->
+        <div class="input-group">
+          <label for="guest-name-input">Tu Nombre</label>
+          <input 
+            type="text" 
+            id="guest-name-input" 
+            placeholder="Ej. Familia Gómez" 
+            required
+            autocomplete="off"
+          >
+        </div>
+
+        <!-- Dedicatoria -->
+        <div class="input-group">
+          <label for="guest-message-input">Mensaje / Dedicatoria</label>
+          <textarea 
+            id="guest-message-input" 
+            placeholder="Escribe tus deseos aquí..." 
+            maxlength="200"
+            rows="3"
+          ></textarea>
+          <div class="char-counter"><span id="char-count">0</span>/200</div>
+        </div>
+
+        <!-- Photo Selector -->
+        <div class="photo-selector-container">
+          <input 
+            type="file" 
+            id="photo-file-input" 
+            accept="image/*" 
+            capture="environment" 
+            style="display: none;"
+          >
+          
+          <button type="button" class="btn-select-photo" id="btn-trigger-camera">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="camera-icon"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+            <span>Tomar o Elegir Foto</span>
+          </button>
+          
+          <!-- Preview container -->
+          <div class="preview-wrapper" id="preview-wrapper" style="display: none;">
+            <img id="image-preview" src="" alt="Vista previa">
+            <button type="button" class="btn-remove-photo" id="btn-remove-photo" title="Eliminar foto">&times;</button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-submit-photo" id="btn-submit-upload" disabled>
+          Enviar a la Pantalla
+        </button>
+      </form>
+    </div>
+
+    <!-- Success Feedback Overlay Card (Hidden initially) -->
+    <div class="feedback-card" id="success-card" style="display: none;">
+      <div class="success-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      </div>
+      <h3>¡Foto Enviada!</h3>
+      <p>Tu dedicatoria ha sido subida. Se proyectará en la pantalla gigante una vez aprobada por los coordinadores del salón.</p>
+      <button class="btn-reset" id="btn-upload-another">Enviar otra foto</button>
+    </div>
+  </main>
+
+  <footer>
+    &copy; 2026 <a href="https://www.janoseventos.com" target="_blank">Jano's Eventos</a>. Todos los derechos reservados.
+  </footer>
+
+  <script src="/js/alerts.js"></script>
+  <script src="/js/fotos.js"></script>
+</body>
+</html>

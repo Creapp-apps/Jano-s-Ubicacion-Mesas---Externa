@@ -6,6 +6,8 @@ const xlsx = require('xlsx');
 const csvParser = require('csv-parser');
 const ExcelJS = require('exceljs');
 const { searchGuests } = require('./utils/search');
+const db = require('./utils/db');
+const { sendWelcomeEmail } = require('./utils/email');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -13,12 +15,8 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'janos2026';
 // Random session token generated on startup
 const ADMIN_SESSION_TOKEN = Math.random().toString(36).substring(2) + Date.now().toString(36);
 
-// Ensure storage folders exist
-const DATA_DIR = path.join(__dirname, 'data');
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-}
-const GUESTS_FILE = path.join(DATA_DIR, 'guests.json');
+const SUPERADMIN_PASSWORD = process.env.SUPERADMIN_PASSWORD || 'janos-superadmin';
+const SUPERADMIN_SESSION_TOKEN = 'super_' + Math.random().toString(36).substring(2) + Date.now().toString(36);
 
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
 if (!fs.existsSync(UPLOADS_DIR)) {
@@ -40,19 +38,78 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 
-// Protect direct access to admin.html before serving static files
+// Validation Middleware: Ensure the Event ID is registered and active
+async function validateEventAccess(req, res, next) {
+  const filePath = req.path;
+  if (
+    filePath.startsWith('/api/superadmin') ||
+    filePath === '/superadmin' ||
+    filePath === '/superlogin' ||
+    filePath === '/inactive' ||
+    filePath === '/inactive.html' ||
+    filePath === '/superlogin.html' ||
+    filePath === '/favicon.ico' ||
+    filePath.startsWith('/css') ||
+    filePath.startsWith('/js') ||
+    filePath.startsWith('/uploads')
+  ) {
+    return next();
+  }
+
+  let eventId = req.query.event;
+  if (!eventId && req.headers.referer) {
+    try {
+      const refererUrl = new URL(req.headers.referer);
+      eventId = refererUrl.searchParams.get('event');
+    } catch (e) {
+      // Ignore
+    }
+  }
+
+  eventId = eventId || 'default';
+
+  try {
+    const isValid = await db.isEventValid(eventId);
+    if (!isValid) {
+      // If it is a JSON API request
+      if (req.xhr || req.headers.accept?.includes('application/json') || filePath.startsWith('/api/')) {
+        return res.status(403).json({ error: 'El Combo Digital ha expirado o no está activo.' });
+      }
+      // Otherwise, redirect to the inactive page
+      return res.redirect(`/inactive.html?event=${eventId}`);
+    }
+    next();
+  } catch (err) {
+    console.error('Error validating event access:', err);
+    next(); // Fail open on error
+  }
+}
+
+app.use(validateEventAccess);
+
 app.get('/admin.html', (req, res) => {
-  res.redirect('/admin');
+  const queryParams = new URLSearchParams(req.query);
+  const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
+  res.redirect(`/admin${queryString}`);
 });
 
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Authentication middleware
 function requireAuth(req, res, next) {
-  if (req.cookies && req.cookies.admin_session === ADMIN_SESSION_TOKEN) {
+  const eventId = req.query.event || req.body.event || 'default';
+  const cookieName = `admin_session_${eventId}`;
+  if (req.cookies && req.cookies[cookieName] === `${ADMIN_SESSION_TOKEN}_${eventId}`) {
     return next();
   }
   res.status(401).json({ error: 'No autorizado. Inicie sesión.' });
+}
+
+function requireSuperAuth(req, res, next) {
+  if (req.cookies && req.cookies.superadmin_session === SUPERADMIN_SESSION_TOKEN) {
+    return next();
+  }
+  res.status(401).json({ error: 'No autorizado. Inicie sesión como Superadmin.' });
 }
 
 
@@ -68,19 +125,15 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // API: Search guests
-app.get('/api/guests/search', (req, res) => {
+app.get('/api/guests/search', async (req, res) => {
   const query = req.query.q;
+  const eventId = req.query.event || 'default';
   if (!query) {
     return res.json([]);
   }
   
-  if (!fs.existsSync(GUESTS_FILE)) {
-    return res.json([]);
-  }
-  
   try {
-    const fileData = fs.readFileSync(GUESTS_FILE, 'utf8');
-    const guests = JSON.parse(fileData);
+    const guests = await db.getGuests(eventId);
     const results = searchGuests(query, guests);
     res.json(results);
   } catch (error) {
@@ -90,14 +143,13 @@ app.get('/api/guests/search', (req, res) => {
 });
 
 // API: Stats (For Admin)
-app.get('/api/stats', requireAuth, (req, res) => {
-  if (!fs.existsSync(GUESTS_FILE)) {
-    return res.json({ guestCount: 0, tableCount: 0, tables: [] });
-  }
-  
+app.get('/api/stats', requireAuth, async (req, res) => {
   try {
-    const fileData = fs.readFileSync(GUESTS_FILE, 'utf8');
-    const guests = JSON.parse(fileData);
+    const eventId = req.query.event || 'default';
+    const guests = await db.getGuests(eventId);
+    if (guests.length === 0) {
+      return res.json({ guestCount: 0, tableCount: 0, tables: [] });
+    }
     
     // Count unique tables and build tables list
     const tablesMap = {};
@@ -132,11 +184,10 @@ app.get('/api/stats', requireAuth, (req, res) => {
 });
 
 // API: Clear database
-app.post('/api/clear', requireAuth, (req, res) => {
+app.post('/api/clear', requireAuth, async (req, res) => {
   try {
-    if (fs.existsSync(GUESTS_FILE)) {
-      fs.unlinkSync(GUESTS_FILE);
-    }
+    const eventId = req.query.event || 'default';
+    await db.clearGuests(eventId);
     res.json({ success: true });
   } catch (error) {
     console.error('Error clearing data:', error);
@@ -144,31 +195,42 @@ app.post('/api/clear', requireAuth, (req, res) => {
   }
 });
 
-// Define Event Config File
-const CONFIG_FILE = path.join(DATA_DIR, 'config.json');
-
 // API: Get config (Public)
-app.get('/api/config', (req, res) => {
+app.get('/api/config', async (req, res) => {
   try {
-    let config = { eventTitle: 'Mi Gran Fiesta Jano\'s' };
-    if (fs.existsSync(CONFIG_FILE)) {
-      config = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
+    const eventId = req.query.event || 'default';
+    const eventTitle = await db.getEventTitle(eventId);
+    let clientName = '';
+    let serviceTables = true;
+    let servicePhotos = true;
+    let serviceInvitation = true;
+    try {
+      const events = await db.getEvents();
+      const event = events.find(e => e.id === eventId);
+      if (event) {
+        clientName = event.clientName;
+        serviceTables = event.serviceTables !== false;
+        servicePhotos = event.servicePhotos !== false;
+        serviceInvitation = event.serviceInvitation !== false;
+      }
+    } catch (e) {
+      console.error('Error fetching clientName for config:', e);
     }
-    res.json(config);
+    res.json({ eventTitle, clientName, serviceTables, servicePhotos, serviceInvitation });
   } catch (error) {
-    res.json({ eventTitle: 'Mi Gran Fiesta Jano\'s' });
+    res.json({ eventTitle: 'Mi Gran Fiesta Jano\'s', clientName: '', serviceTables: true, servicePhotos: true, serviceInvitation: true });
   }
 });
 
 // API: Update config (Admin)
-app.post('/api/config', requireAuth, (req, res) => {
+app.post('/api/config', requireAuth, async (req, res) => {
   const { eventTitle } = req.body;
+  const eventId = req.query.event || 'default';
   if (!eventTitle) {
     return res.status(400).json({ error: 'El título del evento es requerido' });
   }
   try {
-    const config = { eventTitle: eventTitle.trim() };
-    fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2), 'utf8');
+    await db.setEventTitle(eventId, eventTitle);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: 'Error al guardar la configuración' });
@@ -176,49 +238,161 @@ app.post('/api/config', requireAuth, (req, res) => {
 });
 
 // API: Admin Login
-app.post('/api/admin/login', (req, res) => {
+app.post('/api/admin/login', async (req, res) => {
   const { password } = req.body;
-  if (password === ADMIN_PASSWORD) {
-    res.setHeader('Set-Cookie', `admin_session=${ADMIN_SESSION_TOKEN}; Path=/; HttpOnly; SameSite=Strict`);
-    return res.json({ success: true });
+  const eventId = req.query.event || req.body.eventId || 'default';
+  
+  try {
+    const isValid = await db.validateEventPassword(eventId, password);
+    if (isValid) {
+      const cookieName = `admin_session_${eventId}`;
+      res.setHeader('Set-Cookie', `${cookieName}=${ADMIN_SESSION_TOKEN}_${eventId}; Path=/; HttpOnly; SameSite=Strict`);
+      return res.json({ success: true });
+    }
+    res.status(401).json({ error: 'Contraseña incorrecta' });
+  } catch (err) {
+    console.error('Error logging in:', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
-  res.status(401).json({ error: 'Contraseña incorrecta' });
 });
 
 // API: Admin Logout
 app.post('/api/admin/logout', (req, res) => {
-  res.setHeader('Set-Cookie', `admin_session=; Path=/; HttpOnly; Max-Age=0`);
+  const eventId = req.query.event || req.body.event || 'default';
+  const cookieName = `admin_session_${eventId}`;
+  res.setHeader('Set-Cookie', `${cookieName}=; Path=/; HttpOnly; Max-Age=0`);
   res.json({ success: true });
 });
 
 // API: Check Session
 app.get('/api/admin/check', (req, res) => {
-  if (req.cookies && req.cookies.admin_session === ADMIN_SESSION_TOKEN) {
+  const eventId = req.query.event || 'default';
+  const cookieName = `admin_session_${eventId}`;
+  if (req.cookies && req.cookies[cookieName] === `${ADMIN_SESSION_TOKEN}_${eventId}`) {
     return res.json({ loggedIn: true });
   }
   res.json({ loggedIn: false });
 });
 
-// API: Download Mapped Excel (Admin)
-app.get('/api/admin/download-excel', requireAuth, async (req, res) => {
-  if (!fs.existsSync(GUESTS_FILE)) {
-    return res.status(404).json({ error: 'No hay lista de invitados cargada' });
+// API: Superadmin Login
+app.post('/api/superadmin/login', (req, res) => {
+  const { password } = req.body;
+  if (password === SUPERADMIN_PASSWORD) {
+    res.setHeader('Set-Cookie', `superadmin_session=${SUPERADMIN_SESSION_TOKEN}; Path=/; HttpOnly; SameSite=Strict`);
+    return res.json({ success: true });
+  }
+  res.status(401).json({ error: 'Contraseña de Superadmin incorrecta' });
+});
+
+// API: Superadmin Logout
+app.post('/api/superadmin/logout', (req, res) => {
+  res.setHeader('Set-Cookie', `superadmin_session=; Path=/; HttpOnly; Max-Age=0`);
+  res.json({ success: true });
+});
+
+// API: Check Superadmin Session
+app.get('/api/superadmin/check', (req, res) => {
+  if (req.cookies && req.cookies.superadmin_session === SUPERADMIN_SESSION_TOKEN) {
+    return res.json({ loggedIn: true });
+  }
+  res.json({ loggedIn: false });
+});
+
+// API: Superadmin Get Events
+app.get('/api/superadmin/events', requireSuperAuth, async (req, res) => {
+  try {
+    const events = await db.getEvents();
+    res.json(events);
+  } catch (error) {
+    console.error('Error fetching events:', error);
+    res.status(500).json({ error: 'Error al obtener los eventos' });
+  }
+});
+
+// API: Superadmin Create Event
+app.post('/api/superadmin/events', requireSuperAuth, async (req, res) => {
+  const { id, clientName, password, clientEmail, serviceTables, servicePhotos, serviceInvitation } = req.body;
+  if (!id || !clientName) {
+    return res.status(400).json({ error: 'El ID y el nombre del cliente son requeridos.' });
   }
   try {
-    const fileData = fs.readFileSync(GUESTS_FILE, 'utf8');
-    const guests = JSON.parse(fileData);
+    const sTables = serviceTables !== false;
+    const sPhotos = servicePhotos !== false;
+    const sInvitation = serviceInvitation !== false;
+    
+    const cleanId = await db.createEvent(id, clientName, password || '', clientEmail || '', sTables, sPhotos, sInvitation);
+    
+    // Send welcome email and track status to inform UI
+    let emailStatus = { sent: false };
+    if (clientEmail && clientEmail.trim()) {
+      try {
+        const emailResult = await sendWelcomeEmail(clientEmail.trim(), clientName.trim(), cleanId, password || '');
+        if (emailResult.success) {
+          emailStatus.sent = true;
+          emailStatus.simulated = !!emailResult.simulated;
+        } else {
+          emailStatus.error = emailResult.error;
+        }
+      } catch (err) {
+        emailStatus.error = err.message;
+        console.error('[EMAIL] Error sending welcome email:', err);
+      }
+    }
+    
+    res.json({ success: true, eventId: cleanId, emailStatus });
+  } catch (error) {
+    console.error('Error creating event:', error);
+    res.status(500).json({ error: error.message || 'Error al crear el evento' });
+  }
+});
+
+// API: Superadmin Toggle Event Active Status
+app.put('/api/superadmin/events/:id', requireSuperAuth, async (req, res) => {
+  const { id } = req.params;
+  const { active } = req.body;
+  if (active === undefined) {
+    return res.status(400).json({ error: 'El estado "active" es requerido.' });
+  }
+  try {
+    await db.toggleEvent(id, active);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error toggling event status:', error);
+    res.status(500).json({ error: 'Error al actualizar el estado del evento' });
+  }
+});
+
+// API: Superadmin Delete Event
+app.delete('/api/superadmin/events/:id', requireSuperAuth, async (req, res) => {
+  const { id } = req.params;
+  if (id === 'default') {
+    return res.status(400).json({ error: 'No se puede eliminar el evento por defecto.' });
+  }
+  try {
+    await db.deleteEvent(id);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting event:', error);
+    res.status(500).json({ error: 'Error al eliminar el evento' });
+  }
+});
+
+// API: Download Mapped Excel (Admin)
+app.get('/api/admin/download-excel', requireAuth, async (req, res) => {
+  try {
+    const eventId = req.query.event || 'default';
+    const guests = await db.getGuests(eventId);
+    if (guests.length === 0) {
+      return res.status(404).json({ error: 'No hay lista de invitados cargada' });
+    }
     
     // Get dynamic event title from config
     let eventTitle = "JANO'S EVENTOS - LISTA DE INVITADOS";
-    if (fs.existsSync(CONFIG_FILE)) {
-      try {
-        const config = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
-        if (config.eventTitle) {
-          eventTitle = `JANO'S - INVITADOS: ${config.eventTitle.toUpperCase()}`;
-        }
-      } catch (err) {
-        // Ignore
-      }
+    try {
+      const configTitle = await db.getEventTitle(eventId);
+      eventTitle = `JANO'S - INVITADOS: ${configTitle.toUpperCase()}`;
+    } catch (err) {
+      // Ignore
     }
 
     const workbook = new ExcelJS.Workbook();
@@ -331,35 +505,26 @@ app.get('/api/admin/download-excel', requireAuth, async (req, res) => {
 });
 
 // API: Get all guests directly (Admin)
-app.get('/api/admin/guests', requireAuth, (req, res) => {
-  if (!fs.existsSync(GUESTS_FILE)) {
-    return res.json([]);
-  }
+app.get('/api/admin/guests', requireAuth, async (req, res) => {
   try {
-    const fileData = fs.readFileSync(GUESTS_FILE, 'utf8');
-    res.json(JSON.parse(fileData));
+    const eventId = req.query.event || 'default';
+    const guests = await db.getGuests(eventId);
+    res.json(guests);
   } catch (error) {
     res.status(500).json({ error: 'Error al leer invitados' });
   }
 });
 
 // API: Add Guest (Admin)
-app.post('/api/guests', requireAuth, (req, res) => {
+app.post('/api/guests', requireAuth, async (req, res) => {
   const { firstName, lastName, table } = req.body;
+  const eventId = req.query.event || 'default';
   if (!firstName && !lastName) {
     return res.status(400).json({ error: 'El nombre o apellido es requerido' });
   }
   try {
-    let guests = [];
-    if (fs.existsSync(GUESTS_FILE)) {
-      guests = JSON.parse(fs.readFileSync(GUESTS_FILE, 'utf8'));
-    }
-    guests.push({
-      firstName: (firstName || '').trim(),
-      lastName: (lastName || '').trim(),
-      table: (table || 'Sin Mesa').trim()
-    });
-    fs.writeFileSync(GUESTS_FILE, JSON.stringify(guests, null, 2), 'utf8');
+    await db.addGuest(eventId, { firstName, lastName, table });
+    const guests = await db.getGuests(eventId);
     res.json({ success: true, count: guests.length });
   } catch (error) {
     res.status(500).json({ error: 'Error al agregar el invitado' });
@@ -367,47 +532,31 @@ app.post('/api/guests', requireAuth, (req, res) => {
 });
 
 // API: Edit Guest (Admin)
-app.put('/api/guests/:index', requireAuth, (req, res) => {
+app.put('/api/guests/:index', requireAuth, async (req, res) => {
   const index = parseInt(req.params.index, 10);
   const { firstName, lastName, table } = req.body;
+  const eventId = req.query.event || 'default';
   if (!firstName && !lastName) {
     return res.status(400).json({ error: 'El nombre o apellido es requerido' });
   }
   try {
-    if (!fs.existsSync(GUESTS_FILE)) {
-      return res.status(404).json({ error: 'No hay lista de invitados cargada' });
-    }
-    const guests = JSON.parse(fs.readFileSync(GUESTS_FILE, 'utf8'));
-    if (index < 0 || index >= guests.length) {
-      return res.status(404).json({ error: 'Invitado no encontrado' });
-    }
-    guests[index] = {
-      firstName: (firstName || '').trim(),
-      lastName: (lastName || '').trim(),
-      table: (table || 'Sin Mesa').trim()
-    };
-    fs.writeFileSync(GUESTS_FILE, JSON.stringify(guests, null, 2), 'utf8');
+    await db.updateGuest(eventId, index, { firstName, lastName, table });
     res.json({ success: true });
   } catch (error) {
+    console.error('Error updating guest:', error);
     res.status(500).json({ error: 'Error al modificar el invitado' });
   }
 });
 
 // API: Delete Guest (Admin)
-app.delete('/api/guests/:index', requireAuth, (req, res) => {
+app.delete('/api/guests/:index', requireAuth, async (req, res) => {
   const index = parseInt(req.params.index, 10);
+  const eventId = req.query.event || 'default';
   try {
-    if (!fs.existsSync(GUESTS_FILE)) {
-      return res.status(404).json({ error: 'No hay lista de invitados cargada' });
-    }
-    const guests = JSON.parse(fs.readFileSync(GUESTS_FILE, 'utf8'));
-    if (index < 0 || index >= guests.length) {
-      return res.status(404).json({ error: 'Invitado no encontrado' });
-    }
-    guests.splice(index, 1);
-    fs.writeFileSync(GUESTS_FILE, JSON.stringify(guests, null, 2), 'utf8');
+    await db.deleteGuest(eventId, index);
     res.json({ success: true });
   } catch (error) {
+    console.error('Error deleting guest:', error);
     res.status(500).json({ error: 'Error al eliminar el invitado' });
   }
 });
@@ -421,6 +570,7 @@ app.post('/api/upload', requireAuth, upload.single('file'), (req, res) => {
 
   const filePath = req.file.path;
   const fileExt = path.extname(req.file.originalname).toLowerCase();
+  const eventId = req.query.event || 'default';
 
   try {
     let rawData = [];
@@ -432,7 +582,7 @@ app.post('/api/upload', requireAuth, upload.single('file'), (req, res) => {
         .pipe(csvParser())
         .on('data', (data) => results.push(data))
         .on('end', () => {
-          processParsedData(results, filePath, res);
+          processParsedData(eventId, results, filePath, res);
         })
         .on('error', (err) => {
           console.error(err);
@@ -456,7 +606,7 @@ app.post('/api/upload', requireAuth, upload.single('file'), (req, res) => {
       }
       
       rawData = xlsx.utils.sheet_to_json(sheet, { range: rangeOption });
-      processParsedData(rawData, filePath, res);
+      processParsedData(eventId, rawData, filePath, res);
     } else {
       fs.unlinkSync(filePath);
       return res.status(400).json({ error: 'Formato de archivo no soportado. Suba un .xlsx, .xls o .csv' });
@@ -468,8 +618,8 @@ app.post('/api/upload', requireAuth, upload.single('file'), (req, res) => {
   }
 });
 
-// Helper function to map columns and write guests.json
-function processParsedData(data, filePath, res) {
+// Helper function to map columns and write guests
+async function processParsedData(eventId, data, filePath, res) {
   try {
     if (data.length === 0) {
       if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
@@ -492,8 +642,8 @@ function processParsedData(data, filePath, res) {
       };
     }).filter(g => g.firstName !== '' || g.lastName !== '');
 
-    // Write file (Overwrite by default)
-    fs.writeFileSync(GUESTS_FILE, JSON.stringify(guests, null, 2), 'utf8');
+    // Write file using db adapter
+    await db.saveGuests(eventId, guests);
 
     // Remove uploaded file
     if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
@@ -506,27 +656,193 @@ function processParsedData(data, filePath, res) {
   }
 }
 
+// API: Upload guest photo
+app.post('/api/photos/upload', upload.single('photo'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No se subió ninguna foto.' });
+  }
+  const { guestName, message } = req.body;
+  const eventId = req.query.event || 'default';
+  
+  try {
+    const fileBuffer = fs.readFileSync(req.file.path);
+    const photoUrl = await db.uploadPhotoFile(eventId, req.file.originalname, fileBuffer, req.file.mimetype);
+    
+    // Remove the temp file
+    if (fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    
+    await db.addPhoto(eventId, { guestName, message, photoUrl });
+    res.json({ success: true, photoUrl });
+  } catch (error) {
+    console.error('Error uploading photo:', error);
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    res.status(500).json({ error: 'Error al subir la foto y registrarla.' });
+  }
+});
+
+// API: Get all photos (Admin)
+app.get('/api/admin/photos', requireAuth, async (req, res) => {
+  try {
+    const eventId = req.query.event || 'default';
+    const photos = await db.getPhotos(eventId, false); // get all
+    res.json(photos);
+  } catch (error) {
+    res.status(500).json({ error: 'Error al obtener fotos de administración.' });
+  }
+});
+
+// API: Get approved photos (Public Slideshow)
+app.get('/api/public/photos', async (req, res) => {
+  try {
+    const eventId = req.query.event || 'default';
+    const photos = await db.getPhotos(eventId, true); // only approved
+    res.json(photos);
+  } catch (error) {
+    res.status(500).json({ error: 'Error al obtener galería de fotos.' });
+  }
+});
+
+// API: Approve a photo (Admin)
+app.put('/api/admin/photos/:id/approve', requireAuth, async (req, res) => {
+  try {
+    const eventId = req.query.event || 'default';
+    await db.approvePhoto(eventId, req.params.id);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al aprobar la foto.' });
+  }
+});
+
+// API: Delete / Reject a photo (Admin)
+app.delete('/api/admin/photos/:id', requireAuth, async (req, res) => {
+  try {
+    const eventId = req.query.event || 'default';
+    await db.deletePhoto(eventId, req.params.id);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al rechazar la foto.' });
+  }
+});
+
+// API: Clear all photos (Admin)
+app.post('/api/admin/photos/clear', requireAuth, async (req, res) => {
+  try {
+    const eventId = req.query.event || 'default';
+    await db.clearPhotos(eventId);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error clearing photos:', error);
+    res.status(500).json({ error: 'Error al limpiar la galería de fotos.' });
+  }
+});
+
+
 // Serve main app pages
+app.get('/fotos', async (req, res) => {
+  const eventId = req.query.event || 'default';
+  try {
+    const events = await db.getEvents();
+    const event = events.find(e => e.id === eventId);
+    if (event && event.servicePhotos === false) {
+      return res.redirect(`/?event=${encodeURIComponent(eventId)}`);
+    }
+  } catch (err) {
+    console.error('Error checking service availability:', err);
+  }
+  res.sendFile(path.join(__dirname, 'public', 'fotos.html'));
+});
+
+app.get('/proyeccion', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'proyeccion.html'));
+});
+
+app.get('/mesas', async (req, res) => {
+  const eventId = req.query.event || 'default';
+  try {
+    const events = await db.getEvents();
+    const event = events.find(e => e.id === eventId);
+    if (event && event.serviceTables === false) {
+      return res.redirect(`/?event=${encodeURIComponent(eventId)}`);
+    }
+  } catch (err) {
+    console.error('Error checking service availability:', err);
+  }
+  res.sendFile(path.join(__dirname, 'public', 'mesas.html'));
+});
+
+app.get('/invitacion', async (req, res) => {
+  const eventId = req.query.event || 'default';
+  try {
+    const events = await db.getEvents();
+    const event = events.find(e => e.id === eventId);
+    if (event && event.serviceInvitation === false) {
+      return res.redirect(`/?event=${encodeURIComponent(eventId)}`);
+    }
+  } catch (err) {
+    console.error('Error checking service availability:', err);
+  }
+  res.sendFile(path.join(__dirname, 'public', 'invitacion.html'));
+});
+
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 app.get('/admin', (req, res) => {
-  if (req.cookies && req.cookies.admin_session === ADMIN_SESSION_TOKEN) {
+  const eventId = req.query.event || 'default';
+  const cookieName = `admin_session_${eventId}`;
+  if (req.cookies && req.cookies[cookieName] === `${ADMIN_SESSION_TOKEN}_${eventId}`) {
     return res.sendFile(path.join(__dirname, 'private', 'admin.html'));
   }
-  res.redirect('/login');
+  const queryParams = new URLSearchParams();
+  if (req.query.event) queryParams.set('event', req.query.event);
+  if (req.query.service) queryParams.set('service', req.query.service);
+  const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
+  res.redirect(`/login${queryString}`);
 });
 
 app.get('/login', (req, res) => {
-  if (req.cookies && req.cookies.admin_session === ADMIN_SESSION_TOKEN) {
-    return res.redirect('/admin');
+  const eventId = req.query.event || 'default';
+  const cookieName = `admin_session_${eventId}`;
+  if (req.cookies && req.cookies[cookieName] === `${ADMIN_SESSION_TOKEN}_${eventId}`) {
+    const queryParams = new URLSearchParams();
+    if (req.query.event) queryParams.set('event', req.query.event);
+    if (req.query.service) queryParams.set('service', req.query.service);
+    const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return res.redirect(`/admin${queryString}`);
   }
   res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
 app.get('/login.html', (req, res) => {
-  res.redirect('/login');
+  const queryParams = new URLSearchParams();
+  if (req.query.event) queryParams.set('event', req.query.event);
+  if (req.query.service) queryParams.set('service', req.query.service);
+  const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
+  res.redirect(`/login${queryString}`);
+});
+
+// Serve Superadmin & Inactive views
+app.get('/superadmin', (req, res) => {
+  if (req.cookies && req.cookies.superadmin_session === SUPERADMIN_SESSION_TOKEN) {
+    return res.sendFile(path.join(__dirname, 'private', 'superadmin.html'));
+  }
+  res.redirect('/superlogin');
+});
+
+app.get('/superlogin', (req, res) => {
+  if (req.cookies && req.cookies.superadmin_session === SUPERADMIN_SESSION_TOKEN) {
+    return res.redirect('/superadmin');
+  }
+  res.sendFile(path.join(__dirname, 'public', 'superlogin.html'));
+});
+
+app.get('/inactive', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'inactive.html'));
 });
 
 // Handle 404
@@ -564,5 +880,9 @@ function startServer(port) {
 }
 
 const START_PORT = parseInt(PORT, 10);
-startServer(START_PORT);
+if (!process.env.VERCEL) {
+  startServer(START_PORT);
+}
+
+module.exports = app;
 

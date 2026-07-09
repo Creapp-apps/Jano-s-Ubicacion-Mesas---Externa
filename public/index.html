@@ -3,62 +3,539 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Localizador de Mesas | Jano's Eventos</title>
+  <title>Combo Digital | Jano's Eventos</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    :root {
+      --bg-color: #0b0b0c;
+      --card-bg: rgba(22, 22, 25, 0.45);
+      --card-border: rgba(212, 175, 55, 0.15);
+      --card-border-hover: rgba(212, 175, 55, 0.6);
+      --gold-primary: #d4af37;
+      --gold-gradient: linear-gradient(135deg, #f3e5ab 0%, #d4af37 50%, #aa7c11 100%);
+      --text-main: #ffffff;
+      --text-muted: #a0a0a5;
+      --success: #2ec4b6;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      font-family: 'Montserrat', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      overflow-x: hidden;
+      position: relative;
+      padding: 40px 20px;
+    }
+
+    /* Ambient background glows wrapper */
+    .bg-glows {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .bg-glow-1 {
+      position: absolute;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(212, 175, 55, 0.08) 0%, transparent 70%);
+      top: -100px;
+      left: -100px;
+    }
+
+    .bg-glow-2 {
+      position: absolute;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(212, 175, 55, 0.05) 0%, transparent 70%);
+      bottom: -150px;
+      right: -100px;
+    }
+
+    header {
+      width: 100%;
+      max-width: 800px;
+      text-align: center;
+      z-index: 10;
+      margin-bottom: 20px;
+      animation: fadeInDown 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    .logo-container {
+      margin-bottom: 15px;
+    }
+
+    .logo-container img {
+      height: 55px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.2));
+    }
+
+    .event-title {
+      font-family: 'Cinzel', serif;
+      font-size: 0.8rem;
+      letter-spacing: 3px;
+      color: var(--gold-primary);
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-bottom: 20px;
+      opacity: 0.9;
+    }
+
+    .welcome-greeting {
+      font-family: 'Cinzel', serif;
+      font-size: 1.8rem;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 8px;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+      letter-spacing: 1px;
+    }
+
+    .main-title {
+      font-family: 'Cinzel', serif;
+      font-size: 2.2rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      background: var(--gold-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 10px;
+      text-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+    }
+
+    .tagline {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      max-width: 500px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    main {
+      width: 100%;
+      max-width: 1000px;
+      z-index: 10;
+      margin: 30px 0;
+      display: flex;
+      justify-content: center;
+    }
+
+    .grid-container {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 25px;
+      width: 100%;
+      max-width: 900px;
+    }
+
+    /* Service Card Design */
+    .service-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 40px 30px;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Background glow inside the card */
+    .service-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: radial-gradient(800px circle at var(--x, 0px) var(--y, 0px), rgba(212, 175, 55, 0.08), transparent 40%);
+      z-index: -1;
+      opacity: 0;
+      transition: opacity 0.5s;
+    }
+
+    .service-card:hover::before {
+      opacity: 1;
+    }
+
+    .service-card:hover {
+      transform: translateY(-8px);
+      border-color: var(--card-border-hover);
+      box-shadow: 0 20px 40px rgba(212, 175, 55, 0.15);
+    }
+
+    /* Icon Styling */
+    .icon-wrapper {
+      width: 80px;
+      height: 80px;
+      background: rgba(212, 175, 55, 0.05);
+      border: 1px solid rgba(212, 175, 55, 0.15);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 25px;
+      color: var(--gold-primary);
+      transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+      position: relative;
+    }
+
+    .icon-wrapper::after {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 1px solid var(--gold-primary);
+      opacity: 0;
+      transform: scale(1.1);
+      transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+    }
+
+    .service-card:hover .icon-wrapper {
+      background: rgba(212, 175, 55, 0.15);
+      color: #fff;
+      transform: scale(1.05);
+      box-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
+    }
+
+    .service-card:hover .icon-wrapper::after {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .icon-wrapper svg {
+      width: 32px;
+      height: 32px;
+      stroke-width: 1.5;
+    }
+
+    /* Card Text content */
+    .service-title {
+      font-family: 'Cinzel', serif;
+      font-size: 1.3rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+      color: #ffffff;
+      transition: color 0.3s;
+    }
+
+    .service-card:hover .service-title {
+      color: var(--gold-primary);
+    }
+
+    .service-desc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 30px;
+      flex-grow: 1;
+      max-width: 250px;
+    }
+
+    /* Button inside the card */
+    .service-btn {
+      width: 100%;
+      padding: 12px 24px;
+      border-radius: 30px;
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      background: transparent;
+      color: var(--text-main);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      font-weight: 600;
+      transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+      position: relative;
+      overflow: hidden;
+      z-index: 1;
+    }
+
+    .service-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--gold-gradient);
+      z-index: -1;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .service-card:hover .service-btn:not(.secondary-btn) {
+      border-color: transparent;
+      color: #0b0b0c;
+    }
+
+    .service-card:hover .service-btn:not(.secondary-btn)::before {
+      opacity: 1;
+    }
+
+    .secondary-btn {
+      border-color: rgba(255, 255, 255, 0.15) !important;
+      color: var(--text-muted) !important;
+      margin-top: 10px;
+    }
+
+    .secondary-btn:hover {
+      border-color: var(--gold-primary) !important;
+      color: var(--gold-primary) !important;
+      background: rgba(212, 175, 55, 0.05) !important;
+    }
+
+    .secondary-btn::before {
+      display: none !important;
+    }
+
+    /* Disabled/Coming Soon Card Styling */
+    .service-card.disabled {
+      cursor: not-allowed;
+      border-color: rgba(255, 255, 255, 0.05);
+      background: rgba(15, 15, 17, 0.2);
+    }
+
+    .service-card.disabled:hover {
+      transform: none;
+      border-color: rgba(255, 255, 255, 0.05);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+    }
+
+    .service-card.disabled .icon-wrapper {
+      color: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.05);
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .service-card.disabled:hover .icon-wrapper {
+      transform: none;
+      background: rgba(255, 255, 255, 0.02);
+      color: rgba(255, 255, 255, 0.2);
+      box-shadow: none;
+    }
+
+    .service-card.disabled:hover .icon-wrapper::after {
+      opacity: 0;
+    }
+
+    .service-card.disabled .service-title {
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    .service-card.disabled .service-desc {
+      color: rgba(255, 255, 255, 0.25);
+    }
+
+    .service-card.disabled .service-btn {
+      border-color: rgba(255, 255, 255, 0.08);
+      color: rgba(255, 255, 255, 0.3);
+      pointer-events: none;
+    }
+
+    /* Premium Coming Soon Badge */
+    .badge-upcoming {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: rgba(212, 175, 55, 0.1);
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      padding: 6px 12px;
+      border-radius: 12px;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      font-weight: 700;
+      color: var(--gold-primary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .badge-upcoming::before {
+      content: '';
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: var(--gold-primary);
+      box-shadow: 0 0 8px var(--gold-primary);
+      animation: pulseGlow 1.8s infinite;
+    }
+
+    footer {
+      width: 100%;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      letter-spacing: 1px;
+      z-index: 10;
+      margin-top: 40px;
+      animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    footer a {
+      color: var(--gold-primary);
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.3s;
+    }
+
+    footer a:hover {
+      color: #fff;
+    }
+
+    /* Grid cards entry animations */
+    .service-card:nth-child(1) { animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both; }
+    .service-card:nth-child(2) { animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both; }
+    .service-card:nth-child(3) { animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both; }
+
+    @keyframes fadeInDown {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes pulseGlow {
+      0% {
+        transform: scale(0.9);
+        box-shadow: 0 0 4px var(--gold-primary);
+        opacity: 0.6;
+      }
+      50% {
+        transform: scale(1.1);
+        box-shadow: 0 0 12px var(--gold-primary);
+        opacity: 1;
+      }
+      100% {
+        transform: scale(0.9);
+        box-shadow: 0 0 4px var(--gold-primary);
+        opacity: 0.6;
+      }
+    }
+
+    @media (max-width: 850px) {
+      body {
+        padding: 30px 15px;
+      }
+
+      .main-title {
+        font-size: 1.8rem;
+      }
+
+      .grid-container {
+        grid-template-columns: 1fr;
+        max-width: 320px;
+      }
+
+      .service-card {
+        padding: 35px 25px;
+      }
+    }
+  </style>
 </head>
 <body>
-  
+  <div class="bg-glows">
+    <div class="bg-glow-1"></div>
+    <div class="bg-glow-2"></div>
+  </div>
+
   <header>
     <div class="logo-container">
       <img src="/assets/LOGO_JANOS.png" alt="Logo Jano's Eventos">
     </div>
-    <div class="subtitle" id="event-subtitle">Salón de Eventos</div>
+    <div class="event-title" id="event-title">Cargando evento...</div>
+    <h2 class="welcome-greeting" id="welcome-greeting" style="display: none;"></h2>
+    <h1 class="main-title">Combo Digital</h1>
+    <p class="tagline">Elegí uno de nuestros servicios interactivos para disfrutar al máximo de la celebración.</p>
   </header>
 
   <main>
-    <!-- Search Section Card -->
-    <div class="card" id="search-card">
-      <h2>Encuentra tu Mesa</h2>
-      <p class="instructions">Ingresa tu nombre y apellido a continuación para ubicar tu mesa asignada en el evento.</p>
-      
-      <form id="search-form" onsubmit="event.preventDefault();">
-        <div class="search-box-container">
-          <label for="guest-name-input">Nombre del Invitado</label>
-          <div class="input-wrapper">
-            <input 
-              type="text" 
-              id="guest-name-input" 
-              placeholder="Ej. Juan Pérez" 
-              autocomplete="off"
-              required
-            >
-          </div>
-          <!-- Auto-complete Suggestions Dropdown -->
-          <ul class="suggestions-list" id="suggestions-box"></ul>
+    <div class="grid-container">
+      <!-- Service 1: Mesas -->
+      <a href="/mesas" class="service-card" id="card-service-tables">
+        <div class="icon-wrapper">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+          </svg>
         </div>
-        
-        <button type="submit" class="btn-search" id="btn-submit-search">Buscar</button>
-      </form>
-    </div>
+        <h2 class="service-title">Mesas</h2>
+        <p class="service-desc">Buscá tu nombre para saber qué mesa tenés asignada en el salón.</p>
+        <button class="service-btn">Armar Mesas</button>
+      </a>
 
-    <!-- VIP Ticket Reveal Container (Hidden initially) -->
-    <div class="ticket-wrapper" id="ticket-wrapper">
-      <div class="ticket">
-        <div class="ticket-header">
-          <div class="ticket-vip-tag">Invitado VIP</div>
-          <div class="ticket-name" id="result-name">Juan Pérez</div>
+      <!-- Service 2: Fotos -->
+      <div class="service-card" id="card-service-photos" style="cursor: default;">
+        <div class="icon-wrapper">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+          </svg>
         </div>
-        <div class="ticket-body">
-          <div class="ticket-label">Tu mesa asignada es</div>
-          <div class="ticket-table-number" id="result-table">Mesa 12</div>
-        </div>
-        <div class="ticket-footer">
-          <button class="btn-back" id="btn-search-again">Buscar Otro</button>
+        <h2 class="service-title">Fotos</h2>
+        <p class="service-desc">Subí tus fotos y dedicatorias a la pantalla gigante en tiempo real.</p>
+        <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; z-index: 5; position: relative;">
+          <a id="btn-service-photos-upload" href="/fotos" class="service-btn" style="text-decoration: none; text-align: center; display: block;">Subir Foto</a>
+          <a id="btn-service-photos-moderate" href="/admin" class="service-btn secondary-btn" style="text-decoration: none; text-align: center; display: block;">Moderar fotos</a>
         </div>
       </div>
+
+      <!-- Service 3: Invitación -->
+      <a href="/invitacion" class="service-card" id="card-service-invitation">
+        <div class="icon-wrapper">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 19v-8.93a2 2 0 01.89-1.664l8-5.333a2 2 0 012.22 0l8 5.333A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-2.25-1.5a2 2 0 00-2.22 0l-2.25 1.5"></path>
+          </svg>
+        </div>
+        <h2 class="service-title">Invitación</h2>
+        <p class="service-desc">Explorá la invitación interactiva con itinerario y mapas del evento.</p>
+        <button class="service-btn">Ver Invitación</button>
+      </a>
     </div>
   </main>
 
@@ -66,6 +543,95 @@
     &copy; 2026 <a href="https://www.janoseventos.com" target="_blank">Jano's Eventos</a>. Todos los derechos reservados.
   </footer>
 
-  <script src="/js/app.js"></script>
+  <script>
+    // Extract event query parameter for multi-tenancy context propagation
+    const urlParams = new URLSearchParams(window.location.search);
+    const eventId = urlParams.get('event') || 'default';
+
+    // Propagate event ID parameter to all navigation links
+    document.querySelectorAll('.service-card').forEach(card => {
+      const currentHref = card.getAttribute('href');
+      if (currentHref) {
+        card.setAttribute('href', `${currentHref}?event=${encodeURIComponent(eventId)}`);
+      }
+    });
+
+    const uploadLink = document.getElementById('btn-service-photos-upload');
+    if (uploadLink) {
+      uploadLink.setAttribute('href', `/fotos?event=${encodeURIComponent(eventId)}`);
+    }
+    const moderateLink = document.getElementById('btn-service-photos-moderate');
+    if (moderateLink) {
+      moderateLink.setAttribute('href', `/admin?event=${encodeURIComponent(eventId)}&service=photos`);
+    }
+
+    function getGreeting(name) {
+      if (!name) return "";
+      let cleanName = name.replace(/^(boda|xv|mis xv|cumpleaños|cumple|fiesta)\s+de\s+/i, '').trim();
+      
+      if (cleanName.includes('&') || /\s+y\s+/i.test(cleanName) || cleanName.includes(',')) {
+        return `¡Bienvenidos, ${cleanName}!`;
+      }
+      
+      const firstWord = cleanName.split(' ')[0].replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ]/g, '');
+      const lastChar = firstWord.slice(-1).toLowerCase();
+      
+      if (lastChar === 'a' || lastChar === 'á') {
+        return `¡Bienvenida, ${cleanName}!`;
+      }
+      return `¡Bienvenido, ${cleanName}!`;
+    }
+
+    // Fetch configuration title for specific event
+    fetch(`/api/config?event=${encodeURIComponent(eventId)}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.eventTitle) {
+          document.getElementById('event-title').textContent = data.eventTitle;
+        } else {
+          document.getElementById('event-title').textContent = "Jano's Eventos";
+        }
+
+        const greetingEl = document.getElementById('welcome-greeting');
+        const nameToUse = data.clientName || data.eventTitle || '';
+        if (nameToUse && eventId !== 'default') {
+          greetingEl.textContent = getGreeting(nameToUse);
+          greetingEl.style.display = 'block';
+        } else {
+          greetingEl.style.display = 'none';
+        }
+
+        // Dynamic service hiding based on tenant config
+        if (data) {
+          if (data.serviceTables === false) {
+            const el = document.getElementById('card-service-tables');
+            if (el) el.style.display = 'none';
+          }
+          if (data.servicePhotos === false) {
+            const el = document.getElementById('card-service-photos');
+            if (el) el.style.display = 'none';
+          }
+          if (data.serviceInvitation === false) {
+            const el = document.getElementById('card-service-invitation');
+            if (el) el.style.display = 'none';
+          }
+        }
+      })
+      .catch(() => {
+        document.getElementById('event-title').textContent = "Jano's Eventos";
+      });
+
+    // Elegant Mouse Hover Effect for Radial Glow Background on Cards
+    const cards = document.querySelectorAll('.service-card:not(.disabled)');
+    cards.forEach(card => {
+      card.addEventListener('mousemove', (e) => {
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        card.style.setProperty('--x', `${x}px`);
+        card.style.setProperty('--y', `${y}px`);
+      });
+    });
+  </script>
 </body>
 </html>

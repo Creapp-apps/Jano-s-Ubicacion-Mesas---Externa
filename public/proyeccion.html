@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transmisión en Vivo | Jano's Eventos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/proyeccion.css">
+</head>
+<body>
+
+  <!-- Fullscreen Slideshow Wrapper -->
+  <div class="slideshow-container" id="slideshow-container">
+    <div class="slide active" id="slide-1"></div>
+    <div class="slide" id="slide-2"></div>
+  </div>
+
+  <!-- Ambient Golden Overlay -->
+  <div class="ambient-gradient"></div>
+
+  <!-- Header Banner -->
+  <header class="projector-header">
+    <div class="logo-box">
+      <img src="/assets/LOGO_JANOS.png" alt="Logo Jano's">
+    </div>
+    <div class="event-title-banner" id="event-title">Jano's Eventos</div>
+  </header>
+
+  <!-- Interactive Floating Dedication Box -->
+  <div class="dedication-card-wrapper" id="dedication-card-wrapper">
+    <div class="dedication-card" id="dedication-card">
+      <div class="gold-accent-line"></div>
+      <div class="guest-name" id="guest-name">Familia Pérez</div>
+      <div class="ornament">♦</div>
+      <div class="guest-message" id="guest-message">¡Felicitaciones a los novios! Que esta nueva etapa esté llena de amor, sonrisas y momentos mágicos.</div>
+    </div>
+  </div>
+
+  <!-- Empty State (No photos approved yet) -->
+  <div class="empty-state-container" id="empty-state" style="display: none;">
+    <div class="empty-card">
+      <div class="logo-large">
+        <img src="/assets/LOGO_JANOS.png" alt="Logo Jano's">
+      </div>
+      <h2>¡Sube tus fotos a la Pantalla!</h2>
+      <p class="subtitle-empty" id="empty-event-title">Jano's Eventos</p>
+      
+      <div class="instruction-box">
+        <div class="instruction-step">
+          <span class="number">1</span>
+          <span>Escanea el código QR en las pantallas o mesas del salón.</span>
+        </div>
+        <div class="instruction-step">
+          <span class="number">2</span>
+          <span>Tómate una foto o selecciona una desde tu galería.</span>
+        </div>
+        <div class="instruction-step">
+          <span class="number">3</span>
+          <span>Escribe tus felicitaciones y envíala en vivo.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/proyeccion.js"></script>
+</body>
+</html>

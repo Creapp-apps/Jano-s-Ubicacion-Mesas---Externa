@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Acceso Admin | Jano's Eventos</title>
+  <title>Acceso Superadmin | Jano's Combo Digital</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -88,12 +88,12 @@
   <div class="login-wrapper">
     <div class="panel login-card">
       <img src="/assets/LOGO_JANOS.png" alt="Logo Jano's" class="login-logo">
-      <h1 class="login-title">Administración</h1>
-      <div class="login-subtitle">Acceso al Panel de Control</div>
+      <h1 class="login-title">Superadmin</h1>
+      <div class="login-subtitle">Portal de Control Global</div>
       
       <form id="login-form">
         <div class="form-group">
-          <label for="password">Contraseña de Acceso</label>
+          <label for="password">Contraseña Maestra</label>
           <input type="password" id="password" class="form-control" placeholder="••••••••" required autocomplete="current-password">
         </div>
         
@@ -104,27 +104,6 @@
   </div>
 
   <script>
-    document.addEventListener('DOMContentLoaded', async () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const eventId = urlParams.get('event') || 'default';
-      
-      if (eventId !== 'default') {
-        try {
-          const response = await fetch(`/api/config?event=${encodeURIComponent(eventId)}`);
-          if (response.ok) {
-            const data = await response.json();
-            if (data.clientName) {
-              document.querySelector('.login-title').textContent = data.clientName;
-              document.querySelector('.login-subtitle').textContent = 'Panel de Control • Combo Digital';
-              document.title = `Acceso Admin | ${data.clientName}`;
-            }
-          }
-        } catch (err) {
-          console.error('Error fetching event config:', err);
-        }
-      }
-    });
-
     document.getElementById('login-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const password = document.getElementById('password').value;
@@ -132,25 +111,19 @@
       
       errorMsg.classList.remove('visible');
       
-      const urlParams = new URLSearchParams(window.location.search);
-      const eventId = urlParams.get('event') || 'default';
-      
       try {
-        const response = await fetch(`/api/admin/login?event=${encodeURIComponent(eventId)}`, {
+        const response = await fetch('/api/superadmin/login', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ password, eventId })
+          body: JSON.stringify({ password })
         });
         
         const data = await response.json();
         
         if (response.ok && data.success) {
-          // Redirect to admin panel
-          const service = urlParams.get('service');
-          const redirectUrl = `/admin?event=${encodeURIComponent(eventId)}${service ? `&service=${encodeURIComponent(service)}` : ''}`;
-          window.location.href = redirectUrl;
+          window.location.href = '/superadmin';
         } else {
           errorMsg.textContent = data.error || 'Error al iniciar sesión';
           errorMsg.classList.add('visible');

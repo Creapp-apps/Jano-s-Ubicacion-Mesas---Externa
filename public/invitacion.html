@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Invitación Interactiva | Jano's Eventos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    /* Teaser/Mockup specific styles */
+    .mock-timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      margin-top: 20px;
+      text-align: left;
+    }
+    .mock-event-item {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      padding: 10px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(212, 175, 55, 0.1);
+    }
+    .mock-time {
+      font-family: 'Cinzel', serif;
+      color: var(--gold-primary);
+      font-weight: 600;
+      font-size: 0.95rem;
+      min-width: 60px;
+    }
+    .mock-desc {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .teaser-badge {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 12px;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: var(--gold-primary);
+      background: rgba(212, 175, 55, 0.1);
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      margin-bottom: 15px;
+      animation: pulseGold 2s infinite;
+    }
+    .btn-teaser-action {
+      display: inline-block;
+      width: 100%;
+      padding: 14px;
+      border-radius: 30px;
+      background: transparent;
+      border: 1px solid rgba(212, 175, 55, 0.2);
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: not-allowed;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  
+  <header>
+    <div class="logo-container">
+      <img src="/assets/LOGO_JANOS.png" alt="Logo Jano's Eventos">
+    </div>
+    <div class="subtitle" id="event-subtitle">Cargando evento...</div>
+  </header>
+
+  <main>
+    <!-- Onboarding Card for Invitacion -->
+    <div class="card" id="onboarding-card">
+      <h2>Invitación Interactiva</h2>
+      <p class="instructions" style="margin-bottom: 25px;">Viví la experiencia digital y cinematográfica de la fiesta en tres simples pasos:</p>
+      
+      <div class="steps-container">
+        <div class="step-item">
+          <div class="step-num">1</div>
+          <div class="step-text"><strong>Itinerario en vivo</strong> para seguir el minuto a minuto del cronograma del evento.</div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">2</div>
+          <div class="step-text"><strong>Cómo llegar</strong> con acceso a mapas interactivos y coordenadas del salón.</div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">3</div>
+          <div class="step-text"><strong>Confirmar asistencia</strong> informando restricciones alimenticias u otros datos.</div>
+        </div>
+      </div>
+      
+      <button class="btn-search" id="btn-start-invitation" style="margin-top: 15px; width: 100%;">Explorar Invitación</button>
+    </div>
+
+    <!-- Main Teaser Card (Hidden initially) -->
+    <div class="card" id="teaser-card" style="display: none; opacity: 0;">
+      <div class="teaser-badge">Próximamente</div>
+      <h2>Tu Invitación Digital</h2>
+      <p class="instructions" style="margin-bottom: 20px;">Estamos preparando una experiencia multimedia inmersiva y cinematográfica para este evento.</p>
+      
+      <div class="mock-timeline">
+        <div class="mock-event-item">
+          <div class="mock-time">21:00 hs</div>
+          <div class="mock-desc">Recepción & Cóctel de Bienvenida</div>
+        </div>
+        <div class="mock-event-item">
+          <div class="mock-time">22:30 hs</div>
+          <div class="mock-desc">Ingreso de los Agasajados & Cena de Gala</div>
+        </div>
+        <div class="mock-event-item">
+          <div class="mock-time">00:00 hs</div>
+          <div class="mock-desc">Apertura de Pista & Show de Luces</div>
+        </div>
+      </div>
+
+      <button class="btn-teaser-action" disabled>Módulo en Preparación</button>
+    </div>
+  </main>
+
+  <footer>
+    &copy; 2026 <a href="https://www.janoseventos.com" target="_blank">Jano's Eventos</a>. Todos los derechos reservados.
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const eventSubtitle = document.getElementById('event-subtitle');
+      const onboardingCard = document.getElementById('onboarding-card');
+      const teaserCard = document.getElementById('teaser-card');
+      const startBtn = document.getElementById('btn-start-invitation');
+
+      // Extract event query parameter for multi-tenancy
+      const urlParams = new URLSearchParams(window.location.search);
+      const eventId = urlParams.get('event') || 'default';
+
+      // Load config title
+      fetch(`/api/config?event=${encodeURIComponent(eventId)}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.eventTitle) {
+            eventSubtitle.textContent = data.eventTitle;
+          }
+        })
+        .catch(() => {
+          eventSubtitle.textContent = "Salón de Eventos";
+        });
+
+      // Handle card fade transition
+      if (startBtn && onboardingCard && teaserCard) {
+        startBtn.addEventListener('click', () => {
+          onboardingCard.style.opacity = '0';
+          onboardingCard.style.transform = 'scale(0.95)';
+          onboardingCard.style.transition = 'all 0.4s ease-in-out';
+          
+          setTimeout(() => {
+            onboardingCard.style.display = 'none';
+            teaserCard.style.display = 'block';
+            teaserCard.style.opacity = '0';
+            teaserCard.style.transform = 'scale(0.95)';
+            
+            // Force reflow
+            void teaserCard.offsetWidth;
+            
+            teaserCard.style.transition = 'all 0.4s ease-in-out';
+            teaserCard.style.opacity = '1';
+            teaserCard.style.transform = 'scale(1)';
+          }, 400);
+        });
+      }
+    });
+  </script>
+</body>
+</html>

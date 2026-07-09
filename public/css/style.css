@@ -461,3 +461,43 @@ footer a:hover {
     filter: drop-shadow(0 4px 15px rgba(212,175,55,0.4));
   }
 }
+
+/* Onboarding Steps styling */
+.steps-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-bottom: 30px;
+  text-align: left;
+}
+
+.step-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+}
+
+.step-num {
+  width: 28px;
+  height: 28px;
+  background: var(--gold-gradient);
+  border-radius: 50%;
+  color: #0b0b0c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.step-text {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.step-text strong {
+  color: var(--text-main);
+  font-weight: 600;
+}

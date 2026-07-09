@@ -8,9 +8,41 @@ document.addEventListener('DOMContentLoaded', () => {
   const resultTable = document.getElementById('result-table');
   const btnSearchAgain = document.getElementById('btn-search-again');
   const eventSubtitle = document.getElementById('event-subtitle');
+  const onboardingCard = document.getElementById('onboarding-card');
+  const startSearchBtn = document.getElementById('btn-start-search');
+  
+  if (startSearchBtn && onboardingCard && searchCard) {
+    startSearchBtn.addEventListener('click', () => {
+      onboardingCard.style.opacity = '0';
+      onboardingCard.style.transform = 'scale(0.95)';
+      onboardingCard.style.transition = 'all 0.4s ease-in-out';
+      
+      setTimeout(() => {
+        onboardingCard.style.display = 'none';
+        searchCard.style.display = 'block';
+        searchCard.style.opacity = '0';
+        searchCard.style.transform = 'scale(0.95)';
+        
+        // Force reflow
+        void searchCard.offsetWidth;
+        
+        searchCard.style.transition = 'all 0.4s ease-in-out';
+        searchCard.style.opacity = '1';
+        searchCard.style.transform = 'scale(1)';
+        
+        setTimeout(() => {
+          nameInput.focus();
+        }, 400);
+      }, 400);
+    });
+  }
+  
+  // Extract event query parameter for multi-tenancy
+  const urlParams = new URLSearchParams(window.location.search);
+  const eventId = urlParams.get('event') || 'default';
   
   // Load dynamic event title config
-  fetch('/api/config')
+  fetch(`/api/config?event=${encodeURIComponent(eventId)}`)
     .then(res => res.json())
     .then(data => {
       if (data && data.eventTitle) {
@@ -76,7 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Fetch suggestions helper
   function fetchSuggestions(query) {
-    fetch(`/api/guests/search?q=${encodeURIComponent(query)}`)
+    fetch(`/api/guests/search?q=${encodeURIComponent(query)}&event=${encodeURIComponent(eventId)}`)
       .then(res => res.json())
       .then(data => {
         activeSuggestions = data;
@@ -123,7 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Search directly on server
   function searchDirectly(query) {
-    fetch(`/api/guests/search?q=${encodeURIComponent(query)}`)
+    fetch(`/api/guests/search?q=${encodeURIComponent(query)}&event=${encodeURIComponent(eventId)}`)
       .then(res => res.json())
       .then(data => {
         if (data.length === 0) {
@@ -165,6 +197,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }, { once: true });
   }
 
+  function formatTableDisplay(table) {
+    if (!table) return 'Sin Mesa';
+    const t = String(table).trim();
+    if (t.toLowerCase() === 'sin mesa') return 'Sin Mesa';
+    if (/^mesa\b/i.test(t)) {
+      return t.charAt(0).toUpperCase() + t.slice(1);
+    }
+    return `Mesa ${t}`;
+  }
+
   // Select guest and animate VIP ticket reveal
   function selectGuest(guest) {
     // Remove errors
@@ -173,7 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Set details
     resultName.textContent = `${guest.firstName} ${guest.lastName}`;
-    resultTable.textContent = guest.table || 'Sin Mesa';
+    resultTable.textContent = formatTableDisplay(guest.table);
 
     // Transition out search card and reveal ticket
     searchCard.style.opacity = '0';

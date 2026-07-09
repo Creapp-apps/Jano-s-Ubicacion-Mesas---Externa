@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Combo Inactivo | Jano's Eventos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-color: #0b0b0c;
+      --gold-primary: #d4af37;
+      --gold-gradient: linear-gradient(135deg, #f3e09d 0%, #d4af37 50%, #aa7c11 100%);
+      --text-main: #f5f5f7;
+      --text-muted: #a0a0a5;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      font-family: 'Montserrat', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 20px;
+      overflow: hidden;
+      background-image: radial-gradient(circle at center, rgba(212, 175, 55, 0.05) 0%, transparent 70%);
+    }
+    
+    .container {
+      max-width: 480px;
+      padding: 40px 30px;
+      border: 1px solid rgba(212, 175, 55, 0.2);
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.02);
+      backdrop-filter: blur(15px);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+      transform: translateY(0);
+      animation: fadeIn 0.8s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .logo {
+      height: 60px;
+      margin-bottom: 25px;
+    }
+    
+    h1 {
+      font-family: 'Cinzel', serif;
+      font-size: 2.2rem;
+      background: var(--gold-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 15px;
+      letter-spacing: 1px;
+    }
+    
+    h2 {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 300;
+      font-size: 1rem;
+      color: var(--gold-primary);
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      margin-bottom: 25px;
+    }
+    
+    p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      line-height: 1.6;
+      margin-bottom: 35px;
+    }
+    
+    .btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 14px;
+      border-radius: 25px;
+      text-decoration: none;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.85rem;
+      letter-spacing: 1.5px;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      border: 1px solid var(--gold-primary);
+      color: var(--bg-color);
+      background: var(--gold-gradient);
+      box-shadow: 0 4px 15px rgba(212, 175, 55, 0.2);
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+    }
+
+    .btn-secondary {
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .event-info {
+      margin-top: 30px;
+      font-size: 0.75rem;
+      color: rgba(255, 255, 255, 0.2);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img src="/assets/LOGO_JANOS.png" alt="Logo Jano's" class="logo">
+    <h1>Servicio Inactivo</h1>
+    <h2>Combo Digital Expirado</h2>
+    <p>El acceso a este combo digital se encuentra inactivo. Esto puede deberse a que el evento ha finalizado, no está registrado, o requiere renovación de la licencia contratada.</p>
+    
+    <div class="btn-group">
+      <a href="https://janos.com.ar" target="_blank" class="btn btn-primary">Contactar Soporte Jano's</a>
+      <a href="/superlogin" class="btn btn-secondary">Acceso Superadmin</a>
+    </div>
+
+    <div class="event-info" id="event-display">Evento: default</div>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const eventId = urlParams.get('event') || 'default';
+    document.getElementById('event-display').textContent = `Evento ID: ${eventId}`;
+  </script>
+</body>
+</html>

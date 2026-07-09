@@ -1,4 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const eventId = urlParams.get('event') || 'default';
+
   // Elements
   const fileDropZone = document.getElementById('file-drop-zone');
   const fileInput = document.getElementById('excel-file-input');
@@ -42,24 +45,172 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let activeConfirmCallback = null;
 
-  function showConfirm(title, message, onAccept) {
-    confirmTitle.textContent = title;
-    confirmMessage.textContent = message;
-    activeConfirmCallback = onAccept;
-    confirmModal.classList.add('active');
+  // Tabs elements
+  const tabBtnMesas = document.getElementById('tab-btn-mesas');
+  const tabBtnFotos = document.getElementById('tab-btn-fotos');
+  const tabMesas = document.getElementById('tab-mesas');
+  const tabFotos = document.getElementById('tab-fotos');
+
+  // Photo grid elements
+  const pendingPhotosGrid = document.getElementById('pending-photos-grid');
+  const approvedPhotosGrid = document.getElementById('approved-photos-grid');
+
+  // Photo polling state
+  let photoIntervalId = null;
+
+  function switchTab(tabId) {
+    if (tabId === 'mesas') {
+      if (tabBtnMesas) tabBtnMesas.classList.add('active');
+      if (tabBtnFotos) tabBtnFotos.classList.remove('active');
+      if (tabMesas) tabMesas.classList.add('active');
+      if (tabFotos) tabFotos.classList.remove('active');
+      stopPhotoPolling();
+    } else if (tabId === 'fotos') {
+      if (tabBtnMesas) tabBtnMesas.classList.remove('active');
+      if (tabBtnFotos) tabBtnFotos.classList.add('active');
+      if (tabMesas) tabMesas.classList.remove('active');
+      if (tabFotos) tabFotos.classList.add('active');
+      loadPhotos();
+      startPhotoPolling();
+    }
+  }
+
+  function startPhotoPolling() {
+    if (photoIntervalId) clearInterval(photoIntervalId);
+    photoIntervalId = setInterval(loadPhotos, 10000);
+  }
+
+  function stopPhotoPolling() {
+    if (photoIntervalId) {
+      clearInterval(photoIntervalId);
+      photoIntervalId = null;
+    }
+  }
+
+  function loadPhotos() {
+    if (!pendingPhotosGrid || !approvedPhotosGrid) return;
+    
+    fetch(`/api/admin/photos?event=${encodeURIComponent(eventId)}`)
+      .then(res => res.json())
+      .then(photos => {
+        if (Array.isArray(photos)) {
+          renderPhotos(photos);
+        } else {
+          console.error('Invalid photos response', photos);
+        }
+      })
+      .catch(err => {
+        console.error('Error fetching admin photos:', err);
+      });
+  }
+
+  function renderPhotos(photos) {
+    const pending = photos.filter(p => !p.approved);
+    const approved = photos.filter(p => p.approved);
+
+    // Render Pending
+    if (pending.length === 0) {
+      pendingPhotosGrid.innerHTML = '<div class="no-photos-msg">No hay fotos pendientes de aprobación.</div>';
+    } else {
+      pendingPhotosGrid.innerHTML = pending.map(p => `
+        <div class="photo-card" id="photo-${p.id}">
+          <div class="photo-card-img-wrapper">
+            <img src="${p.photoUrl}" alt="Foto de ${p.guestName}" loading="lazy">
+          </div>
+          <div class="photo-card-info">
+            <h4>${escapeHtml(p.guestName)}</h4>
+            <p>${escapeHtml(p.message || '')}</p>
+            <div class="photo-card-actions">
+              <button class="btn btn-danger" onclick="rejectPhotoCard('${p.id}')">Rechazar</button>
+              <button class="btn btn-primary" onclick="approvePhotoCard('${p.id}')">Aprobar</button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Render Approved
+    if (approved.length === 0) {
+      approvedPhotosGrid.innerHTML = '<div class="no-photos-msg">No hay fotos aprobadas aún.</div>';
+    } else {
+      approvedPhotosGrid.innerHTML = approved.map(p => `
+        <div class="photo-card" id="photo-${p.id}">
+          <div class="photo-card-img-wrapper">
+            <img src="${p.photoUrl}" alt="Foto de ${p.guestName}" loading="lazy">
+          </div>
+          <div class="photo-card-info">
+            <h4>${escapeHtml(p.guestName)}</h4>
+            <p>${escapeHtml(p.message || '')}</p>
+            <div class="photo-card-actions">
+              <button class="btn btn-danger" style="width: 100%;" onclick="rejectPhotoCard('${p.id}')">Eliminar</button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  window.approvePhotoCard = (id) => {
+    fetch(`/api/admin/photos/${id}/approve?event=${encodeURIComponent(eventId)}`, {
+      method: 'PUT'
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          showToast('Foto aprobada correctamente', 'success');
+          loadPhotos();
+        } else {
+          showToast('Error al aprobar la foto.', 'error');
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        showToast('Error de red al aprobar foto.', 'error');
+      });
+  };
+
+  window.rejectPhotoCard = (id) => {
+    showConfirm(
+      '¿Eliminar / Rechazar Foto?',
+      '¿Estás seguro de que deseas eliminar o rechazar esta foto? Esta acción la removerá permanentemente de la pantalla.',
+      () => {
+        fetch(`/api/admin/photos/${id}?event=${encodeURIComponent(eventId)}`, {
+          method: 'DELETE'
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              showToast('Foto eliminada correctamente', 'success');
+              loadPhotos();
+            } else {
+              showToast('Error al eliminar la foto.', 'error');
+            }
+          })
+          .catch(err => {
+            console.error(err);
+            showToast('Error de red al eliminar foto.', 'error');
+          });
+      }
+    );
+  };
+
+  async function showConfirm(title, message, onAccept) {
+    const accepted = await customConfirm(title, message);
+    if (accepted && onAccept) onAccept();
   }
 
   function hideConfirm() {
-    confirmModal.classList.remove('active');
-    activeConfirmCallback = null;
-  }
-
-  if (btnConfirmCancel) btnConfirmCancel.addEventListener('click', hideConfirm);
-  if (btnConfirmAccept) {
-    btnConfirmAccept.addEventListener('click', () => {
-      if (activeConfirmCallback) activeConfirmCallback();
-      hideConfirm();
-    });
+    // Retained for compatibility
   }
 
   // Active guest list state
@@ -68,32 +219,185 @@ document.addEventListener('DOMContentLoaded', () => {
   // Set up QR codes pointing to Guest view
   const siteOrigin = window.location.origin;
   const qrBaseUrl = 'https://api.qrserver.com/v1/create-qr-code/';
-  
-  // Set screen QR
-  const screenQrUrl = `${qrBaseUrl}?size=150x150&data=${encodeURIComponent(siteOrigin)}&color=0b0b0c&bgcolor=ffffff`;
-  qrCodeContainer.innerHTML = `<img src="${screenQrUrl}" alt="QR Code" style="display: block;">`;
 
-  // Set print QR
-  const printQrUrl = `${qrBaseUrl}?size=500x500&data=${encodeURIComponent(siteOrigin)}&color=000000&bgcolor=ffffff`;
-  printQrImg.src = printQrUrl;
+  const qrInstructionsText = document.getElementById('qr-instructions-text');
+  const btnPrintPhotosQr = document.getElementById('btn-print-photos-qr');
+  const btnSavePhotosTitle = document.getElementById('btn-save-photos-title');
+  const eventTitlePhotosInput = document.getElementById('event-title-photos-input');
+  const photosTitleStatus = document.getElementById('photos-title-status');
+  const btnClearPhotos = document.getElementById('btn-clear-photos');
+  const btnViewGuestView = document.getElementById('btn-view-guest-view');
+
+  const activeService = urlParams.get('service');
+
+  function updateQR() {
+    const isPhotos = (activeService === 'photos');
+    const targetPath = isPhotos ? '/fotos' : '/mesas';
+    const targetUrl = `${siteOrigin}${targetPath}?event=${encodeURIComponent(eventId)}`;
+
+    // Generate QR code URLs
+    const screenQrUrl = `${qrBaseUrl}?size=150x150&data=${encodeURIComponent(targetUrl)}&color=0b0b0c&bgcolor=ffffff`;
+    const printQrUrl = `${qrBaseUrl}?size=500x500&data=${encodeURIComponent(targetUrl)}&color=000000&bgcolor=ffffff`;
+
+    // 1. Set the correct QR images depending on active service
+    if (isPhotos) {
+      const qrPhotosContainer = document.getElementById('qr-photos-code-container');
+      if (qrPhotosContainer) {
+        qrPhotosContainer.innerHTML = `<img src="${screenQrUrl}" alt="QR Code" style="display: block;">`;
+      }
+      
+      const qrPhotosInstructionsText = document.getElementById('qr-photos-instructions-text');
+      if (qrPhotosInstructionsText) {
+        qrPhotosInstructionsText.textContent = 'Imprime el cartel con el QR oficial para ubicarlo en el salón. Los invitados podrán escanearlo para subir y compartir sus fotos al instante.';
+      }
+    } else {
+      if (qrCodeContainer) {
+        qrCodeContainer.innerHTML = `<img src="${screenQrUrl}" alt="QR Code" style="display: block;">`;
+      }
+      
+      if (qrInstructionsText) {
+        qrInstructionsText.textContent = 'Imprime el cartel con el QR oficial para ubicarlo en la recepción del salón. Los invitados podrán escanearlo al llegar para encontrar su mesa asignada.';
+      }
+    }
+
+    // Common/Print QR image configuration for window.print()
+    if (printQrImg) {
+      printQrImg.src = printQrUrl;
+    }
+
+    // Update print poster contents dynamically
+    const printTitle = document.getElementById('print-event-title');
+    const printSubtitle = document.querySelector('.print-subtitle');
+    const printInstructions = document.querySelector('.print-instructions');
+
+    if (printTitle) {
+      printTitle.textContent = isPhotos ? 'Muro de Fotos' : 'Ubicación de Mesas';
+    }
+    if (printSubtitle) {
+      printSubtitle.textContent = isPhotos ? 'Comparte tus Momentos' : 'Encuentra tu Mesa';
+    }
+    if (printInstructions) {
+      printInstructions.innerHTML = isPhotos 
+        ? 'Escanéa este código con la cámara de tu celular<br>para subir fotos y mensajes al muro.'
+        : 'Escanéa este código con la cámara de tu celular<br>para consultar tu mesa asignada.';
+    }
+  }
+
+  // Trigger initial QR render
+  updateQR();
 
   // Initialize page
   checkSession();
-  loadStats();
   loadConfig();
-  loadGuests();
+
+  // Hide the global navigation tabs container as services are isolated now
+  const adminNav = document.querySelector('.admin-nav');
+  if (adminNav) {
+    adminNav.style.display = 'none';
+  }
+
+  // Switch display container and load data based on the service param
+  if (activeService === 'photos') {
+    switchTab('fotos');
+  } else {
+    switchTab('mesas');
+    loadStats();
+    loadGuests();
+  }
+
+  // Set header guest view link path
+  if (btnViewGuestView) {
+    btnViewGuestView.href = (activeService === 'photos')
+      ? `/fotos?event=${encodeURIComponent(eventId)}`
+      : `/mesas?event=${encodeURIComponent(eventId)}`;
+  }
+
+  // Wire Photos specific settings listeners
+  if (btnSavePhotosTitle && eventTitlePhotosInput) {
+    btnSavePhotosTitle.addEventListener('click', () => {
+      const eventTitle = eventTitlePhotosInput.value.trim();
+      if (!eventTitle) {
+        showPhotosTitleStatus('Por favor, ingresa un nombre para el evento.', 'error');
+        return;
+      }
+
+      fetch(`/api/config?event=${encodeURIComponent(eventId)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventTitle })
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            showPhotosTitleStatus('Título del evento guardado correctamente.', 'success');
+            if (printEventTitle) printEventTitle.textContent = eventTitle;
+            // Sync the tables title input too if it exists on page
+            if (eventTitleInput) eventTitleInput.value = eventTitle;
+          } else {
+            showPhotosTitleStatus('Error al guardar la configuración.', 'error');
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          showPhotosTitleStatus('Error de red al guardar la configuración.', 'error');
+        });
+    });
+  }
+
+  function showPhotosTitleStatus(message, type) {
+    if (!photosTitleStatus) return;
+    photosTitleStatus.textContent = message;
+    photosTitleStatus.className = 'status-msg';
+    photosTitleStatus.classList.add(type);
+    photosTitleStatus.style.display = 'block';
+    setTimeout(() => {
+      photosTitleStatus.style.display = 'none';
+    }, 4000);
+  }
+
+  if (btnClearPhotos) {
+    btnClearPhotos.addEventListener('click', () => {
+      showConfirm(
+        'Limpiar Galería de Fotos',
+        '¿Está seguro de que desea eliminar todas las fotos de la galería? Esta acción no se puede deshacer y vaciará el mural.',
+        () => {
+          fetch(`/api/admin/photos/clear?event=${encodeURIComponent(eventId)}`, {
+            method: 'POST'
+          })
+            .then(res => res.json())
+            .then(data => {
+              if (data.success) {
+                showToast('Galería de fotos limpiada correctamente.', 'success');
+                loadPhotos();
+              } else {
+                showToast('Error al limpiar la galería de fotos.', 'error');
+              }
+            })
+            .catch(err => {
+              console.error('Error clearing photos:', err);
+              showToast('Error de conexión con el servidor.', 'error');
+            });
+        }
+      );
+    });
+  }
 
   // Print QR Poster trigger
-  btnPrintQr.addEventListener('click', () => {
-    window.print();
-  });
+  if (btnPrintQr) {
+    btnPrintQr.addEventListener('click', () => {
+      window.print();
+    });
+  }
 
-  // Logout trigger
+  if (btnPrintPhotosQr) {
+    btnPrintPhotosQr.addEventListener('click', () => {
+      window.print();
+    });
+  }
+
+  // Salir trigger (volver al home)
   btnLogout.addEventListener('click', () => {
-    fetch('/api/admin/logout', { method: 'POST' })
-      .then(() => {
-        window.location.href = '/login.html';
-      });
+    window.location.href = `/?event=${encodeURIComponent(eventId)}`;
   });
 
   // Save Event Title Config
@@ -104,7 +408,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    fetch('/api/config', {
+    fetch(`/api/config?event=${encodeURIComponent(eventId)}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ eventTitle })
@@ -126,7 +430,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Export Mapped Excel
   btnExportExcel.addEventListener('click', () => {
-    window.location.href = '/api/admin/download-excel';
+    window.location.href = `/api/admin/download-excel?event=${encodeURIComponent(eventId)}`;
   });
 
   // Clear database button
@@ -141,7 +445,15 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Drag and Drop events
-  fileDropZone.addEventListener('click', () => fileInput.click());
+  fileDropZone.addEventListener('click', (e) => {
+    if (e.target !== fileInput) {
+      fileInput.click();
+    }
+  });
+
+  fileInput.addEventListener('click', (e) => {
+    e.stopPropagation();
+  });
 
   fileInput.addEventListener('change', () => {
     if (fileInput.files.length > 0) {
@@ -149,18 +461,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  fileDropZone.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    fileDropZone.classList.add('dragover');
+  ['dragenter', 'dragover'].forEach(eventName => {
+    fileDropZone.addEventListener(eventName, (e) => {
+      e.preventDefault();
+      fileDropZone.classList.add('dragover');
+    });
   });
 
-  fileDropZone.addEventListener('dragleave', () => {
-    fileDropZone.classList.remove('dragover');
+  ['dragleave', 'drop'].forEach(eventName => {
+    fileDropZone.addEventListener(eventName, () => {
+      fileDropZone.classList.remove('dragover');
+    });
   });
 
   fileDropZone.addEventListener('drop', (e) => {
     e.preventDefault();
-    fileDropZone.classList.remove('dragover');
     if (e.dataTransfer.files.length > 0) {
       handleFileUpload(e.dataTransfer.files[0]);
     }
@@ -192,32 +507,48 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Check if session is valid, redirect if not
   function checkSession() {
-    fetch('/api/admin/check')
+    fetch(`/api/admin/check?event=${encodeURIComponent(eventId)}`)
       .then(res => res.json())
       .then(data => {
         if (!data.loggedIn) {
-          window.location.href = '/login.html';
+          window.location.href = `/login.html?event=${encodeURIComponent(eventId)}`;
         }
       })
       .catch(() => {
-        window.location.href = '/login.html';
+        window.location.href = `/login.html?event=${encodeURIComponent(eventId)}`;
       });
   }
 
   // Load Config from API
   function loadConfig() {
-    fetch('/api/config')
+    fetch(`/api/config?event=${encodeURIComponent(eventId)}`)
       .then(res => res.json())
       .then(data => {
-        eventTitleInput.value = data.eventTitle || '';
-        printEventTitle.textContent = data.eventTitle || 'Ubicación de Mesas';
+        if (data && data.error) {
+          throw new Error(data.error);
+        }
+        if (eventTitleInput) eventTitleInput.value = data.eventTitle || '';
+        if (eventTitlePhotosInput) eventTitlePhotosInput.value = data.eventTitle || '';
+        
+        if (printEventTitle) {
+          printEventTitle.textContent = data.eventTitle || 'Ubicación de Mesas';
+        }
+        
+        if (data.clientName) {
+          const headerTitle = document.querySelector('.logo-group h1');
+          const isPhotos = (activeService === 'photos');
+          if (headerTitle) {
+            headerTitle.textContent = `${isPhotos ? 'Control de Fotos' : 'Control de Mesas'} • ${data.clientName}`;
+          }
+          document.title = `${isPhotos ? 'Moderación de Fotos' : 'Control de Mesas'} | ${data.clientName}`;
+        }
       })
       .catch(err => console.error('Error config:', err));
   }
 
   // Load Stats from API
   function loadStats() {
-    fetch('/api/stats')
+    fetch(`/api/stats?event=${encodeURIComponent(eventId)}`)
       .then(res => res.json())
       .then(data => {
         statGuests.textContent = data.guestCount || 0;
@@ -231,15 +562,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Fetch all guests
   function loadGuests() {
-    fetch('/api/admin/guests')
-      .then(res => res.json())
+    fetch(`/api/admin/guests?event=${encodeURIComponent(eventId)}`)
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`Server returned status ${res.status}`);
+        }
+        return res.json();
+      })
       .then(data => {
+        if (data && data.error) {
+          throw new Error(data.error);
+        }
+        if (!Array.isArray(data)) {
+          throw new Error('Response is not a valid guest list array');
+        }
         allGuests = data;
         renderGuestsTable();
       })
       .catch(err => {
         console.error('Error fetching guests:', err);
+        guestsTableBody.innerHTML = `
+          <tr>
+            <td colspan="4" style="text-align: center; color: var(--error); padding: 30px;">
+              Error al cargar el listado de invitados: ${err.message || err}
+            </td>
+          </tr>
+        `;
       });
+  }
+
+  function formatTableDisplay(table) {
+    if (!table) return 'Sin Mesa';
+    const t = String(table).trim();
+    if (t.toLowerCase() === 'sin mesa') return 'Sin Mesa';
+    if (/^mesa\b/i.test(t)) {
+      return t.charAt(0).toUpperCase() + t.slice(1);
+    }
+    return `Mesa ${t}`;
   }
 
   // Render guest list table (with search filtering)
@@ -267,7 +626,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <tr>
         <td style="color: var(--text-main); font-weight: 500;">${g.firstName}</td>
         <td style="color: var(--text-main); font-weight: 500;">${g.lastName}</td>
-        <td style="color: var(--gold-primary); font-weight: 600;">Mesa ${g.table}</td>
+        <td style="color: var(--gold-primary); font-weight: 600;">${formatTableDisplay(g.table)}</td>
         <td style="text-align: center; display: flex; justify-content: center; gap: 10px;">
           <button class="btn-action edit" onclick="openEditGuestModal(${g.originalIndex})">Editar</button>
           <button class="btn-action delete" onclick="confirmDeleteGuest(${g.originalIndex})">Eliminar</button>
@@ -289,7 +648,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     tablesBreakdownList.innerHTML = tables.map(t => `
       <div class="table-row">
-        <span class="table-row-name">Mesa ${t.name}</span>
+        <span class="table-row-name">${formatTableDisplay(t.name)}</span>
         <span class="table-row-count">${t.count} ${t.count === 1 ? 'invitado' : 'invitados'}</span>
       </div>
     `).join('');
@@ -305,7 +664,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const isEdit = idx !== '';
-    const url = isEdit ? `/api/guests/${idx}` : '/api/guests';
+    const url = isEdit ? `/api/guests/${idx}?event=${encodeURIComponent(eventId)}` : `/api/guests?event=${encodeURIComponent(eventId)}`;
     const method = isEdit ? 'PUT' : 'POST';
 
     fetch(url, {
@@ -319,19 +678,20 @@ document.addEventListener('DOMContentLoaded', () => {
           guestModal.classList.remove('active');
           loadStats();
           loadGuests();
+          showToast('Invitado guardado correctamente', 'success');
         } else {
-          alert('Error al guardar el invitado: ' + (data.error || 'error desconocido'));
+          showToast('Error al guardar el invitado: ' + (data.error || 'error desconocido'), 'error');
         }
       })
       .catch(err => {
         console.error(err);
-        alert('Error de red al intentar guardar.');
+        showToast('Error de red al intentar guardar.', 'error');
       });
   }
 
   // Clear database logic
   function clearDatabase() {
-    fetch('/api/clear', { method: 'POST' })
+    fetch(`/api/clear?event=${encodeURIComponent(eventId)}`, { method: 'POST' })
       .then(res => res.json())
       .then(data => {
         if (data.success) {
@@ -362,7 +722,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const formData = new FormData();
     formData.append('file', file);
 
-    fetch('/api/upload', {
+    fetch(`/api/upload?event=${encodeURIComponent(eventId)}`, {
       method: 'POST',
       body: formData
     })
@@ -422,21 +782,38 @@ document.addEventListener('DOMContentLoaded', () => {
       '¿Eliminar Invitado?',
       `¿Estás seguro de que deseas eliminar a ${guest.firstName} ${guest.lastName} de la lista de invitados? Esta acción no se puede deshacer.`,
       () => {
-        fetch(`/api/guests/${index}`, { method: 'DELETE' })
+        fetch(`/api/guests/${index}?event=${encodeURIComponent(eventId)}`, { method: 'DELETE' })
           .then(res => res.json())
           .then(data => {
             if (data.success) {
               loadStats();
               loadGuests();
+              showToast('Invitado eliminado correctamente', 'success');
             } else {
-              alert('Error al intentar eliminar.');
+              showToast('Error al intentar eliminar.', 'error');
             }
           })
           .catch(err => {
             console.error(err);
-            alert('Error de red al intentar eliminar.');
+            showToast('Error de red al intentar eliminar.', 'error');
           });
       }
     );
   };
+
+  // Onboarding Modal logic
+  const onboardingModal = document.getElementById('onboarding-modal');
+  const btnCloseOnboarding = document.getElementById('btn-close-onboarding');
+
+  if (onboardingModal && btnCloseOnboarding) {
+    if (!localStorage.getItem(`onboarding_dismissed_${eventId}`)) {
+      onboardingModal.classList.add('active');
+    }
+    
+    btnCloseOnboarding.addEventListener('click', () => {
+      onboardingModal.classList.remove('active');
+      localStorage.setItem(`onboarding_dismissed_${eventId}`, 'true');
+    });
+  }
 });
+
