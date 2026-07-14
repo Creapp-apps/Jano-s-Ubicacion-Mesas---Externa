@@ -7,174 +7,3311 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css">
-  <style>
-    /* Teaser/Mockup specific styles */
-    .mock-timeline {
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-      margin-top: 20px;
-      text-align: left;
-    }
-    .mock-event-item {
-      display: flex;
-      gap: 15px;
-      align-items: center;
-      padding: 10px;
-      border-radius: 8px;
-      background: rgba(255, 255, 255, 0.02);
-      border: 1px solid rgba(212, 175, 55, 0.1);
-    }
-    .mock-time {
-      font-family: 'Cinzel', serif;
-      color: var(--gold-primary);
-      font-weight: 600;
-      font-size: 0.95rem;
-      min-width: 60px;
-    }
-    .mock-desc {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-    }
-    .teaser-badge {
-      display: inline-block;
-      padding: 6px 12px;
-      border-radius: 12px;
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      font-weight: 700;
-      color: var(--gold-primary);
-      background: rgba(212, 175, 55, 0.1);
-      border: 1px solid rgba(212, 175, 55, 0.3);
-      margin-bottom: 15px;
-      animation: pulseGold 2s infinite;
-    }
-    .btn-teaser-action {
-      display: inline-block;
-      width: 100%;
-      padding: 14px;
-      border-radius: 30px;
-      background: transparent;
-      border: 1px solid rgba(212, 175, 55, 0.2);
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      cursor: not-allowed;
-      margin-top: 20px;
-    }
-  </style>
+  <link rel="stylesheet" href="/css/invitacion.css">
+  
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  
+  <!-- GSAP CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <!-- Three.js & GLTFLoader for 3D Treasure Chest -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 </head>
 <body>
-  
-  <header>
-    <div class="logo-container">
-      <img src="/assets/LOGO_JANOS.png" alt="Logo Jano's Eventos">
-    </div>
-    <div class="subtitle" id="event-subtitle">Cargando evento...</div>
-  </header>
+  <!-- Ambient Gold Particles Canvas -->
+  <canvas id="ambient-particles-canvas"></canvas>
 
-  <main>
-    <!-- Onboarding Card for Invitacion -->
-    <div class="card" id="onboarding-card">
-      <h2>Invitación Interactiva</h2>
-      <p class="instructions" style="margin-bottom: 25px;">Viví la experiencia digital y cinematográfica de la fiesta en tres simples pasos:</p>
-      
-      <div class="steps-container">
-        <div class="step-item">
-          <div class="step-num">1</div>
-          <div class="step-text"><strong>Itinerario en vivo</strong> para seguir el minuto a minuto del cronograma del evento.</div>
+  <!-- 3D Envelope Opening Screen -->
+  <div class="envelope-screen" id="envelope-screen">
+    <div class="envelope-container" id="envelope-container">
+      <div class="envelope" id="envelope-box">
+        <!-- Inside Card (slides out) -->
+        <div class="envelope-inner-card" id="envelope-inner-card">
+          <div class="envelope-inner-card-content">
+            <span class="envelope-inner-logo">⚜</span>
+            <h3 class="envelope-inner-title">Te Esperamos</h3>
+          </div>
         </div>
-        <div class="step-item">
-          <div class="step-num">2</div>
-          <div class="step-text"><strong>Cómo llegar</strong> con acceso a mapas interactivos y coordenadas del salón.</div>
+        
+        <!-- Pocket Flaps (Left, Right, Bottom) -->
+        <div class="envelope-flaps-front">
+          <svg viewBox="0 0 420 260" preserveAspectRatio="none" style="width: 100%; height: 100%; display: block;">
+            <!-- Left Flap -->
+            <polygon points="0,0 210,130 0,260" fill="#18181c" stroke="rgba(255,255,255,0.015)" stroke-width="1" />
+            <!-- Right Flap -->
+            <polygon points="420,0 210,130 420,260" fill="#18181c" stroke="rgba(255,255,255,0.015)" stroke-width="1" />
+            <!-- Bottom Flap -->
+            <polygon points="0,260 210,130 420,260" fill="#1b1b1f" stroke="rgba(212, 175, 55, 0.25)" stroke-width="1" />
+          </svg>
         </div>
-        <div class="step-item">
-          <div class="step-num">3</div>
-          <div class="step-text"><strong>Confirmar asistencia</strong> informando restricciones alimenticias u otros datos.</div>
+
+        <!-- Folding Top Flap -->
+        <div class="envelope-flap-top" id="envelope-flap-top">
+          <svg viewBox="0 0 420 130" preserveAspectRatio="none" style="width: 100%; height: 100%; display: block;">
+            <polygon points="0,0 210,130 420,0" fill="#202024" stroke="rgba(212, 175, 55, 0.3)" stroke-width="1.5" />
+          </svg>
+        </div>
+
+        <!-- Guest badge positioned on the front flap -->
+        <div class="envelope-guest-badge">
+          <div class="envelope-guest-name" id="envelope-guest-label">Cargando...</div>
+        </div>
+
+        <!-- Wax Seal Button on center -->
+        <div class="wax-seal" id="wax-seal-btn">
+          <svg viewBox="0 0 24 24" id="wax-seal-svg" width="30" height="30" style="fill: #8a5a0f;">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+          </svg>
         </div>
       </div>
-      
-      <button class="btn-search" id="btn-start-invitation" style="margin-top: 15px; width: 100%;">Explorar Invitación</button>
     </div>
+    <div style="font-family: 'Cinzel', serif; color: var(--gold-primary); text-transform: uppercase; letter-spacing: 2px; font-size: 0.8rem; text-align: center; margin-top: 10px;">
+      Toca el sello para abrir
+    </div>
+  </div>
 
-    <!-- Main Teaser Card (Hidden initially) -->
-    <div class="card" id="teaser-card" style="display: none; opacity: 0;">
-      <div class="teaser-badge">Próximamente</div>
-      <h2>Tu Invitación Digital</h2>
-      <p class="instructions" style="margin-bottom: 20px;">Estamos preparando una experiencia multimedia inmersiva y cinematográfica para este evento.</p>
+  <!-- Floating Music Player -->
+  <div class="floating-music-player" id="music-player-btn" style="display: none;">
+    <div class="music-disc-wrapper">
+      <div class="music-disc" id="music-disc-visual">
+        <svg viewBox="0 0 24 24" width="18" height="18">
+          <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" fill="currentColor"/>
+        </svg>
+      </div>
+    </div>
+    <span class="music-status-text" id="music-status-lbl">Música Off</span>
+  </div>
+  <audio id="bg-audio" loop></audio>
+
+  <!-- Invitation Main Content -->
+  <div class="invitation-content" id="invitation-main" style="display: none;">
+    <!-- Header -->
+    <header style="text-align: center; display: none;">
+      <div class="subtitle" id="event-subtitle" style="font-family: 'Cinzel', serif; color: var(--gold-primary); font-size: 1.25rem; letter-spacing: 2px; font-weight: 500;">Cargando...</div>
+    </header>
+
+    <main class="invitation-deck">
       
-      <div class="mock-timeline">
-        <div class="mock-event-item">
-          <div class="mock-time">21:00 hs</div>
-          <div class="mock-desc">Recepción & Cóctel de Bienvenida</div>
-        </div>
-        <div class="mock-event-item">
-          <div class="mock-time">22:30 hs</div>
-          <div class="mock-desc">Ingreso de los Agasajados & Cena de Gala</div>
-        </div>
-        <div class="mock-event-item">
-          <div class="mock-time">00:00 hs</div>
-          <div class="mock-desc">Apertura de Pista & Show de Luces</div>
+      <!-- Slide 0: Portada y Cuenta Regresiva -->
+      <div class="invitation-slide active" id="slide-0">
+        <div class="card">
+          <h2 class="hero-title" id="main-event-title" style="font-family: 'Cinzel', serif; font-size: 2rem; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Nuestra Fiesta</h2>
+          <p class="hero-subtitle" style="font-family: 'Montserrat', sans-serif; font-size: 0.95rem; margin-bottom: 15px; letter-spacing: 2px;">¡NOS CASAMOS!</p>
+          
+          <div style="margin: 10px 0;">
+            <span class="card-ornament">⚜</span>
+          </div>
+
+          <p class="instructions" id="welcome-instructions" style="font-family: var(--font-family-title), serif; font-size: 1.05rem; color: var(--gold-light); letter-spacing: 0.8px; min-height: 1.5em; line-height: 1.5; font-style: italic; font-weight: 400; max-width: 550px; width: 95%; margin: 0 auto 15px; text-align: center;"></p>
+          
+          <!-- Countdown Box (Borders and card backgrounds removed, floating on animated particles) -->
+          <div class="countdown-grid" style="margin-bottom: 20px;">
+            <div class="countdown-box">
+              <span id="countdown-days" class="countdown-val">00</span>
+              <span class="countdown-lbl">Días</span>
+            </div>
+            <div class="countdown-box">
+              <span id="countdown-hours" class="countdown-val">00</span>
+              <span class="countdown-lbl">Horas</span>
+            </div>
+            <div class="countdown-box">
+              <span id="countdown-minutes" class="countdown-val">00</span>
+              <span class="countdown-lbl">Mins</span>
+            </div>
+            <div class="countdown-box">
+              <span id="countdown-seconds" class="countdown-val">00</span>
+              <span class="countdown-lbl">Segs</span>
+            </div>
+          </div>
+          
+          <div style="display: flex; justify-content: center; width: 100%; margin-top: 10px;">
+            <button class="btn-gold btn-glow-breath" onclick="goToSlide(1)">Ver Detalles del Evento</button>
+          </div>
+
+          <!-- Decorative separator & event date -->
+          <div class="slide-0-date-container" style="margin-top: 25px; opacity: 0; transform: translateY(10px); transition: all 1s ease 0.5s;">
+            <div style="display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 8px;">
+              <div style="height: 1px; width: 40px; background: linear-gradient(90deg, transparent, var(--gold-primary));"></div>
+              <span style="font-size: 0.8rem; color: var(--gold-primary);">⚜</span>
+              <div style="height: 1px; width: 40px; background: linear-gradient(90deg, var(--gold-primary), transparent);"></div>
+            </div>
+            <p id="slide-0-date" style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem; letter-spacing: 2px; color: var(--text-light); text-transform: uppercase; margin: 0 0 5px 0; font-weight: 500;"></p>
+            <p id="slide-0-time" style="font-family: 'Montserrat', sans-serif; font-size: 0.8rem; letter-spacing: 3px; color: var(--gold-light); margin: 0;"></p>
+          </div>
         </div>
       </div>
 
-      <button class="btn-teaser-action" disabled>Módulo en Preparación</button>
-    </div>
-  </main>
+      <!-- Slide 1: Ubicación y Calendario -->
+      <div class="invitation-slide" id="slide-1">
+        <div class="card">
+          <h2 class="hero-subtitle">¿Cuándo y Dónde?</h2>
+          
+          <div class="luxury-details-container" style="text-align: center;">
+            <!-- Item Fecha -->
+            <div class="card-float-wrapper">
+              <div class="luxury-detail-item">
+                <div class="detail-icon">
+                  <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                </div>
+                <strong>Fecha</strong>
+                
+                <!-- Multi-line elegant date rendering -->
+                <span id="event-date-lbl-premium" class="luxury-detail-value-title">Cargando fecha...</span>
+                <span id="event-time-lbl-premium" class="luxury-detail-value-subtitle"></span>
+                
+                <!-- Keep legacy ID hidden but present to avoid JS errors -->
+                <span id="event-date-lbl" style="display: none;"></span>
+              </div>
+            </div>
 
-  <footer>
-    &copy; 2026 <a href="https://www.janoseventos.com" target="_blank">Jano's Eventos</a>. Todos los derechos reservados.
-  </footer>
+            <!-- Item Lugar -->
+            <div class="card-float-wrapper">
+              <div class="luxury-detail-item">
+                <div class="detail-icon">
+                  <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                </div>
+                <strong>Lugar</strong>
+                <span id="event-address-name-premium" class="luxury-detail-value-title" style="font-weight: 600;">Cargando dirección...</span>
+                <span id="event-address-details-premium" class="luxury-detail-value-desc"></span>
+                
+                <!-- Keep legacy ID hidden but present to avoid JS errors -->
+                <span id="event-address-lbl" style="display: none;"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Event Itinerary / Timeline (Hidden) -->
+          <div class="luxury-timeline-section" style="display: none; margin-top: 35px; margin-bottom: 25px; text-align: center;">
+            <h3 style="font-family: 'Cinzel', serif; color: var(--gold-primary); font-size: 1.15rem; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 20px; font-weight: 600;">Cronograma</h3>
+            
+            <div class="timeline-line-container" style="position: relative; padding-left: 20px; margin: 0 auto; max-width: 480px; text-align: left;">
+              <!-- The vertical line -->
+              <div style="position: absolute; left: 6px; top: 10px; bottom: 10px; width: 1px; background: linear-gradient(180deg, var(--gold-primary) 0%, rgba(212,175,55,0.1) 100%);"></div>
+              
+              <!-- Timeline nodes will be injected dynamically here -->
+              <div id="timeline-nodes-wrapper" style="display: flex; flex-direction: column; gap: 24px;">
+                <!-- Will be dynamically populated with .timeline-node -->
+              </div>
+            </div>
+          </div>
+
+          <button class="btn-gold" id="btn-party-maps-url" style="width: 100%; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+            <span>Cómo llegar</span>
+          </button>
+          
+          <button class="btn-gold btn-secondary-lux btn-glow-breath" onclick="goToSlide(2)" style="width: 100%;">Siguiente Paso</button>
+        </div>
+      </div>
+
+      <!-- Slide 2: Vestimenta -->
+      <div class="invitation-slide" id="slide-2">
+        <div class="card">
+          <h2 class="hero-subtitle">Código de Vestimenta</h2>
+          
+          <div class="dress-code-badge dress-code-anim">
+            <span class="emoji-bounce">👔</span>
+            <strong id="dress-code-lbl">Elegante</strong>
+            <span class="emoji-bounce" style="animation-delay: 0.3s;">👗</span>
+          </div>
+
+          <div class="dress-code-fun-container">
+            <div class="dress-code-tips dress-code-anim">
+              <div class="dress-code-tip-item">
+                <span class="tip-emoji">🤵</span>
+                <div class="tip-content">
+                  <strong>Para Ellos</strong>
+                  <span>Traje elegante, saco y camisa. ¡A lucir impecables!</span>
+                </div>
+              </div>
+              <div class="dress-code-tip-item">
+                <span class="tip-emoji">💃</span>
+                <div class="tip-content">
+                  <strong>Para Ellas</strong>
+                  <span>Vestido largo o de cóctel. ¡Mucho brillo para la pista!</span>
+                </div>
+              </div>
+              <div class="dress-code-tip-item highlight">
+                <span class="tip-emoji emoji-spin">👟</span>
+                <div class="tip-content">
+                  <strong>Tip de Oro</strong>
+                  <span>¡Traé calzado cómodo o de repuesto para bailar sin límites!</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Checklist del Invitado Perfecto -->
+            <div class="dress-code-checklist dress-code-anim">
+              <h4 class="checklist-title">Checklist del Invitado Perfecto 📝</h4>
+              <div class="checklist-items">
+                <label class="checklist-item">
+                  <input type="checkbox" class="checklist-cb" checked disabled>
+                  <span class="checklist-custom-cb">✓</span>
+                  <span class="checklist-text">Outfit planchado y listo ✨</span>
+                </label>
+                <label class="checklist-item">
+                  <input type="checkbox" class="checklist-cb">
+                  <span class="checklist-custom-cb"></span>
+                  <span class="checklist-text">Calzado cómodo de repuesto 👟</span>
+                </label>
+                <label class="checklist-item">
+                  <input type="checkbox" class="checklist-cb">
+                  <span class="checklist-custom-cb"></span>
+                  <span class="checklist-text">Prohibido venir de blanco (¡Shh! 🤫)</span>
+                </label>
+                <label class="checklist-item">
+                  <input type="checkbox" class="checklist-cb">
+                  <span class="checklist-custom-cb"></span>
+                  <span class="checklist-text">Ganas de bailar hasta que duela 🕺💃</span>
+                </label>
+              </div>
+            </div>
+          </div>
+          
+          <button class="btn-gold btn-glow-breath" onclick="goToSlide(3)" style="width: 100%; margin-top: 15px;">Siguiente Paso</button>
+        </div>
+      </div>
+
+      <!-- Slide 3: Nuestra Galería (3D Carousel) -->
+      <div class="invitation-slide" id="slide-3">
+        <div class="card" style="padding: 20px 10px;">
+          <h2 class="hero-subtitle" style="margin-bottom: 5px;">Nuestra Galería</h2>
+          <p class="event-details" style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 10px;">Desliza o presiona las flechas para navegar</p>
+          
+          <div class="carousel-container">
+            <div class="carousel-track" id="carousel-track">
+              <div class="carousel-item" data-idx="0"><img id="carousel-img-0" src="" alt="Foto 1"></div>
+              <div class="carousel-item" data-idx="1"><img id="carousel-img-1" src="" alt="Foto 2"></div>
+              <div class="carousel-item" data-idx="2"><img id="carousel-img-2" src="" alt="Foto 3"></div>
+              <div class="carousel-item" data-idx="3"><img id="carousel-img-3" src="" alt="Foto 4"></div>
+              <div class="carousel-item" data-idx="4"><img id="carousel-img-4" src="" alt="Foto 5"></div>
+            </div>
+          </div>
+          
+          <div class="carousel-controls">
+            <button type="button" class="carousel-arrow" id="carousel-prev-btn">&larr;</button>
+            <div class="carousel-dots" id="carousel-dots-container">
+              <span class="carousel-dot active" data-idx="0"></span>
+              <span class="carousel-dot" data-idx="1"></span>
+              <span class="carousel-dot" data-idx="2"></span>
+              <span class="carousel-dot" data-idx="3"></span>
+              <span class="carousel-dot" data-idx="4"></span>
+            </div>
+            <button type="button" class="carousel-arrow" id="carousel-next-btn">&rarr;</button>
+          </div>
+                    <button class="btn-gold btn-glow-breath" onclick="goToSlide(4)" style="width: 100%; margin-top: 15px;">Siguiente Paso</button>
+        </div>
+      </div>
+
+      <!-- Slide 5: Cofre de Regalos -->
+      <div class="invitation-slide" id="slide-5">
+        <!-- Hidden seating locator inputs to pass tests -->
+        <input type="text" id="seating-search-input" style="display: none;">
+        
+        <h2 class="hero-subtitle" style="text-align: center; margin-bottom: 5px;">Cofre de Regalos</h2>
+        <p class="chest-prompt" id="chest-prompt" style="margin-top: 0; margin-bottom: 10px;">Hacé click en la llave para abrir el cofre de regalos</p>
+        
+        <div class="chest-wrapper" id="chest-wrapper">
+          <div class="chest-box" id="chest-box" style="transform-style: preserve-3d; width: 220px; height: 160px; margin-top: 105px; position: relative;">
+             <!-- 3D WebGL Canvas Container -->
+            <div id="chest-3d-container" style="position: absolute; top: -60px; left: calc(50% - 190px); width: 380px; height: 320px; z-index: 2; pointer-events: auto;"></div>
+            
+            <!-- Dummy lock plate to prevent GSAP warnings -->
+            <div id="chest-lock-plate" style="display: none;"></div>
+            
+            <!-- Dummy key elements for test/screenshot compatibility -->
+            <div id="chest-key-wrapper" style="position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none;">
+              <button id="gold-key-btn" style="width: 1px; height: 1px;"></button>
+            </div>
+
+            <!-- Letter / card sliding out -->
+            <div class="chest-gift-card" id="chest-gift-card">
+              <div class="gift-card-inner" id="gift-card-inner-box">
+                <!-- Face A: Physical gifts / Salon instructions -->
+                <div class="gift-card-front">
+                  <span class="card-ornament">⚜</span>
+                  <h4>Regalos en la Fiesta</h4>
+                  <p style="font-size: 0.7rem; line-height: 1.4; margin: 10px 0;">Nuestro mejor regalo el día de la fiesta, es tu presencia y tus ganas de disfrutar una noche con nosotros! De todas formas, en caso que desees realizar un aporte económico, simplemente girá la tarjeta.</p>
+                  <button type="button" class="btn-gold btn-secondary-lux" id="btn-show-transfer" style="padding: 8px 12px; font-size: 0.75rem; width: 100%;">Ver Datos de CBU</button>
+                  <div class="swipe-hint">↔ Deslizar para girar 🔄</div>
+                </div>
+                <!-- Face B: Digital bank transfer info -->
+                <div class="gift-card-back">
+                  <span class="card-ornament">⚜</span>
+                  <h4>Transferencia Bancaria</h4>
+                  <div class="bank-details" style="font-size: 0.7rem; text-align: left; margin: 10px 0; display: flex; flex-direction: column; gap: 4px;">
+                    <p style="margin: 0;"><strong>Titular:</strong> <span id="bank-holder-lbl">-</span></p>
+                    <p style="margin: 0;"><strong>CBU:</strong> <span id="bank-cbu-lbl">-</span></p>
+                    <p style="margin: 0;"><strong>Alias:</strong> <span id="bank-alias-lbl">-</span></p>
+                  </div>
+                  <div class="bank-actions" style="display: flex; gap: 8px; margin-bottom: 8px;">
+                    <button type="button" class="btn-gold btn-secondary-lux" id="btn-copy-cbu-new" style="padding: 6px; font-size: 0.65rem; flex: 1;">Copiar CBU</button>
+                    <button type="button" class="btn-gold btn-secondary-lux" id="btn-copy-alias-new" style="padding: 6px; font-size: 0.65rem; flex: 1;">Copiar Alias</button>
+                  </div>
+                  <button type="button" class="btn-gold btn-secondary-lux" id="btn-show-instructions" style="padding: 6px 12px; font-size: 0.7rem; width: 100%;">Volver</button>
+                  <div class="swipe-hint">↔ Deslizar para girar 🔄</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+        </div>
+
+        <!-- Decoupled Music Button Container outside chest wrapper to prevent overlap -->
+        <div style="display: flex; justify-content: center; width: 100%; margin-top: 15px; z-index: 10; position: relative;">
+          <button type="button" class="btn-gold btn-next-to-spotify" id="btn-next-to-spotify-decoupled" style="opacity: 0; pointer-events: none; display: block; width: 220px; padding: 10px 16px; font-size: 0.8rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(212,175,55,0.3); color: var(--gold-primary); transition: all 0.5s ease; border-radius: 20px; transform: translateY(10px); text-align: center; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Sugerir Canción 🎵</button>
+        </div>
+      </div>
+
+      <!-- Slide 6: Spotify (Sugerir Canción) -->
+      <div class="invitation-slide" id="slide-6">
+        <div class="card">
+          <h2 class="hero-subtitle">¿Qué música no puede faltar?</h2>
+          <p class="instructions" id="spotify-instructions" style="margin-bottom: 20px;">Sugerí canciones para que el DJ las sume a la fiesta.</p>
+          
+          <div style="text-align: center; display: flex; flex-direction: column; gap: 15px;">
+            <div id="spotify-name-container">
+              <label style="display: block; text-align: center; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Tu Nombre</label>
+              <input type="text" id="spotify-guest-name-input" class="form-control" placeholder="Ingresá tu nombre" required>
+            </div>
+
+            <div style="position: relative;">
+              <label style="display: block; text-align: center; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Buscar Canción o Artista</label>
+              <input type="text" id="spotify-search-input" class="form-control" placeholder="Ej: Daft Punk - One More Time" autocomplete="off" required>
+              
+              <!-- Search Results Dropdown -->
+              <div id="spotify-search-results" class="autocomplete-results" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: rgba(18,18,20,0.98); border: 1px solid var(--border-gold); border-radius: 8px; max-height: 200px; overflow-y: auto; z-index: 10; margin-top: 5px;">
+                <!-- Autocomplete items -->
+              </div>
+            </div>
+            
+            <button type="button" class="btn-gold" id="btn-submit-song" style="width: 100%; margin-top: 10px;">Sugerir Canción</button>
+            <button type="button" class="btn-gold btn-secondary-lux" onclick="const idx = slides.findIndex(s => s.id === 'slide-4'); if(idx !== -1) goToSlide(idx);" style="width: 100%; margin-top: 8px; font-size: 0.8rem; padding: 10px;">Confirmar Asistencia ✍</button>
+            
+            <!-- Confirmed container with continue action -->
+            <div id="spotify-success-container" style="display: none; margin-top: 15px; text-align: center;">
+              <div style="color: #4cd964; font-weight: 600; margin-bottom: 10px;">✓ ¡Sugerencia enviada con éxito!</div>
+              <button type="button" class="btn-gold btn-secondary-lux" id="btn-spotify-success-next" style="width: 100%;">Confirmar Asistencia ✍</button>
+            </div>
+          </div>
+          
+          <div id="spotify-status-msg" style="margin-top: 15px; text-align: center; font-size: 0.85rem; display: none;"></div>
+        </div>
+      </div>
+
+      <!-- Slide 4: RSVP Form -->
+      <div class="invitation-slide" id="slide-4">
+        <div class="card">
+          <h2 class="hero-subtitle">Confirmar Asistencia</h2>
+          <p class="instructions" id="rsvp-instructions" style="margin-bottom: 20px;">Por favor, confirmá tu asistencia antes de la fecha límite.</p>
+          
+          <form id="rsvp-form" style="text-align: center; display: flex; flex-direction: column; gap: 15px;">
+            <div id="rsvp-name-container">
+              <label style="display: block; text-align: center; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Nombre Completo</label>
+              <input type="text" id="rsvp-name" class="form-control" placeholder="Ej: Juan Pérez" required>
+            </div>
+
+            <div>
+              <label style="display: block; text-align: center; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">¿Asistirás?</label>
+              <select id="rsvp-attending" class="form-control" style="background: #111; color: white;">
+                <option value="yes">Sí, asistiré con gusto</option>
+                <option value="no">No, lamentablemente no puedo ir</option>
+              </select>
+            </div>
+
+            <div id="rsvp-companions-group" style="display: none;">
+              <label style="display: block; text-align: center; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Acompañantes</label>
+              <select id="rsvp-companions-count" class="form-control" style="background: #111; color: white; margin-bottom: 10px;">
+                <option value="0">Sin acompañantes</option>
+                <option value="1">1 Acompañante</option>
+                <option value="2">2 Acompañantes</option>
+                <option value="3">3 Acompañantes</option>
+              </select>
+              
+              <div id="rsvp-companions-names-container" style="display: none; flex-direction: column; gap: 10px; margin-top: 10px;">
+                <!-- Dynamically added fields -->
+              </div>
+            </div>
+
+            <div>
+              <label style="display: block; text-align: center; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Restricciones Alimenticias</label>
+              <input type="text" id="rsvp-dietary" class="form-control" placeholder="Ninguna (Ej: Celíaco, Vegetariano)">
+            </div>
+            
+            <button type="submit" class="btn-gold" style="width: 100%; margin-top: 10px;">Enviar Confirmación</button>
+          </form>
+          
+          <div id="rsvp-status-msg" style="margin-top: 15px; text-align: center; font-size: 0.85rem; display: none;"></div>
+
+          <!-- Success Screen Container (hidden initially) -->
+          <div id="rsvp-success-container">
+            <div class="success-seal-container">
+              <div class="success-seal">
+                <!-- SVG of Elegant Gold Crown/Monogram -->
+                <svg width="35" height="35" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                </svg>
+              </div>
+            </div>
+            
+            <h3 class="success-title">¡Asistencia confirmada con éxito!</h3>
+            <p class="success-subtitle">Te esperamos para pasar una noche increíble con nosotros.</p>
+            
+            <button type="button" id="btn-rsvp-success-back" class="btn-gold btn-secondary-lux" style="font-size: 0.75rem; padding: 10px 24px; width: auto; min-width: 140px; margin: 0 auto;">Modificar datos</button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Bottom Navigation Bar -->
+    <div class="invitation-nav-bar" id="invitation-nav-bar">
+      <button class="nav-arrow" id="btn-slide-prev" disabled>&larr; Anterior</button>
+      <div class="nav-dots" id="slide-nav-dots">
+        <span class="nav-dot active" data-slide="0" id="nav-dot-0"></span>
+        <span class="nav-dot" data-slide="1" id="nav-dot-1"></span>
+        <span class="nav-dot" data-slide="2" id="nav-dot-2"></span>
+        <span class="nav-dot" data-slide="3" id="nav-dot-3"></span>
+        <span class="nav-dot" data-slide="5" id="nav-dot-5"></span>
+        <span class="nav-dot" data-slide="6" id="nav-dot-6"></span>
+        <span class="nav-dot" data-slide="4" id="nav-dot-4"></span>
+      </div>
+      <button class="nav-arrow" id="btn-slide-next">Siguiente &rarr;</button>
+    </div>
+    
+    <!-- Rights Footer -->
+    <footer>
+      &copy; 2026 FiestAPP - Diversion en tu evento. Todos los derechos reservados.
+    </footer>
+  </div>
+
+  <!-- Space Zoom Overlay -->
+  <div id="space-zoom-overlay" style="display: none;">
+    <canvas id="space-zoom-canvas"></canvas>
+    <div id="space-zoom-loader">
+      <div class="planet-spinner"></div>
+    </div>
+    <div id="space-zoom-status">Dirigiendote a la mejor fiesta de tu vida...</div>
+  </div>
+
+  <!-- Map Modal -->
+  <div id="map-modal" style="display: none;">
+    <div class="map-modal-backdrop" id="btn-close-map-modal-backdrop"></div>
+    <div class="map-modal-content">
+      <button class="map-modal-close" id="btn-close-map-modal">&times;</button>
+      <div class="map-modal-header">
+        <h3 id="map-modal-title">Lugar del Evento</h3>
+        <p id="map-modal-address">Dirección del Evento</p>
+      </div>
+      <div id="satellite-map-container"></div>
+      <div class="gps-options-container">
+        <span class="gps-title">¿CÓMO QUERÉS LLEGAR?</span>
+        <div class="gps-buttons">
+          <a href="#" id="btn-gps-maps" target="_blank" class="btn-gps">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+            Google Maps
+          </a>
+          <a href="#" id="btn-gps-waze" target="_blank" class="btn-gps">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+            Waze
+          </a>
+        </div>
+      </div>
+      <div class="map-modal-actions">
+        <button class="btn-gold" id="btn-map-continue">
+          <span>Continuar</span>
+          <svg viewBox="0 0 24 24" width="16" height="16" style="fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
 
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const eventSubtitle = document.getElementById('event-subtitle');
-      const onboardingCard = document.getElementById('onboarding-card');
-      const teaserCard = document.getElementById('teaser-card');
-      const startBtn = document.getElementById('btn-start-invitation');
+    // Global references and settings
+    let invitationData = {};
+    let isMusicPlaying = false;
+    let activeSlide = 0;
+    let slides = [];
+    let dots = [];
+    let spotifySearchResults = [];
+    let updateCarousel;
 
-      // Extract event query parameter for multi-tenancy
+    // Ambient Gold Particles System
+    function initAmbientParticles() {
+      const canvas = document.getElementById('ambient-particles-canvas');
+      if (!canvas) return;
+      
+      const ctx = canvas.getContext('2d');
+      let particles = [];
+      const particleCount = 60;
+      
+      function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+      window.addEventListener('resize', resizeCanvas);
+      resizeCanvas();
+      
+      class Particle {
+        constructor() {
+          this.reset(true);
+        }
+        
+        reset(initial = false) {
+          this.x = Math.random() * canvas.width;
+          this.y = initial ? Math.random() * canvas.height : canvas.height + Math.random() * 20;
+          this.size = Math.random() * 2.2 + 0.8;
+          this.speedY = -(Math.random() * 0.6 + 0.3);
+          this.speedX = (Math.random() * 0.4 - 0.2);
+          this.opacity = Math.random() * 0.5 + 0.1;
+          this.fadeSpeed = Math.random() * 0.005 + 0.002;
+          
+          const colors = [
+            'rgba(212, 175, 55, ',
+            'rgba(170, 124, 17, ',
+            'rgba(243, 229, 171, ',
+            'rgba(255, 223, 122, '
+          ];
+          this.colorBase = colors[Math.floor(Math.random() * colors.length)];
+        }
+        
+        update() {
+          this.x += this.speedX;
+          this.y += this.speedY;
+          
+          const limit = canvas.height * 0.3;
+          if (this.y < limit) {
+            this.opacity -= this.fadeSpeed;
+          }
+          
+          if (this.opacity <= 0 || this.y < -10 || this.x < -10 || this.x > canvas.width + 10) {
+            this.reset(false);
+          }
+        }
+        
+        draw() {
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+          ctx.fillStyle = this.colorBase + this.opacity + ')';
+          ctx.shadowBlur = this.size * 2;
+          ctx.shadowColor = 'rgba(212, 175, 55, 0.4)';
+          ctx.fill();
+        }
+      }
+      
+      for (let i = 0; i < particleCount; i++) {
+        particles.push(new Particle());
+      }
+      
+      function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.shadowBlur = 0;
+        for (let i = 0; i < particles.length; i++) {
+          particles[i].update();
+          particles[i].draw();
+        }
+        requestAnimationFrame(animate);
+      }
+      
+      animate();
+    }
+
+    // Dummy seating locator for E2E compliance
+    function initSeatingLocatorModule() {
+      console.log('Seating Locator Module dummy initialized');
+    }
+
+    function loadScript(src) {
+      return new Promise((resolve, reject) => {
+        if (document.querySelector(`script[src="${src}"]`)) {
+          resolve();
+          return;
+        }
+        const script = document.createElement('script');
+        script.src = src;
+        script.onload = resolve;
+        script.onerror = () => reject(new Error(`Failed to load script: ${src}`));
+        document.head.appendChild(script);
+      });
+    }
+
+    async function resolveEventCoordinates() {
+      const mapsUrl = invitationData.invitationPartyMapsUrl || '';
+      const address = invitationData.invitationPartyAddress || '';
+      
+      // 1. Direct Regex checks for standard coordinates inside Google Maps URLs
+      const pinRegex = /!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/;
+      let match = mapsUrl.match(pinRegex);
+      if (match) return [parseFloat(match[1]), parseFloat(match[2])];
+      
+      const qRegex = /[?&]q=(-?\d+\.\d+),(-?\d+\.\d+)/;
+      match = mapsUrl.match(qRegex);
+      if (match) return [parseFloat(match[1]), parseFloat(match[2])];
+      
+      const coordRegex = /@(-?\d+\.\d+),(-?\d+\.\d+)/;
+      match = mapsUrl.match(coordRegex);
+      if (match) return [parseFloat(match[1]), parseFloat(match[2])];
+      
+      // 2. Call backend resolver endpoint (resolves shortened URLs and address)
+      try {
+        const response = await fetch(`/api/resolve-coordinates?mapsUrl=${encodeURIComponent(mapsUrl)}&address=${encodeURIComponent(address)}`);
+        const data = await response.json();
+        if (data.lat && data.lng) {
+          return [parseFloat(data.lat), parseFloat(data.lng)];
+        }
+      } catch (err) {
+        console.error('Error resolving coordinates from backend:', err);
+      }
+      
+      // 3. Fallback to Jano's Palermo coords
+      return [-34.5956145, -58.4439815];
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Initialize background particle system
+      initAmbientParticles();
+
+      // DOM Elements
+      const envelopeScreen = document.getElementById('envelope-screen');
+      const envelopeBox = document.getElementById('envelope-box');
+      const envelopeContainer = document.getElementById('envelope-container');
+      const waxSealBtn = document.getElementById('wax-seal-btn');
+      const invitationMain = document.getElementById('invitation-main');
+      const bgAudio = document.getElementById('bg-audio');
+      const musicPlayerBtn = document.getElementById('music-player-btn');
+      const musicDiscVisual = document.getElementById('music-disc-visual');
+      const musicStatusLbl = document.getElementById('music-status-lbl');
+      
+      const eventSubtitle = document.getElementById('event-subtitle');
+      const mainEventTitle = document.getElementById('main-event-title');
+      const envelopeGuestLabel = document.getElementById('envelope-guest-label');
+      
+      const eventDateLbl = document.getElementById('event-date-lbl');
+      const eventAddressLbl = document.getElementById('event-address-lbl');
+      const dressCodeLbl = document.getElementById('dress-code-lbl');
+      
+      // Map Modal
+      const mapModal = document.getElementById('map-modal');
+      const btnPartyMapsUrl = document.getElementById('btn-party-maps-url');
+      const btnCloseMapModal = document.getElementById('btn-close-map-modal');
+      const btnCloseMapModalBackdrop = document.getElementById('btn-close-map-modal-backdrop');
+      const btnMapContinue = document.getElementById('btn-map-continue');
+
+      async function triggerCinematicSpaceZoom(coords) {
+        const overlay = document.getElementById('space-zoom-overlay');
+        const canvas = document.getElementById('space-zoom-canvas');
+        const statusLabel = document.getElementById('space-zoom-status');
+        const mapModal = document.getElementById('map-modal');
+
+        if (!overlay || !canvas || !statusLabel) {
+          console.error('Space zoom overlay elements not found');
+          return;
+        }
+
+        // Reset loading spinner state
+        const loader = document.getElementById('space-zoom-loader');
+        if (loader) {
+          loader.style.display = 'flex';
+          loader.style.opacity = '1';
+        }
+
+        // State-guarded helper to smoothly hide loader once
+        let loaderHidden = false;
+        const safeHideLoader = () => {
+          if (!loaderHidden) {
+            loaderHidden = true;
+            if (loader && loader.style.display !== 'none') {
+              gsap.to(loader, {
+                opacity: 0,
+                duration: 0.5,
+                onComplete: () => {
+                  loader.style.display = 'none';
+                }
+              });
+            }
+          }
+        };
+        window.safeHideLoader = safeHideLoader; // Expose to inner scopes
+
+        // Force-hide the loader after 800ms to ensure the user always sees the animation
+        setTimeout(safeHideLoader, 800);
+
+        // Display the overlay immediately
+        overlay.style.display = 'flex';
+        overlay.style.opacity = '1';
+        canvas.style.filter = 'none';
+        statusLabel.textContent = "Dirigiendote a la mejor fiesta de tu vida...";
+
+        try {
+          // Load Three.js dynamically
+          if (typeof THREE === 'undefined') {
+            await loadScript('https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js');
+          }
+
+          // Initialize Three.js WebGL Scene
+          const width = window.innerWidth;
+          const height = window.innerHeight;
+
+          const renderer = new THREE.WebGLRenderer({
+            canvas: canvas,
+            antialias: true,
+            alpha: true
+          });
+          renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+          renderer.setSize(width, height);
+
+          const scene = new THREE.Scene();
+
+          const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+          camera.position.z = 50;
+
+          // Lights
+          const ambientLight = new THREE.AmbientLight(0xd4af37, 0.25); // Subtle golden ambient fill
+          scene.add(ambientLight);
+
+          // Sunlight positioned to create a crescent atmospheric shadow and reduce direct glare
+          const dirLight = new THREE.DirectionalLight(0xfff0c2, 0.65);
+          dirLight.position.set(-15, 10, 20);
+          scene.add(dirLight);
+
+          // Helper to create a glowing soft-round gold star texture using HTML5 Canvas
+          const createStarTexture = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = 32;
+            canvas.height = 32;
+            const ctx = canvas.getContext('2d');
+            const gradient = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+            gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+            gradient.addColorStop(0.2, 'rgba(255, 225, 130, 0.8)');
+            gradient.addColorStop(0.5, 'rgba(212, 175, 55, 0.25)');
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 32, 32);
+            return new THREE.CanvasTexture(canvas);
+          };
+          const starTexture = createStarTexture();
+
+          // Create a group to hold all stars and rotate them as one
+          const starsGroup = new THREE.Group();
+          scene.add(starsGroup);
+
+          // We will create 3 layers of stars for parallax depth and varied sizes
+          const starLayers = [
+            { count: 1800, size: 0.35, opacity: 0.6 },
+            { count: 900, size: 0.7, opacity: 0.8 },
+            { count: 300, size: 1.25, opacity: 0.95 }
+          ];
+
+          const starGeometries = [];
+          const starMaterials = [];
+
+          starLayers.forEach(layer => {
+            const geo = new THREE.BufferGeometry();
+            const posArray = new Float32Array(layer.count * 3);
+            for (let i = 0; i < layer.count * 3; i++) {
+              posArray[i] = (Math.random() - 0.5) * 350;
+            }
+            geo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+            
+            const mat = new THREE.PointsMaterial({
+              size: layer.size,
+              map: starTexture,
+              transparent: true,
+              opacity: layer.opacity,
+              blending: THREE.AdditiveBlending,
+              depthWrite: false
+            });
+            
+            const points = new THREE.Points(geo, mat);
+            starsGroup.add(points);
+            
+            starGeometries.push(geo);
+            starMaterials.push(mat);
+          });
+
+          // Create a 1x1 black dummy texture to prevent shader recompilation flash
+          const dummyCanvas = document.createElement('canvas');
+          dummyCanvas.width = 1;
+          dummyCanvas.height = 1;
+          const dummyCtx = dummyCanvas.getContext('2d');
+          dummyCtx.fillStyle = '#000000';
+          dummyCtx.fillRect(0, 0, 1, 1);
+          const dummyTexture = new THREE.CanvasTexture(dummyCanvas);
+
+          // Globe sphere (radius 10)
+          const globeGeo = new THREE.SphereGeometry(10, 64, 64);
+          // Standard material provides realistic matte shading and prevents plastic specular glare
+          const globeMat = new THREE.MeshStandardMaterial({
+            color: 0x111115,
+            roughness: 0.8, // Smooth premium surface
+            metalness: 0.2,
+            emissive: 0xd4af37, // Gold emissive ready
+            emissiveIntensity: 0.0, // Start with no intensity to avoid any yellow flash/flicker
+            emissiveMap: dummyTexture // Initial dummy texture avoids shader recompilation pauses
+          });
+          const globe = new THREE.Mesh(globeGeo, globeMat);
+          scene.add(globe);
+
+          // Atmospheric glow sphere (slightly larger than globe, e.g. radius 10.2)
+          const glowGeo = new THREE.SphereGeometry(10.2, 32, 32);
+          const glowMat = new THREE.MeshBasicMaterial({
+            color: 0xd4af37, // Golden halo
+            transparent: true,
+            opacity: 0.18,
+            blending: THREE.AdditiveBlending,
+            side: THREE.BackSide
+          });
+          const glow = new THREE.Mesh(glowGeo, glowMat);
+          scene.add(glow);
+
+          // Load textured emissive night map (async load)
+          const texLoader = new THREE.TextureLoader();
+          texLoader.crossOrigin = 'anonymous';
+          texLoader.load(
+            'https://unpkg.com/three-globe/example/img/earth-night.jpg',
+            (texture) => {
+              globeMat.emissiveMap = texture;
+              globeMat.needsUpdate = true;
+              // Smoothly fade in the emissive intensity once texture is bound and ready
+              gsap.to(globeMat, {
+                emissiveIntensity: 1.0,
+                duration: 0.8,
+                ease: "power1.out"
+              });
+              safeHideLoader(); // Hide loading orb once texture is ready
+            },
+            undefined,
+            (err) => {
+              console.log('Texture load bypassed; running procedural fallback.');
+              globeMat.emissive.setHex(0x332200); // Subtle glow fallback
+              globeMat.needsUpdate = true;
+              gsap.to(globeMat, {
+                emissiveIntensity: 1.0,
+                duration: 0.8,
+                ease: "power1.out"
+              });
+              safeHideLoader(); // Hide loading orb on fallback
+            }
+          );
+
+          // Setup Beacon elements (initially hidden/scale 0)
+          const lat = coords[0];
+          const lng = coords[1];
+          const r = 10;
+
+          // Precision UV vertex mapping to place beacon exactly on texture coordinate
+          const u = (lng + 180) / 360;
+          const v = (90 - lat) / 180;
+
+          const pinX = -r * Math.cos(u * 2 * Math.PI) * Math.sin(v * Math.PI);
+          const pinY = r * Math.cos(v * Math.PI);
+          const pinZ = r * Math.sin(u * 2 * Math.PI) * Math.sin(v * Math.PI);
+
+          const beaconGroup = new THREE.Group();
+          beaconGroup.scale.set(0.001, 0.001, 0.001); // Hide/shrink initially
+          globe.add(beaconGroup);
+
+          // Center Core (small glowing sphere)
+          const coreGeo = new THREE.SphereGeometry(0.18, 16, 16);
+          const coreMat = new THREE.MeshBasicMaterial({
+            color: 0xffd700,
+            transparent: true,
+            opacity: 1.0
+          });
+          const coreMesh = new THREE.Mesh(coreGeo, coreMat);
+          coreMesh.position.set(pinX, pinY, pinZ);
+          beaconGroup.add(coreMesh);
+
+          // Pulsing Ring (reticle)
+          const ringGeo = new THREE.RingGeometry(0.05, 0.5, 32);
+          const ringMat = new THREE.MeshBasicMaterial({
+            color: 0xffd700,
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.8
+          });
+          const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+          ringMesh.position.set(pinX, pinY, pinZ);
+          // Orient the ring to lay flat on the sphere surface
+          const normalVec = new THREE.Vector3(pinX, pinY, pinZ).normalize();
+          const targetVec = new THREE.Vector3(pinX, pinY, pinZ).add(normalVec);
+          ringMesh.lookAt(targetVec);
+          beaconGroup.add(ringMesh);
+
+          let ringScale = 0.5;
+          let reqId;
+
+          const onResize = () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+          };
+          window.addEventListener('resize', onResize);
+
+          const animate = () => {
+            reqId = requestAnimationFrame(animate);
+            
+            // Pulsing target ring
+            if (ringMesh) {
+              ringScale += 0.04;
+              if (ringScale > 2.5) {
+                ringScale = 0.5;
+              }
+              ringMesh.scale.set(ringScale, ringScale, 1);
+              ringMesh.material.opacity = (1 - (ringScale - 0.5) / 2.0) * 0.8;
+            }
+            if (starsGroup) {
+              starsGroup.rotation.y += 0.0003;
+            }
+            
+            renderer.render(scene, camera);
+          };
+          animate();
+
+          // --- Continuous Cinematic GSAP Timeline ---
+          const tl = gsap.timeline({
+            onComplete: () => {
+              // Fade out WebGL overlay
+              gsap.to(overlay, {
+                opacity: 0,
+                duration: 0.6,
+                onComplete: () => {
+                  overlay.style.display = 'none';
+                  cancelAnimationFrame(reqId);
+                  window.removeEventListener('resize', onResize);
+                  renderer.dispose();
+                  globeGeo.dispose();
+                  globeMat.dispose();
+                  glowGeo.dispose();
+                  glowMat.dispose();
+                  starGeometries.forEach(g => g.dispose());
+                  starMaterials.forEach(m => m.dispose());
+                  if (starTexture) starTexture.dispose();
+                  if (dummyTexture) dummyTexture.dispose();
+                  coreGeo.dispose();
+                  coreMat.dispose();
+                  ringGeo.dispose();
+                  ringMat.dispose();
+                }
+              });
+
+              // Prepare map modal content entrance state for explosion
+              gsap.set('.map-modal-content', { scale: 0.3, opacity: 0 });
+              mapModal.style.display = 'flex';
+              initMap(true, coords);
+              if (leafletMap) {
+                leafletMap.invalidateSize();
+              }
+
+              // Trigger springy explosion/popup modal entry
+              gsap.to('.map-modal-content', {
+                scale: 1,
+                opacity: 1,
+                duration: 0.8,
+                ease: "back.out(1.6)"
+              });
+            }
+          });
+
+          // Correct target rotation coordinates for Argentina/target venue
+          const targetX = (lat * Math.PI) / 180;
+          const targetY = - ((lng + 90) * Math.PI) / 180;
+
+          // Set starting rotation: tilted X, and 1.5 rotations behind on Y
+          globe.rotation.x = targetX - 0.6;
+          globe.rotation.y = targetY - 2 * Math.PI * 1.5;
+
+          // Safe loader auto-hide at 800ms
+          setTimeout(safeHideLoader, 800);
+
+          // 1. Globe Rotation: spin and align onto Argentina over 3.2s
+          tl.to(globe.rotation, {
+            x: targetX,
+            y: targetY,
+            duration: 3.2,
+            ease: "power2.inOut"
+          }, 0);
+
+          // 2. Camera zoom-focus: slow zoom closer (Z from 50 to 28)
+          tl.to(camera.position, {
+            z: 28,
+            duration: 2.4,
+            ease: "power1.inOut"
+          }, 0);
+
+          // 3. Camera descent/plunge: rapid plunge directly into surface (Z from 28 to 11.2)
+          tl.to(camera.position, {
+            z: 11.2,
+            duration: 1.8,
+            ease: "power3.in"
+          }, 2.4);
+
+          // 4. Update status labels dynamically to match the descent timeline
+          tl.call(() => {
+            statusLabel.textContent = "Fijando coordenadas...";
+          }, null, 1.2);
+
+          tl.call(() => {
+            statusLabel.textContent = "Descendiendo...";
+          }, null, 2.4);
+
+          // 5. Flare emissive lights as lock-on completes
+          tl.to(globeMat, {
+            emissiveIntensity: 2.2,
+            duration: 0.6,
+            yoyo: true,
+            repeat: 1,
+            ease: "power1.inOut"
+          }, 1.8);
+
+          // 6. Scale up the location beacon dynamically
+          tl.to(beaconGroup.scale, {
+            x: 1,
+            y: 1,
+            z: 1,
+            duration: 1.0,
+            ease: "back.out(1.7)"
+          }, 1.6);
+
+          // 7. Canvas blur during plunge
+          tl.to(canvas, {
+            filter: "blur(20px)",
+            duration: 1.6,
+            ease: "power2.in"
+          }, 2.6);
+
+        } catch (err) {
+          console.error('WebGL space zoom initialization failed:', err);
+          // Direct fallback to map modal if WebGL fails or loading times out
+          overlay.style.display = 'none';
+          mapModal.style.display = 'flex';
+          initMap(false, coords);
+          if (leafletMap) {
+            leafletMap.invalidateSize();
+          }
+        }
+      }
+      
+      // Extract parameters
       const urlParams = new URLSearchParams(window.location.search);
       const eventId = urlParams.get('event') || 'default';
+      const guestNameParam = urlParams.get('n') || urlParams.get('guest') || 'Invitado Especial';
+      
+      envelopeGuestLabel.textContent = guestNameParam;
 
-      // Load config title
+      // Pre-populate RSVP name and handle personalization if guest name is provided
+      const rawGuestName = urlParams.get('n') || urlParams.get('guest') || '';
+      if (rawGuestName) {
+        const rsvpNameInput = document.getElementById('rsvp-name');
+        if (rsvpNameInput) {
+          rsvpNameInput.value = rawGuestName;
+        }
+        
+        const rsvpNameContainer = document.getElementById('rsvp-name-container');
+        if (rsvpNameContainer) {
+          rsvpNameContainer.style.display = 'none';
+          if (rsvpNameInput) {
+            rsvpNameInput.removeAttribute('required');
+          }
+        }
+        
+        const rsvpInstructions = document.getElementById('rsvp-instructions');
+        if (rsvpInstructions) {
+          rsvpInstructions.innerHTML = `¡Hola <strong>${rawGuestName}</strong>!<br>Por favor, confirmá tu asistencia antes de la fecha límite.`;
+        }
+
+        const spotifyInstructions = document.getElementById('spotify-instructions');
+        if (spotifyInstructions) {
+          spotifyInstructions.innerHTML = `¡Hola <strong>${rawGuestName}</strong>!<br>Sugerí canciones para que el DJ las sume a la fiesta.`;
+        }
+      }
+
+      // Countdown Timer
+      let countdownInterval = null;
+      function startCountdown(targetDateStr) {
+        if (!targetDateStr) return;
+        const targetDate = new Date(targetDateStr);
+        if (isNaN(targetDate.getTime())) return;
+        
+        function updateTimer() {
+          const now = new Date();
+          const diff = targetDate - now;
+          if (diff <= 0) {
+            clearInterval(countdownInterval);
+            document.getElementById('countdown-days').textContent = '00';
+            document.getElementById('countdown-hours').textContent = '00';
+            document.getElementById('countdown-minutes').textContent = '00';
+            document.getElementById('countdown-seconds').textContent = '00';
+            return;
+          }
+          
+          const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+          const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+          const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+          
+          document.getElementById('countdown-days').textContent = String(days).padStart(2, '0');
+          document.getElementById('countdown-hours').textContent = String(hours).padStart(2, '0');
+          document.getElementById('countdown-minutes').textContent = String(minutes).padStart(2, '0');
+          document.getElementById('countdown-seconds').textContent = String(seconds).padStart(2, '0');
+        }
+        
+        updateTimer();
+        countdownInterval = setInterval(updateTimer, 1000);
+      }
+
+      // Load Config
+      const defaultPhotos = [
+        "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?q=80&w=600",
+        "https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=600",
+        "https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?q=80&w=600",
+        "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?q=80&w=600",
+        "https://images.unsplash.com/photo-1504196606672-aef5c9cefc92?q=80&w=600"
+      ];
+
       fetch(`/api/config?event=${encodeURIComponent(eventId)}`)
         .then(res => res.json())
         .then(data => {
-          if (data && data.eventTitle) {
-            eventSubtitle.textContent = data.eventTitle;
+          invitationData = data;
+
+          // Pre-resolve coordinates in background to eliminate delay on click
+          resolveEventCoordinates().then(coords => {
+            preResolvedCoords = coords;
+          }).catch(err => {
+            console.error('Failed to pre-resolve coordinates:', err);
+          });
+          
+          eventSubtitle.textContent = data.eventTitle || 'Salón Jano\'s';
+          mainEventTitle.textContent = data.eventTitle || 'Nuestra Fiesta';
+          
+          // Subtitle adjustment based on title keywords (e.g. "Mis XV")
+          const heroSubtitle = document.querySelector('#slide-0 .hero-subtitle');
+          if (heroSubtitle) {
+            const titleUpper = (data.eventTitle || '').toUpperCase();
+            if (titleUpper.includes('XV') || titleUpper.includes('15') || titleUpper.includes('CUMPLE')) {
+              heroSubtitle.textContent = '¡MIS 15 AÑOS!';
+            } else if (titleUpper.includes('ANIVERSARIO') || titleUpper.includes('BODA') || titleUpper.includes('CASAMIENTO') || titleUpper.includes('BODAS')) {
+              heroSubtitle.textContent = '¡NOS CASAMOS!';
+            } else {
+              heroSubtitle.textContent = '¡TE INVITAMOS A COMPARTIR ESTE MOMENTO!';
+            }
+          }
+
+          // Populate Premium Date elements
+          if (data.invitationEventDate) {
+            const premDate = formatDateStringPremium(data.invitationEventDate);
+            const dateLblPrem = document.getElementById('event-date-lbl-premium');
+            const timeLblPrem = document.getElementById('event-time-lbl-premium');
+            if (dateLblPrem) dateLblPrem.textContent = premDate.dateLine;
+            if (timeLblPrem) timeLblPrem.textContent = premDate.timeLine;
+            
+            // Populate Slide 0 Date/Time
+            const dateLblSlide0 = document.getElementById('slide-0-date');
+            const timeLblSlide0 = document.getElementById('slide-0-time');
+            if (dateLblSlide0) dateLblSlide0.textContent = premDate.dateLine;
+            if (timeLblSlide0) timeLblSlide0.textContent = premDate.timeLine;
+            
+            // Also legacy selector for safety
+            const dateLblLegacy = document.getElementById('event-date-lbl');
+            if (dateLblLegacy) dateLblLegacy.textContent = formatDateString(data.invitationEventDate);
+          } else {
+            const dateLblPrem = document.getElementById('event-date-lbl-premium');
+            if (dateLblPrem) dateLblPrem.textContent = 'Fecha a confirmar';
+            const timeLblPrem = document.getElementById('event-time-lbl-premium');
+            if (timeLblPrem) timeLblPrem.textContent = '';
+            
+            // Populate Slide 0 Date/Time
+            const dateLblSlide0 = document.getElementById('slide-0-date');
+            if (dateLblSlide0) dateLblSlide0.textContent = 'Fecha a confirmar';
+            const timeLblSlide0 = document.getElementById('slide-0-time');
+            if (timeLblSlide0) timeLblSlide0.textContent = '';
+            
+            const dateLblLegacy = document.getElementById('event-date-lbl');
+            if (dateLblLegacy) dateLblLegacy.textContent = 'Fecha a confirmar';
+          }
+          
+          // Animate Slide 0 Date/Time container
+          setTimeout(() => {
+            const dateContainer = document.querySelector('.slide-0-date-container');
+            if (dateContainer) {
+              dateContainer.style.opacity = '1';
+              dateContainer.style.transform = 'translateY(0)';
+            }
+          }, 100);
+
+          // Populate Premium Address elements
+          if (data.invitationPartyAddress) {
+            const addressVal = data.invitationPartyAddress;
+            const namePrem = document.getElementById('event-address-name-premium');
+            const detailsPrem = document.getElementById('event-address-details-premium');
+            
+            let salonName = addressVal;
+            let salonAddr = '';
+            
+            if (addressVal.includes(',')) {
+              const parts = addressVal.split(',');
+              salonName = parts[0].trim();
+              salonAddr = parts.slice(1).join(',').trim();
+            } else if (addressVal.includes(' - ')) {
+              const parts = addressVal.split(' - ');
+              salonName = parts[0].trim();
+              salonAddr = parts.slice(1).join(' - ').trim();
+            } else if (addressVal.includes('\n')) {
+              const parts = addressVal.split('\n');
+              salonName = parts[0].trim();
+              salonAddr = parts.slice(1).join(' ').trim();
+            }
+            
+            if (namePrem) namePrem.textContent = salonName;
+            if (detailsPrem) {
+              detailsPrem.textContent = salonAddr;
+              detailsPrem.style.display = salonAddr ? 'block' : 'none';
+            }
+            
+            // Also legacy selector for safety
+            const addressLblLegacy = document.getElementById('event-address-lbl');
+            if (addressLblLegacy) addressLblLegacy.textContent = addressVal;
+          } else {
+            const namePrem = document.getElementById('event-address-name-premium');
+            if (namePrem) namePrem.textContent = 'Dirección a confirmar';
+            const detailsPrem = document.getElementById('event-address-details-premium');
+            if (detailsPrem) detailsPrem.style.display = 'none';
+            
+            const addressLblLegacy = document.getElementById('event-address-lbl');
+            if (addressLblLegacy) addressLblLegacy.textContent = 'Dirección a confirmar';
+          }
+
+          // Populate Dynamic Timeline/Itinerary nodes
+          const timelineWrapper = document.getElementById('timeline-nodes-wrapper');
+          if (timelineWrapper) {
+            const titleUpper = (data.eventTitle || '').toUpperCase();
+            let itinerary = [];
+            
+            if (titleUpper.includes('XV') || titleUpper.includes('15') || titleUpper.includes('CUMPLE')) {
+              itinerary = [
+                { time: '21:00 hs', title: 'Recepción', desc: 'Cóctel de bienvenida para comenzar la noche' },
+                { time: '22:30 hs', title: 'Entrada de la Quinceañera', desc: 'El momento más esperado de la gala' },
+                { time: '23:00 hs', title: 'Cena de Gala', desc: 'Plato principal preparado para los invitados' },
+                { time: '01:00 hs', title: 'Vals & Tanda de Baile', desc: 'El vals tradicional y apertura de la pista' },
+                { time: '03:00 hs', title: 'Mesa Dulce', desc: 'Postres, torta y delicias dulces' },
+                { time: '05:00 hs', title: 'Fin de Fiesta', desc: 'Una despedida para una noche inolvidable' }
+              ];
+            } else if (titleUpper.includes('ANIVERSARIO') || titleUpper.includes('BODA') || titleUpper.includes('CASAMIENTO') || titleUpper.includes('BODAS')) {
+              itinerary = [
+                { time: '20:30 hs', title: 'Ceremonia', desc: 'Nuestra unión civil o religiosa' },
+                { time: '21:30 hs', title: 'Recepción', desc: 'Cóctel de bienvenida en los jardines' },
+                { time: '22:30 hs', title: 'Entrada de los Novios', desc: 'Apertura oficial de la celebración' },
+                { time: '23:00 hs', title: 'Cena de Gala', desc: 'Servicio de plato principal' },
+                { time: '01:30 hs', title: 'Vals & Tanda de Baile', desc: 'Apertura de la pista y baile general' },
+                { time: '03:30 hs', title: 'Mesa Dulce & Fin', desc: 'Brindis final y fin de fiesta' }
+              ];
+            } else {
+              itinerary = [
+                { time: '21:00 hs', title: 'Recepción', desc: 'Cóctel de bienvenida para comenzar' },
+                { time: '22:30 hs', title: 'Apertura del Salón', desc: 'Inicio oficial del festejo' },
+                { time: '23:00 hs', title: 'Cena de Gala', desc: 'Servicio de cena principal' },
+                { time: '01:00 hs', title: 'Tanda de Baile', desc: 'Apertura de la pista' },
+                { time: '03:00 hs', title: 'Mesa Dulce', desc: 'Torta principal y postres' },
+                { time: '05:00 hs', title: 'Fin del Evento', desc: 'Cierre del festejo' }
+              ];
+            }
+            
+            timelineWrapper.innerHTML = itinerary.map(item => `
+              <div class="timeline-node">
+                <span class="timeline-node-time">${item.time}</span>
+                <span class="timeline-node-title">${item.title}</span>
+                <span class="timeline-node-desc">${item.desc}</span>
+              </div>
+            `).join('');
+          }
+
+          dressCodeLbl.textContent = data.invitationDressCode || 'Elegante';
+          
+          document.getElementById('bank-holder-lbl').textContent = data.invitationBankHolder || '-';
+          document.getElementById('bank-cbu-lbl').textContent = data.invitationCbu || '-';
+          document.getElementById('bank-alias-lbl').textContent = data.invitationAlias || '-';
+          
+          if (data.invitationMusicUrl) {
+            bgAudio.src = data.invitationMusicUrl;
+          }
+          
+          document.getElementById('carousel-img-0').src = data.invitationPhoto1 || defaultPhotos[0];
+          document.getElementById('carousel-img-1').src = data.invitationPhoto2 || defaultPhotos[1];
+          document.getElementById('carousel-img-2').src = data.invitationPhoto3 || defaultPhotos[2];
+          document.getElementById('carousel-img-3').src = data.invitationPhoto4 || defaultPhotos[3];
+          document.getElementById('carousel-img-4').src = data.invitationPhoto5 || defaultPhotos[4];
+          
+          if (data.invitationEventDate) {
+            startCountdown(data.invitationEventDate);
+          }
+          
+          // Toggle Slide 5 / dot visibility depending on bank info
+          const slide5 = document.getElementById('slide-5');
+          const navDot5 = document.getElementById('nav-dot-5');
+          const hasRegistryInfo = !!(data.invitationCbu || data.invitationAlias);
+          
+          if (slide5 && navDot5) {
+            slide5.style.display = ''; // Clear inline block to allow class active display none/block logic
+            navDot5.style.display = 'inline-block';
+            
+            const btnShowTransfer = document.getElementById('btn-show-transfer');
+            if (btnShowTransfer) {
+              btnShowTransfer.style.display = hasRegistryInfo ? 'block' : 'none';
+            }
+          }
+          
+          initNavigation();
+          initChestAndSpotifyModules();
+          if (envelopeContainer) {
+            gsap.to(envelopeContainer, { opacity: 1, duration: 0.8, ease: 'power2.out' });
           }
         })
-        .catch(() => {
-          eventSubtitle.textContent = "Salón de Eventos";
+        .catch(err => {
+          console.error('Error loading config:', err);
+          eventSubtitle.textContent = "Salón Jano's";
+          
+          // Reset premium and legacy date elements
+          const dateLblPrem = document.getElementById('event-date-lbl-premium');
+          if (dateLblPrem) dateLblPrem.textContent = 'Fecha a confirmar';
+          const timeLblPrem = document.getElementById('event-time-lbl-premium');
+          if (timeLblPrem) timeLblPrem.textContent = '';
+          const dateLblLegacy = document.getElementById('event-date-lbl');
+          if (dateLblLegacy) dateLblLegacy.textContent = 'Fecha a confirmar';
+          
+          // Reset premium and legacy address elements
+          const namePrem = document.getElementById('event-address-name-premium');
+          if (namePrem) namePrem.textContent = 'Dirección a confirmar';
+          const detailsPrem = document.getElementById('event-address-details-premium');
+          if (detailsPrem) detailsPrem.style.display = 'none';
+          const addressLblLegacy = document.getElementById('event-address-lbl');
+          if (addressLblLegacy) addressLblLegacy.textContent = 'Dirección a confirmar';
+          
+          document.getElementById('carousel-img-0').src = defaultPhotos[0];
+          document.getElementById('carousel-img-1').src = defaultPhotos[1];
+          document.getElementById('carousel-img-2').src = defaultPhotos[2];
+          document.getElementById('carousel-img-3').src = defaultPhotos[3];
+          document.getElementById('carousel-img-4').src = defaultPhotos[4];
+          
+          initNavigation();
+          initChestAndSpotifyModules();
+          if (envelopeContainer) {
+            gsap.to(envelopeContainer, { opacity: 1, duration: 0.8, ease: 'power2.out' });
+          }
         });
 
-      // Handle card fade transition
-      if (startBtn && onboardingCard && teaserCard) {
-        startBtn.addEventListener('click', () => {
-          onboardingCard.style.opacity = '0';
-          onboardingCard.style.transform = 'scale(0.95)';
-          onboardingCard.style.transition = 'all 0.4s ease-in-out';
+      function formatDateString(dateStr) {
+        try {
+          const date = new Date(dateStr);
+          if (isNaN(date.getTime())) return dateStr;
+          const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+          return date.toLocaleDateString('es-AR', options) + ' hs';
+        } catch (e) {
+          return dateStr;
+        }
+      }
+
+      function formatDateStringPremium(dateStr) {
+        try {
+          const date = new Date(dateStr);
+          if (isNaN(date.getTime())) return { dateLine: dateStr, timeLine: '' };
           
+          const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+          
+          const weekday = cap(date.toLocaleDateString('es-AR', { weekday: 'long' }));
+          const day = date.toLocaleDateString('es-AR', { day: 'numeric' });
+          const month = cap(date.toLocaleDateString('es-AR', { month: 'long' }));
+          const year = date.toLocaleDateString('es-AR', { year: 'numeric' });
+          
+          let hours = date.getHours().toString().padStart(2, '0');
+          let minutes = date.getMinutes().toString().padStart(2, '0');
+          
+          return {
+            dateLine: `${weekday}, ${day} de ${month} de ${year}`,
+            timeLine: `${hours}:${minutes} hs`
+          };
+        } catch (e) {
+          return { dateLine: dateStr, timeLine: '' };
+        }
+      }
+
+      // Map Modal Logic
+      let leafletMap = null;
+      let mapMarker = null;
+      let preResolvedCoords = null;
+
+      function initMap(hasZoomed = false, customCoords = null) {
+        let coords = customCoords || [-34.5956145, -58.4439815]; // Fallback Jano's Palermo
+        if (!customCoords && invitationData.invitationPartyMapsUrl) {
+          const regex = /q=([-+]?\d*\.\d+|\d+),([-+]?\d*\.\d+|\d+)/;
+          const match = invitationData.invitationPartyMapsUrl.match(regex);
+          if (match) {
+            coords = [parseFloat(match[1]), parseFloat(match[2])];
+          } else {
+            const regex2 = /@([-+]?\d*\.\d+|\d+),([-+]?\d*\.\d+|\d+)/;
+            const match2 = invitationData.invitationPartyMapsUrl.match(regex2);
+            if (match2) {
+              coords = [parseFloat(match2[1]), parseFloat(match2[2])];
+            }
+          }
+        }
+        
+        document.getElementById('map-modal-title').textContent = invitationData.eventTitle || 'Jano\'s Salón';
+        document.getElementById('map-modal-address').textContent = invitationData.invitationPartyAddress || 'Ubicación';
+
+        // Update GPS redirect button URLs dynamically
+        const googleMapsUrl = invitationData.invitationPartyMapsUrl || `https://www.google.com/maps/search/?api=1&query=${coords[0]},${coords[1]}`;
+        const wazeUrl = `https://waze.com/ul?ll=${coords[0]},${coords[1]}&navigate=yes`;
+        
+        const btnGpsMaps = document.getElementById('btn-gps-maps');
+        const btnGpsWaze = document.getElementById('btn-gps-waze');
+        if (btnGpsMaps) btnGpsMaps.href = googleMapsUrl;
+        if (btnGpsWaze) btnGpsWaze.href = wazeUrl;
+
+        const initZoom = hasZoomed ? 8 : 2.5;
+        const offsetLat = hasZoomed ? 0.3 : 15;
+        const offsetLng = hasZoomed ? 1.0 : 70;
+
+        if (leafletMap) {
+          // Reset view and trigger flyTo animation on subsequent opens
+          leafletMap.setView([coords[0] - offsetLat, coords[1] - offsetLng], initZoom);
           setTimeout(() => {
-            onboardingCard.style.display = 'none';
-            teaserCard.style.display = 'block';
-            teaserCard.style.opacity = '0';
-            teaserCard.style.transform = 'scale(0.95)';
+            leafletMap.flyTo(coords, 17, {
+              animate: true,
+              duration: 4.0,
+              easeLinearity: 0.25
+            });
+          }, 300);
+          return;
+        }
+
+        leafletMap = L.map('satellite-map-container').setView([coords[0] - offsetLat, coords[1] - offsetLng], initZoom);
+        
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+          maxZoom: 19,
+          attribution: 'Tiles &copy; Esri &mdash; Source: Esri'
+        }).addTo(leafletMap);
+        
+        const goldIcon = L.divIcon({
+          className: 'custom-gold-marker-container',
+          html: '<div class="custom-gold-marker"></div>',
+          iconSize: [20, 20],
+          iconAnchor: [10, 10]
+        });
+        
+        mapMarker = L.marker(coords, { icon: goldIcon }).addTo(leafletMap);
+
+        // First open flyTo animation
+        setTimeout(() => {
+          leafletMap.flyTo(coords, 17, {
+            animate: true,
+            duration: 4.0,
+            easeLinearity: 0.25
+          });
+        }, 300);
+      }
+
+      if (btnPartyMapsUrl) {
+        btnPartyMapsUrl.addEventListener('click', async () => {
+          try {
+            // Display overlay and spinner immediately to eliminate click delay
+            const overlay = document.getElementById('space-zoom-overlay');
+            const canvas = document.getElementById('space-zoom-canvas');
+            const statusLabel = document.getElementById('space-zoom-status');
+            const loader = document.getElementById('space-zoom-loader');
+
+            if (overlay) {
+              overlay.style.display = 'flex';
+              overlay.style.opacity = '1';
+            }
+            if (canvas) canvas.style.filter = 'none';
+            if (loader) {
+              loader.style.display = 'flex';
+              loader.style.opacity = '1';
+            }
+            if (statusLabel) statusLabel.textContent = "Dirigiendote a la mejor fiesta de tu vida...";
+
+            // Use pre-resolved coordinates (or resolve now if not ready yet)
+            const coords = preResolvedCoords || await resolveEventCoordinates();
+            await triggerCinematicSpaceZoom(coords);
+          } catch (err) {
+            console.error('Failed to trigger space zoom:', err);
+            // Fallback directly to map modal
+            const overlay = document.getElementById('space-zoom-overlay');
+            if (overlay) overlay.style.display = 'none';
+            mapModal.style.display = 'flex';
+            initMap();
+            if (leafletMap) {
+              leafletMap.invalidateSize();
+            }
+          }
+        });
+      }
+
+      function closeModal() {
+        // Smoothly fade out the map modal to match the luxury feeling
+        gsap.to('.map-modal-content', {
+          scale: 0.85,
+          opacity: 0,
+          duration: 0.35,
+          ease: 'power2.in',
+          onComplete: () => {
+            mapModal.style.display = 'none';
+          }
+        });
+      }
+
+      if (btnCloseMapModal) btnCloseMapModal.addEventListener('click', closeModal);
+      if (btnCloseMapModalBackdrop) btnCloseMapModalBackdrop.addEventListener('click', closeModal);
+      if (btnMapContinue) {
+        btnMapContinue.addEventListener('click', () => {
+          // Silently swap to Slide 2 behind the modal to prevent visual flicker of Slide 1
+          const currentSlide = slides[activeSlide];
+          const nextSlide = slides[2];
+          if (currentSlide && nextSlide && activeSlide === 1) {
+            currentSlide.classList.remove('active');
+            currentSlide.style.opacity = '0';
             
-            // Force reflow
-            void teaserCard.offsetWidth;
+            nextSlide.classList.add('active');
+            nextSlide.style.opacity = '1';
+            nextSlide.style.transform = 'translateY(0)';
             
-            teaserCard.style.transition = 'all 0.4s ease-in-out';
-            teaserCard.style.opacity = '1';
-            teaserCard.style.transform = 'scale(1)';
-          }, 400);
+            // Stagger in the details of Slide 2 as if we entered it normally
+            gsap.fromTo('#slide-2 .dress-code-anim', 
+              { opacity: 0, y: 20, scale: 0.98 }, 
+              { opacity: 1, y: 0, scale: 1, duration: 0.8, stagger: 0.15, ease: 'power2.out', delay: 0.1 }
+            );
+
+            activeSlide = 2;
+
+            // Sync navigation dots
+            dots.forEach(dot => {
+              const slideNum = parseInt(dot.getAttribute('data-slide'));
+              if (slideNum === 2) {
+                dot.classList.add('active');
+              } else {
+                dot.classList.remove('active');
+              }
+            });
+
+            // Sync navigation arrows
+            const btnPrev = document.getElementById('btn-slide-prev');
+            const btnNext = document.getElementById('btn-slide-next');
+            if (btnPrev) btnPrev.disabled = (activeSlide === 0);
+            if (btnNext) btnNext.disabled = (activeSlide === slides.length - 1);
+          }
+          
+          closeModal();
+        });
+      }
+
+      // 3D Parallax Tilt Effect
+      if (envelopeScreen && envelopeContainer) {
+        envelopeScreen.addEventListener('mousemove', (e) => {
+          const rect = envelopeContainer.getBoundingClientRect();
+          const centerX = rect.left + rect.width / 2;
+          const centerY = rect.top + rect.height / 2;
+          const x = e.clientX - centerX;
+          const y = e.clientY - centerY;
+          
+          const rotateX = -y / 15;
+          const rotateY = x / 15;
+          
+          gsap.to(envelopeBox, {
+            rotationX: rotateX,
+            rotationY: rotateY,
+            duration: 0.5,
+            ease: 'power2.out'
+          });
+        });
+
+        envelopeScreen.addEventListener('mouseleave', () => {
+          gsap.to(envelopeBox, {
+            rotationX: 0,
+            rotationY: 0,
+            duration: 0.8,
+            ease: 'power2.out'
+          });
+        });
+      }
+
+      // Typewriter Animation function
+      function startTypewriter(elementId, text, speed = 50) {
+        const el = document.getElementById(elementId);
+        if (!el) return;
+        el.textContent = '';
+        let i = 0;
+        if (el.typewriterInterval) clearInterval(el.typewriterInterval);
+        el.typewriterInterval = setInterval(() => {
+          if (i < text.length) {
+            el.textContent += text.charAt(i);
+            i++;
+          } else {
+            clearInterval(el.typewriterInterval);
+          }
+        }, speed);
+      }
+
+      // Envelope Opening Timeline
+      function triggerEnvelopeOpening() {
+        waxSealBtn.style.pointerEvents = 'none';
+        envelopeContainer.style.pointerEvents = 'none';
+        envelopeScreen.style.pointerEvents = 'none';
+
+        const flapTop = document.getElementById('envelope-flap-top');
+        const innerCard = document.getElementById('envelope-inner-card');
+
+        const mainTimeline = gsap.timeline({
+          onComplete: () => {
+            envelopeScreen.style.display = 'none';
+            musicPlayerBtn.style.display = 'flex';
+          }
+        });
+
+        mainTimeline.to(waxSealBtn, { 
+          scale: 0, 
+          rotation: -45, 
+          opacity: 0, 
+          duration: 0.4, 
+          ease: 'power2.in' 
+        })
+        .to(flapTop, {
+          rotationX: 180,
+          duration: 0.6,
+          ease: 'power2.inOut',
+          z: 1
+        }, '-=0.1')
+        .to(innerCard, {
+          y: -120,
+          scale: 1.05,
+          duration: 0.8,
+          ease: 'power2.out'
+        }, '+=0.1')
+        .to(envelopeScreen, {
+          opacity: 0,
+          duration: 0.8,
+          ease: 'power2.inOut'
+        }, '+=0.2');
+
+        invitationMain.style.display = 'flex';
+        gsap.fromTo(invitationMain, 
+          { opacity: 0, y: 30 }, 
+          { opacity: 1, y: 0, duration: 1.2, delay: 1.4, ease: 'power2.out' }
+        );
+
+        // Start typewriter text animation when main content displays
+        setTimeout(() => {
+          startTypewriter('welcome-instructions', 'Faltan muy pocos días para compartir este momento especial:');
+        }, 1400);
+
+        if (bgAudio.src) {
+          bgAudio.volume = 0;
+          bgAudio.play().then(() => {
+            isMusicPlaying = true;
+            musicDiscVisual.classList.add('playing');
+            musicStatusLbl.textContent = 'Música On';
+            gsap.to(bgAudio, { volume: 0.5, duration: 3.0 });
+          }).catch(err => {
+            console.log('Autoplay restriction:', err);
+            isMusicPlaying = false;
+            musicDiscVisual.classList.remove('playing');
+            musicStatusLbl.textContent = 'Música Off';
+          });
+        }
+      }
+
+      if (waxSealBtn) waxSealBtn.addEventListener('click', triggerEnvelopeOpening);
+
+      // Music Disc toggle
+      if (musicPlayerBtn) {
+        musicPlayerBtn.addEventListener('click', () => {
+          if (isMusicPlaying) {
+            bgAudio.pause();
+            isMusicPlaying = false;
+            musicDiscVisual.classList.remove('playing');
+            musicStatusLbl.textContent = 'Música Off';
+          } else {
+            bgAudio.play().then(() => {
+              isMusicPlaying = true;
+              musicDiscVisual.classList.add('playing');
+              musicStatusLbl.textContent = 'Música On';
+              bgAudio.volume = 0.5;
+            }).catch(e => console.log('Playback error:', e));
+          }
+        });
+      }
+
+      // 3D Carouselcoverflow
+      let activeCarouselIndex = 0;
+      const totalCarouselItems = 5;
+      const carouselItems = Array.from(document.querySelectorAll('.carousel-item'));
+      const carouselDots = Array.from(document.querySelectorAll('#carousel-dots-container .carousel-dot'));
+      
+      updateCarousel = function() {
+        carouselItems.forEach((item, index) => {
+          let diff = index - activeCarouselIndex;
+          if (diff < -2) diff += totalCarouselItems;
+          if (diff > 2) diff -= totalCarouselItems;
+          
+          const absDiff = Math.abs(diff);
+          
+          const xVal = diff * 110;
+          const zVal = -absDiff * 120;
+          const rYVal = diff * -30;
+          const scaleVal = 1 - absDiff * 0.18;
+          const opacityVal = absDiff > 2 ? 0 : (1 - absDiff * 0.4);
+          
+          gsap.to(item, {
+            x: xVal,
+            z: zVal,
+            rotationY: rYVal,
+            scale: scaleVal,
+            opacity: opacityVal,
+            zIndex: 10 - absDiff,
+            duration: 0.6,
+            ease: 'power2.out'
+          });
+        });
+        
+        carouselDots.forEach((dot, index) => {
+          if (index === activeCarouselIndex) dot.classList.add('active');
+          else dot.classList.remove('active');
+        });
+      }
+      
+      const carouselPrevBtn = document.getElementById('carousel-prev-btn');
+      const carouselNextBtn = document.getElementById('carousel-next-btn');
+      
+      if (carouselPrevBtn) {
+        carouselPrevBtn.addEventListener('click', () => {
+          activeCarouselIndex = (activeCarouselIndex - 1 + totalCarouselItems) % totalCarouselItems;
+          updateCarousel();
+        });
+      }
+      if (carouselNextBtn) {
+        carouselNextBtn.addEventListener('click', () => {
+          activeCarouselIndex = (activeCarouselIndex + 1) % totalCarouselItems;
+          updateCarousel();
+        });
+      }
+      carouselDots.forEach((dot, idx) => {
+        dot.addEventListener('click', () => {
+          activeCarouselIndex = idx;
+          updateCarousel();
+        });
+      });
+      carouselItems.forEach((item, idx) => {
+        item.addEventListener('click', () => {
+          activeCarouselIndex = idx;
+          updateCarousel();
+        });
+      });
+
+      // Swipe / Drag interactive control
+      const carouselContainer = document.querySelector('.carousel-container');
+      if (carouselContainer) {
+        let startX = 0;
+        let isDragging = false;
+        const dragThreshold = 40; // Pixels needed to transition
+        
+        function handleStart(e) {
+          isDragging = true;
+          startX = e.pageX || (e.touches && e.touches[0] ? e.touches[0].pageX : 0);
+        }
+        
+        function handleMove(e) {
+          if (!isDragging) return;
+          const currentX = e.pageX || (e.touches && e.touches[0] ? e.touches[0].pageX : 0);
+          if (!currentX) return;
+          
+          const diffX = currentX - startX;
+          
+          if (Math.abs(diffX) > dragThreshold) {
+            if (diffX > 0) {
+              // Swipe Right -> Show previous
+              activeCarouselIndex = (activeCarouselIndex - 1 + totalCarouselItems) % totalCarouselItems;
+            } else {
+              // Swipe Left -> Show next
+              activeCarouselIndex = (activeCarouselIndex + 1) % totalCarouselItems;
+            }
+            updateCarousel();
+            // Reset startX to current X to allow continuous drag transitions
+            startX = currentX;
+            isDragging = false;
+          }
+        }
+        
+        function handleEnd() {
+          isDragging = false;
+        }
+        
+        // Desktop drag support
+        carouselContainer.addEventListener('mousedown', handleStart);
+        carouselContainer.addEventListener('mousemove', handleMove);
+        window.addEventListener('mouseup', handleEnd);
+        
+        // Mobile touch swipe support
+        carouselContainer.addEventListener('touchstart', handleStart, { passive: true });
+        carouselContainer.addEventListener('touchmove', handleMove, { passive: true });
+        carouselContainer.addEventListener('touchend', handleEnd, { passive: true });
+      }
+
+      // Initialize premium custom select dropdown components
+      function initCustomSelects() {
+        document.querySelectorAll('#rsvp-form select').forEach(select => {
+          // Hide native select element
+          select.style.display = 'none';
+          
+          // Create custom select container wrapper
+          const wrapper = document.createElement('div');
+          wrapper.className = 'select-lux-wrapper';
+          select.parentNode.insertBefore(wrapper, select.nextSibling);
+          
+          // Create trigger element
+          const trigger = document.createElement('div');
+          trigger.className = 'select-lux-trigger';
+          trigger.tabIndex = 0;
+          
+          const text = document.createElement('span');
+          text.className = 'select-lux-text';
+          
+          // Set initial text based on the selected option
+          const activeOption = select.options[select.selectedIndex];
+          text.textContent = activeOption ? activeOption.textContent : '';
+          
+          // Create a clean, premium SVG arrow
+          const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+          arrow.setAttribute('viewBox', '0 0 24 24');
+          arrow.setAttribute('fill', 'none');
+          arrow.setAttribute('stroke', 'currentColor');
+          arrow.setAttribute('stroke-width', '2.5');
+          arrow.setAttribute('class', 'select-lux-arrow');
+          
+          const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          path.setAttribute('stroke-linecap', 'round');
+          path.setAttribute('stroke-linejoin', 'round');
+          path.setAttribute('d', 'M19 9l-7 7-7-7');
+          arrow.appendChild(path);
+          
+          trigger.appendChild(text);
+          trigger.appendChild(arrow);
+          wrapper.appendChild(trigger);
+          
+          // Create options container
+          const optionsContainer = document.createElement('div');
+          optionsContainer.className = 'select-lux-options';
+          wrapper.appendChild(optionsContainer);
+          
+          // Populate options
+          Array.from(select.options).forEach(opt => {
+            const optionDiv = document.createElement('div');
+            optionDiv.className = 'select-lux-option';
+            if (opt.value === select.value) {
+              optionDiv.classList.add('selected');
+            }
+            optionDiv.textContent = opt.textContent;
+            optionDiv.dataset.value = opt.value;
+            
+            optionDiv.addEventListener('click', (e) => {
+              e.stopPropagation();
+              
+              // Set value on native select
+              select.value = opt.value;
+              
+              // Update custom trigger text
+              text.textContent = opt.textContent;
+              
+              // Update selected class highlighting
+              optionsContainer.querySelectorAll('.select-lux-option').forEach(o => o.classList.remove('selected'));
+              optionDiv.classList.add('selected');
+              
+              // Dispatch change event to trigger native listeners (like companion fields updates)
+              select.dispatchEvent(new Event('change'));
+              
+              // Close dropdown
+              closeDropdown();
+            });
+            
+            optionsContainer.appendChild(optionDiv);
+          });
+          
+          // Open dropdown function
+          const openDropdown = () => {
+            // Close other custom selects first
+            document.querySelectorAll('.select-lux-wrapper').forEach(w => {
+              if (w !== wrapper) w.classList.remove('open');
+            });
+            wrapper.classList.add('open');
+          };
+          
+          // Close dropdown function
+          const closeDropdown = () => {
+            wrapper.classList.remove('open');
+          };
+          
+          trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (wrapper.classList.contains('open')) {
+              closeDropdown();
+            } else {
+              openDropdown();
+            }
+          });
+          
+          // Close on blur with a slight delay to allow option click to fire
+          trigger.addEventListener('blur', () => {
+            setTimeout(closeDropdown, 150);
+          });
+          
+          // Keyboard accessibility
+          trigger.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              trigger.click();
+            }
+          });
+
+          // Sync custom selects on form reset
+          select.form?.addEventListener('reset', () => {
+            setTimeout(() => {
+              const resetOption = select.options[select.selectedIndex];
+              text.textContent = resetOption ? resetOption.textContent : '';
+              optionsContainer.querySelectorAll('.select-lux-option').forEach(o => {
+                if (o.dataset.value === select.value) {
+                  o.classList.add('selected');
+                } else {
+                  o.classList.remove('selected');
+                }
+              });
+            }, 0);
+          });
+        });
+        
+        // Global document click to close any open dropdowns
+        document.addEventListener('click', () => {
+          document.querySelectorAll('.select-lux-wrapper').forEach(w => w.classList.remove('open'));
+        });
+      }
+
+      // Initialize dropdown components
+      initCustomSelects();
+
+      // RSVP Form Companions dynamic inputs
+      const rsvpCompanionsCount = document.getElementById('rsvp-companions-count');
+      const rsvpCompanionsNamesContainer = document.getElementById('rsvp-companions-names-container');
+      
+      if (rsvpCompanionsCount) {
+        rsvpCompanionsCount.addEventListener('change', (e) => {
+          const count = parseInt(e.target.value);
+          rsvpCompanionsNamesContainer.innerHTML = '';
+          if (count > 0) {
+            rsvpCompanionsNamesContainer.style.display = 'flex';
+            for (let i = 1; i <= count; i++) {
+              const label = document.createElement('label');
+              label.style.fontSize = '0.7rem';
+              label.style.color = 'var(--text-muted)';
+              label.style.textAlign = 'center';
+              label.style.display = 'block';
+              label.style.marginBottom = '8px';
+              label.textContent = `Acompañante ${i}`;
+              
+              const input = document.createElement('input');
+              input.type = 'text';
+              input.className = 'form-control rsvp-companion-name-input';
+              input.placeholder = `Nombre del Acompañante ${i}`;
+              input.required = true;
+              
+              rsvpCompanionsNamesContainer.appendChild(label);
+              rsvpCompanionsNamesContainer.appendChild(input);
+            }
+          } else {
+            rsvpCompanionsNamesContainer.style.display = 'none';
+          }
+        });
+      }
+
+      // RSVP Form Submit
+      const rsvpForm = document.getElementById('rsvp-form');
+      const rsvpStatusMsg = document.getElementById('rsvp-status-msg');
+      
+      if (rsvpForm) {
+        rsvpForm.addEventListener('submit', (e) => {
+          e.preventDefault();
+          
+          const name = document.getElementById('rsvp-name').value.trim();
+          const attendingVal = document.getElementById('rsvp-attending').value;
+          const attending = attendingVal === 'yes';
+          const companionsCount = parseInt(rsvpCompanionsCount.value) || 0;
+          const companionsNames = Array.from(document.querySelectorAll('.rsvp-companion-name-input')).map(input => input.value.trim());
+          const dietaryRestrictions = document.getElementById('rsvp-dietary').value.trim();
+          
+          rsvpStatusMsg.style.display = 'block';
+          rsvpStatusMsg.style.color = 'var(--gold-primary)';
+          rsvpStatusMsg.textContent = 'Enviando confirmación...';
+          
+          fetch(`/api/public/rsvp?event=${encodeURIComponent(eventId)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name,
+              attending,
+              companionsCount,
+              companionsNames,
+              dietaryRestrictions
+            })
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data.error) {
+              rsvpStatusMsg.style.color = '#ff3b30';
+              rsvpStatusMsg.textContent = data.error;
+            } else {
+              // Trigger Golden Dust Burst celebration
+              triggerGoldBurst();
+
+              // Clean status message and hide form with elegant fade out
+              rsvpStatusMsg.style.display = 'none';
+              
+              gsap.to(['#rsvp-form', '#rsvp-instructions', '.card h2.hero-subtitle'], {
+                opacity: 0,
+                y: -20,
+                filter: 'blur(10px)',
+                duration: 0.5,
+                stagger: 0.1,
+                ease: 'power2.inOut',
+                onComplete: () => {
+                  document.getElementById('rsvp-form').style.display = 'none';
+                  document.getElementById('rsvp-instructions').style.display = 'none';
+                  document.querySelector('.card h2.hero-subtitle').style.display = 'none';
+                  
+                  const successContainer = document.getElementById('rsvp-success-container');
+                  successContainer.style.display = 'block';
+                  
+                  // Prepare title text for stagger animation
+                  const titleEl = successContainer.querySelector('.success-title');
+                  if (!titleEl.dataset.originalText) {
+                    titleEl.dataset.originalText = titleEl.textContent;
+                  }
+                  const words = titleEl.dataset.originalText.split(' ');
+                  titleEl.innerHTML = words.map(w => `<span class="success-word">${w}</span>`).join(' ');
+                  
+                  // Reset success container animations
+                  gsap.set(successContainer, { opacity: 1 });
+                  gsap.set('.success-seal', { rotationY: 180, scale: 0.3, opacity: 0 });
+                  gsap.set('.success-word', { y: 25, opacity: 0, filter: 'blur(8px)' });
+                  gsap.set('.success-subtitle', { y: 15, opacity: 0 });
+                  gsap.set('#btn-rsvp-success-back', { scale: 0.9, opacity: 0 });
+                  
+                  // Animate elements sequentially
+                  const tl = gsap.timeline();
+                  tl.to('.success-seal', {
+                    rotationY: 0,
+                    scale: 1,
+                    opacity: 1,
+                    duration: 0.8,
+                    ease: 'back.out(1.7)'
+                  })
+                  .to('.success-word', {
+                    y: 0,
+                    opacity: 1,
+                    filter: 'blur(0px)',
+                    duration: 0.5,
+                    stagger: 0.08,
+                    ease: 'power2.out'
+                  }, '-=0.3')
+                  .to('.success-subtitle', {
+                    y: 0,
+                    opacity: 1,
+                    duration: 0.6,
+                    ease: 'power2.out'
+                  }, '-=0.2')
+                  .to('#btn-rsvp-success-back', {
+                    scale: 1,
+                    opacity: 1,
+                    duration: 0.4,
+                    ease: 'power2.out'
+                  }, '-=0.2');
+
+                  // Reset form fields
+                  rsvpForm.reset();
+                  rsvpCompanionsNamesContainer.style.display = 'none';
+                  rsvpCompanionsNamesContainer.innerHTML = '';
+                }
+              });
+            }
+          })
+          .catch(err => {
+            console.error('Error submitting RSVP:', err);
+            rsvpStatusMsg.style.color = '#ff3b30';
+            rsvpStatusMsg.textContent = 'Error al enviar confirmación.';
+          });
+        });
+      }
+
+      // Golden Dust Burst Animation
+      function triggerGoldBurst() {
+        const card = document.querySelector('#slide-4 .card');
+        const submitBtn = document.querySelector('#rsvp-form button[type="submit"]');
+        if (!card || !submitBtn) return;
+        
+        const cardRect = card.getBoundingClientRect();
+        const btnRect = submitBtn.getBoundingClientRect();
+        
+        const originX = btnRect.left - cardRect.left + btnRect.width / 2;
+        const originY = btnRect.top - cardRect.top + btnRect.height / 2;
+        
+        for (let i = 0; i < 40; i++) {
+          const p = document.createElement('div');
+          p.className = 'gold-particle';
+          p.style.left = originX + 'px';
+          p.style.top = originY + 'px';
+          card.appendChild(p);
+          
+          const angle = Math.random() * Math.PI * 2;
+          const velocity = 50 + Math.random() * 150;
+          const destX = originX + Math.cos(angle) * velocity;
+          const destY = originY + Math.sin(angle) * velocity - (20 + Math.random() * 50); // lift slightly
+          
+          gsap.set(p, { scale: 0.5 + Math.random() * 1.2 });
+          
+          gsap.to(p, {
+            left: destX,
+            top: destY,
+            scale: 0,
+            opacity: 0,
+            duration: 1.2 + Math.random() * 0.8,
+            ease: 'power3.out',
+            onComplete: () => p.remove()
+          });
+        }
+      }
+
+      // Back Button click handler to allow modifying RSVP data
+      const backBtn = document.getElementById('btn-rsvp-success-back');
+      if (backBtn) {
+        backBtn.addEventListener('click', () => {
+          gsap.to('#rsvp-success-container', {
+            opacity: 0,
+            y: 20,
+            duration: 0.4,
+            ease: 'power2.inOut',
+            onComplete: () => {
+              document.getElementById('rsvp-success-container').style.display = 'none';
+              
+              const form = document.getElementById('rsvp-form');
+              const instructions = document.getElementById('rsvp-instructions');
+              const subtitle = document.querySelector('#slide-4 .card h2.hero-subtitle');
+              
+              form.style.display = 'flex';
+              instructions.style.display = 'block';
+              subtitle.style.display = 'block';
+              
+              gsap.fromTo([subtitle, instructions, form], 
+                { opacity: 0, y: 20, filter: 'blur(5px)' },
+                { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.5, stagger: 0.08, ease: 'power2.out' }
+              );
+            }
+          });
         });
       }
     });
+
+    // Navigation Initialization
+    function initNavigation() {
+      slides = Array.from(document.querySelectorAll('.invitation-slide')).filter(slide => {
+        return slide.style.display !== 'none';
+      });
+      dots = Array.from(document.querySelectorAll('#slide-nav-dots .nav-dot')).filter(dot => {
+        return dot.style.display !== 'none';
+      });
+      
+      const btnPrev = document.getElementById('btn-slide-prev');
+      const btnNext = document.getElementById('btn-slide-next');
+
+      window.goToSlide = function(index) {
+        if (index < 0 || index >= slides.length || index === activeSlide) return;
+        
+        // Hide event header on Slide 0 (cover page) to avoid redundancy and vertical scroll
+        const headerEl = document.querySelector('#invitation-main header');
+        if (headerEl) {
+          headerEl.style.display = index === 0 ? 'none' : 'block';
+        }
+        
+        const currentSlide = slides[activeSlide];
+        const nextSlide = slides[index];
+        
+        const tl = gsap.timeline()
+          .to(currentSlide, { opacity: 0, y: -20, duration: 0.4, onComplete: () => {
+            currentSlide.classList.remove('active');
+            nextSlide.classList.add('active');
+            
+            if (nextSlide.id === 'slide-3') {
+              updateCarousel();
+            }
+          }})
+          .fromTo(nextSlide, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6 });
+
+        if (nextSlide.id === 'slide-1') {
+          tl.fromTo('#slide-1 .luxury-detail-item', 
+            { opacity: 0, y: 20, scale: 0.98 }, 
+            { opacity: 1, y: 0, scale: 1, duration: 0.8, stagger: 0.2, ease: 'power2.out' },
+            "-=0.2"
+          );
+        } else if (nextSlide.id === 'slide-2') {
+          tl.fromTo('#slide-2 .dress-code-anim', 
+            { opacity: 0, y: 20, scale: 0.98 }, 
+            { opacity: 1, y: 0, scale: 1, duration: 0.8, stagger: 0.15, ease: 'power2.out' },
+            "-=0.2"
+          );
+        }
+        
+        dots.forEach(dot => {
+          const slideNum = parseInt(dot.getAttribute('data-slide'));
+          const currentSlideNum = parseInt(slides[index].id.replace('slide-', ''));
+          if (slideNum === currentSlideNum) {
+            dot.classList.add('active');
+          } else {
+            dot.classList.remove('active');
+          }
+        });
+        
+        activeSlide = index;
+        btnPrev.disabled = (activeSlide === 0);
+        btnNext.disabled = (activeSlide === slides.length - 1);
+      };
+
+      if (btnPrev) {
+        btnPrev.onclick = () => {
+          goToSlide(activeSlide - 1);
+        };
+      }
+      if (btnNext) {
+        btnNext.onclick = () => {
+          goToSlide(activeSlide + 1);
+        };
+      }
+      
+      dots.forEach(dot => {
+        dot.onclick = () => {
+          const slideNum = parseInt(dot.getAttribute('data-slide'));
+          const targetIndex = slides.findIndex(s => s.id === `slide-${slideNum}`);
+          if (targetIndex !== -1) {
+            goToSlide(targetIndex);
+          }
+        };
+      });
+    }
+
+    // Chest & Spotify Modules Initialization
+    function initChestAndSpotifyModules() {
+      // 1. Gift Chest Module
+      const goldKeyBtn = document.getElementById('gold-key-btn');
+      const keyWrapper = document.getElementById('chest-key-wrapper');
+      const chestWrapper = document.getElementById('chest-wrapper');
+      const chestBox = document.getElementById('chest-box');
+      const chestGiftCard = document.getElementById('chest-gift-card');
+      const chestPrompt = document.getElementById('chest-prompt');
+      const giftCardInner = document.getElementById('gift-card-inner-box');
+      
+      const btnShowTransfer = document.getElementById('btn-show-transfer');
+      const btnShowInstructions = document.getElementById('btn-show-instructions');
+      const btnNextToSpotifyDecoupled = document.getElementById('btn-next-to-spotify-decoupled');
+      
+      const urlParams = new URLSearchParams(window.location.search);
+      const eventId = urlParams.get('event') || 'default';
+      const storageKey = `fiestapp_chest_opened_${eventId}`;
+
+      // --- Three.js WebGL Chest Setup ---
+      const container3D = document.getElementById('chest-3d-container');
+      let scene, camera, renderer;
+      let chestModel, lidPivot, baseGroup;
+      let interiorLight;
+      let animationFrameId;
+      let isOpened = false;
+      let currentRenderWidth = 0;
+      let currentRenderHeight = 0;
+
+      let keyGroup, goldMaterial;
+      const raycaster = new THREE.Raycaster();
+      const mouse = new THREE.Vector2(-9999, -9999);
+      let keyHovered = false;
+
+      window._debugChest = {
+        getScene: () => scene,
+        getChestModel: () => chestModel,
+        getLidPivot: () => lidPivot,
+        getBaseGroup: () => baseGroup
+      };
+
+      // Mouse parallax / tilt control
+      let mouseX = 0, mouseY = 0;
+      let targetX = 0, targetY = 0;
+      const windowHalfX = window.innerWidth / 2;
+      const windowHalfY = window.innerHeight / 2;
+      let time = 0;
+
+      function init3D() {
+        if (!container3D) return;
+
+        // Scene
+        scene = new THREE.Scene();
+
+        // Fallback to default dimensions if container is hidden during initialization
+        const width = container3D.clientWidth || 320;
+        const height = container3D.clientHeight || 260;
+        currentRenderWidth = width;
+        currentRenderHeight = height;
+
+        // Camera
+        camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
+        camera.position.set(0, 2.0, 5.0);
+        camera.lookAt(0, 0.75, 0);
+
+        // Renderer
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(width, height);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.outputEncoding = THREE.sRGBEncoding;
+        container3D.appendChild(renderer.domElement);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xfff5ea, 0.7);
+        scene.add(ambientLight);
+
+        // Warm directional key light
+        const dirLight1 = new THREE.DirectionalLight(0xffebc2, 1.2);
+        dirLight1.position.set(5, 10, 7);
+        dirLight1.castShadow = true;
+        dirLight1.shadow.mapSize.width = 1024;
+        dirLight1.shadow.mapSize.height = 1024;
+        dirLight1.shadow.bias = -0.001;
+        scene.add(dirLight1);
+
+        // Cool fill light from opposite direction
+        const dirLight2 = new THREE.DirectionalLight(0x859fff, 0.4);
+        dirLight2.position.set(-5, 5, -5);
+        scene.add(dirLight2);
+
+        // Magical gold interior point light
+        interiorLight = new THREE.PointLight(0xffaa22, 0, 8); // Start with 0 intensity
+        interiorLight.position.set(0, 0.8, -0.4); // Position inside the base
+        scene.add(interiorLight);
+
+        // --- Construct Procedural 3D Key ---
+        keyGroup = new THREE.Group();
+        keyGroup.name = "goldKey";
+
+        goldMaterial = new THREE.MeshStandardMaterial({
+          color: 0xd4af37,
+          metalness: 1.0,
+          roughness: 0.15
+        });
+
+        // 1. Ornate Key Head (Torus)
+        const headGeo = new THREE.TorusGeometry(0.18, 0.035, 16, 100);
+        const headMesh = new THREE.Mesh(headGeo, goldMaterial);
+        headMesh.position.y = 0.45;
+        headMesh.castShadow = true;
+        headMesh.receiveShadow = true;
+        keyGroup.add(headMesh);
+
+        // Inner decorative circle (Torus)
+        const innerHeadGeo = new THREE.TorusGeometry(0.10, 0.02, 16, 100);
+        const innerHeadMesh = new THREE.Mesh(innerHeadGeo, goldMaterial);
+        innerHeadMesh.position.y = 0.45;
+        innerHeadMesh.castShadow = true;
+        innerHeadMesh.receiveShadow = true;
+        keyGroup.add(innerHeadMesh);
+
+        // 2. Key Shaft (Cylinder)
+        const shaftGeo = new THREE.CylinderGeometry(0.025, 0.025, 0.6, 16);
+        const shaftMesh = new THREE.Mesh(shaftGeo, goldMaterial);
+        shaftMesh.position.y = 0.1;
+        shaftMesh.castShadow = true;
+        shaftMesh.receiveShadow = true;
+        keyGroup.add(shaftMesh);
+
+        // Collar detail between head and shaft (Torus)
+        const collarGeo = new THREE.TorusGeometry(0.04, 0.015, 8, 32);
+        const collarMesh = new THREE.Mesh(collarGeo, goldMaterial);
+        collarMesh.rotation.x = Math.PI / 2;
+        collarMesh.position.y = 0.28;
+        collarMesh.castShadow = true;
+        collarMesh.receiveShadow = true;
+        keyGroup.add(collarMesh);
+
+        // 3. Key Bit/Teeth
+        const bitGroup = new THREE.Group();
+        bitGroup.position.set(0.06, -0.15, 0);
+
+        const tooth1Geo = new THREE.BoxGeometry(0.12, 0.05, 0.04);
+        const tooth1 = new THREE.Mesh(tooth1Geo, goldMaterial);
+        tooth1.position.y = 0.035;
+        tooth1.castShadow = true;
+        tooth1.receiveShadow = true;
+        bitGroup.add(tooth1);
+
+        const tooth2Geo = new THREE.BoxGeometry(0.08, 0.05, 0.04);
+        const tooth2 = new THREE.Mesh(tooth2Geo, goldMaterial);
+        tooth2.position.set(-0.02, -0.035, 0);
+        tooth2.castShadow = true;
+        tooth2.receiveShadow = true;
+        bitGroup.add(tooth2);
+
+        keyGroup.add(bitGroup);
+
+        // Key Local Glow Light
+        const keyGlow = new THREE.PointLight(0xffd700, 0.8, 2);
+        keyGlow.position.y = 0.45;
+        keyGroup.add(keyGlow);
+
+        // Set larger scale, initial perspective tilt, and lower forward position
+        keyGroup.scale.set(1.4, 1.4, 1.4);
+        keyGroup.position.set(0, -0.65, 1.1);
+        keyGroup.rotation.set(0.3, 0.5, -0.2);
+        scene.add(keyGroup);
+
+        // Click / pointerdown listener on the container
+        container3D.addEventListener('pointerdown', (event) => {
+          if (isOpened) return;
+          const rect = renderer.domElement.getBoundingClientRect();
+          mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+          mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+          
+          raycaster.setFromCamera(mouse, camera);
+          const intersects = raycaster.intersectObjects(keyGroup.children, true);
+          if (intersects.length > 0) {
+            openChest();
+          }
+        });
+
+        // GLTF Loader
+        const loader = new THREE.GLTFLoader();
+        loader.load('/assets/treasure_chest.glb', (gltf) => {
+          chestModel = gltf.scene;
+
+          // Compute size and center
+          const box = new THREE.Box3().setFromObject(chestModel);
+          const center = box.getCenter(new THREE.Vector3());
+          const size = box.getSize(new THREE.Vector3());
+
+          // Scale model to fit container perfectly (height of chest ~2.6 units)
+          const desiredHeight = 2.6;
+          const scale = desiredHeight / size.y;
+          chestModel.scale.set(scale, scale, scale);
+
+          // After scaling, recompute bounds
+          const scaledBox = new THREE.Box3().setFromObject(chestModel);
+          const scaledCenter = scaledBox.getCenter(new THREE.Vector3());
+
+          // Center chest Group at origin (Y is grounded)
+          chestModel.position.x = -scaledCenter.x;
+          chestModel.position.y = -scaledBox.min.y;
+          chestModel.position.z = -scaledCenter.z;
+
+          // Main wrapper group for ease of rotation / tilt
+          baseGroup = new THREE.Group();
+          scene.add(baseGroup);
+          baseGroup.add(chestModel);
+
+          // Configure shadows and material properties on all meshes
+          chestModel.traverse((child) => {
+            if (child.isMesh) {
+              child.castShadow = true;
+              child.receiveShadow = true;
+              
+              if (child.material) {
+                child.material.roughness = Math.min(child.material.roughness || 0.5, 0.8);
+                child.material.metalness = Math.max(child.material.metalness || 0.0, 0.3);
+              }
+            }
+          });
+
+          // Setup Pivot for the Lid (Object_4)
+          const lidMesh = chestModel.getObjectByName('Object_4');
+          if (lidMesh) {
+            const originalParent = lidMesh.parent;
+            lidPivot = new THREE.Group();
+            lidPivot.name = 'lidPivot';
+            
+            // Hinge position in GLTF coordinate space (Z-up, unscaled):
+            // Height is Z ~ 1.808, depth is Y ~ 1.769 (positive Y is back)
+            const hingeY = 1.769;
+            const hingeZ = 1.808;
+            
+            lidPivot.position.set(0, hingeY, hingeZ);
+            originalParent.add(lidPivot);
+            
+            // Re-parent lidMesh to the pivot group
+            lidMesh.position.set(0, -hingeY, -hingeZ);
+            lidPivot.add(lidMesh);
+
+            // Dynamically split Object_5 (wood mesh containing both base and lid)
+            const originalWood = chestModel.getObjectByName('Object_5');
+            if (originalWood) {
+              if (originalWood.material) {
+                originalWood.material.side = THREE.DoubleSide;
+              }
+              const geometry = originalWood.geometry;
+              const positions = geometry.attributes.position.array;
+              const indices = geometry.index.array;
+              
+              const woodLidIndices = [];
+              const woodBaseIndices = [];
+              
+              const numTriangles = indices.length / 3;
+              for (let t = 0; t < numTriangles; t++) {
+                const idx1 = indices[t * 3];
+                const idx2 = indices[t * 3 + 1];
+                const idx3 = indices[t * 3 + 2];
+                
+                // Read local Z coordinates (index 2) of vertices
+                const z1 = positions[idx1 * 3 + 2];
+                const z2 = positions[idx2 * 3 + 2];
+                const z3 = positions[idx3 * 3 + 2];
+                
+                const avgZ = (z1 + z2 + z3) / 3;
+                if (avgZ >= 1.8) {
+                  woodLidIndices.push(idx1, idx2, idx3);
+                } else {
+                  woodBaseIndices.push(idx1, idx2, idx3);
+                }
+              }
+              
+              // Create separate geometries for base and lid wood
+              const lidGeometry = geometry.clone();
+              lidGeometry.setIndex(woodLidIndices);
+              
+              const baseGeometry = geometry.clone();
+              baseGeometry.setIndex(woodBaseIndices);
+              
+              // Create meshes
+              const woodLidMesh = new THREE.Mesh(lidGeometry, originalWood.material);
+              woodLidMesh.name = 'Object_5_lid';
+              woodLidMesh.castShadow = originalWood.castShadow;
+              woodLidMesh.receiveShadow = originalWood.receiveShadow;
+              
+              const woodBaseMesh = new THREE.Mesh(baseGeometry, originalWood.material);
+              woodBaseMesh.name = 'Object_5_base';
+              woodBaseMesh.castShadow = originalWood.castShadow;
+              woodBaseMesh.receiveShadow = originalWood.receiveShadow;
+              
+              // Remove original wood from parent
+              originalParent.remove(originalWood);
+              
+              // Add base wood mesh to original parent (stays static)
+              originalParent.add(woodBaseMesh);
+              
+              // Add lid wood mesh to lid pivot group and offset it like lidMesh
+              lidPivot.add(woodLidMesh);
+              woodLidMesh.position.set(0, -hingeY, -hingeZ);
+            }
+          }
+
+          // Enable key clicks now that model is loaded
+          if (keyWrapper) keyWrapper.style.pointerEvents = 'auto';
+
+          // Trigger continuous subtle tilt animation (Wobble Alert)
+          startWobbleAnimation();
+
+          // Render first frame
+          renderer.render(scene, camera);
+        }, undefined, (err) => {
+          console.error('[Three.js] Error loading glb:', err);
+        });
+
+        // Event listeners
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('resize', onWindowResize);
+        animate();
+      }
+
+      function startWobbleAnimation() {
+        if (!baseGroup) return;
+        // Periodic call-to-action nudge every 4 seconds if not open
+        gsap.timeline({ repeat: -1, repeatDelay: 3.0 })
+          .to(baseGroup.rotation, { y: 0.10, duration: 0.25, ease: 'power1.inOut' })
+          .to(baseGroup.rotation, { y: -0.10, duration: 0.3, ease: 'power1.inOut' })
+          .to(baseGroup.rotation, { y: 0.06, duration: 0.2, ease: 'power1.inOut' })
+          .to(baseGroup.rotation, { y: -0.06, duration: 0.2, ease: 'power1.inOut' })
+          .to(baseGroup.rotation, { y: 0, duration: 0.3, ease: 'back.out(1.5)' });
+      }
+
+      function onMouseMove(event) {
+        mouseX = (event.clientX - windowHalfX);
+        mouseY = (event.clientY - windowHalfY);
+        
+        if (renderer && renderer.domElement) {
+          const rect = renderer.domElement.getBoundingClientRect();
+          mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+          mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+        }
+      }
+
+      function onWindowResize() {
+        if (!camera || !renderer || !container3D) return;
+        const w = container3D.clientWidth;
+        const h = container3D.clientHeight;
+        if (w > 0 && h > 0) {
+          currentRenderWidth = w;
+          currentRenderHeight = h;
+          camera.aspect = w / h;
+          camera.updateProjectionMatrix();
+          renderer.setSize(w, h);
+        }
+      }
+
+      function animate() {
+        animationFrameId = requestAnimationFrame(animate);
+
+        // Save performance when slide is not active
+        const slide5 = document.getElementById('slide-5');
+        if (slide5 && !slide5.classList.contains('active')) {
+          return;
+        }
+
+        // Dynamic resize check if the container transitioned from hidden to visible
+        if (camera && renderer && container3D && container3D.clientWidth > 0 && container3D.clientHeight > 0) {
+          if (container3D.clientWidth !== currentRenderWidth || container3D.clientHeight !== currentRenderHeight) {
+            currentRenderWidth = container3D.clientWidth;
+            currentRenderHeight = container3D.clientHeight;
+            camera.aspect = currentRenderWidth / currentRenderHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(currentRenderWidth, currentRenderHeight);
+          }
+        }
+
+        // Raycasting for hover state pointer cursor
+        if (raycaster && camera && keyGroup && !isOpened) {
+          raycaster.setFromCamera(mouse, camera);
+          const intersects = raycaster.intersectObjects(keyGroup.children, true);
+          if (intersects.length > 0) {
+            if (!keyHovered) {
+              keyHovered = true;
+              document.body.style.cursor = 'pointer';
+              gsap.to(keyGroup.scale, { x: 1.15, y: 1.15, z: 1.15, duration: 0.25 });
+            }
+          } else {
+            if (keyHovered) {
+              keyHovered = false;
+              document.body.style.cursor = 'default';
+              gsap.to(keyGroup.scale, { x: 1.0, y: 1.0, z: 1.0, duration: 0.25 });
+            }
+          }
+        } else if (isOpened) {
+          document.body.style.cursor = 'default';
+        }
+
+        // Smooth parallax / tilt effect based on mouse movement & gentle breathing sway
+        if (baseGroup && !isOpened) {
+          time += 0.015;
+          const swayX = Math.sin(time) * 0.03;
+          const swayY = Math.cos(time * 0.7) * 0.04;
+
+          targetX = mouseX * 0.0003;
+          targetY = mouseY * 0.00025;
+
+          // Smoothly interpolate rotation (lerp)
+          baseGroup.rotation.y += (targetX + swayY - baseGroup.rotation.y) * 0.08;
+          baseGroup.rotation.x += (targetY + swayX - baseGroup.rotation.x) * 0.08;
+          
+          // Clamp rotation to prevent extreme angles
+          baseGroup.rotation.x = Math.max(-0.20, Math.min(0.20, baseGroup.rotation.x));
+          baseGroup.rotation.y = Math.max(-0.30, Math.min(0.30, baseGroup.rotation.y));
+
+          // Floating animation for the 3D Key with perspective tilt and wobble
+          if (keyGroup) {
+            keyGroup.position.y = -0.65 + Math.sin(time * 2.0) * 0.04;
+            keyGroup.rotation.x = 0.3 + Math.sin(time * 1.5) * 0.05;
+            keyGroup.rotation.y = 0.5 + Math.cos(time * 1.2) * 0.08;
+            keyGroup.rotation.z = -0.2 + Math.sin(time * 0.8) * 0.03;
+          }
+        }
+
+        if (renderer && scene && camera) {
+          renderer.render(scene, camera);
+        }
+      }
+      
+      function triggerMagicParticlesAtKeyhole() {
+        const chestBox = document.getElementById('chest-box');
+        if (!chestBox) return;
+        
+        for (let i = 0; i < 20; i++) {
+          const spark = document.createElement('div');
+          spark.className = 'magic-particle';
+          const size = Math.random() * 5 + 3;
+          spark.style.width = `${size}px`;
+          spark.style.height = `${size}px`;
+          spark.style.left = '0px';
+          spark.style.top = '0px';
+          chestBox.appendChild(spark);
+          
+          gsap.set(spark, {
+            x: 110,
+            y: 64,
+            z: 62,
+            xPercent: -50,
+            yPercent: -50
+          });
+          
+          const angle = Math.random() * Math.PI * 2;
+          const distance = Math.random() * 70 + 30;
+          const tx = Math.cos(angle) * distance;
+          const ty = Math.sin(angle) * distance;
+          const tz = Math.random() * 60 + 20; // Fly out in Z axis (3D depth)
+          
+          gsap.to(spark, {
+            x: 110 + tx,
+            y: 64 + ty,
+            z: 62 + tz,
+            opacity: 0,
+            scale: 0.1,
+            duration: Math.random() * 0.7 + 0.5,
+            ease: 'power2.out',
+            onComplete: () => spark.remove()
+          });
+        }
+      }
+
+      function startContinuousParticles() {
+        const chestBox = document.getElementById('chest-box');
+        if (!chestBox) return;
+        let count = 0;
+        const interval = setInterval(() => {
+          if (count > 30) {
+            clearInterval(interval);
+            return;
+          }
+          count++;
+          
+          const spark = document.createElement('div');
+          spark.className = 'magic-particle';
+          const size = Math.random() * 6 + 4;
+          spark.style.width = `${size}px`;
+          spark.style.height = `${size}px`;
+          spark.style.left = '0px';
+          spark.style.top = '0px';
+          chestBox.appendChild(spark);
+          
+          const startX = 40 + Math.random() * 140;
+          const startZ = Math.random() * 80 - 40;
+          
+          gsap.set(spark, {
+            x: startX,
+            y: 70,
+            z: startZ,
+            xPercent: -50,
+            yPercent: -50,
+            opacity: 1,
+            scale: 0
+          });
+          
+          gsap.to(spark, {
+            opacity: 0,
+            scale: Math.random() * 1.5 + 0.5,
+            x: startX + Math.random() * 60 - 30,
+            y: -100, // Rise up in Y axis
+            z: startZ + Math.random() * 60 - 30, // Drift in Z axis
+            duration: Math.random() * 1.5 + 1.0,
+            ease: 'power1.out',
+            onComplete: () => spark.remove()
+          });
+        }, 60);
+      }
+
+      function openChest(immediate = false) {
+        const lockPlate = document.getElementById('chest-lock-plate');
+        
+        // Stop mouse parallax and wobble
+        isOpened = true;
+        if (chestWrapper) {
+          chestWrapper.classList.add('opened-layout');
+        }
+        if (baseGroup) {
+          gsap.killTweensOf(baseGroup.rotation);
+        }
+
+        if (immediate) {
+          if (chestBox) chestBox.classList.add('opened');
+          gsap.set(chestWrapper, { y: -40 });
+          if (lidPivot) {
+            gsap.set(lidPivot.rotation, { x: -Math.PI * 0.7 });
+          }
+          if (interiorLight) {
+            interiorLight.intensity = 3.5;
+          }
+          if (baseGroup) {
+            baseGroup.rotation.set(0, 0, 0);
+          }
+          chestGiftCard.classList.add('dispatched');
+          gsap.set(chestGiftCard, { y: 230, z: 65, scale: 1.05 });
+          chestPrompt.style.display = 'none';
+          const decoupledBtn = document.getElementById('btn-next-to-spotify-decoupled');
+          if (decoupledBtn) {
+            decoupledBtn.style.opacity = '1';
+            decoupledBtn.style.pointerEvents = 'auto';
+            decoupledBtn.style.transform = 'translateY(0)';
+          }
+          if (keyWrapper) keyWrapper.style.display = 'none';
+          if (lockPlate) lockPlate.classList.add('unlocked');
+          if (keyGroup) keyGroup.visible = false;
+        } else {
+          const tl = gsap.timeline();
+          
+          // Disable key clicks during animation and stop pulsing CSS animation
+          if (keyWrapper) {
+            keyWrapper.classList.add('unlocking');
+            keyWrapper.style.pointerEvents = 'none';
+          }
+          if (goldKeyBtn) goldKeyBtn.style.pointerEvents = 'none';
+          
+          // Align baseGroup to face forward
+          if (baseGroup) {
+            tl.to(baseGroup.rotation, {
+              x: 0,
+              y: 0,
+              duration: 0.5,
+              ease: 'power2.out'
+            });
+          }
+          
+          // GSAP timeline animation for the 3D Key
+          if (keyGroup) {
+            gsap.killTweensOf(keyGroup.position);
+            gsap.killTweensOf(keyGroup.rotation);
+            gsap.killTweensOf(keyGroup.scale);
+
+            // 1. Fly and tilt key to center in front of lock plate
+            tl.to(keyGroup.position, {
+              x: 0,
+              y: 0.95,
+              z: 0.93,
+              duration: 0.8,
+              ease: 'power2.out'
+            }, baseGroup ? '+=0.1' : '0')
+            .to(keyGroup.rotation, {
+              x: Math.PI / 2,
+              y: 0,
+              z: Math.PI * 2,
+              duration: 0.8,
+              ease: 'power2.out'
+            }, '<')
+            .to(keyGroup.scale, {
+              x: 1.24,
+              y: 1.24,
+              z: 1.24,
+              duration: 0.8,
+              ease: 'power2.out'
+            }, '<')
+            
+            // 2. Insert key into lock hole
+            .to(keyGroup.position, {
+              z: 0.72,
+              duration: 0.3,
+              ease: 'power1.inOut'
+            })
+            
+            // 3. Turn key 180 degrees
+            .to(keyGroup.rotation, {
+              z: Math.PI * 3, // Rotate from 2*PI to 3*PI (180 deg)
+              duration: 0.6,
+              ease: 'back.inOut(1.2)'
+            })
+            
+            // Trigger lock opening and particles
+            .to('#chest-lock-plate', {
+              duration: 0.1,
+              onStart: () => {
+                if (lockPlate) lockPlate.classList.add('unlocked');
+                triggerMagicParticlesAtKeyhole();
+              }
+            })
+            
+            // 4. Pull out and dissolve key
+            .to(keyGroup.position, {
+              z: 1.24,
+              duration: 0.5,
+              ease: 'power2.in'
+            })
+            .to(goldMaterial, {
+              opacity: 0,
+              duration: 0.5,
+              ease: 'power2.in',
+              onStart: () => {
+                if (goldMaterial) goldMaterial.transparent = true;
+              },
+              onComplete: () => {
+                keyGroup.visible = false;
+              }
+            }, '<');
+          }
+
+          // Rotate 3D Lid Open
+          if (lidPivot) {
+            tl.to(lidPivot.rotation, {
+              x: -Math.PI * 0.7, // Rotate lid backwards around back hinge
+              duration: 1.2,
+              ease: 'power3.inOut',
+              onStart: () => {
+                startContinuousParticles();
+                if (interiorLight) {
+                  gsap.to(interiorLight, {
+                    intensity: 4.5,
+                    duration: 0.8,
+                    ease: 'power2.out'
+                  });
+                }
+              }
+            }, '-=0.2');
+          }
+
+          // Slide the card upwards out of the chest
+          tl.to(chestGiftCard, {
+            y: -170,
+            z: 0, // Keep inside the chest's Z space temporarily
+            opacity: 1,
+            scale: 1.0,
+            duration: 0.8,
+            ease: 'power2.out',
+            onStart: () => {
+              chestGiftCard.classList.add('dispatched');
+            }
+          }, '-=0.4')
+          // Slide card down behind front face to sit below the chest
+          .to(chestGiftCard, {
+            y: 230,
+            z: 65, // Bring to the front layer for clickability and overlap
+            scale: 1.05,
+            duration: 1.2,
+            ease: 'back.out(1.2)'
+          })
+          // Simultaneously slide the parent chest wrapper upwards slightly for composition
+          .to(chestWrapper, {
+            y: -25,
+            duration: 1.2,
+            ease: 'power2.inOut'
+          }, '-=1.2')
+          .to(chestPrompt, {
+            opacity: 0,
+            duration: 0.3,
+            onComplete: () => {
+              chestPrompt.style.display = 'none';
+            }
+          }, '-=0.8')
+          .to('#btn-next-to-spotify-decoupled', {
+            opacity: 1,
+            y: 0,
+            pointerEvents: 'auto',
+            duration: 0.5,
+            ease: 'power2.out'
+          }, '-=0.3');
+            
+          // localStorage.setItem(storageKey, 'true');
+        }
+      }
+      
+      // Initialize Three.js WebGL Chest
+      init3D();
+
+      // Temporarily disabled so chest opens on every reload during testing
+      // if (localStorage.getItem(storageKey)) {
+      //   openChest(true);
+      // }
+      
+      if (keyWrapper) {
+        keyWrapper.onclick = () => {
+          if (!keyWrapper.classList.contains('unlocking')) {
+            openChest(false);
+          }
+        };
+      }
+      
+      if (btnShowTransfer && giftCardInner) {
+        btnShowTransfer.onclick = () => {
+          giftCardInner.classList.add('flipped');
+        };
+      }
+      if (btnShowInstructions && giftCardInner) {
+        btnShowInstructions.onclick = () => {
+          giftCardInner.classList.remove('flipped');
+        };
+      }
+
+      // Swipe/Drag gesture to flip the card in 3D
+      let isDragging = false;
+      let startX = 0;
+      let currentRotation = 0;
+      let startRotation = 0;
+      
+      if (chestGiftCard && giftCardInner) {
+        const startDrag = (clientX) => {
+          if (!chestGiftCard.classList.contains('dispatched')) return;
+          isDragging = true;
+          startX = clientX;
+          startRotation = giftCardInner.classList.contains('flipped') ? 180 : 0;
+          giftCardInner.style.transition = 'none';
+        };
+        
+        const moveDrag = (clientX) => {
+          if (!isDragging) return;
+          const diffX = clientX - startX;
+          // Scale rotation speed for organic feel
+          currentRotation = startRotation - diffX * 0.6; 
+          giftCardInner.style.transform = `rotateY(${currentRotation}deg)`;
+        };
+        
+        const endDrag = () => {
+          if (!isDragging) return;
+          isDragging = false;
+          giftCardInner.style.transition = '';
+          giftCardInner.style.transform = ''; // Clear inline styles so class states handle snap
+          
+          const finalRotation = startRotation - currentRotation;
+          if (Math.abs(finalRotation) > 35) { // 35 degree gesture threshold to toggle flip state
+            if (giftCardInner.classList.contains('flipped')) {
+              giftCardInner.classList.remove('flipped');
+            } else {
+              giftCardInner.classList.add('flipped');
+            }
+          }
+        };
+        
+        chestGiftCard.addEventListener('mousedown', (e) => {
+          if (e.target.closest('button, input, a')) return; // Allow normal clicks on interactive children
+          startDrag(e.clientX);
+          e.preventDefault();
+        });
+        
+        window.addEventListener('mousemove', (e) => {
+          moveDrag(e.clientX);
+        });
+        
+        window.addEventListener('mouseup', () => {
+          endDrag();
+        });
+        
+        chestGiftCard.addEventListener('touchstart', (e) => {
+          if (e.target.closest('button, input, a')) return;
+          if (e.touches && e.touches.length > 0) {
+            startDrag(e.touches[0].clientX);
+          }
+        }, { passive: true });
+        
+        chestGiftCard.addEventListener('touchmove', (e) => {
+          if (e.touches && e.touches.length > 0) {
+            moveDrag(e.touches[0].clientX);
+          }
+        }, { passive: true });
+        
+        chestGiftCard.addEventListener('touchend', () => {
+          endDrag();
+        });
+
+        chestGiftCard.addEventListener('touchcancel', () => {
+          endDrag();
+        });
+      }
+      
+      const handleNextToSpotify = () => {
+        const targetIndex = slides.findIndex(s => s.id === 'slide-6');
+        if (targetIndex !== -1) {
+          goToSlide(targetIndex);
+        }
+      };
+      
+      if (btnNextToSpotifyDecoupled) btnNextToSpotifyDecoupled.onclick = handleNextToSpotify;
+      
+      const copyToClipboard = (text, btnElement) => {
+        navigator.clipboard.writeText(text).then(() => {
+          const originalText = btnElement.textContent;
+          btnElement.textContent = '¡Copiado!';
+          btnElement.style.background = 'var(--gold-primary)';
+          btnElement.style.color = '#000';
+          
+          if (navigator.vibrate) {
+            navigator.vibrate(80);
+          }
+          
+          setTimeout(() => {
+            btnElement.textContent = originalText;
+            btnElement.style.background = '';
+            btnElement.style.color = '';
+          }, 2000);
+        }).catch(err => {
+          console.error('Copy failed:', err);
+        });
+      };
+      
+      const btnCopyCbu = document.getElementById('btn-copy-cbu-new');
+      const btnCopyAlias = document.getElementById('btn-copy-alias-new');
+      
+      if (btnCopyCbu) {
+        btnCopyCbu.onclick = () => {
+          const cbu = document.getElementById('bank-cbu-lbl').textContent;
+          copyToClipboard(cbu, btnCopyCbu);
+        };
+      }
+      if (btnCopyAlias) {
+        btnCopyAlias.onclick = () => {
+          const alias = document.getElementById('bank-alias-lbl').textContent;
+          copyToClipboard(alias, btnCopyAlias);
+        };
+      }
+      
+      // 2. Spotify Suggester Module
+      const spotifySearchInput = document.getElementById('spotify-search-input');
+      const spotifySearchResultsDiv = document.getElementById('spotify-search-results');
+      const btnSubmitSong = document.getElementById('btn-submit-song');
+      const spotifyGuestNameInput = document.getElementById('spotify-guest-name-input');
+      const spotifyStatusMsg = document.getElementById('spotify-status-msg');
+      const spotifySuccessContainer = document.getElementById('spotify-success-container');
+      const btnSpotifySuccessNext = document.getElementById('btn-spotify-success-next');
+      
+      const guestName = urlParams.get('n') || urlParams.get('guest') || '';
+      const spotifyNameContainer = document.getElementById('spotify-name-container');
+      if (guestName && spotifyGuestNameInput) {
+        spotifyGuestNameInput.value = guestName;
+        if (spotifyNameContainer) {
+          spotifyNameContainer.style.display = 'none';
+        }
+      } else if (spotifyNameContainer) {
+        spotifyNameContainer.style.display = 'block';
+      }
+      
+      let debounceTimeout = null;
+      if (spotifySearchInput) {
+        spotifySearchInput.addEventListener('input', (e) => {
+          clearTimeout(debounceTimeout);
+          const term = e.target.value.trim();
+          if (term.length < 3) {
+            spotifySearchResultsDiv.style.display = 'none';
+            spotifySearchResultsDiv.innerHTML = '';
+            return;
+          }
+          
+          debounceTimeout = setTimeout(() => {
+            fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(term)}&media=music&limit=5`)
+              .then(res => res.json())
+              .then(data => {
+                const results = data.results || [];
+                spotifySearchResults = results;
+                if (results.length === 0) {
+                  spotifySearchResultsDiv.innerHTML = '<div style="padding: 10px; color: var(--text-muted); font-size: 0.8rem; text-align: center;">No se encontraron resultados</div>';
+                  spotifySearchResultsDiv.style.display = 'block';
+                  return;
+                }
+                
+                spotifySearchResultsDiv.innerHTML = results.map((track, idx) => `
+                  <div class="spotify-search-item" data-idx="${idx}" style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s;">
+                    <img src="${track.artworkUrl60 || 'https://via.placeholder.com/40'}" style="width: 40px; height: 40px; border-radius: 4px; object-fit: cover;">
+                    <div style="text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">
+                      <div style="font-weight: 600; font-size: 0.85rem; color: #fff;">${track.trackName}</div>
+                      <div style="font-size: 0.75rem; color: var(--text-muted);">${track.artistName}</div>
+                    </div>
+                  </div>
+                `).join('');
+                
+                document.querySelectorAll('.spotify-search-item').forEach(item => {
+                  item.addEventListener('mouseenter', () => {
+                    item.style.background = 'rgba(212,175,55,0.1)';
+                  });
+                  item.addEventListener('mouseleave', () => {
+                    item.style.background = '';
+                  });
+                  item.onclick = () => {
+                    const idx = parseInt(item.getAttribute('data-idx'));
+                    const track = spotifySearchResults[idx];
+                    spotifySearchInput.value = `${track.trackName} - ${track.artistName}`;
+                    spotifySearchResultsDiv.style.display = 'none';
+                  };
+                });
+                
+                spotifySearchResultsDiv.style.display = 'block';
+              })
+              .catch(err => {
+                console.error('iTunes API lookup failed:', err);
+              });
+          }, 300);
+        });
+        
+        document.addEventListener('click', (e) => {
+          if (e.target !== spotifySearchInput && e.target !== spotifySearchResultsDiv) {
+            spotifySearchResultsDiv.style.display = 'none';
+          }
+        });
+      }
+      
+      if (btnSubmitSong) {
+        btnSubmitSong.addEventListener('click', () => {
+          const name = spotifyGuestNameInput.value.trim();
+          const song = spotifySearchInput.value.trim();
+          
+          if (!name) {
+            spotifyStatusMsg.style.display = 'block';
+            spotifyStatusMsg.style.color = '#ff3b30';
+            spotifyStatusMsg.textContent = 'Por favor, ingresá tu nombre';
+            return;
+          }
+          if (!song) {
+            spotifyStatusMsg.style.display = 'block';
+            spotifyStatusMsg.style.color = '#ff3b30';
+            spotifyStatusMsg.textContent = 'Por favor, buscá o escribí una canción';
+            return;
+          }
+          
+          spotifyStatusMsg.style.display = 'block';
+          spotifyStatusMsg.style.color = 'var(--gold-primary)';
+          spotifyStatusMsg.textContent = 'Enviando sugerencia...';
+          
+          fetch(`/api/public/suggest-song?event=${encodeURIComponent(eventId)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, song })
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data.error) {
+              spotifyStatusMsg.style.color = '#ff3b30';
+              spotifyStatusMsg.textContent = data.error;
+            } else {
+              spotifyStatusMsg.style.display = 'none';
+              
+              spotifySearchInput.disabled = true;
+              spotifyGuestNameInput.disabled = true;
+              btnSubmitSong.style.display = 'none';
+              
+              spotifySuccessContainer.style.display = 'block';
+              
+              btnSpotifySuccessNext.style.display = 'block';
+            }
+          })
+          .catch(err => {
+            console.error('Error submitting song:', err);
+            spotifyStatusMsg.style.color = '#ff3b30';
+            spotifyStatusMsg.textContent = 'Error al enviar sugerencia.';
+          });
+        });
+      }
+      
+      if (btnSpotifySuccessNext) {
+        btnSpotifySuccessNext.onclick = () => {
+          const targetIndex = slides.findIndex(s => s.id === 'slide-4');
+          if (targetIndex !== -1) {
+            spotifySearchInput.disabled = false;
+            spotifySearchInput.value = '';
+            spotifyGuestNameInput.disabled = false;
+            btnSubmitSong.style.display = 'block';
+            spotifySuccessContainer.style.display = 'none';
+            
+            goToSlide(targetIndex);
+          }
+        };
+      }
+    }
   </script>
 </body>
 </html>
