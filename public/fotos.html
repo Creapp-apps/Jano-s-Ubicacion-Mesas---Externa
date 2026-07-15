@@ -247,72 +247,75 @@
 
       <!-- Viewfinder UI Footer -->
       <div class="camera-footer-controls">
-        <!-- Horizontally Scrollable Filter Track -->
-        <div id="filter-selector-bar" class="filter-selector-bar">
-          <button type="button" class="filter-btn active" data-filter="normal">
-            <div class="filter-preview-circle" style="background: linear-gradient(45deg, #333, #888);"></div>
-            <span>Normal</span>
-          </button>
-          <button type="button" class="filter-btn" data-filter="vintage">
-            <div class="filter-preview-circle" style="background: linear-gradient(45deg, #5c4308, #b59410); filter: sepia(0.6);"></div>
-            <span>Retro</span>
-          </button>
-          <button type="button" class="filter-btn" data-filter="cyberpunk">
-            <div class="filter-preview-circle" style="background: linear-gradient(45deg, #7b085c, #0ea3b5); filter: hue-rotate(280deg) saturate(1.8);"></div>
-            <span>Cyberpunk</span>
-          </button>
-          <button type="button" class="filter-btn" data-filter="perrito">
-            <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🐶</div>
-            <span>Perrito</span>
-          </button>
-          <button type="button" class="filter-btn" data-filter="cotillon">
-            <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🥳</div>
-            <span>Cotillón</span>
-          </button>
-          <button type="button" class="filter-btn" data-filter="makeup">
-            <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">💄</div>
-            <span>Glam</span>
-          </button>
-          <button type="button" class="filter-btn" data-filter="angel">
-            <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">😇</div>
-            <span>Ángel</span>
-          </button>
-          <button type="button" class="filter-btn" data-filter="demonio">
-            <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">😈</div>
-            <span>Demonio</span>
-          </button>
-          <button type="button" class="filter-btn" data-filter="payaso">
-            <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🤡</div>
-            <span>Payaso</span>
-          </button>
-          <button type="button" class="filter-btn" data-filter="pirata">
-            <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🏴‍☠️</div>
-            <span>Pirata</span>
-          </button>
-          <button type="button" class="filter-btn" data-filter="cybervisor">
-            <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🕶️</div>
-            <span>Cyber-Visor</span>
-          </button>
-          <button type="button" class="filter-btn" data-filter="gato">
-            <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🐱</div>
-            <span>Gatito</span>
-          </button>
-          <button type="button" class="filter-btn" data-filter="corona">
-            <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">👑</div>
-            <span>Corona</span>
-          </button>
-          <button type="button" class="filter-btn" data-filter="vampiro">
-            <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🧛</div>
-            <span>Vampiro</span>
-          </button>
-          <button type="button" class="filter-btn" data-filter="mono">
-            <div class="filter-preview-circle" style="background: linear-gradient(45deg, #222, #aaa); filter: grayscale(1);"></div>
-            <span>B&N</span>
-          </button>
-        </div>
+        <!-- Wrapper to guarantee perfect vertical and horizontal centering of active filter circle and shutter ring -->
+        <div class="filter-carousel-wrapper">
+          <!-- Horizontally Scrollable Filter Track -->
+          <div id="filter-selector-bar" class="filter-selector-bar">
+            <button type="button" class="filter-btn active" data-filter="normal">
+              <div class="filter-preview-circle" style="background: linear-gradient(45deg, #333, #888);"></div>
+              <span>Normal</span>
+            </button>
+            <button type="button" class="filter-btn" data-filter="vintage">
+              <div class="filter-preview-circle" style="background: linear-gradient(45deg, #5c4308, #b59410); filter: sepia(0.6);"></div>
+              <span>Retro</span>
+            </button>
+            <button type="button" class="filter-btn" data-filter="cyberpunk">
+              <div class="filter-preview-circle" style="background: linear-gradient(45deg, #7b085c, #0ea3b5); filter: hue-rotate(280deg) saturate(1.8);"></div>
+              <span>Cyberpunk</span>
+            </button>
+            <button type="button" class="filter-btn" data-filter="perrito">
+              <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🐶</div>
+              <span>Perrito</span>
+            </button>
+            <button type="button" class="filter-btn" data-filter="cotillon">
+              <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🥳</div>
+              <span>Cotillón</span>
+            </button>
+            <button type="button" class="filter-btn" data-filter="makeup">
+              <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">💄</div>
+              <span>Glam</span>
+            </button>
+            <button type="button" class="filter-btn" data-filter="angel">
+              <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">😇</div>
+              <span>Ángel</span>
+            </button>
+            <button type="button" class="filter-btn" data-filter="demonio">
+              <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">😈</div>
+              <span>Demonio</span>
+            </button>
+            <button type="button" class="filter-btn" data-filter="payaso">
+              <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🤡</div>
+              <span>Payaso</span>
+            </button>
+            <button type="button" class="filter-btn" data-filter="pirata">
+              <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🏴‍☠️</div>
+              <span>Pirata</span>
+            </button>
+            <button type="button" class="filter-btn" data-filter="cybervisor">
+              <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🕶️</div>
+              <span>Cyber-Visor</span>
+            </button>
+            <button type="button" class="filter-btn" data-filter="gato">
+              <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🐱</div>
+              <span>Gatito</span>
+            </button>
+            <button type="button" class="filter-btn" data-filter="corona">
+              <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">👑</div>
+              <span>Corona</span>
+            </button>
+            <button type="button" class="filter-btn" data-filter="vampiro">
+              <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🧛</div>
+              <span>Vampiro</span>
+            </button>
+            <button type="button" class="filter-btn" data-filter="mono">
+              <div class="filter-preview-circle" style="background: linear-gradient(45deg, #222, #aaa); filter: grayscale(1);"></div>
+              <span>B&N</span>
+            </button>
+          </div>
 
-        <!-- Visual Shutter Ring (centered behind the active filter circle) -->
-        <div id="camera-shutter-visual-ring" class="camera-shutter-visual-ring"></div>
+          <!-- Visual Shutter Ring (centered behind the active filter circle) -->
+          <div id="camera-shutter-visual-ring" class="camera-shutter-visual-ring"></div>
+        </div>
 
         <!-- Post-Capture Options (Hidden initially) -->
         <div id="camera-post-capture-controls" class="post-capture-controls" style="display: none;">
