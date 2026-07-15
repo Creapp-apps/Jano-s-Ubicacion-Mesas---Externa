@@ -36,8 +36,10 @@ class TriviaCoordinator {
   }
 
   addPlayer(eventId, nickname) {
+    if (!this.sessions[eventId]) {
+      this.initializeSession(eventId, []);
+    }
     const session = this.sessions[eventId];
-    if (!session) return false;
     const cleanNick = nickname.trim();
     if (!cleanNick) return false;
     if (!session.players[cleanNick]) {
