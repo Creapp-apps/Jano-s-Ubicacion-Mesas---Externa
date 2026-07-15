@@ -16,10 +16,10 @@ const isSupabaseEnabled = !!(SUPABASE_URL && SUPABASE_KEY) && process.env.FORCE_
 
 let supabase = null;
 if (isSupabaseEnabled) {
-  console.log('[JANO\'S DB] Supabase database connection enabled.');
+  console.log('[MiFiestAPP DB] Supabase database connection enabled.');
   supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 } else {
-  console.log('[JANO\'S DB] Local JSON file storage enabled (Supabase credentials missing).');
+  console.log('[MiFiestAPP DB] Local JSON file storage enabled (Supabase credentials missing).');
 }
 
 // Local File Paths
@@ -28,7 +28,7 @@ if (!fs.existsSync(DATA_DIR)) {
   try {
     fs.mkdirSync(DATA_DIR, { recursive: true });
   } catch (err) {
-    console.warn('[JANO\'S DB] Local DATA_DIR creation ignored/failed (read-only filesystem):', err.message);
+    console.warn('[MiFiestAPP DB] Local DATA_DIR creation ignored/failed (read-only filesystem):', err.message);
   }
 }
 const EVENTS_FILE = path.join(DATA_DIR, 'events.json');
@@ -39,7 +39,7 @@ function getLocalEvents() {
     try {
       fs.writeFileSync(EVENTS_FILE, JSON.stringify(defaultEvents, null, 2), 'utf8');
     } catch (err) {
-      console.warn('[JANO\'S DB] Local events.json write failed:', err.message);
+      console.warn('[MiFiestAPP DB] Local events.json write failed:', err.message);
     }
     return defaultEvents;
   }
@@ -55,7 +55,7 @@ function saveLocalEvents(events) {
   try {
     fs.writeFileSync(EVENTS_FILE, JSON.stringify(events, null, 2), 'utf8');
   } catch (err) {
-    console.error('[JANO\'S DB] Local saveLocalEvents write failed:', err.message);
+    console.error('[MiFiestAPP DB] Local saveLocalEvents write failed:', err.message);
   }
 }
 
@@ -64,7 +64,16 @@ if (!isSupabaseEnabled && !fs.existsSync(LOCAL_PHOTOS_DIR)) {
   try {
     fs.mkdirSync(LOCAL_PHOTOS_DIR, { recursive: true });
   } catch (err) {
-    console.warn('[JANO\'S DB] Local LOCAL_PHOTOS_DIR creation ignored/failed:', err.message);
+    console.warn('[MiFiestAPP DB] Local LOCAL_PHOTOS_DIR creation ignored/failed:', err.message);
+  }
+}
+
+const LOCAL_AUDIO_DIR = path.join(__dirname, '..', 'public', 'uploads', 'audio');
+if (!isSupabaseEnabled && !fs.existsSync(LOCAL_AUDIO_DIR)) {
+  try {
+    fs.mkdirSync(LOCAL_AUDIO_DIR, { recursive: true });
+  } catch (err) {
+    console.warn('[MiFiestAPP DB] Local LOCAL_AUDIO_DIR creation ignored/failed:', err.message);
   }
 }
 
@@ -74,7 +83,7 @@ if (!fs.existsSync(defaultDir)) {
   try {
     fs.mkdirSync(defaultDir, { recursive: true });
   } catch (err) {
-    console.warn('[JANO\'S DB] Local defaultDir creation failed:', err.message);
+    console.warn('[MiFiestAPP DB] Local defaultDir creation failed:', err.message);
   }
 }
 const oldGuests = path.join(DATA_DIR, 'guests.json');
@@ -91,7 +100,7 @@ try {
     fs.copyFileSync(oldPhotos, path.join(defaultDir, 'photos.json'));
   }
 } catch (err) {
-  console.warn('[JANO\'S DB] Legacy migration files copy ignored/failed:', err.message);
+  console.warn('[MiFiestAPP DB] Legacy migration files copy ignored/failed:', err.message);
 }
 
 /**
@@ -104,7 +113,7 @@ function getEventFiles(eventId) {
     try {
       fs.mkdirSync(eventDir, { recursive: true });
     } catch (err) {
-      console.warn('[JANO\'S DB] Local eventDir creation ignored/failed:', err.message);
+      console.warn('[MiFiestAPP DB] Local eventDir creation ignored/failed:', err.message);
     }
   }
   return {
@@ -124,11 +133,11 @@ if (isSupabaseEnabled) {
         const exists = buckets.some(b => b.name === 'event-photos');
         if (!exists) {
           await supabase.storage.createBucket('event-photos', { public: true });
-          console.log("[JANO'S DB] Supabase 'event-photos' storage bucket created successfully.");
+          console.log("[MiFiestAPP DB] Supabase 'event-photos' storage bucket created successfully.");
         }
       }
     } catch (e) {
-      console.warn("[JANO'S DB] Storage bucket initial setup warning (might lack policy creation rights):", e.message);
+      console.warn("[MiFiestAPP DB] Storage bucket initial setup warning (might lack policy creation rights):", e.message);
     }
   })();
 }
@@ -353,51 +362,75 @@ async function deleteGuest(eventId = 'default', index) {
 }
 
 /**
- * Get dynamic event config
+ * Get config key value
  */
-async function getEventTitle(eventId = 'default') {
-  const defaultTitle = 'Mi Gran Fiesta Jano\'s';
+async function getConfigValue(eventId = 'default', key, defaultValue = '') {
   if (isSupabaseEnabled) {
     try {
       const { data, error } = await supabase
         .from('config')
         .select('value')
-        .eq('key', 'event_title')
         .eq('event_id', eventId)
+        .eq('key', key)
         .single();
-        
-      if (error || !data) {
-        return defaultTitle;
-      }
+      if (error || !data) return defaultValue;
       return data.value;
-    } catch (err) {
-      return defaultTitle;
+    } catch (e) {
+      return defaultValue;
     }
   } else {
     const { configFile } = getEventFiles(eventId);
-    if (!fs.existsSync(configFile)) {
-      return defaultTitle;
-    }
+    if (!fs.existsSync(configFile)) return defaultValue;
     try {
       const config = JSON.parse(fs.readFileSync(configFile, 'utf8'));
-      return config.eventTitle || defaultTitle;
-    } catch (err) {
-      return defaultTitle;
+      return config[key] !== undefined ? config[key] : defaultValue;
+    } catch (e) {
+      return defaultValue;
     }
   }
 }
 
 /**
- * Set dynamic event title
+ * Get all config values for an event in a single batch query
  */
-async function setEventTitle(eventId = 'default', eventTitle) {
-  const title = (eventTitle || '').trim();
+async function getConfigValues(eventId = 'default') {
+  if (isSupabaseEnabled) {
+    try {
+      const { data, error } = await supabase
+        .from('config')
+        .select('key, value')
+        .eq('event_id', eventId);
+      if (error || !data) return {};
+      const config = {};
+      data.forEach(row => {
+        config[row.key] = row.value;
+      });
+      return config;
+    } catch (e) {
+      console.error('Error in getConfigValues batch query:', e);
+      return {};
+    }
+  } else {
+    const { configFile } = getEventFiles(eventId);
+    if (!fs.existsSync(configFile)) return {};
+    try {
+      return JSON.parse(fs.readFileSync(configFile, 'utf8')) || {};
+    } catch (e) {
+      return {};
+    }
+  }
+}
+
+/**
+ * Set config key value
+ */
+async function setConfigValue(eventId = 'default', key, value) {
   if (isSupabaseEnabled) {
     const { data: existing } = await supabase
       .from('config')
       .select('id')
       .eq('event_id', eventId)
-      .eq('key', 'event_title')
+      .eq('key', key)
       .maybeSingle();
 
     let error;
@@ -405,7 +438,7 @@ async function setEventTitle(eventId = 'default', eventTitle) {
       const res = await supabase
         .from('config')
         .update({
-          value: title,
+          value: value,
           updated_at: new Date().toISOString()
         })
         .eq('id', existing.id);
@@ -415,22 +448,41 @@ async function setEventTitle(eventId = 'default', eventTitle) {
         .from('config')
         .insert([{
           event_id: eventId,
-          key: 'event_title',
-          value: title,
+          key: key,
+          value: value,
           updated_at: new Date().toISOString()
         }]);
       error = res.error;
     }
-
     if (error) {
-      console.error('Error updating config in Supabase:', error);
+      console.error(`Error updating config key ${key} in Supabase:`, error);
       throw error;
     }
   } else {
-    const config = { eventTitle: title };
     const { configFile } = getEventFiles(eventId);
+    let config = {};
+    if (fs.existsSync(configFile)) {
+      try {
+        config = JSON.parse(fs.readFileSync(configFile, 'utf8'));
+      } catch (e) {}
+    }
+    config[key] = value;
     fs.writeFileSync(configFile, JSON.stringify(config, null, 2), 'utf8');
   }
+}
+
+/**
+ * Get dynamic event title
+ */
+async function getEventTitle(eventId = 'default') {
+  return getConfigValue(eventId, 'event_title', 'Mi Gran Fiesta');
+}
+
+/**
+ * Set dynamic event title
+ */
+async function setEventTitle(eventId = 'default', eventTitle) {
+  return setConfigValue(eventId, 'event_title', (eventTitle || '').trim());
 }
 
 /**
@@ -701,13 +753,51 @@ async function uploadPhotoFile(eventId = 'default', fileName, fileBuffer, mimeTy
   }
 }
 
+async function uploadAudioFile(eventId = 'default', fileName, fileBuffer, mimeType) {
+  if (isSupabaseEnabled) {
+    const cleanFileName = `${Date.now()}-${fileName.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+    const { data, error } = await supabase.storage
+      .from('event-photos')
+      .upload(`audio/${cleanFileName}`, fileBuffer, {
+        contentType: mimeType,
+        upsert: true
+      });
+
+    if (error) {
+      console.error('Error uploading audio to Supabase Storage:', error);
+      throw error;
+    }
+
+    const { data: publicUrlData } = supabase.storage
+      .from('event-photos')
+      .getPublicUrl(`audio/${cleanFileName}`);
+
+    return publicUrlData.publicUrl;
+  } else {
+    // Local upload
+    const cleanFileName = `${Date.now()}-${fileName.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+    const cleanId = (eventId || 'default').replace(/[^a-zA-Z0-9_-]/g, '');
+    const audioDir = path.join(LOCAL_AUDIO_DIR, cleanId);
+    if (!fs.existsSync(audioDir)) {
+      fs.mkdirSync(audioDir, { recursive: true });
+    }
+    const targetPath = path.join(audioDir, cleanFileName);
+    fs.writeFileSync(targetPath, fileBuffer);
+    return `/uploads/audio/${cleanId}/${cleanFileName}`;
+  }
+}
+
 async function isEventValid(eventId = 'default') {
+  const cleanId = (eventId || 'default').trim().toLowerCase();
+  if (cleanId === 'default') {
+    return true;
+  }
   if (isSupabaseEnabled) {
     try {
       const { data, error } = await supabase
         .from('events')
         .select('active')
-        .eq('id', eventId)
+        .eq('id', cleanId)
         .maybeSingle();
 
       if (error || !data) {
@@ -720,8 +810,53 @@ async function isEventValid(eventId = 'default') {
     }
   } else {
     const events = getLocalEvents();
-    const event = events.find(e => e.id === eventId);
+    const event = events.find(e => e.id === cleanId);
     return event ? event.active : false;
+  }
+}
+
+async function getEvent(eventId) {
+  const cleanId = (eventId || 'default').trim().toLowerCase();
+  if (isSupabaseEnabled) {
+    const { data, error } = await supabase
+      .from('events')
+      .select('*')
+      .eq('id', cleanId)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error fetching event from Supabase:', error);
+      throw error;
+    }
+    if (!data) return null;
+    return {
+      id: data.id,
+      clientName: data.client_name,
+      clientEmail: data.client_email || '',
+      active: data.active,
+      password: data.password || '',
+      createdAt: data.created_at,
+      serviceTables: data.service_tables !== false,
+      servicePhotos: data.service_photos !== false,
+      serviceInvitation: data.service_invitation !== false,
+      serviceTrivia: data.service_trivia !== false
+    };
+  } else {
+    const events = getLocalEvents();
+    const e = events.find(event => event.id === cleanId);
+    if (!e) return null;
+    return {
+      id: e.id,
+      clientName: e.clientName,
+      clientEmail: e.clientEmail || '',
+      active: e.active,
+      password: e.password || '',
+      createdAt: e.createdAt,
+      serviceTables: e.serviceTables !== false,
+      servicePhotos: e.servicePhotos !== false,
+      serviceInvitation: e.serviceInvitation !== false,
+      serviceTrivia: e.serviceTrivia !== false
+    };
   }
 }
 
@@ -745,7 +880,8 @@ async function getEvents() {
       createdAt: e.created_at,
       serviceTables: e.service_tables !== false,
       servicePhotos: e.service_photos !== false,
-      serviceInvitation: e.service_invitation !== false
+      serviceInvitation: e.service_invitation !== false,
+      serviceTrivia: e.service_trivia !== false
     }));
   } else {
     const events = getLocalEvents();
@@ -758,12 +894,13 @@ async function getEvents() {
       createdAt: e.createdAt,
       serviceTables: e.serviceTables !== false,
       servicePhotos: e.servicePhotos !== false,
-      serviceInvitation: e.serviceInvitation !== false
+      serviceInvitation: e.serviceInvitation !== false,
+      serviceTrivia: e.serviceTrivia !== false
     }));
   }
 }
 
-async function createEvent(id, clientName, password = '', clientEmail = '', serviceTables = true, servicePhotos = true, serviceInvitation = true) {
+async function createEvent(id, clientName, password = '', clientEmail = '', serviceTables = true, servicePhotos = true, serviceInvitation = true, serviceTrivia = true) {
   const cleanId = (id || '').trim().toLowerCase().replace(/[^a-zA-Z0-9_-]/g, '');
   if (!cleanId) throw new Error('ID de evento inválido.');
 
@@ -778,7 +915,8 @@ async function createEvent(id, clientName, password = '', clientEmail = '', serv
         password: password.trim(),
         service_tables: serviceTables,
         service_photos: servicePhotos,
-        service_invitation: serviceInvitation
+        service_invitation: serviceInvitation,
+        service_trivia: serviceTrivia
       }]);
 
     if (error) {
@@ -799,7 +937,8 @@ async function createEvent(id, clientName, password = '', clientEmail = '', serv
       createdAt: new Date().toISOString(),
       serviceTables,
       servicePhotos,
-      serviceInvitation
+      serviceInvitation,
+      serviceTrivia
     });
     saveLocalEvents(events);
     // Auto-create local directories for isolation
@@ -829,6 +968,13 @@ async function toggleEvent(id, active) {
 }
 
 async function deleteEvent(id) {
+  // Clear all photos (records and storage files) first to prevent orphaned files in bucket
+  try {
+    await clearPhotos(id);
+  } catch (clearErr) {
+    console.warn(`[db] Error clearing photos during deletion of event ${id}:`, clearErr.message);
+  }
+
   if (isSupabaseEnabled) {
     const { error } = await supabase
       .from('events')
@@ -838,7 +984,7 @@ async function deleteEvent(id) {
     if (error) {
       console.error('Error deleting event from Supabase:', error);
       throw error;
-    }
+      }
   } else {
     let events = getLocalEvents();
     events = events.filter(e => e.id !== id);
@@ -861,7 +1007,7 @@ async function validateEventPassword(eventId, password) {
   const cleanId = (eventId || '').trim().toLowerCase();
   
   if (cleanId === 'default' || !cleanId) {
-    const adminPass = process.env.ADMIN_PASSWORD || 'janos2026';
+    const adminPass = process.env.ADMIN_PASSWORD || 'mifiestapp2026';
     return password === adminPass;
   }
   
@@ -877,7 +1023,7 @@ async function validateEventPassword(eventId, password) {
         // Safe fallback if column doesn't exist yet
         if (error.message && error.message.includes('column "password" does not exist')) {
           console.warn('WARNING: column "password" does not exist in events. Using ADMIN_PASSWORD.');
-          const adminPass = process.env.ADMIN_PASSWORD || 'janos2026';
+          const adminPass = process.env.ADMIN_PASSWORD || 'mifiestapp2026';
           return password === adminPass;
         }
         console.error('Error fetching event password from Supabase:', error);
@@ -897,6 +1043,265 @@ async function validateEventPassword(eventId, password) {
   }
 }
 
+async function findEventByEmailAndPassword(email, password) {
+  const cleanEmail = (email || '').trim().toLowerCase();
+  if (!cleanEmail || !password) return null;
+
+  if (isSupabaseEnabled) {
+    try {
+      const { data, error } = await supabase
+        .from('events')
+        .select('id, password, active')
+        .eq('client_email', cleanEmail);
+        
+      if (error) {
+        console.error('Error fetching event by email from Supabase:', error);
+        return null;
+      }
+      if (!data || data.length === 0) return null;
+      
+      const match = data.find(e => e.password === password);
+      if (match) {
+        return { id: match.id, active: match.active };
+      }
+      return null;
+    } catch (err) {
+      console.error('Error finding event by email in Supabase:', err);
+      return null;
+    }
+  } else {
+    const events = getLocalEvents();
+    const match = events.find(e => (e.clientEmail || '').trim().toLowerCase() === cleanEmail && e.password === password);
+    if (match) {
+      return { id: match.id, active: match.active };
+    }
+    return null;
+  }
+}
+
+/**
+ * Get RSVPs for an event
+ */
+async function getRsvps(eventId = 'default') {
+  if (isSupabaseEnabled) {
+    const { data, error } = await supabase
+      .from('rsvps')
+      .select('id, name, attending, companions_count, companions_names, dietary_restrictions, suggested_song, created_at')
+      .eq('event_id', eventId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching RSVPs from Supabase:', error);
+      throw error;
+    }
+
+    return (data || []).map(r => ({
+      id: r.id,
+      name: r.name,
+      attending: r.attending,
+      companionsCount: r.companions_count,
+      companionsNames: r.companions_names,
+      dietaryRestrictions: r.dietary_restrictions,
+      suggestedSong: r.suggested_song,
+      createdAt: r.created_at
+    }));
+  } else {
+    const { configFile } = getEventFiles(eventId);
+    const eventDir = path.dirname(configFile);
+    const rsvpsFile = path.join(eventDir, 'rsvps.json');
+    if (!fs.existsSync(rsvpsFile)) {
+      return [];
+    }
+    try {
+      const fileData = fs.readFileSync(rsvpsFile, 'utf8');
+      const rsvps = JSON.parse(fileData);
+      return (rsvps || []).map(r => ({
+        id: r.id,
+        name: r.name,
+        attending: r.attending,
+        companionsCount: r.companions_count || r.companionsCount || 0,
+        companionsNames: r.companions_names || r.companionsNames || '',
+        dietaryRestrictions: r.dietary_restrictions || r.dietaryRestrictions || '',
+        suggestedSong: r.suggested_song || r.suggestedSong || '',
+        createdAt: r.created_at || r.createdAt
+      })).sort((a, b) => new Date(b.createdAt || b.created_at) - new Date(a.createdAt || a.created_at));
+    } catch (err) {
+      console.error('Error reading local RSVPs file:', err);
+      return [];
+    }
+  }
+}
+
+/**
+ * Add an RSVP submission
+ */
+async function addRsvp(eventId = 'default', rsvpData) {
+  let companionsNamesStr = '';
+  if (Array.isArray(rsvpData.companionsNames)) {
+    companionsNamesStr = rsvpData.companionsNames.filter(name => name && name.trim()).map(name => name.trim()).join(', ');
+  } else if (typeof rsvpData.companionsNames === 'string') {
+    companionsNamesStr = rsvpData.companionsNames.trim();
+  }
+
+  const rsvp = {
+    name: (rsvpData.name || '').trim(),
+    attending: !!rsvpData.attending,
+    companionsCount: parseInt(rsvpData.companionsCount, 10) || 0,
+    companionsNames: companionsNamesStr,
+    dietaryRestrictions: (rsvpData.dietaryRestrictions || '').trim(),
+    suggestedSong: (rsvpData.suggestedSong || '').trim(),
+    createdAt: new Date().toISOString()
+  };
+
+  if (isSupabaseEnabled) {
+    const { error } = await supabase
+      .from('rsvps')
+      .insert([{
+        event_id: eventId,
+        name: rsvp.name,
+        attending: rsvp.attending,
+        companions_count: rsvp.companionsCount,
+        companions_names: rsvp.companionsNames,
+        dietary_restrictions: rsvp.dietaryRestrictions,
+        suggested_song: rsvp.suggestedSong
+      }]);
+
+    if (error) {
+      console.error('Error inserting RSVP into Supabase:', error);
+      throw error;
+    }
+  } else {
+    const { configFile } = getEventFiles(eventId);
+    const eventDir = path.dirname(configFile);
+    const rsvpsFile = path.join(eventDir, 'rsvps.json');
+    let rsvps = [];
+    if (fs.existsSync(rsvpsFile)) {
+      try {
+        rsvps = JSON.parse(fs.readFileSync(rsvpsFile, 'utf8'));
+      } catch (e) {}
+    }
+    const newRsvp = {
+      id: Date.now(),
+      name: rsvp.name,
+      attending: rsvp.attending,
+      companions_count: rsvp.companionsCount,
+      companions_names: rsvp.companionsNames,
+      dietary_restrictions: rsvp.dietaryRestrictions,
+      suggested_song: rsvp.suggestedSong,
+      created_at: rsvp.createdAt
+    };
+    rsvps.push(newRsvp);
+    fs.writeFileSync(rsvpsFile, JSON.stringify(rsvps, null, 2), 'utf8');
+  }
+}
+
+/**
+ * Delete an RSVP submission by ID
+ */
+async function deleteRsvp(eventId = 'default', rsvpId) {
+  if (isSupabaseEnabled) {
+    const { error } = await supabase
+      .from('rsvps')
+      .delete()
+      .eq('id', rsvpId)
+      .eq('event_id', eventId);
+
+    if (error) {
+      console.error('Error deleting RSVP in Supabase:', error);
+      throw error;
+    }
+  } else {
+    const { configFile } = getEventFiles(eventId);
+    const eventDir = path.dirname(configFile);
+    const rsvpsFile = path.join(eventDir, 'rsvps.json');
+    if (!fs.existsSync(rsvpsFile)) return;
+    try {
+      let rsvps = JSON.parse(fs.readFileSync(rsvpsFile, 'utf8'));
+      rsvps = rsvps.filter(r => r.id !== parseInt(rsvpId, 10));
+      fs.writeFileSync(rsvpsFile, JSON.stringify(rsvps, null, 2), 'utf8');
+    } catch (err) {
+      console.error('Error deleting local RSVP:', err);
+    }
+  }
+}
+
+/**
+ * Save a song suggestion for a guest (either update existing RSVP or add a new one)
+ */
+async function saveSongSuggestion(eventId = 'default', name, song) {
+  const normalizedName = (name || '').trim();
+  const normalizedSong = (song || '').trim();
+
+  if (isSupabaseEnabled) {
+    // Check if there is an existing RSVP for this name
+    const { data: existing, error: fetchError } = await supabase
+      .from('rsvps')
+      .select('id')
+      .eq('event_id', eventId)
+      .ilike('name', normalizedName)
+      .order('id', { ascending: false })
+      .limit(1);
+
+    if (!fetchError && existing && existing.length > 0) {
+      // Update existing RSVP
+      const { error } = await supabase
+        .from('rsvps')
+        .update({ suggested_song: normalizedSong })
+        .eq('id', existing[0].id);
+
+      if (error) {
+        console.error('Error updating RSVP suggested song in Supabase:', error);
+        throw error;
+      }
+    } else {
+      // Insert new RSVP
+      const { error } = await supabase
+        .from('rsvps')
+        .insert([{
+          event_id: eventId,
+          name: normalizedName,
+          attending: true,
+          suggested_song: normalizedSong,
+          companions_count: 0,
+          companions_names: '',
+          dietary_restrictions: 'Ninguno'
+        }]);
+
+      if (error) {
+        console.error('Error inserting song RSVP into Supabase:', error);
+        throw error;
+      }
+    }
+  } else {
+    const { configFile } = getEventFiles(eventId);
+    const eventDir = path.dirname(configFile);
+    const rsvpsFile = path.join(eventDir, 'rsvps.json');
+    let rsvps = [];
+    if (fs.existsSync(rsvpsFile)) {
+      try {
+        rsvps = JSON.parse(fs.readFileSync(rsvpsFile, 'utf8'));
+      } catch (e) {}
+    }
+
+    const existingIndex = rsvps.findIndex(r => r.name.toLowerCase() === normalizedName.toLowerCase());
+    if (existingIndex !== -1) {
+      rsvps[existingIndex].suggested_song = normalizedSong;
+    } else {
+      rsvps.push({
+        id: Date.now(),
+        name: normalizedName,
+        attending: true,
+        companions_count: 0,
+        companions_names: '',
+        dietary_restrictions: 'Ninguno',
+        suggested_song: normalizedSong,
+        created_at: new Date().toISOString()
+      });
+    }
+    fs.writeFileSync(rsvpsFile, JSON.stringify(rsvps, null, 2), 'utf8');
+  }
+}
+
 module.exports = {
   isSupabaseEnabled,
   getGuests,
@@ -905,6 +1310,9 @@ module.exports = {
   addGuest,
   updateGuest,
   deleteGuest,
+  getConfigValue,
+  getConfigValues,
+  setConfigValue,
   getEventTitle,
   setEventTitle,
   getPhotos,
@@ -913,10 +1321,18 @@ module.exports = {
   deletePhoto,
   clearPhotos,
   uploadPhotoFile,
+  uploadAudioFile,
   isEventValid,
+  getEvent,
   getEvents,
   createEvent,
   toggleEvent,
   deleteEvent,
-  validateEventPassword
+  validateEventPassword,
+  findEventByEmailAndPassword,
+  getRsvps,
+  addRsvp,
+  deleteRsvp,
+  saveSongSuggestion
 };
+
