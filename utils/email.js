@@ -22,53 +22,117 @@ async function sendWelcomeEmail(clientEmail, clientName, eventId, password) {
 
   // HTML template matching MiFiestAPP premium aesthetic
   const html = `
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff; color: #1a202c;">
-      <div style="text-align: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; margin-bottom: 20px;">
-        <h1 style="color: #d4af37; font-size: 24px; margin: 0; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">MiFiestAPP</h1>
-        <p style="font-size: 14px; color: #718096; margin: 5px 0 0 0;">Gestión de Mesas y Eventos Premium</p>
-      </div>
-      
-      <div style="line-height: 1.6; font-size: 16px;">
-        <p>Hola <strong>${clientName}</strong>,</p>
-        
-        <p>¡Queremos darte la bienvenida a <strong>MiFiestAPP</strong>! Ya hemos dado de alta tu evento en nuestro sistema y está listo para ser configurado.</p>
-        
-        <div style="background-color: #f7fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 25px 0;">
-          <h3 style="margin-top: 0; color: #2d3748; font-size: 16px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">🔑 Datos de Acceso al Panel de Administración</h3>
-          <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-            <tr>
-              <td style="padding: 6px 0; color: #718096; width: 40%;"><strong>URL de Administración:</strong></td>
-              <td style="padding: 6px 0;"><a href="${baseUrl}/admin?event=${eventId}" style="color: #3182ce; text-decoration: none; font-weight: 600;">Acceder al Panel</a></td>
-            </tr>
-            <tr>
-              <td style="padding: 6px 0; color: #718096;"><strong>ID de Evento:</strong></td>
-              <td style="padding: 6px 0; font-family: monospace; font-size: 15px; color: #2d3748;"><strong>${eventId}</strong></td>
-            </tr>
-            <tr>
-              <td style="padding: 6px 0; color: #718096;"><strong>Contraseña de Acceso:</strong></td>
-              <td style="padding: 6px 0; font-family: monospace; font-size: 15px; color: #2d3748;"><strong>${password}</strong></td>
-            </tr>
-          </table>
-        </div>
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Tu evento está listo</title>
+    </head>
+    <body style="margin: 0; padding: 0; background-color: #0b0b0c; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+      <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #0b0b0c; padding: 40px 10px;">
+        <tr>
+          <td align="center">
+            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background: #141416; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
+              
+              <!-- Header Section -->
+              <tr>
+                <td align="center" style="background: linear-gradient(135deg, #1b0a3a 0%, #080214 100%); padding: 40px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.06);">
+                  <div style="background: linear-gradient(135deg, #4a90e2, #2ecc71); display: inline-block; padding: 6px 16px; border-radius: 30px; font-weight: 700; font-size: 11px; color: #ffffff; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 15px; box-shadow: 0 0 20px rgba(74, 144, 226, 0.3);">
+                    Servicio Premium Activado
+                  </div>
+                  <h1 style="color: #ffffff; font-size: 28px; margin: 0; font-weight: 800; letter-spacing: -0.5px;">
+                    MiFiest<span style="color: #d4af37;">APP</span>
+                  </h1>
+                  <p style="font-size: 14px; color: #a59cb5; margin: 8px 0 0 0; font-weight: 400; letter-spacing: 0.5px;">Gestión Exclusiva de Mesas y Eventos en Vivo</p>
+                </td>
+              </tr>
+              
+              <!-- Content Body -->
+              <tr>
+                <td style="padding: 40px 35px 30px 35px;">
+                  <p style="font-size: 17px; line-height: 1.6; color: #f3f0fa; margin-top: 0; font-weight: 500;">
+                    ¡Hola, <strong>${clientName}</strong>! 👋
+                  </p>
+                  <p style="font-size: 15px; line-height: 1.6; color: #a59cb5; margin-bottom: 25px;">
+                    Te damos la bienvenida a la experiencia digital de tu gran noche. Tu evento ha sido registrado exitosamente y ya puedes acceder a toda la configuración interactiva.
+                  </p>
+                  
+                  <!-- Credentials Card -->
+                  <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 16px; padding: 25px; margin: 30px 0;">
+                    <h3 style="margin-top: 0; margin-bottom: 15px; color: #d4af37; font-size: 15px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">
+                      🔑 Tus Datos de Acceso
+                    </h3>
+                    <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td width="35%" style="padding: 10px 0; font-size: 14px; color: #888096; border-bottom: 1px solid rgba(255, 255, 255, 0.04);">ID del Evento:</td>
+                        <td style="padding: 10px 0; font-size: 15px; font-family: monospace; color: #ffffff; font-weight: 700; border-bottom: 1px solid rgba(255, 255, 255, 0.04);">${eventId}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 10px 0; font-size: 14px; color: #888096; border-bottom: 1px solid rgba(255, 255, 255, 0.04);">Contraseña:</td>
+                        <td style="padding: 10px 0; font-size: 15px; font-family: monospace; color: #ffffff; font-weight: 700; border-bottom: 1px solid rgba(255, 255, 255, 0.04);">${password}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 10px 0; font-size: 14px; color: #888096;">Acceso Panel:</td>
+                        <td style="padding: 10px 0; font-size: 14px;"><a href="${baseUrl}/admin?event=${eventId}" style="color: #4a90e2; text-decoration: none; font-weight: 600;">Ingresar al Administrador &rarr;</a></td>
+                      </tr>
+                    </table>
+                  </div>
 
-        <p>Desde el panel de administración podrás:</p>
-        <ul style="padding-left: 20px; color: #4a5568;">
-          <li style="margin-bottom: 8px;">Cargar la lista de invitados desde un archivo de Excel para asignar las mesas.</li>
-          <li style="margin-bottom: 8px;">Moderar en tiempo real las fotos enviadas por los invitados a la pantalla gigante.</li>
-          <li style="margin-bottom: 8px;">Personalizar el banner de bienvenida y ver estadísticas de tu evento.</li>
-        </ul>
+                  <p style="font-size: 15px; line-height: 1.6; color: #f3f0fa; font-weight: 600; margin-bottom: 15px;">
+                    ¿Qué puedes controlar desde tu panel?
+                  </p>
+                  
+                  <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin-bottom: 30px;">
+                    <tr>
+                      <td valign="top" style="padding: 5px 10px 10px 0; color: #2ecc71; font-size: 16px;">✦</td>
+                      <td style="padding: 5px 0 10px 0; font-size: 14.5px; line-height: 1.5; color: #a59cb5;">
+                        <strong style="color: #ffffff;">Gestión de Mesas:</strong> Descarga la plantilla simplificada de Excel, sube a tus invitados y organízalos fácilmente.
+                      </td>
+                    </tr>
+                    <tr>
+                      <td valign="top" style="padding: 5px 10px 10px 0; color: #2ecc71; font-size: 16px;">✦</td>
+                      <td style="padding: 5px 0 10px 0; font-size: 14.5px; line-height: 1.5; color: #a59cb5;">
+                        <strong style="color: #ffffff;">Fotos en Tiempo Real:</strong> Modera las fotos enviadas por los invitados para proyectarlas en la pantalla del salón.
+                      </td>
+                    </tr>
+                    <tr>
+                      <td valign="top" style="padding: 5px 10px 10px 0; color: #2ecc71; font-size: 16px;">✦</td>
+                      <td style="padding: 5px 0 10px 0; font-size: 14.5px; line-height: 1.5; color: #a59cb5;">
+                        <strong style="color: #ffffff;">Trivia Interactiva:</strong> Lanza preguntas, revela respuestas correctas y proyecta el podio de ganadores en vivo.
+                      </td>
+                    </tr>
+                  </table>
 
-        <p style="margin-top: 25px;">Para tus invitados, el enlace de acceso directo es:</p>
-        <div style="text-align: center; margin: 20px 0;">
-          <a href="${baseUrl}/?event=${eventId}" style="background-color: #d4af37; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 30px; font-weight: 600; display: inline-block; box-shadow: 0 4px 6px rgba(212, 175, 55, 0.2);">Ver Buscador de Mesas (Invitados)</a>
-        </div>
-      </div>
-      
-      <div style="border-top: 1px solid #e2e8f0; padding-top: 20px; margin-top: 30px; text-align: center; font-size: 12px; color: #a0aec0;">
-        <p>Este es un correo automático de bienvenida. Por favor, no respondas a este mensaje.</p>
-        <p>&copy; 2026 MiFiestAPP. Todos los derechos reservados.</p>
-      </div>
-    </div>
+                  <!-- Guest access -->
+                  <p style="font-size: 14px; line-height: 1.5; color: #888096; text-align: center; margin-bottom: 25px;">
+                    Tus invitados ingresarán para buscar sus mesas y jugar con el siguiente botón:
+                  </p>
+
+                  <div align="center" style="margin-bottom: 40px;">
+                    <a href="${baseUrl}/?event=${eventId}" style="background: linear-gradient(135deg, #d4af37 0%, #b8931d 100%); color: #0b0b0c; text-decoration: none; padding: 15px 30px; border-radius: 35px; font-weight: 700; font-size: 15px; display: inline-block; box-shadow: 0 10px 20px rgba(212, 175, 55, 0.25); text-transform: uppercase; letter-spacing: 0.5px;">
+                      Acceso para Invitados
+                    </a>
+                  </div>
+
+                </td>
+              </tr>
+              
+              <!-- Footer -->
+              <tr>
+                <td align="center" style="background: #0e0e10; padding: 30px; border-top: 1px solid rgba(255, 255, 255, 0.04); font-size: 12px; color: #5c5567; line-height: 1.6;">
+                  <p style="margin: 0 0 8px 0;">Este es un mensaje automático de bienvenida de tu plataforma contratada.</p>
+                  <p style="margin: 0 0 15px 0;">Si tienes alguna duda o necesitas soporte técnico, por favor ponte en contacto con nosotros.</p>
+                  <p style="margin: 0; color: #888096; font-weight: 600;">&copy; 2026 MiFiestAPP. Todos los derechos reservados.</p>
+                </td>
+              </tr>
+              
+            </table>
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
   `;
 
   if (!RESEND_API_KEY) {
