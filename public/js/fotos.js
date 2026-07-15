@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Camera stream elements
   const cameraStreamContainer = document.getElementById('camera-stream-container');
   const cameraVideo = document.getElementById('camera-video');
-  const capturePhotoBtn = document.getElementById('btn-capture-photo');
+  const capturePhotoBtn = document.getElementById('camera-shutter-visual-ring');
   const switchCameraBtn = document.getElementById('btn-switch-camera');
   
   // Camera Filter selectors
@@ -384,7 +384,7 @@ document.addEventListener('DOMContentLoaded', () => {
       } catch (e) {}
     }
     if (capturePhotoBtn) {
-      capturePhotoBtn.style.display = 'flex';
+      capturePhotoBtn.style.display = 'block';
       capturePhotoBtn.disabled = false;
       capturePhotoBtn.style.pointerEvents = 'auto';
       capturePhotoBtn.style.opacity = '1';
@@ -394,6 +394,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (filterSelectorBar) {
       filterSelectorBar.style.opacity = '1';
       filterSelectorBar.style.pointerEvents = 'auto';
+      // Center the active filter button in the carousel when camera modal opens
+      const activeBtn = Array.from(filterBtns).find(btn => btn.classList.contains('active'));
+      if (activeBtn) {
+        setTimeout(() => {
+          activeBtn.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' });
+        }, 100);
+      }
     }
 
     if (snapApiToken) {
@@ -523,6 +530,10 @@ document.addEventListener('DOMContentLoaded', () => {
       filterBtns.forEach(btn => {
         if (btn.dataset.filter === 'normal') {
           btn.classList.add('active');
+          // Center normal button in the carousel
+          setTimeout(() => {
+            btn.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' });
+          }, 50);
         } else {
           btn.classList.remove('active');
         }
@@ -1701,15 +1712,59 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Camera Filter Selection Setup
+  // Scroll snapping auto-detection of centered active filter
+  let scrollTimeout = null;
+  if (filterSelectorBar && filterBtns) {
+    filterSelectorBar.addEventListener('scroll', () => {
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        // Calculate the center point of the scroll view
+        const containerRect = filterSelectorBar.getBoundingClientRect();
+        const containerCenter = containerRect.left + containerRect.width / 2;
+        
+        let closestBtn = null;
+        let minDistance = Infinity;
+        
+        // Find the filter button closest to the viewport horizontal center
+        filterBtns.forEach(btn => {
+          const btnRect = btn.getBoundingClientRect();
+          const btnCenter = btnRect.left + btnRect.width / 2;
+          const distance = Math.abs(btnCenter - containerCenter);
+          if (distance < minDistance) {
+            minDistance = distance;
+            closestBtn = btn;
+          }
+        });
+        
+        // Update active filter if settled on a different item
+        if (closestBtn && !closestBtn.classList.contains('active')) {
+          filterBtns.forEach(b => b.classList.remove('active'));
+          closestBtn.classList.add('active');
+          activeFilter = closestBtn.dataset.filter || 'normal';
+          applyActiveFilter();
+        }
+      }, 150); // settle delay to prevent loading heavy WebGL filters while swiping fast
+    });
+  }
+
+  // Camera Filter Selection Setup with Double-tap/Active click to snap photo
   if (filterBtns) {
     filterBtns.forEach(btn => {
       btn.addEventListener('click', async () => {
-        filterBtns.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        
-        activeFilter = btn.dataset.filter || 'normal';
-        await applyActiveFilter();
+        if (btn.classList.contains('active')) {
+          // Double-tap or tap on active filter triggers instant countdown/shutter capture!
+          await triggerCaptureSequence();
+        } else {
+          // Center the clicked filter carousel item smoothly
+          clearTimeout(scrollTimeout);
+          btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+          
+          filterBtns.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          
+          activeFilter = btn.dataset.filter || 'normal';
+          await applyActiveFilter();
+        }
       });
     });
   }
@@ -1931,122 +1986,123 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Shutter Capture Button Action with Cinematic Countdown
-  if (capturePhotoBtn) {
-    capturePhotoBtn.addEventListener('click', async () => {
-      // Initialize AudioContext on user gesture
-      initAudioContext();
+  // Modular hoisted function to trigger the capture sequence with interactive countdown
+  async function triggerCaptureSequence() {
+    const visualRing = document.getElementById('camera-shutter-visual-ring');
+    if (visualRing && visualRing.classList.contains('active-press')) return; // prevent concurrent triggers
 
-      // Prevent duplicate clicks
-      capturePhotoBtn.disabled = true;
-      capturePhotoBtn.style.pointerEvents = 'none';
-      capturePhotoBtn.style.opacity = '0.5';
+    // Add visual press feedback
+    if (visualRing) visualRing.classList.add('active-press');
 
-      // Hide other control triggers during the countdown
-      if (switchCameraBtn) switchCameraBtn.style.display = 'none';
-      const filterSelectorBar = document.getElementById('filter-selector-bar');
+    // Initialize AudioContext on user gesture
+    initAudioContext();
+
+    // Hide other control triggers during the countdown
+    if (switchCameraBtn) switchCameraBtn.style.display = 'none';
+    if (filterSelectorBar) {
+      filterSelectorBar.style.pointerEvents = 'none';
+      filterSelectorBar.style.opacity = '0.4';
+    }
+
+    // Get countdown elements
+    const countdownOverlay = document.getElementById('camera-countdown-overlay');
+    const countdownNumberDisplay = document.getElementById('countdown-number-display');
+    const countdownMessageDisplay = document.getElementById('countdown-message-display');
+    const countdownProgressBar = document.getElementById('countdown-progress-bar');
+    const cameraFlash = document.getElementById('camera-flash');
+
+    if (!countdownOverlay || !countdownNumberDisplay || !countdownMessageDisplay || !countdownProgressBar) {
+      // Fallback capture if UI is somehow missing elements
+      await capturePhotoNow();
+      if (visualRing) visualRing.classList.remove('active-press');
+      if (switchCameraBtn) switchCameraBtn.style.display = 'flex';
       if (filterSelectorBar) {
-        filterSelectorBar.style.pointerEvents = 'none';
-        filterSelectorBar.style.opacity = '0.4';
+        filterSelectorBar.style.pointerEvents = 'auto';
+        filterSelectorBar.style.opacity = '1';
       }
+      return;
+    }
 
-      // Get countdown elements
-      const countdownOverlay = document.getElementById('camera-countdown-overlay');
-      const countdownNumberDisplay = document.getElementById('countdown-number-display');
-      const countdownMessageDisplay = document.getElementById('countdown-message-display');
-      const countdownProgressBar = document.getElementById('countdown-progress-bar');
-      const cameraFlash = document.getElementById('camera-flash');
+    // Show countdown overlay
+    countdownOverlay.style.display = 'flex';
 
-      if (!countdownOverlay || !countdownNumberDisplay || !countdownMessageDisplay || !countdownProgressBar) {
-        // Fallback capture if UI is somehow missing elements
-        await capturePhotoNow();
-        capturePhotoBtn.disabled = false;
-        capturePhotoBtn.style.pointerEvents = 'auto';
-        capturePhotoBtn.style.opacity = '1';
-        if (switchCameraBtn) switchCameraBtn.style.display = 'flex';
-        if (filterSelectorBar) {
-          filterSelectorBar.style.pointerEvents = 'auto';
-          filterSelectorBar.style.opacity = '1';
+    // Reset & Start SVG circular progress ring transition smoothly over 3s
+    countdownProgressBar.style.transition = 'none';
+    countdownProgressBar.style.strokeDashoffset = '0';
+    void countdownProgressBar.offsetWidth; // force browser layout reflow
+    countdownProgressBar.style.transition = 'stroke-dashoffset 3s linear';
+    countdownProgressBar.style.strokeDashoffset = '314';
+
+    const countdownSequence = [
+      { num: '3', text: '¡Posá, ponete lindo/linda!', freq: 880 },
+      { num: '2', text: '¡Sonreí!', freq: 880 },
+      { num: '1', text: '¡FOTO!', freq: 1100 }
+    ];
+
+    const runTick = (stepIdx) => {
+      if (stepIdx >= countdownSequence.length) {
+        // Play synthesized camera shutter sound
+        playShutterClick();
+
+        // Trigger flash visual effect
+        if (cameraFlash) {
+          cameraFlash.style.display = 'block';
+          cameraFlash.classList.add('camera-flash-active');
         }
+
+        // Execute photo capture
+        capturePhotoNow().then(() => {
+          // Restore controls and clean up overlays after flash animation finishes
+          setTimeout(() => {
+            countdownOverlay.style.display = 'none';
+            if (cameraFlash) {
+              cameraFlash.style.display = 'none';
+              cameraFlash.classList.remove('camera-flash-active');
+            }
+            // Restore buttons
+            if (visualRing) visualRing.classList.remove('active-press');
+            if (switchCameraBtn) switchCameraBtn.style.display = 'flex';
+            if (filterSelectorBar) {
+              filterSelectorBar.style.pointerEvents = 'auto';
+              filterSelectorBar.style.opacity = '1';
+            }
+          }, 350);
+        });
         return;
       }
 
-      // Show countdown overlay
-      countdownOverlay.style.display = 'flex';
+      const data = countdownSequence[stepIdx];
 
-      // Reset & Start SVG circular progress ring transition smoothly over 3s
-      countdownProgressBar.style.transition = 'none';
-      countdownProgressBar.style.strokeDashoffset = '0';
-      void countdownProgressBar.offsetWidth; // force browser layout reflow
-      countdownProgressBar.style.transition = 'stroke-dashoffset 3s linear';
-      countdownProgressBar.style.strokeDashoffset = '314';
+      // Update displays
+      countdownNumberDisplay.textContent = data.num;
+      countdownMessageDisplay.textContent = data.text;
 
-      const countdownSequence = [
-        { num: '3', text: '¡Posá, ponete lindo/linda!', freq: 880 },
-        { num: '2', text: '¡Sonreí!', freq: 880 },
-        { num: '1', text: '¡FOTO!', freq: 1100 }
-      ];
+      // Reset and trigger animations for this tick
+      countdownNumberDisplay.classList.remove('animate-tick');
+      countdownMessageDisplay.classList.remove('animate-tick');
+      void countdownNumberDisplay.offsetWidth; // force browser layout reflow
+      void countdownMessageDisplay.offsetWidth;
 
-      const runTick = (stepIdx) => {
-        if (stepIdx >= countdownSequence.length) {
-          // Play synthesized camera shutter sound
-          playShutterClick();
+      countdownNumberDisplay.classList.add('animate-tick');
+      countdownMessageDisplay.classList.add('animate-tick');
 
-          // Trigger flash visual effect
-          if (cameraFlash) {
-            cameraFlash.style.display = 'block';
-            cameraFlash.classList.add('camera-flash-active');
-          }
+      // Play synth beep sound
+      playCountdownBeep(data.freq, 0.12);
 
-          // Execute photo capture
-          capturePhotoNow().then(() => {
-            // Restore controls and clean up overlays after flash animation finishes
-            setTimeout(() => {
-              countdownOverlay.style.display = 'none';
-              if (cameraFlash) {
-                cameraFlash.style.display = 'none';
-                cameraFlash.classList.remove('camera-flash-active');
-              }
-              // Restore buttons
-              capturePhotoBtn.disabled = false;
-              capturePhotoBtn.style.pointerEvents = 'auto';
-              capturePhotoBtn.style.opacity = '1';
-              if (switchCameraBtn) switchCameraBtn.style.display = 'flex';
-              if (filterSelectorBar) {
-                filterSelectorBar.style.pointerEvents = 'auto';
-                filterSelectorBar.style.opacity = '1';
-              }
-            }, 350);
-          });
-          return;
-        }
+      // Schedule next tick
+      setTimeout(() => {
+        runTick(stepIdx + 1);
+      }, 1000);
+    };
 
-        const data = countdownSequence[stepIdx];
+    // Start the tick sequence
+    runTick(0);
+  }
 
-        // Update displays
-        countdownNumberDisplay.textContent = data.num;
-        countdownMessageDisplay.textContent = data.text;
-
-        // Reset and trigger animations for this tick
-        countdownNumberDisplay.classList.remove('animate-tick');
-        countdownMessageDisplay.classList.remove('animate-tick');
-        void countdownNumberDisplay.offsetWidth; // force browser layout reflow
-        void countdownMessageDisplay.offsetWidth;
-
-        countdownNumberDisplay.classList.add('animate-tick');
-        countdownMessageDisplay.classList.add('animate-tick');
-
-        // Play synth beep sound
-        playCountdownBeep(data.freq, 0.12);
-
-        // Schedule next tick
-        setTimeout(() => {
-          runTick(stepIdx + 1);
-        }, 1000);
-      };
-
-      // Start the tick sequence
-      runTick(0);
+  // Shutter Capture Button Action (click listener fallback for the visual ring)
+  if (capturePhotoBtn) {
+    capturePhotoBtn.addEventListener('click', async () => {
+      await triggerCaptureSequence();
     });
   }
 
@@ -2091,7 +2147,7 @@ document.addEventListener('DOMContentLoaded', () => {
       tempCapturedBlob = null;
       if (postCaptureControls) postCaptureControls.style.display = 'none';
       if (capturePhotoBtn) {
-        capturePhotoBtn.style.display = 'flex';
+        capturePhotoBtn.style.display = 'block';
         capturePhotoBtn.disabled = false;
         capturePhotoBtn.style.pointerEvents = 'auto';
         capturePhotoBtn.style.opacity = '1';

@@ -311,18 +311,13 @@
           </button>
         </div>
 
-        <!-- Actions Area -->
-        <div class="camera-actions-row">
-          <!-- Capture Button -->
-          <button type="button" id="btn-capture-photo" class="camera-shutter-btn" title="Tomar foto">
-            <div class="camera-shutter-inner"></div>
-          </button>
-          
-          <!-- Post-Capture Options (Hidden initially) -->
-          <div id="camera-post-capture-controls" class="post-capture-controls" style="display: none;">
-            <button type="button" id="btn-retake-photo" class="btn-camera-secondary">Repetir</button>
-            <button type="button" id="btn-use-photo" class="btn-camera-primary">Usar Foto</button>
-          </div>
+        <!-- Visual Shutter Ring (centered behind the active filter circle) -->
+        <div id="camera-shutter-visual-ring" class="camera-shutter-visual-ring"></div>
+
+        <!-- Post-Capture Options (Hidden initially) -->
+        <div id="camera-post-capture-controls" class="post-capture-controls" style="display: none;">
+          <button type="button" id="btn-retake-photo" class="btn-camera-secondary">Repetir</button>
+          <button type="button" id="btn-use-photo" class="btn-camera-primary">Usar Foto</button>
         </div>
       </div>
     </div>
