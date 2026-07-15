@@ -19,8 +19,8 @@ const ADMIN_SESSION_TOKEN = process.env.ADMIN_SESSION_TOKEN || 'mifiestapp-defau
 const SUPERADMIN_PASSWORD = process.env.SUPERADMIN_PASSWORD || 'mifiestapp-superadmin';
 const SUPERADMIN_SESSION_TOKEN = process.env.SUPERADMIN_SESSION_TOKEN || 'super_mifiestapp-default-superadmin-session-secret-2026';
 
-const UPLOADS_DIR = path.join(__dirname, 'uploads');
-if (!fs.existsSync(UPLOADS_DIR)) {
+const UPLOADS_DIR = process.env.VERCEL ? '/tmp' : path.join(__dirname, 'uploads');
+if (UPLOADS_DIR !== '/tmp' && !fs.existsSync(UPLOADS_DIR)) {
   try {
     fs.mkdirSync(UPLOADS_DIR, { recursive: true });
   } catch (err) {
