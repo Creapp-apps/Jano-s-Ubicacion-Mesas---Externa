@@ -15,7 +15,9 @@
   <div class="admin-container">
     <header>
       <div class="logo-group">
-        <img src="/assets/LOGO_JANOS.png" alt="Logo Jano's Eventos">
+        <a href="#" id="btn-back-to-portal" class="btn-back" title="Volver al Portal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--gold-primary); display: block;"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        </a>
         <h1>Panel de Control</h1>
       </div>
       <div style="display: flex; gap: 15px; align-items: center;">
@@ -35,12 +37,20 @@
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 5px;"><path d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
         Moderación de Fotos
       </button>
+      <button class="nav-tab" id="tab-btn-invitacion">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 5px;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><path d="M22 6l-10 7L2 6"/></svg>
+        Invitación & RSVPs
+      </button>
+      <button class="nav-tab" id="tab-btn-trivia">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 5px;"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+        Juego de Trivia
+      </button>
     </div>
 
     <!-- TABLES & GUESTS TAB -->
     <div id="tab-mesas" class="tab-content active">
       <div class="admin-grid">
-      <!-- Left Column: Settings & Load Guests -->
+      <!-- Left Column: Settings & QR Poster -->
       <div>
         <!-- Event Configuration panel -->
         <div class="panel">
@@ -58,70 +68,6 @@
           <div class="status-msg" id="title-status"></div>
         </div>
 
-        <!-- Upload Excel/CSV panel -->
-        <div class="panel">
-          <h2>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
-            Cargar Lista de Invitados
-          </h2>
-          <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; margin-bottom: 20px;">
-            Sube un archivo Excel (.xlsx, .xls) o CSV. El sistema leerá las columnas: <strong>Nombre</strong>, <strong>Apellido</strong> y <strong>Numero de Mesa</strong> para asignar ubicaciones.
-          </p>
-
-          <div class="drop-zone" id="file-drop-zone">
-            <div class="drop-zone-icon">&uarr;</div>
-            <div class="drop-zone-text">Arrastra tu archivo aquí o haz click para explorar</div>
-            <div class="drop-zone-subtext">Formatos permitidos: .xlsx, .xls, .csv</div>
-            <input type="file" id="excel-file-input" class="file-input" accept=".xlsx, .xls, .csv">
-          </div>
-
-          <div class="status-msg" id="upload-status"></div>
-        </div>
-
-        <!-- System Reset panel -->
-        <div class="panel">
-          <h2>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>
-            Acciones del Servidor
-          </h2>
-          <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; margin-bottom: 20px;">
-            Al subir un nuevo Excel se sobrescribirá la base de datos de invitados actual. Si deseas limpiar todo el listado de forma manual, utiliza la opción a continuación.
-          </p>
-          <div class="panel-actions">
-            <button class="btn btn-danger" id="btn-clear-db">Limpiar Base de Datos</button>
-            <a href="/assets/plantilla_invitados.xlsx" download class="btn btn-header-action" style="text-align: center; text-decoration: none; padding-top: 14px; font-size: 0.8rem; display: flex; align-items: center; justify-content: center;">Descargar Plantilla</a>
-          </div>
-        </div>
-      </div>
-
-      <!-- Right Column: Stats & QR Poster -->
-      <div>
-        <!-- Stats panel -->
-        <div class="panel">
-          <h2>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
-            Estadísticas del Evento
-          </h2>
-          
-          <div class="stats-container">
-            <div class="stat-card">
-              <div class="stat-value" id="stat-guests">0</div>
-              <div class="stat-label">Invitados</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-value" id="stat-tables">0</div>
-              <div class="stat-label">Mesas</div>
-            </div>
-          </div>
-
-          <h3 style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: var(--gold-primary); margin-bottom: 12px;">Capacidad por Mesa</h3>
-          <div class="tables-list-container" id="tables-breakdown-list">
-            <div style="padding: 20px; text-align: center; color: var(--text-muted); font-size: 0.85rem;">
-              No hay datos de mesas disponibles.
-            </div>
-          </div>
-        </div>
-
         <!-- QR Generator panel -->
         <div class="panel">
           <h2>
@@ -137,6 +83,35 @@
               Imprime el cartel con el QR oficial para ubicarlo en la recepción del salón. Los invitados podrán escanearlo al llegar para encontrar su mesa asignada.
             </p>
             <button class="btn btn-primary" id="btn-print-qr" style="width: auto; padding-left: 30px; padding-right: 30px;">Imprimir Cartel QR</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Stats -->
+      <div>
+        <!-- Stats panel -->
+        <div class="panel">
+          <h2>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+            Estadísticas del Evento
+          </h2>
+          
+          <div class="stats-container">
+            <div class="stat-card">
+              <div class="stat-value" id="stat-guests">0</div>
+              <div class="stat-label">Invitados Confirmados</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="stat-tables">0</div>
+              <div class="stat-label">Mesas</div>
+            </div>
+          </div>
+
+          <h3 style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: var(--gold-primary); margin-bottom: 12px;">Capacidad por Mesa</h3>
+          <div class="tables-list-container" id="tables-breakdown-list">
+            <div style="padding: 20px; text-align: center; color: var(--text-muted); font-size: 0.85rem;">
+              No hay datos de mesas disponibles.
+            </div>
           </div>
         </div>
       </div>
@@ -204,8 +179,12 @@
               Acciones de Galería
             </h2>
             <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; margin-bottom: 20px;">
-              Si deseas reiniciar la galería de fotos del muro eliminando todas las fotos (tanto pendientes como aprobadas), utiliza esta opción.
+              Proyecta las fotos en vivo en la pantalla gigante del salón, o reinicia la galería si es necesario.
             </p>
+            <button class="btn btn-primary" id="btn-screen-mode" style="width: 100%; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="stroke: #0b0b0c;"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+              Proyectar Fotos
+            </button>
             <button class="btn btn-danger" id="btn-clear-photos" style="width: 100%;">Limpiar Galería de Fotos</button>
           </div>
 
@@ -264,6 +243,525 @@
       </div>
     </div>
 
+    <!-- INVITATION TAB -->
+    <div id="tab-invitacion" class="tab-content">
+      <!-- Tabs Navigation -->
+      <div class="subtabs-nav" style="margin-bottom: 25px;">
+        <button type="button" class="subtab-btn active" id="subtab-btn-informacion" onclick="switchSubTab('informacion')">Información</button>
+        <button type="button" class="subtab-btn" id="subtab-btn-diseno" onclick="switchSubTab('diseno')">Diseño</button>
+        <button type="button" class="subtab-btn" id="subtab-btn-regalos" onclick="switchSubTab('regalos')">Regalos</button>
+        <button type="button" class="subtab-btn" id="subtab-btn-confirmaciones" onclick="switchSubTab('confirmaciones')">Confirmaciones</button>
+        <button type="button" class="subtab-btn" id="subtab-btn-respuestas" onclick="switchSubTab('respuestas')">Respuestas</button>
+        <button type="button" class="subtab-btn" id="subtab-btn-invitados" onclick="switchSubTab('invitados')">Invitados</button>
+      </div>
+
+      <form id="invitation-config-form" onsubmit="event.preventDefault();">
+        <!-- Subtab Content 1: Información -->
+        <div id="subtab-informacion" class="subtab-content-wrapper active-subtab fade-in-subtab">
+          <div class="admin-grid">
+            <!-- Left Column: Configuración Básica -->
+            <div class="panel">
+              <h2>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                Datos del Evento
+              </h2>
+              <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; margin-bottom: 20px;">
+                Configura los detalles básicos del evento que verán tus invitados.
+              </p>
+              
+              <div style="margin-bottom: 15px; text-align: left;">
+                <label style="display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Título del Evento</label>
+                <input type="text" id="inv-title-input" class="form-control-admin" placeholder="Ej. Boda de Laura & Martín" style="width: 100%; padding: 12px 18px; border-radius: 20px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif;">
+              </div>
+              <div style="margin-bottom: 15px; display: flex; gap: 15px; text-align: left;">
+                <div style="flex: 1;">
+                  <label style="display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Fecha del Evento</label>
+                  <div class="custom-datepicker-container" id="datepicker-container">
+                    <input type="text" id="inv-date-only-input" class="form-control-admin" placeholder="DD/MM/AAAA" maxlength="10" autocomplete="off" style="width: 100%; padding: 12px 42px 12px 18px; border-radius: 20px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif;">
+                    <button type="button" class="btn-datepicker-toggle" id="btn-datepicker-toggle" aria-label="Abrir calendario">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                      </svg>
+                    </button>
+                    <div class="custom-datepicker-dropdown" id="custom-datepicker-dropdown"></div>
+                  </div>
+                </div>
+                <div style="width: 130px;">
+                  <label style="display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Hora (24hs)</label>
+                  <input type="text" id="inv-time-only-input" class="form-control-admin" placeholder="21:00" maxlength="5" style="width: 100%; padding: 12px 18px; border-radius: 20px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif; text-align: center;">
+                </div>
+              </div>
+
+              <div style="margin-bottom: 15px; text-align: left;">
+                <label style="display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Música de Fondo por Defecto (MP3 o Spotify)</label>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                  <input type="url" id="inv-music-input" class="form-control-admin" placeholder="Ej. Link de Spotify o archivo .mp3" style="flex: 1; padding: 12px 18px; border-radius: 20px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif;">
+                  <label for="inv-audio-upload" class="btn btn-primary" style="padding: 12px 18px; border-radius: 20px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; white-space: nowrap; margin: 0; font-family: 'Montserrat', sans-serif; font-size: 0.75rem; height: 44px; box-sizing: border-box;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="feather feather-upload"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                    Subir MP3
+                  </label>
+                  <input type="file" id="inv-audio-upload" accept="audio/mpeg,audio/mp3" style="display: none;">
+                </div>
+                <div id="inv-audio-upload-status" style="font-size: 0.75rem; color: #a1a1a6; margin-top: 6px; font-family: 'Montserrat', sans-serif; min-height: 15px; font-weight: 500;"></div>
+              </div>
+
+              <div style="margin-bottom: 15px; text-align: left;">
+                <label style="display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Dirección del Salón</label>
+                <textarea id="inv-address-input" class="form-control-admin" rows="2" placeholder="Ej. Calle Jano's 123, CABA" style="width: 100%; padding: 12px 18px; border-radius: 20px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif; resize: none;"></textarea>
+              </div>
+
+              <div style="margin-bottom: 15px; text-align: left;">
+                <label style="display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Enlace de Google Maps del Salón</label>
+                <input type="url" id="inv-maps-input" class="form-control-admin" placeholder="Ej. https://maps.google.com/..." style="width: 100%; padding: 12px 18px; border-radius: 20px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif;">
+              </div>
+
+              <div style="margin-bottom: 15px; text-align: left;">
+                <label style="display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Código de Vestimenta (Dress Code)</label>
+                <input type="text" id="inv-dress-input" class="form-control-admin" placeholder="Ej. Elegante / Traje y vestido largo" style="width: 100%; padding: 12px 18px; border-radius: 20px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif;">
+              </div>
+
+              <div style="margin-top: 25px;">
+                <button type="button" class="btn btn-primary btn-save-invitation-config" style="width: 100%; padding: 14px; border-radius: 20px; font-weight: bold;">Guardar Configuración</button>
+              </div>
+              <div class="status-msg inv-config-status"></div>
+            </div>
+
+            <!-- Right Column: QR de Invitación -->
+            <div class="panel">
+              <h2>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                Enlace / QR de Invitación
+              </h2>
+              <div class="qr-preview-box" style="margin-top: 15px;">
+                <div class="qr-code-wrapper" id="qr-invitation-code-container">
+                  <div style="width: 150px; height: 150px; background: #eee; display: flex; align-items: center; justify-content: center; color: #666; font-size: 0.8rem;">Cargando...</div>
+                </div>
+                <p class="qr-instructions" id="qr-invitation-instructions-text">
+                  Enlace público de la invitación para enviar a tus invitados. Puedes copiar el enlace o imprimir el código QR.
+                </p>
+                <div style="display: flex; gap: 8px; align-items: center; width: 100%; margin-bottom: 15px;">
+                  <input type="text" id="invitation-public-url" readonly style="flex: 1; padding: 10px 14px; border-radius: 15px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.5); color: white; font-size: 0.8rem; outline: none;" onclick="this.select();">
+                  <button type="button" class="btn" id="btn-copy-invitation-url" style="padding: 10px 16px; border-radius: 15px; font-size: 0.75rem; background: var(--accent-gold); color: black; font-weight: bold; border: none; cursor: pointer;">Copiar</button>
+                </div>
+                <button type="button" class="btn btn-primary" id="btn-print-invitation-qr" style="width: auto; padding-left: 30px; padding-right: 30px;">Imprimir Cartel QR</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Subtab Content 2: Diseño -->
+        <div id="subtab-diseno" class="subtab-content-wrapper">
+          <div class="panel">
+            <h2>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+              Estilo & Personalización Estética
+            </h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; margin-bottom: 20px;">
+              Elige la tipografía, colores, efectos dinámicos de fondo y el sello de cera de tu sobre digital.
+            </p>
+
+            <div style="display: flex; gap: 30px; text-align: left; align-items: stretch; flex-wrap: wrap; margin-bottom: 20px;">
+              <div style="flex: 1.2; min-width: 320px; display: flex; flex-direction: column; justify-content: space-between; gap: 15px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
+                  <div>
+                    <div style="margin-bottom: 15px;">
+                      <label style="display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Tipografía (Estilo de Fuente)</label>
+                      <select id="inv-theme-font" class="form-control-admin" style="width: 100%; padding: 12px 18px; border-radius: 20px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif;">
+                        <option value="classic-editorial">Clásico & Editorial (Playfair + Montserrat)</option>
+                        <option value="romantic-charms">Romántico & Caligráfico (Great Vibes + Open Sans)</option>
+                        <option value="cinematic-roman">Cinematográfico Imperial (Cinzel + Lora)</option>
+                        <option value="modern-minimalist">Moderno & Minimalista (Outfit + Outfit)</option>
+                      </select>
+                    </div>
+
+                    <div style="margin-bottom: 15px;">
+                      <label style="display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Paleta de Colores (Tema)</label>
+                      <select id="inv-theme-color" class="form-control-admin" style="width: 100%; padding: 12px 18px; border-radius: 20px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif;">
+                        <option value="golden-luxury">Golden Luxury (Negro y Oro Imperial)</option>
+                        <option value="romantic-rose">Romantic Rose (Rosa Viejo, Blanco y Oro Rosa)</option>
+                        <option value="emerald-forest">Emerald Forest (Verde Esmeralda y Oro)</option>
+                        <option value="midnight-blue">Midnight Blue (Azul Noche y Plata)</option>
+                        <option value="minimalist-pearl">Minimalist Pearl (Blanco Perla, Gris y Negro)</option>
+                      </select>
+                    </div>
+
+                    <div style="margin-bottom: 15px;">
+                      <label style="display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Efecto de Fondo Animado</label>
+                      <select id="inv-bg-effect" class="form-control-admin" style="width: 100%; padding: 12px 18px; border-radius: 20px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif;">
+                        <option value="golden-dust">Polvo de Oro Flotante (Golden Dust)</option>
+                        <option value="rose-petals">Pétalos de Rosas Cayendo (Rose Petals)</option>
+                        <option value="green-leaves">Hojas Verdes Orgánicas (Foliage)</option>
+                        <option value="stars">Estrellas Parpadeantes (Stars)</option>
+                        <option value="none">Sin Animación (Fondo Liso)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div style="margin-bottom: 15px;">
+                      <label style="display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Diseño del Sello (Sobre Virtual)</label>
+                      <select id="inv-wax-seal" class="form-control-admin" style="width: 100%; padding: 12px 18px; border-radius: 20px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif;">
+                        <option value="rings">Alianzas de Boda (Rings)</option>
+                        <option value="heart">Corazón Romántico (Heart)</option>
+                        <option value="crown">Corona de Iniciales (Crown)</option>
+                        <option value="star">Celebración / Estrella (Star)</option>
+                      </select>
+                    </div>
+
+                    <div style="margin-bottom: 15px;">
+                      <label style="display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Imagen de Fondo (URL)</label>
+                      <input type="url" id="inv-bg-url" class="form-control-admin" placeholder="Ej. https://tuservidor.com/mi-fondo.jpg" style="width: 100%; padding: 12px 18px; border-radius: 20px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif;">
+                    </div>
+
+                    <div style="margin-bottom: 15px;">
+                      <label style="display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Imagen del Sobre (URL)</label>
+                      <input type="url" id="inv-cover-url" class="form-control-admin" placeholder="Ej. https://tuservidor.com/mi-portada.jpg" style="width: 100%; padding: 12px 18px; border-radius: 20px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif;">
+                    </div>
+
+                    <!-- Custom Invitation Carousel Photos -->
+                    <div class="moderation-section-header" style="margin-top: 15px; margin-bottom: 10px;">
+                      <h3 style="font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); display: flex; align-items: center; gap: 8px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                        Galería de Fotos (Carrusel)
+                      </h3>
+                    </div>
+                    <p style="color: var(--text-muted); font-size: 0.75rem; line-height: 1.4; margin-bottom: 12px;">
+                      Ingresa las URLs de hasta 5 fotos para el carrusel interactivo 3D.
+                    </p>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; text-align: left;">
+                      <div style="grid-column: span 2;">
+                        <label style="display: block; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; color: var(--gold-primary); margin-bottom: 5px; font-weight: 600;">Foto 1 (Principal)</label>
+                        <input type="url" id="inv-photo-1" class="form-control-admin" placeholder="Ej. https://tuservidor.com/foto1.jpg" style="width: 100%; padding: 10px 14px; border-radius: 15px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif; font-size: 0.8rem;">
+                      </div>
+                      <div>
+                        <label style="display: block; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; color: var(--gold-primary); margin-bottom: 5px; font-weight: 600;">Foto 2</label>
+                        <input type="url" id="inv-photo-2" class="form-control-admin" placeholder="Ej. https://tuservidor.com/foto2.jpg" style="width: 100%; padding: 10px 14px; border-radius: 15px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif; font-size: 0.8rem;">
+                      </div>
+                      <div>
+                        <label style="display: block; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; color: var(--gold-primary); margin-bottom: 5px; font-weight: 600;">Foto 3</label>
+                        <input type="url" id="inv-photo-3" class="form-control-admin" placeholder="Ej. https://tuservidor.com/foto3.jpg" style="width: 100%; padding: 10px 14px; border-radius: 15px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif; font-size: 0.8rem;">
+                      </div>
+                      <div>
+                        <label style="display: block; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; color: var(--gold-primary); margin-bottom: 5px; font-weight: 600;">Foto 4</label>
+                        <input type="url" id="inv-photo-4" class="form-control-admin" placeholder="Ej. https://tuservidor.com/foto4.jpg" style="width: 100%; padding: 10px 14px; border-radius: 15px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif; font-size: 0.8rem;">
+                      </div>
+                      <div>
+                        <label style="display: block; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; color: var(--gold-primary); margin-bottom: 5px; font-weight: 600;">Foto 5</label>
+                        <input type="url" id="inv-photo-5" class="form-control-admin" placeholder="Ej. https://tuservidor.com/foto5.jpg" style="width: 100%; padding: 10px 14px; border-radius: 15px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif; font-size: 0.8rem;">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Real-time Preview Mockup Column -->
+              <div style="flex: 0.8; min-width: 290px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 25px 15px; border-radius: 30px; box-shadow: inset 0 0 25px rgba(0,0,0,0.5); position: relative;">
+                
+                <h4 style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px; color: var(--gold-primary); margin-bottom: 12px; font-weight: 600;">Vista Previa en Tiempo Real</h4>
+                
+                <!-- Phone Mockup Container -->
+                <div class="phone-mockup" style="width: 250px; height: 500px; border-radius: 35px; border: 6px solid #222; background: #000; box-shadow: 0 15px 30px rgba(0,0,0,0.6), inset 0 0 8px rgba(255,255,255,0.15); position: relative; overflow: hidden; display: flex; flex-direction: column;">
+                  
+                  <!-- Camera Notch / Island -->
+                  <div style="position: absolute; top: 8px; left: 50%; transform: translateX(-50%); width: 60px; height: 12px; background: #222; border-radius: 8px; z-index: 10; display: flex; justify-content: center; align-items: center;">
+                    <div style="width: 24px; height: 3px; background: #111; border-radius: 2px;"></div>
+                  </div>
+                  
+                  <!-- Screen Wrapper -->
+                  <div id="preview-screen" style="flex: 1; display: flex; flex-direction: column; position: relative; background: #0b0b0c; padding: 25px 0 0 0; overflow: hidden; border-radius: 0 0 32px 32px; height: 100%;">
+                    
+                    <!-- Toggle view header -->
+                    <div style="display: flex; justify-content: center; gap: 6px; position: absolute; top: 35px; left: 0; right: 0; z-index: 10; pointer-events: auto;">
+                      <button type="button" id="btn-prev-view-envelope" style="padding: 4px 10px; border-radius: 10px; font-size: 0.6rem; border: 1px solid rgba(255,255,255,0.1); background: var(--gold-gradient); color: #0b0b0c; cursor: pointer; font-weight: bold; outline: none; transition: all 0.2s; box-shadow: 0 4px 8px rgba(0,0,0,0.5);">Sobre</button>
+                      <button type="button" id="btn-prev-view-card" style="padding: 4px 10px; border-radius: 10px; font-size: 0.6rem; border: 1px solid rgba(255,255,255,0.05); background: rgba(255,255,255,0.05); color: #888; cursor: pointer; font-weight: bold; outline: none; transition: all 0.2s; box-shadow: 0 4px 8px rgba(0,0,0,0.5);">Tarjeta</button>
+                    </div>
+
+                    <!-- Live Iframe -->
+                    <iframe id="preview-iframe" src="" style="width: 100%; height: 100%; border: none; background: #0b0b0c; z-index: 1;"></iframe>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 25px;">
+              <button type="button" class="btn btn-primary btn-save-invitation-config" style="width: 100%; padding: 14px; border-radius: 20px; font-weight: bold;">Guardar Configuración</button>
+            </div>
+            <div class="status-msg inv-config-status"></div>
+          </div>
+        </div>
+
+        <!-- Subtab Content 3: Regalos -->
+        <div id="subtab-regalos" class="subtab-content-wrapper">
+          <div class="panel">
+            <h2>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12V8H4v4M2 12h20M4 12v6h16v-6"/></svg>
+              Mesa de Regalos / Datos Bancarios
+            </h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; margin-bottom: 20px;">
+              Ingresa los datos de tu cuenta bancaria para que tus invitados puedan realizar transferencias y regalos directamente.
+            </p>
+
+            <div style="max-width: 600px; margin: 0 auto; text-align: left;">
+              <div style="margin-bottom: 15px;">
+                <label style="display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Titular de la Cuenta</label>
+                <input type="text" id="inv-bank-holder-input" class="form-control-admin" placeholder="Ej. Laura Pérez" style="width: 100%; padding: 12px 18px; border-radius: 20px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif;">
+              </div>
+              <div style="margin-bottom: 15px;">
+                <label style="display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">CBU</label>
+                <input type="text" id="inv-cbu-input" class="form-control-admin" placeholder="22 dígitos" style="width: 100%; padding: 12px 18px; border-radius: 20px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif;">
+              </div>
+              <div style="margin-bottom: 15px;">
+                <label style="display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Alias</label>
+                <input type="text" id="inv-alias-input" class="form-control-admin" placeholder="Ej. boda.laura.martin" style="width: 100%; padding: 12px 18px; border-radius: 20px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif;">
+              </div>
+
+              <div style="margin-top: 25px;">
+                <button type="button" class="btn btn-primary btn-save-invitation-config" style="width: 100%; padding: 14px; border-radius: 20px; font-weight: bold;">Guardar Configuración</button>
+              </div>
+              <div class="status-msg inv-config-status"></div>
+            </div>
+          </div>
+        </div>
+      </form>
+
+      <!-- Subtab Content 4: Confirmaciones -->
+      <div id="subtab-confirmaciones" class="subtab-content-wrapper">
+        <div class="panel">
+          <h2>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            Métricas & Confirmaciones (RSVPs)
+          </h2>
+          <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; margin-bottom: 20px;">
+            Visualiza el recuento de asistencia, restricciones alimentarias informadas y sugerencias musicales de tus invitados.
+          </p>
+
+          <div class="stats-container" style="margin-top: 15px; margin-bottom: 25px;">
+            <div class="stat-card" style="flex: 1;">
+              <div class="stat-value" id="rsvp-stat-confirmed" style="color: #2ec4b6;">0</div>
+              <div class="stat-label">Asistirán</div>
+            </div>
+            <div class="stat-card" style="flex: 1;">
+              <div class="stat-value" id="rsvp-stat-declined" style="color: var(--error);">0</div>
+              <div class="stat-label">No Asistirán</div>
+            </div>
+            <div class="stat-card" style="flex: 1;">
+              <div class="stat-value" id="rsvp-stat-total-guests">0</div>
+              <div class="stat-label">Total Invitados</div>
+            </div>
+          </div>
+
+          <div class="admin-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+            <!-- Dietary and food requirements list -->
+            <div style="border: 1px solid var(--card-border); background: rgba(0,0,0,0.2); border-radius: 20px; padding: 20px; text-align: left;">
+              <h3 style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; color: var(--gold-primary); margin-bottom: 12px;">Menú Especial / Restricciones</h3>
+              <div class="tables-list-container" id="rsvp-diet-breakdown" style="max-height: 250px; overflow-y: auto;">
+                <div style="padding: 10px; text-align: center; color: var(--text-muted); font-size: 0.8rem;">Cargando restricciones...</div>
+              </div>
+            </div>
+
+            <!-- Suggested Songs list -->
+            <div style="border: 1px solid var(--card-border); background: rgba(0,0,0,0.2); border-radius: 20px; padding: 20px; text-align: left;">
+              <h3 style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; color: var(--gold-primary); margin-bottom: 12px;">Sugerencias para el DJ</h3>
+              <div class="tables-list-container" id="rsvp-songs-list" style="max-height: 250px; overflow-y: auto;">
+                <div style="padding: 10px; text-align: center; color: var(--text-muted); font-size: 0.8rem;">Cargando sugerencias de canciones...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Subtab Content 5: Respuestas -->
+      <div id="subtab-respuestas" class="subtab-content-wrapper">
+        <div class="panel">
+          <div class="panel-header-flex" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+            <h2 style="margin: 0;">Listado Detallado de Respuestas</h2>
+            <input type="text" id="rsvp-search-input" class="form-control-admin" placeholder="Buscar por nombre..." style="padding: 8px 12px; font-size: 0.8rem; border-radius: 12px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; width: 220px; outline: none; font-family: 'Montserrat', sans-serif;">
+          </div>
+          <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; margin-bottom: 20px; text-align: left;">
+            Busca, filtra y administra las confirmaciones individuales de tus invitados.
+          </p>
+          
+          <div class="table-wrapper" style="margin-top: 20px; max-height: 450px; overflow-y: auto; overflow-x: auto;">
+            <table class="guests-table" style="font-size: 0.8rem;">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Asistencia</th>
+                  <th>Acompañantes</th>
+                  <th>Restricción</th>
+                  <th style="width: 80px; text-align: center;">Acción</th>
+                </tr>
+              </thead>
+              <tbody id="rsvp-table-body">
+                <tr>
+                  <td colspan="5" style="text-align: center; padding: 20px; color: var(--text-muted);">Cargando confirmaciones de asistencia...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Subtab Content 6: Invitados -->
+      <div id="subtab-invitados" class="subtab-content-wrapper">
+        <div class="panel">
+          <div class="panel-header-flex" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+            <h2 style="margin: 0;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              Gestión de Invitados & Enlaces
+            </h2>
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-left: auto;">
+              <input type="text" id="invitados-guest-search" class="form-control-admin" placeholder="Buscar por nombre..." style="padding: 10px 15px; font-size: 0.85rem; border-radius: 15px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif; width: 220px;">
+              <button type="button" class="btn btn-primary" id="btn-add-guest-invitados" style="padding: 10px 20px; font-size: 0.8rem; border-radius: 20px; flex: none;">+ Agregar Invitado</button>
+            </div>
+          </div>
+          <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; margin-bottom: 20px; text-align: left;">
+            Carga tu listado de invitados para poder generar y copiar sus enlaces de invitación personalizados.
+          </p>
+
+          <!-- Excel Uploader & Template inside Invitados Subtab -->
+          <div class="admin-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 20px;">
+            <div class="panel" style="background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.03); margin-bottom: 0;">
+              <h3 style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; color: var(--gold-primary); margin-bottom: 8px;">Cargar Listado (.xlsx / .csv)</h3>
+              <div class="drop-zone" id="file-drop-zone-invitados" style="padding: 20px 10px;">
+                <div class="drop-zone-icon" style="font-size: 1.5rem; margin-bottom: 5px;">&uarr;</div>
+                <div class="drop-zone-text" style="font-size: 0.8rem;">Haz click o arrastra tu Excel aquí</div>
+                <input type="file" id="excel-file-input-invitados" class="file-input" accept=".xlsx, .xls, .csv">
+              </div>
+              <div class="status-msg" id="upload-status-invitados" style="margin-top: 10px;"></div>
+            </div>
+
+            <div class="panel" style="background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.03); margin-bottom: 0; display: flex; flex-direction: column; justify-content: space-between;">
+              <div>
+                <h3 style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; color: var(--gold-primary); margin-bottom: 8px;">Acciones de Lista</h3>
+                <p style="color: var(--text-muted); font-size: 0.75rem; line-height: 1.4; margin-bottom: 15px;">
+                  Puedes descargar la plantilla oficial de Excel para rellenarla con tus invitados, o limpiar la base de datos actual para comenzar de cero.
+                </p>
+              </div>
+              <div style="display: flex; gap: 10px;">
+                <a href="/assets/plantilla_invitados.xlsx" download class="btn btn-header-action" style="flex: 1; text-align: center; text-decoration: none; font-size: 0.75rem; padding: 10px 0; display: flex; align-items: center; justify-content: center; border-radius: 15px;">Descargar Plantilla</a>
+                <button type="button" class="btn btn-danger" id="btn-clear-db-invitados" style="flex: 1; font-size: 0.75rem; padding: 10px 0; border-radius: 15px;">Limpiar Todo</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Table of Guests & Personal Links -->
+          <div class="table-wrapper" style="margin-top: 20px; max-height: 400px; overflow-y: auto; overflow-x: auto;">
+            <table class="guests-table" style="font-size: 0.8rem;">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Apellido</th>
+                  <th>Mesa</th>
+                  <th style="text-align: center; width: 120px;">Confirmación</th>
+                  <th>Enlace de Invitación</th>
+                  <th style="width: 180px; text-align: center;">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="invitados-table-body">
+                <tr>
+                  <td colspan="6" style="text-align: center; padding: 20px; color: var(--text-muted);">Cargando listado de invitados...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- TRIVIA TAB -->
+    <div id="tab-trivia" class="tab-content">
+      <div class="admin-grid">
+        <!-- Left Column: Configuración y Preguntas -->
+        <div class="panel">
+          <h2>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            Configuración de Preguntas
+          </h2>
+          <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; margin-bottom: 20px;">
+            Personalizá las preguntas de la trivia. Los novios o agasajados podrán jugar con sus invitados.
+          </p>
+
+          <div style="margin-bottom: 20px; text-align: left;">
+            <label style="display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Estado de la Trivia</label>
+            <select id="trivia-enabled-toggle" class="form-control-admin" style="width: 100%; padding: 12px 18px; border-radius: 20px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif;">
+              <option value="false">Deshabilitada</option>
+              <option value="true">Habilitada</option>
+            </select>
+          </div>
+
+          <div id="trivia-questions-editor-section">
+            <h3 style="font-size: 0.95rem; font-family: 'Cinzel', serif; color: var(--gold-light); margin-bottom: 12px; text-align: left;">Listado de Preguntas</h3>
+            <div id="trivia-questions-list" style="display: flex; flex-direction: column; gap: 15px; max-height: 550px; overflow-y: auto; margin-bottom: 20px; padding-right: 5px; padding-bottom: 60px;">
+              <!-- Question items injected here -->
+            </div>
+            
+            <button type="button" class="btn btn-header-action" id="btn-add-trivia-question" style="width: 100%; margin-bottom: 15px;">+ Agregar Nueva Pregunta</button>
+            <button type="button" class="btn btn-primary" id="btn-save-trivia-questions" style="width: 100%;">Guardar Preguntas</button>
+          </div>
+        </div>
+
+        <!-- Right Column: Control en Vivo -->
+        <div class="panel">
+          <h2>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+            Consola del Organizador
+          </h2>
+          <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; margin-bottom: 20px;">
+            Guía el ritmo del juego desde aquí. La pantalla gigante y los celulares de los invitados se actualizarán en tiempo real.
+          </p>
+
+          <button type="button" class="btn btn-primary" id="btn-admin-trivia-projector" style="width: 100%; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="stroke: #0b0b0c;"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            Proyectar en pantalla
+          </button>
+
+          <!-- Status Indicator -->
+          <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 15px; border: 1px solid var(--card-border); margin-bottom: 20px; text-align: left;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+              <span style="font-weight: 600; color: var(--gold-light);">Estado actual:</span>
+              <span id="admin-trivia-status-badge" style="background: var(--gold-primary); color: #000; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">Inactivo</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="font-weight: 600; color: var(--gold-light);">Pregunta:</span>
+              <span id="admin-trivia-question-index">-</span>
+            </div>
+          </div>
+
+          <!-- Controls Grid -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 25px;">
+            <button type="button" class="btn btn-danger" id="btn-admin-trivia-init" style="grid-column: span 2; font-size: 0.85rem;">Inicializar / Reiniciar Juego</button>
+            <button type="button" class="btn btn-primary" id="btn-admin-trivia-start" style="font-size: 0.85rem;">Lanzar Pregunta</button>
+            <button type="button" class="btn btn-primary" id="btn-admin-trivia-reveal" style="font-size: 0.85rem;">Revelar Respuesta</button>
+            <button type="button" class="btn btn-header-action" id="btn-admin-trivia-leaderboard" style="font-size: 0.85rem;">Mostrar Posiciones</button>
+            <button type="button" class="btn btn-header-action" id="btn-admin-trivia-next" style="font-size: 0.85rem;">Siguiente Pregunta</button>
+          </div>
+
+          <!-- Active Players list -->
+          <h3 style="font-size: 0.95rem; font-family: 'Cinzel', serif; color: var(--gold-light); margin-bottom: 12px; text-align: left;">Jugadores Conectados (<span id="admin-trivia-players-count">0</span>)</h3>
+          <div class="table-wrapper" style="max-height: 200px; overflow-y: auto;">
+            <table class="guests-table" style="font-size: 0.75rem;">
+              <thead>
+                <tr>
+                  <th>Pos</th>
+                  <th>Jugador</th>
+                  <th style="text-align: right;">Puntos</th>
+                </tr>
+              </thead>
+              <tbody id="admin-trivia-players-tbody">
+                <tr>
+                  <td colspan="3" style="text-align: center; padding: 15px; color: var(--text-muted);">Ningún jugador conectado.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
 
   </div> <!-- Close admin-container -->
 
@@ -311,7 +809,6 @@
   <div id="print-area">
     <div class="print-poster">
       <div class="print-header">
-        <img src="/assets/LOGO_JANOS.png" alt="Logo Jano's" class="print-logo">
       </div>
       
       <div class="print-body">

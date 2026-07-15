@@ -120,6 +120,13 @@ class TriviaCoordinator {
     })).sort((a, b) => b.score - a.score);
   }
 
+  showLeaderboard(eventId) {
+    const session = this.sessions[eventId];
+    if (!session) return;
+    session.status = 'LEADERBOARD';
+    this.broadcastState(eventId);
+  }
+
   nextQuestion(eventId) {
     const session = this.sessions[eventId];
     if (!session) return;

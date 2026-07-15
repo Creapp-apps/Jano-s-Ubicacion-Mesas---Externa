@@ -967,6 +967,26 @@ async function toggleEvent(id, active) {
   }
 }
 
+async function updateEventServiceTrivia(id, serviceTrivia) {
+  if (isSupabaseEnabled) {
+    const { error } = await supabase
+      .from('events')
+      .update({ service_trivia: serviceTrivia })
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error updating service_trivia in Supabase:', error);
+      throw error;
+    }
+  } else {
+    const events = getLocalEvents();
+    const event = events.find(e => e.id === id);
+    if (!event) throw new Error('Evento no encontrado.');
+    event.serviceTrivia = serviceTrivia;
+    saveLocalEvents(events);
+  }
+}
+
 async function deleteEvent(id) {
   // Clear all photos (records and storage files) first to prevent orphaned files in bucket
   try {
@@ -1327,6 +1347,7 @@ module.exports = {
   getEvents,
   createEvent,
   toggleEvent,
+  updateEventServiceTrivia,
   deleteEvent,
   validateEventPassword,
   findEventByEmailAndPassword,

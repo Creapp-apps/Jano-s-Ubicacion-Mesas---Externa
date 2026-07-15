@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gran Trivia en Vivo | MiFiestAPP</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <style>
+    :root {
+      --bg-dark: #080214;
+      --panel-bg: rgba(20, 10, 35, 0.45);
+      --panel-border: rgba(255, 255, 255, 0.08);
+      --text-main: #f3f0fa;
+      --text-muted: #a59cb5;
+      
+      --color-red: hsl(355, 100%, 60%);
+      --color-blue: hsl(210, 100%, 65%);
+      --color-yellow: hsl(45, 100%, 55%);
+      --color-green: hsl(145, 100%, 50%);
+      --gold: #d4af37;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Outfit', 'Montserrat', sans-serif;
+      background: radial-gradient(circle at center, #1b0a3a 0%, var(--bg-dark) 100%);
+      color: var(--text-main);
+      min-height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 2.5rem;
+    }
+
+    /* Elegant Scan QR Overlay on top */
+    header {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--panel-border);
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .logo-badge {
+      background: linear-gradient(135deg, var(--color-blue), var(--color-green));
+      padding: 0.6rem 1.2rem;
+      border-radius: 30px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      font-size: 0.9rem;
+      box-shadow: 0 0 20px rgba(74, 144, 226, 0.3);
+    }
+
+    .event-title {
+      font-size: 1.8rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #ffffff 30%, #bca7e8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .qr-banner {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 0.8rem 1.5rem;
+      border-radius: 16px;
+      border: 1px solid var(--panel-border);
+      backdrop-filter: blur(10px);
+    }
+
+    .qr-img-box {
+      width: 70px;
+      height: 70px;
+      background: white;
+      border-radius: 8px;
+      padding: 4px;
+    }
+
+    .qr-img-box img {
+      width: 100%;
+      height: 100%;
+    }
+
+    .qr-text-box h4 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .qr-text-box p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Main Content Area */
+    main {
+      flex: 1;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      margin: 2rem 0;
+    }
+
+    /* View containers */
+    .view-panel {
+      width: 100%;
+      max-width: 1100px;
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 24px;
+      padding: 3rem;
+      backdrop-filter: blur(30px);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .view-panel.active {
+      display: flex;
+    }
+
+    /* 1. LOBBY VIEW */
+    .lobby-header {
+      font-size: 2.2rem;
+      font-weight: 800;
+      margin-bottom: 1rem;
+    }
+
+    .lobby-counter {
+      font-size: 5rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--color-blue), var(--color-green));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin: 1rem 0;
+    }
+
+    .lobby-subtitle {
+      font-size: 1.2rem;
+      color: var(--text-muted);
+      margin-bottom: 2.5rem;
+    }
+
+    .lobby-players-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      justify-content: center;
+      max-height: 250px;
+      overflow-y: auto;
+      width: 100%;
+      padding: 1rem;
+    }
+
+    .player-pill {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 0.6rem 1.2rem;
+      border-radius: 30px;
+      font-weight: 600;
+      font-size: 1.1rem;
+      animation: popIn 0.3s ease-out forwards;
+    }
+
+    @keyframes popIn {
+      from { transform: scale(0.8); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    /* 2. QUESTION VIEW */
+    .timer-container {
+      position: relative;
+      width: 90px;
+      height: 90px;
+      margin-bottom: 2rem;
+    }
+
+    .timer-svg {
+      transform: rotate(-90deg);
+      width: 100%;
+      height: 100%;
+    }
+
+    .timer-circle {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.1);
+      stroke-width: 8;
+    }
+
+    .timer-progress {
+      fill: none;
+      stroke: var(--color-blue);
+      stroke-width: 8;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.1s linear;
+    }
+
+    .timer-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 1.8rem;
+      font-weight: 800;
+    }
+
+    .question-title {
+      font-size: 2.2rem;
+      font-weight: 700;
+      line-height: 1.3;
+      margin-bottom: 3rem;
+      max-width: 900px;
+    }
+
+    .options-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.5rem;
+      width: 100%;
+      max-width: 950px;
+    }
+
+    .option-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 2px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 1.8rem;
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      text-align: left;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+
+    .option-icon {
+      width: 45px;
+      height: 45px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: white;
+      font-size: 1.4rem;
+      flex-shrink: 0;
+    }
+
+    .option-text {
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    /* Option Colors styles */
+    .opt-0 .option-icon { background-color: var(--color-red); }
+    .opt-1 .option-icon { background-color: var(--color-blue); }
+    .opt-2 .option-icon { background-color: var(--color-yellow); }
+    .opt-3 .option-icon { background-color: var(--color-green); }
+
+    /* Reveal States */
+    .option-card.incorrect {
+      opacity: 0.25;
+      transform: scale(0.97);
+    }
+
+    .option-card.correct {
+      border-color: var(--color-green);
+      box-shadow: 0 0 25px rgba(46, 204, 113, 0.25);
+      background: rgba(46, 204, 113, 0.08);
+      transform: scale(1.02);
+    }
+
+    /* Stat bar overlay */
+    .stat-bar {
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.15);
+      width: 0%;
+      transition: width 1s cubic-bezier(0.1, 0.8, 0.3, 1);
+    }
+    .option-card.correct .stat-bar {
+      background: var(--color-green);
+    }
+
+    /* 3. LEADERBOARD VIEW */
+    .leaderboard-title {
+      font-size: 2.2rem;
+      font-weight: 800;
+      margin-bottom: 2rem;
+    }
+
+    .leaderboard-list {
+      width: 100%;
+      max-width: 700px;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .leaderboard-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--panel-border);
+      padding: 1rem 2rem;
+      border-radius: 14px;
+      font-size: 1.2rem;
+      font-weight: 600;
+      transform-origin: center left;
+    }
+
+    .leaderboard-rank {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .rank-number {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+    }
+
+    .rank-1 .rank-number { background: var(--gold); color: #000; }
+    .rank-2 .rank-number { background: #c0c0c0; color: #000; }
+    .rank-3 .rank-number { background: #cd7f32; color: #000; }
+
+    /* 4. PODIUM VIEW */
+    .podium-container {
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 2rem;
+      margin-top: 3rem;
+      width: 100%;
+      max-width: 800px;
+      height: 350px;
+    }
+
+    .podium-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 160px;
+      position: relative;
+    }
+
+    .podium-pillar {
+      width: 100%;
+      border-top-left-radius: 16px;
+      border-top-right-radius: 16px;
+      border: 1px solid var(--panel-border);
+      border-bottom: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      font-weight: 800;
+      color: rgba(255, 255, 255, 0.25);
+    }
+
+    .podium-name {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 0.8rem;
+      text-align: center;
+      white-space: nowrap;
+      text-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+
+    .podium-score {
+      font-size: 1rem;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+    }
+
+    .block-1 .podium-pillar {
+      height: 200px;
+      background: linear-gradient(180deg, rgba(212, 175, 55, 0.3) 0%, rgba(212, 175, 55, 0.05) 100%);
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    .block-2 .podium-pillar {
+      height: 150px;
+      background: linear-gradient(180deg, rgba(192, 192, 192, 0.3) 0%, rgba(192, 192, 192, 0.05) 100%);
+      border-color: #c0c0c0;
+      color: #c0c0c0;
+    }
+
+    .block-3 .podium-pillar {
+      height: 110px;
+      background: linear-gradient(180deg, rgba(205, 127, 50, 0.3) 0%, rgba(205, 127, 50, 0.05) 100%);
+      border-color: #cd7f32;
+      color: #cd7f32;
+    }
+
+    /* Screen Footer */
+    footer {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      border-top: 1px solid var(--panel-border);
+      padding-top: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Screen Header -->
+  <header>
+    <div class="logo-container">
+      <div class="logo-badge">TRIVIA EN VIVO</div>
+      <h1 class="event-title" id="display-event-title">Cargando evento...</h1>
+    </div>
+    
+    <div class="qr-banner">
+      <div class="qr-img-box" id="projector-qr-container"></div>
+      <div class="qr-text-box">
+        <h4>¡Jugá con tu celular!</h4>
+        <p>Escaneá el código QR para entrar</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- Widescreen content switcher -->
+  <main>
+
+    <!-- 1. LOBBY VIEW -->
+    <div id="view-lobby" class="view-panel active">
+      <h2 class="lobby-header">Esperando Jugadores...</h2>
+      <div class="lobby-counter" id="lobby-counter">0</div>
+      <p class="lobby-subtitle">Invitados listos para competir</p>
+      <div class="lobby-players-grid" id="lobby-players">
+        <!-- Injected joined players list -->
+      </div>
+    </div>
+
+    <!-- 2. QUESTION ACTIVE VIEW -->
+    <div id="view-question" class="view-panel">
+      <div class="timer-container">
+        <svg class="timer-svg" viewBox="0 0 80 80">
+          <circle class="timer-circle" cx="40" cy="40" r="34" />
+          <circle class="timer-progress" id="timer-progress" cx="40" cy="40" r="34" />
+        </svg>
+        <div class="timer-text" id="timer-sec">0</div>
+      </div>
+      <h2 class="question-title" id="question-text">¿Pregunta?</h2>
+      <div class="options-grid" id="options-container">
+        <!-- Option Cards -->
+      </div>
+    </div>
+
+    <!-- 3. LEADERBOARD VIEW -->
+    <div id="view-leaderboard" class="view-panel">
+      <h2 class="leaderboard-title">Tablero de Posiciones</h2>
+      <div class="leaderboard-list" id="leaderboard-list">
+        <!-- Position Rows -->
+      </div>
+    </div>
+
+    <!-- 4. PODIUM VIEW -->
+    <div id="view-podium" class="view-panel">
+      <h2 class="lobby-header" style="background: linear-gradient(135deg, var(--gold), #fff); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">¡Podio Final de Ganadores!</h2>
+      <div class="podium-container" id="podium-blocks">
+        <!-- Podium Blocks -->
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Screen Footer -->
+  <footer>
+    <span>FiestAPP Trivia Loop</span>
+    <span id="game-status-bar">Conectando con el coordinador...</span>
+  </footer>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const eventId = urlParams.get('event') || 'default';
+    
+    // Connect to SSE stream
+    const eventSource = new EventSource(`/api/trivia/stream?event=${eventId}&role=screen`);
+    let countdownInterval = null;
+    let localTimerSec = 0;
+
+    // Generate QR code dynamically
+    function generateQR() {
+      const siteOrigin = window.location.origin;
+      const targetUrl = `${siteOrigin}/trivia-client.html?event=${encodeURIComponent(eventId)}`;
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(targetUrl)}&color=0b0b0c&bgcolor=ffffff`;
+      document.getElementById('projector-qr-container').innerHTML = `<img src="${qrUrl}" alt="QR">`;
+    }
+    generateQR();
+
+    // Fetch config title
+    fetch(`/api/config?event=${encodeURIComponent(eventId)}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.eventTitle) {
+          document.getElementById('display-event-title').textContent = data.eventTitle;
+        }
+      });
+
+    eventSource.onopen = () => {
+      document.getElementById('game-status-bar').textContent = 'Conectado al servidor de trivia';
+    };
+
+    eventSource.onerror = () => {
+      document.getElementById('game-status-bar').textContent = 'Reconectando con el servidor...';
+    };
+
+    eventSource.onmessage = (e) => {
+      const msg = JSON.parse(e.data);
+      if (msg.type === 'INITIAL_STATE' || msg.type === 'STATE_UPDATE') {
+        renderState(msg.data);
+      }
+    };
+
+    function switchView(viewId) {
+      document.querySelectorAll('.view-panel').forEach(panel => {
+        panel.classList.remove('active');
+      });
+      document.getElementById(viewId).classList.add('active');
+    }
+
+    function renderState(state) {
+      if (countdownInterval) clearInterval(countdownInterval);
+      
+      const statusText = `Estado: ${state.status} | Pregunta ${state.currentQuestionIndex + 1}/${state.questionsCount}`;
+      document.getElementById('game-status-bar').textContent = statusText;
+
+      if (state.status === 'LOBBY') {
+        switchView('view-lobby');
+        document.getElementById('lobby-counter').textContent = state.players.length;
+        const playersList = document.getElementById('lobby-players');
+        playersList.innerHTML = '';
+        state.players.forEach(p => {
+          const pill = document.createElement('div');
+          pill.className = 'player-pill';
+          pill.textContent = p.nickname;
+          playersList.appendChild(pill);
+        });
+      }
+      
+      else if (state.status === 'QUESTION_ACTIVE') {
+        switchView('view-question');
+        document.getElementById('question-text').textContent = state.currentQuestion.questionText;
+        
+        const optGrid = document.getElementById('options-container');
+        optGrid.innerHTML = '';
+        state.currentQuestion.options.forEach((opt, idx) => {
+          const card = document.createElement('div');
+          card.className = `option-card opt-${idx}`;
+          card.innerHTML = `
+            <div class="option-icon">${getGeometricSymbol(idx)}</div>
+            <div class="option-text">${opt}</div>
+            <div class="stat-bar" id="bar-${idx}"></div>
+          `;
+          optGrid.appendChild(card);
+        });
+
+        // Setup local timer countdown
+        localTimerSec = state.currentQuestion.timeLimit;
+        const totalLimit = state.currentQuestion.timeLimit;
+        
+        const progressCircle = document.getElementById('timer-progress');
+        const radius = progressCircle.r.baseVal.value;
+        const circumference = 2 * Math.PI * radius;
+        progressCircle.style.strokeDasharray = circumference;
+        
+        const updateTimerVisual = () => {
+          document.getElementById('timer-sec').textContent = localTimerSec;
+          const offset = circumference - (localTimerSec / totalLimit) * circumference;
+          progressCircle.style.strokeDashoffset = offset;
+        };
+
+        updateTimerVisual();
+        countdownInterval = setInterval(() => {
+          if (localTimerSec > 0) {
+            localTimerSec--;
+            updateTimerVisual();
+          } else {
+            clearInterval(countdownInterval);
+          }
+        }, 1000);
+      }
+      
+      else if (state.status === 'REVEAL_ANSWER') {
+        switchView('view-question');
+        document.getElementById('question-text').textContent = state.currentQuestion.questionText;
+        
+        const correctIdx = state.currentQuestion.correctOptionIndex;
+        
+        // Fetch current response stats to show bars
+        fetch(`/api/trivia/leaderboard?event=${eventId}`)
+          .then(res => res.json())
+          .then(data => {
+            const cards = document.querySelectorAll('.option-card');
+            cards.forEach((card, idx) => {
+              if (idx === correctIdx) {
+                card.classList.add('correct');
+              } else {
+                card.classList.add('incorrect');
+              }
+            });
+          });
+      }
+      
+      else if (state.status === 'LEADERBOARD') {
+        switchView('view-leaderboard');
+        fetch(`/api/trivia/leaderboard?event=${eventId}`)
+          .then(res => res.json())
+          .then(data => {
+            const list = document.getElementById('leaderboard-list');
+            list.innerHTML = '';
+            const topPlayers = (data.leaderboard || []).slice(0, 5);
+            topPlayers.forEach((p, idx) => {
+              const item = document.createElement('div');
+              item.className = `leaderboard-item rank-${idx + 1}`;
+              item.innerHTML = `
+                <div class="leaderboard-rank">
+                  <div class="rank-number">${idx + 1}</div>
+                  <span>${p.nickname}</span>
+                </div>
+                <div>${p.score} pts</div>
+              `;
+              list.appendChild(item);
+              
+              // GSAP stagger effect
+              gsap.fromTo(item, 
+                { opacity: 0, x: -30 }, 
+                { opacity: 1, x: 0, duration: 0.5, delay: idx * 0.1 }
+              );
+            });
+          });
+      }
+      
+      else if (state.status === 'PODIUM') {
+        switchView('view-podium');
+        renderPodium();
+      }
+    }
+
+    function getGeometricSymbol(idx) {
+      if (idx === 0) return '▲';
+      if (idx === 1) return '♦';
+      if (idx === 2) return '●';
+      return '■';
+    }
+
+    function renderPodium() {
+      fetch(`/api/trivia/leaderboard?event=${eventId}`)
+        .then(res => res.json())
+        .then(data => {
+          const players = data.leaderboard || [];
+          const container = document.getElementById('podium-blocks');
+          container.innerHTML = '';
+
+          // Sort for podium visualization (2nd, 1st, 3rd)
+          const p1 = players[0] || { nickname: '-', score: 0 };
+          const p2 = players[1] || { nickname: '-', score: 0 };
+          const p3 = players[2] || { nickname: '-', score: 0 };
+
+          const podiumSetup = [
+            { pos: 2, player: p2, class: 'block-2' },
+            { pos: 1, player: p1, class: 'block-1' },
+            { pos: 3, player: p3, class: 'block-3' }
+          ];
+
+          podiumSetup.forEach(setup => {
+            const block = document.createElement('div');
+            block.className = `podium-block ${setup.class}`;
+            block.innerHTML = `
+              <div class="podium-name">${setup.player.nickname}</div>
+              <div class="podium-score">${setup.player.score} pts</div>
+              <div class="podium-pillar">${setup.pos}</div>
+            `;
+            container.appendChild(block);
+          });
+
+          // Trigger confetti burst
+          if (players.length > 0) {
+            confetti({
+              particleCount: 150,
+              spread: 80,
+              origin: { y: 0.6 }
+            });
+          }
+        });
+    }
+  </script>
+</body>
+</html>

@@ -276,14 +276,17 @@ app.get('/api/config', async (req, res) => {
     let serviceTables = true;
     let servicePhotos = true;
     let serviceInvitation = true;
+    let serviceTrivia = true;
 
     if (event) {
       clientName = event.clientName;
       serviceTables = event.serviceTables !== false;
       servicePhotos = event.servicePhotos !== false;
       serviceInvitation = event.serviceInvitation !== false;
+      serviceTrivia = event.serviceTrivia !== false;
     }
 
+    const triviaQuestions = config['trivia_questions'] || '[]';
     const invitationEventDate = config['invitation_event_date'] || '';
     const invitationMusicUrl = config['invitation_music_url'] || '';
     const invitationPartyAddress = config['invitation_party_address'] || '';
@@ -313,6 +316,8 @@ app.get('/api/config', async (req, res) => {
       serviceTables,
       servicePhotos,
       serviceInvitation,
+      serviceTrivia,
+      triviaQuestions,
       invitationEventDate,
       invitationMusicUrl,
       invitationPartyAddress,
@@ -501,7 +506,9 @@ app.post('/api/config', requireAuth, async (req, res) => {
     invitationPhoto2,
     invitationPhoto3,
     invitationPhoto4,
-    invitationPhoto5
+    invitationPhoto5,
+    serviceTrivia,
+    triviaQuestions
   } = req.body;
   const eventId = req.query.event || 'default';
   if (!eventTitle) {
@@ -531,6 +538,8 @@ app.post('/api/config', requireAuth, async (req, res) => {
     if (invitationPhoto3 !== undefined) await db.setConfigValue(eventId, 'invitation_photo_3', invitationPhoto3);
     if (invitationPhoto4 !== undefined) await db.setConfigValue(eventId, 'invitation_photo_4', invitationPhoto4);
     if (invitationPhoto5 !== undefined) await db.setConfigValue(eventId, 'invitation_photo_5', invitationPhoto5);
+    if (serviceTrivia !== undefined) await db.updateEventServiceTrivia(eventId, serviceTrivia === true || serviceTrivia === 'true');
+    if (triviaQuestions !== undefined) await db.setConfigValue(eventId, 'trivia_questions', triviaQuestions);
 
     res.json({ success: true });
   } catch (error) {
@@ -1470,6 +1479,9 @@ app.post('/api/trivia/control', requireAuth, async (req, res) => {
     res.json({ success: true });
   } else if (action === 'reveal') {
     triviaCoordinator.revealAnswer(eventId);
+    res.json({ success: true });
+  } else if (action === 'leaderboard') {
+    triviaCoordinator.showLeaderboard(eventId);
     res.json({ success: true });
   } else if (action === 'next') {
     triviaCoordinator.nextQuestion(eventId);

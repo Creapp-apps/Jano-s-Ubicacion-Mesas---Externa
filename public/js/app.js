@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     startSearchBtn.addEventListener('click', () => {
       onboardingCard.style.opacity = '0';
       onboardingCard.style.transform = 'scale(0.95)';
-      onboardingCard.style.transition = 'all 0.4s ease-in-out';
+      onboardingCard.style.transition = 'all 0.5s cubic-bezier(0.16, 1, 0.3, 1)';
       
       setTimeout(() => {
         onboardingCard.style.display = 'none';
@@ -26,14 +26,14 @@ document.addEventListener('DOMContentLoaded', () => {
         // Force reflow
         void searchCard.offsetWidth;
         
-        searchCard.style.transition = 'all 0.4s ease-in-out';
+        searchCard.style.transition = 'all 0.5s cubic-bezier(0.16, 1, 0.3, 1)';
         searchCard.style.opacity = '1';
         searchCard.style.transform = 'scale(1)';
         
         setTimeout(() => {
           nameInput.focus();
-        }, 400);
-      }, 400);
+        }, 500);
+      }, 500);
     });
   }
   

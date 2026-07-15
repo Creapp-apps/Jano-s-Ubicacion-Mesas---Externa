@@ -3,635 +3,497 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Combo Digital | Jano's Eventos</title>
+  <title>MiFiestAPP | El Combo Digital Premium para tu Evento</title>
+  <meta name="description" content="Llevá tu fiesta al siguiente nivel. Buscador de mesas QR, fotos en pantalla gigante en vivo e invitaciones digitales premium.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --bg-color: #0b0b0c;
-      --card-bg: rgba(22, 22, 25, 0.45);
-      --card-border: rgba(212, 175, 55, 0.15);
-      --card-border-hover: rgba(212, 175, 55, 0.6);
-      --gold-primary: #d4af37;
-      --gold-gradient: linear-gradient(135deg, #f3e5ab 0%, #d4af37 50%, #aa7c11 100%);
-      --text-main: #ffffff;
-      --text-muted: #a0a0a5;
-      --success: #2ec4b6;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      background-color: var(--bg-color);
-      color: var(--text-main);
-      font-family: 'Montserrat', sans-serif;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: space-between;
-      overflow-x: hidden;
-      position: relative;
-      padding: 40px 20px;
-    }
-
-    /* Ambient background glows wrapper */
-    .bg-glows {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      z-index: 0;
-      pointer-events: none;
-    }
-
-    .bg-glow-1 {
-      position: absolute;
-      width: 400px;
-      height: 400px;
-      background: radial-gradient(circle, rgba(212, 175, 55, 0.08) 0%, transparent 70%);
-      top: -100px;
-      left: -100px;
-    }
-
-    .bg-glow-2 {
-      position: absolute;
-      width: 500px;
-      height: 500px;
-      background: radial-gradient(circle, rgba(212, 175, 55, 0.05) 0%, transparent 70%);
-      bottom: -150px;
-      right: -100px;
-    }
-
-    header {
-      width: 100%;
-      max-width: 800px;
-      text-align: center;
-      z-index: 10;
-      margin-bottom: 20px;
-      animation: fadeInDown 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
-    }
-
-    .logo-container {
-      margin-bottom: 15px;
-    }
-
-    .logo-container img {
-      height: 55px;
-      object-fit: contain;
-      filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.2));
-    }
-
-    .event-title {
-      font-family: 'Cinzel', serif;
-      font-size: 0.8rem;
-      letter-spacing: 3px;
-      color: var(--gold-primary);
-      text-transform: uppercase;
-      font-weight: 600;
-      margin-bottom: 20px;
-      opacity: 0.9;
-    }
-
-    .welcome-greeting {
-      font-family: 'Cinzel', serif;
-      font-size: 1.8rem;
-      font-weight: 600;
-      color: var(--text-main);
-      margin-bottom: 8px;
-      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-      letter-spacing: 1px;
-    }
-
-    .main-title {
-      font-family: 'Cinzel', serif;
-      font-size: 2.2rem;
-      font-weight: 700;
-      letter-spacing: 2px;
-      background: var(--gold-gradient);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin-bottom: 10px;
-      text-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
-    }
-
-    .tagline {
-      font-size: 0.9rem;
-      color: var(--text-muted);
-      max-width: 500px;
-      margin: 0 auto;
-      line-height: 1.6;
-    }
-
-    main {
-      width: 100%;
-      max-width: 1000px;
-      z-index: 10;
-      margin: 30px 0;
-      display: flex;
-      justify-content: center;
-    }
-
-    .grid-container {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 25px;
-      width: 100%;
-      max-width: 900px;
-    }
-
-    /* Service Card Design */
-    .service-card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 24px;
-      padding: 40px 30px;
-      text-decoration: none;
-      color: inherit;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
-      position: relative;
-      overflow: hidden;
-      cursor: pointer;
-    }
-
-    /* Background glow inside the card */
-    .service-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: radial-gradient(800px circle at var(--x, 0px) var(--y, 0px), rgba(212, 175, 55, 0.08), transparent 40%);
-      z-index: -1;
-      opacity: 0;
-      transition: opacity 0.5s;
-    }
-
-    .service-card:hover::before {
-      opacity: 1;
-    }
-
-    .service-card:hover {
-      transform: translateY(-8px);
-      border-color: var(--card-border-hover);
-      box-shadow: 0 20px 40px rgba(212, 175, 55, 0.15);
-    }
-
-    /* Icon Styling */
-    .icon-wrapper {
-      width: 80px;
-      height: 80px;
-      background: rgba(212, 175, 55, 0.05);
-      border: 1px solid rgba(212, 175, 55, 0.15);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 25px;
-      color: var(--gold-primary);
-      transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
-      position: relative;
-    }
-
-    .icon-wrapper::after {
-      content: '';
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      border: 1px solid var(--gold-primary);
-      opacity: 0;
-      transform: scale(1.1);
-      transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
-    }
-
-    .service-card:hover .icon-wrapper {
-      background: rgba(212, 175, 55, 0.15);
-      color: #fff;
-      transform: scale(1.05);
-      box-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
-    }
-
-    .service-card:hover .icon-wrapper::after {
-      opacity: 1;
-      transform: scale(1);
-    }
-
-    .icon-wrapper svg {
-      width: 32px;
-      height: 32px;
-      stroke-width: 1.5;
-    }
-
-    /* Card Text content */
-    .service-title {
-      font-family: 'Cinzel', serif;
-      font-size: 1.3rem;
-      font-weight: 600;
-      letter-spacing: 1px;
-      margin-bottom: 12px;
-      color: #ffffff;
-      transition: color 0.3s;
-    }
-
-    .service-card:hover .service-title {
-      color: var(--gold-primary);
-    }
-
-    .service-desc {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      line-height: 1.6;
-      margin-bottom: 30px;
-      flex-grow: 1;
-      max-width: 250px;
-    }
-
-    /* Button inside the card */
-    .service-btn {
-      width: 100%;
-      padding: 12px 24px;
-      border-radius: 30px;
-      border: 1px solid rgba(212, 175, 55, 0.3);
-      background: transparent;
-      color: var(--text-main);
-      font-size: 0.8rem;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      font-weight: 600;
-      transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
-      position: relative;
-      overflow: hidden;
-      z-index: 1;
-    }
-
-    .service-btn::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: var(--gold-gradient);
-      z-index: -1;
-      opacity: 0;
-      transition: opacity 0.3s;
-    }
-
-    .service-card:hover .service-btn:not(.secondary-btn) {
-      border-color: transparent;
-      color: #0b0b0c;
-    }
-
-    .service-card:hover .service-btn:not(.secondary-btn)::before {
-      opacity: 1;
-    }
-
-    .secondary-btn {
-      border-color: rgba(255, 255, 255, 0.15) !important;
-      color: var(--text-muted) !important;
-      margin-top: 10px;
-    }
-
-    .secondary-btn:hover {
-      border-color: var(--gold-primary) !important;
-      color: var(--gold-primary) !important;
-      background: rgba(212, 175, 55, 0.05) !important;
-    }
-
-    .secondary-btn::before {
-      display: none !important;
-    }
-
-    /* Disabled/Coming Soon Card Styling */
-    .service-card.disabled {
-      cursor: not-allowed;
-      border-color: rgba(255, 255, 255, 0.05);
-      background: rgba(15, 15, 17, 0.2);
-    }
-
-    .service-card.disabled:hover {
-      transform: none;
-      border-color: rgba(255, 255, 255, 0.05);
-      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
-    }
-
-    .service-card.disabled .icon-wrapper {
-      color: rgba(255, 255, 255, 0.2);
-      border-color: rgba(255, 255, 255, 0.05);
-      background: rgba(255, 255, 255, 0.02);
-    }
-
-    .service-card.disabled:hover .icon-wrapper {
-      transform: none;
-      background: rgba(255, 255, 255, 0.02);
-      color: rgba(255, 255, 255, 0.2);
-      box-shadow: none;
-    }
-
-    .service-card.disabled:hover .icon-wrapper::after {
-      opacity: 0;
-    }
-
-    .service-card.disabled .service-title {
-      color: rgba(255, 255, 255, 0.4);
-    }
-
-    .service-card.disabled .service-desc {
-      color: rgba(255, 255, 255, 0.25);
-    }
-
-    .service-card.disabled .service-btn {
-      border-color: rgba(255, 255, 255, 0.08);
-      color: rgba(255, 255, 255, 0.3);
-      pointer-events: none;
-    }
-
-    /* Premium Coming Soon Badge */
-    .badge-upcoming {
-      position: absolute;
-      top: 15px;
-      right: 15px;
-      background: rgba(212, 175, 55, 0.1);
-      border: 1px solid rgba(212, 175, 55, 0.3);
-      padding: 6px 12px;
-      border-radius: 12px;
-      font-size: 0.65rem;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      font-weight: 700;
-      color: var(--gold-primary);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .badge-upcoming::before {
-      content: '';
-      display: inline-block;
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background-color: var(--gold-primary);
-      box-shadow: 0 0 8px var(--gold-primary);
-      animation: pulseGlow 1.8s infinite;
-    }
-
-    footer {
-      width: 100%;
-      text-align: center;
-      color: var(--text-muted);
-      font-size: 0.75rem;
-      letter-spacing: 1px;
-      z-index: 10;
-      margin-top: 40px;
-      animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
-    }
-
-    footer a {
-      color: var(--gold-primary);
-      text-decoration: none;
-      font-weight: 500;
-      transition: color 0.3s;
-    }
-
-    footer a:hover {
-      color: #fff;
-    }
-
-    /* Grid cards entry animations */
-    .service-card:nth-child(1) { animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both; }
-    .service-card:nth-child(2) { animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both; }
-    .service-card:nth-child(3) { animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both; }
-
-    @keyframes fadeInDown {
-      from {
-        opacity: 0;
-        transform: translateY(-20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(30px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    @keyframes pulseGlow {
-      0% {
-        transform: scale(0.9);
-        box-shadow: 0 0 4px var(--gold-primary);
-        opacity: 0.6;
-      }
-      50% {
-        transform: scale(1.1);
-        box-shadow: 0 0 12px var(--gold-primary);
-        opacity: 1;
-      }
-      100% {
-        transform: scale(0.9);
-        box-shadow: 0 0 4px var(--gold-primary);
-        opacity: 0.6;
-      }
-    }
-
-    @media (max-width: 850px) {
-      body {
-        padding: 30px 15px;
-      }
-
-      .main-title {
-        font-size: 1.8rem;
-      }
-
-      .grid-container {
-        grid-template-columns: 1fr;
-        max-width: 320px;
-      }
-
-      .service-card {
-        padding: 35px 25px;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="/css/landing.css">
 </head>
 <body>
-  <div class="bg-glows">
-    <div class="bg-glow-1"></div>
-    <div class="bg-glow-2"></div>
+
+  <!-- Ambient Glows -->
+  <div class="ambient-glows">
+    <div class="glow-1"></div>
+    <div class="glow-2"></div>
+    <div class="glow-3"></div>
   </div>
 
-  <header>
-    <div class="logo-container">
-      <img src="/assets/LOGO_JANOS.png" alt="Logo Jano's Eventos">
+  <!-- Header / Navigation -->
+  <nav class="navbar">
+    <a href="/" class="logo-text">
+      <svg class="logo-icon" viewBox="0 0 24 24">
+        <path d="M2 22h20V10l-4-4-4 4-4-4-4 4-4-4v12zm10-7.5c1.38 0 2.5 1.12 2.5 2.5s-1.12 2.5-2.5 2.5-2.5-1.12-2.5-2.5 1.12-2.5 2.5-2.5z"/>
+      </svg>
+      MiFiest<span class="text-gold">APP</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#funciones">Funciones</a></li>
+      <li><a href="#simulador">Simulador</a></li>
+      <li><a href="#admin">Administración</a></li>
+      <li><a href="#precios">Planes</a></li>
+      <li><a href="#faq">Preguntas</a></li>
+    </ul>
+    <div class="nav-buttons-container">
+      <button class="nav-brand-btn" id="open-client-login-btn">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+          <path d="M2 22h20V10l-4-4-4 4-4-4-4 4-4-4v12zm10-7.5c1.38 0 2.5 1.12 2.5 2.5s-1.12 2.5-2.5 2.5-2.5-1.12-2.5-2.5 1.12-2.5 2.5-2.5z"/>
+        </svg>
+        <span>MiFiestAPP</span>
+      </button>
+      <a href="https://wa.me/5491136125026?text=Hola!%20Me%20interesa%20adquirir%20el%20servicio%20de%20MiFiestAPP%20para%20mi%20evento." target="_blank" class="nav-cta">
+        <span>Contratar</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </a>
     </div>
-    <div class="event-title" id="event-title">Cargando evento...</div>
-    <h2 class="welcome-greeting" id="welcome-greeting" style="display: none;"></h2>
-    <h1 class="main-title">Combo Digital</h1>
-    <p class="tagline">Elegí uno de nuestros servicios interactivos para disfrutar al máximo de la celebración.</p>
+    <button class="nav-toggle">☰</button>
+  </nav>
+
+  <!-- Hero Section -->
+  <header class="hero">
+    <div class="hero-tag">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+      </svg>
+      La Experiencia Digital Definitiva
+    </div>
+    <h1 class="hero-title">Llevá tu fiesta al<br><span class="text-gold">Siguiente Nivel</span></h1>
+    <p class="hero-desc">
+      Buscador interactivo de mesas, fotos proyectadas en pantalla gigante en tiempo real e invitaciones digitales de lujo. Todo integrado en una sola plataforma premium para que tus invitados disfruten al máximo.
+    </p>
+    <div class="hero-btns">
+      <a href="#simulador" class="btn-primary">Probar Simulador</a>
+      <a href="https://wa.me/5491136125026?text=Hola!%20Me%20interesa%20adquirir%20el%20servicio%20de%20MiFiestAPP%20para%20mi%20evento." target="_blank" class="btn-secondary">Cotizar Servicio</a>
+    </div>
   </header>
 
-  <main>
-    <div class="grid-container">
-      <!-- Service 1: Mesas -->
-      <a href="/mesas" class="service-card" id="card-service-tables">
-        <div class="icon-wrapper">
+  <!-- Features Grid Section -->
+  <section id="funciones">
+    <div class="sec-header">
+      <span class="sec-tag">¿Qué incluye?</span>
+      <h2 class="sec-title">Tres Servicios, Una Sola Experiencia</h2>
+      <p class="sec-desc">
+        Diseñado para sorprender a tus invitados desde el primer momento y mantener la energía de la fiesta en lo más alto.
+      </p>
+    </div>
+    <div class="features-grid">
+      <!-- Card 1: Mesas -->
+      <div class="feat-card">
+        <div class="feat-icon-wrap">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
           </svg>
         </div>
-        <h2 class="service-title">Mesas</h2>
-        <p class="service-desc">Buscá tu nombre para saber qué mesa tenés asignada en el salón.</p>
-        <button class="service-btn">Armar Mesas</button>
-      </a>
-
-      <!-- Service 2: Fotos -->
-      <div class="service-card" id="card-service-photos" style="cursor: default;">
-        <div class="icon-wrapper">
+        <h3 class="feat-title">Buscador de Mesas QR</h3>
+        <p class="feat-desc">
+          Evitá las molestas colas y demoras en la recepción. Tus invitados escanean un código QR en la entrada, escriben su nombre y descubren al instante qué mesa tienen asignada con total claridad.
+        </p>
+      </div>
+      <!-- Card 2: Fotos -->
+      <div class="feat-card">
+        <div class="feat-icon-wrap">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
             <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
           </svg>
         </div>
-        <h2 class="service-title">Fotos</h2>
-        <p class="service-desc">Subí tus fotos y dedicatorias a la pantalla gigante en tiempo real.</p>
-        <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; z-index: 5; position: relative;">
-          <a id="btn-service-photos-upload" href="/fotos" class="service-btn" style="text-decoration: none; text-align: center; display: block;">Subir Foto</a>
-          <a id="btn-service-photos-moderate" href="/admin" class="service-btn secondary-btn" style="text-decoration: none; text-align: center; display: block;">Moderar fotos</a>
+        <h3 class="feat-title">Proyección en Vivo</h3>
+        <p class="feat-desc">
+          Tus invitados suben fotos de la fiesta con saludos personalizados directamente a la pantalla gigante del salón. Cuenta con un panel de moderación en tiempo real para filtrar las imágenes antes de proyectarlas.
+        </p>
+      </div>
+      <!-- Card 3: Invitación -->
+      <div class="feat-card">
+        <div class="feat-icon-wrap">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 19v-8.93a2 2 0 01.89-1.664l8-5.333a2 2 0 012.22 0l8 5.333A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-2.25-1.5a2 2 0 00-2.22 0l-2.25 1.5"></path>
+          </svg>
+        </div>
+        <h3 class="feat-title">Invitación Digital Premium</h3>
+        <p class="feat-desc">
+          Una web interactiva dedicada a tu fiesta con cuenta regresiva en vivo, itinerario detallado de la noche, mapas interactivos con GPS, código de vestimenta y confirmación rápida de asistencia.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Interactive Simulator Section -->
+  <section id="simulador">
+    <div class="sec-header">
+      <span class="sec-tag">Demo Interactiva</span>
+      <h2 class="sec-title">Viví la Experiencia MiFiestAPP</h2>
+      <p class="sec-desc">
+        Interactúa con el teléfono inteligente y mira cómo cambian y funcionan nuestras aplicaciones en tiempo real.
+      </p>
+    </div>
+    <div class="simulator-layout">
+      <!-- Steps Selection -->
+      <div class="sim-interface">
+        <div class="sim-step active" data-service="tables">
+          <div class="sim-step-num">1</div>
+          <div class="sim-step-content">
+            <h3>Buscador de Mesas</h3>
+            <p>Escribí un nombre o seleccioná un preset para simular la asignación ágil de mesa.</p>
+          </div>
+        </div>
+        <div class="sim-step" data-service="photos">
+          <div class="sim-step-num">2</div>
+          <div class="sim-step-content">
+            <h3>Subida de Fotos</h3>
+            <p>Subí una foto de prueba, escribí una dedicatoria y mira cómo vuela a la pantalla gigante.</p>
+          </div>
+        </div>
+        <div class="sim-step" data-service="invitation">
+          <div class="sim-step-num">3</div>
+          <div class="sim-step-content">
+            <h3>Invitación Interactiva</h3>
+            <p>Explorá el temporizador interactivo y el itinerario inteligente del evento.</p>
+          </div>
         </div>
       </div>
 
-      <!-- Service 3: Invitación -->
-      <a href="/invitacion" class="service-card" id="card-service-invitation">
-        <div class="icon-wrapper">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3 19v-8.93a2 2 0 01.89-1.664l8-5.333a2 2 0 012.22 0l8 5.333A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-2.25-1.5a2 2 0 00-2.22 0l-2.25 1.5"></path>
+      <!-- Smartphone and screen presentation -->
+      <div class="sim-device-container">
+        <div class="device-backglow"></div>
+        
+        <!-- Smart Phone Mockup -->
+        <div class="phone-mockup">
+          <div class="phone-island">
+            <div class="phone-camera"></div>
+            <div class="phone-speaker"></div>
+          </div>
+          <div class="phone-screen">
+            <div class="phone-header">
+              <span class="phone-logo">MiFiest<span class="text-gold" style="font-family: inherit;">APP</span></span>
+              <span class="phone-time">22:00</span>
+            </div>
+            <div class="phone-content" id="phone-screen-content">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Giant LED Wall Mockup -->
+        <div class="giant-screen-mockup">
+          <div class="giant-screen-led">
+            <div class="giant-screen-title">PANTALLA PRINCIPAL SALÓN</div>
+            <div class="giant-screen-content" id="giant-screen-content">
+              <div class="led-placeholder-txt" id="led-placeholder-txt">Esperando foto de la fiesta...</div>
+              <div class="led-live-badge" id="led-live-badge">En Vivo</div>
+              <div class="led-live-photo" id="led-live-photo"></div>
+              <div class="led-live-msg" id="led-live-msg"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Superadmin Dashboard Teaser -->
+  <section id="admin">
+    <div class="dashboard-teaser">
+      <div>
+        <span class="sec-tag">Control Total</span>
+        <h2 class="sec-title" style="font-size: 1.8rem; text-align: left; margin-bottom: 15px;">Administración Rápida y Sencilla</h2>
+        <p class="sec-desc" style="text-align: left; font-size: 0.85rem; margin-bottom: 25px; line-height: 1.8;">
+          El organizador del evento cuenta con un panel administrativo privado para cargar invitados en 3 segundos mediante Excel, moderar cada foto enviada antes de que se proyecte en pantalla gigante y personalizar los servicios en tiempo real.
+        </p>
+        <ul style="list-style: none; display: flex; flex-direction: column; gap: 12px; font-size: 0.85rem; color: var(--text-secondary);">
+          <li style="display: flex; align-items: center; gap: 10px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold-primary)" stroke-width="2">
+              <path d="M20 6L9 17l-5-5"/>
+            </svg>
+            Subida masiva de invitados por planilla Excel.
+          </li>
+          <li style="display: flex; align-items: center; gap: 10px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold-primary)" stroke-width="2">
+              <path d="M20 6L9 17l-5-5"/>
+            </svg>
+            Moderación ágil (Aprobar/Eliminar) desde el móvil.
+          </li>
+          <li style="display: flex; align-items: center; gap: 10px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold-primary)" stroke-width="2">
+              <path d="M20 6L9 17l-5-5"/>
+            </svg>
+            Estadísticas de fotos subidas y confirmación de invitados.
+          </li>
+        </ul>
+      </div>
+
+      <div class="dash-mock">
+        <div class="dash-mock-bar">
+          <span class="dash-dot red"></span>
+          <span class="dash-dot yellow"></span>
+          <span class="dash-dot green"></span>
+          <span style="font-size: 0.55rem; color: var(--text-muted); margin-left: 10px; font-family: monospace;">admin.mifiestapp.com.ar</span>
+        </div>
+        <div class="dash-mock-content">
+          <div class="dash-mock-stat-grid">
+            <div class="dash-stat-box">
+              <div class="dash-stat-num">248</div>
+              <div class="dash-stat-lbl">Invitados</div>
+            </div>
+            <div class="dash-stat-box">
+              <div class="dash-stat-num">95%</div>
+              <div class="dash-stat-lbl">Confirmados</div>
+            </div>
+            <div class="dash-stat-box">
+              <div class="dash-stat-num">142</div>
+              <div class="dash-stat-lbl">Fotos</div>
+            </div>
+          </div>
+          <div class="dash-excel-zone">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+            <div style="font-weight: 600; margin-bottom: 2px;">importar_invitados.xlsx</div>
+            <div style="font-size: 0.55rem; color: var(--text-muted);">Arrastrá tu lista o cargá el archivo Excel aquí</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing Section -->
+  <section id="precios">
+    <div class="sec-header">
+      <span class="sec-tag">Precios transparentes</span>
+      <h2 class="sec-title">Planes a tu Medida</h2>
+      <p class="sec-desc">
+        Elegí la combinación de servicios interactivos que mejor se adapte a tu celebración.
+      </p>
+    </div>
+    <div class="pricing-grid">
+      <!-- Plan 1 -->
+      <div class="price-card">
+        <h3 class="price-title">Básico</h3>
+        <div class="price-value">$9.900</div>
+        <span class="price-period">Pago único por evento</span>
+        <ul class="price-features">
+          <li>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 6L9 17l-5-5"/>
+            </svg>
+            Buscador de Mesas QR
+          </li>
+          <li class="disabled">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+            Fotos en pantalla gigante
+          </li>
+          <li class="disabled">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+            Invitación Digital Premium
+          </li>
+          <li>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 6L9 17l-5-5"/>
+            </svg>
+            Panel de control privado
+          </li>
+        </ul>
+        <a href="https://wa.me/5491136125026?text=Hola!%20Me%20interesa%20contratar%20el%20Plan%20Basico%20de%20MiFiestAPP." target="_blank" class="btn-secondary" style="margin-top: auto;">Contratar Plan</a>
+      </div>
+
+      <!-- Plan 2 (Combo) -->
+      <div class="price-card featured">
+        <span class="price-badge">Recomendado</span>
+        <h3 class="price-title">Full Combo</h3>
+        <div class="price-value">$19.900</div>
+        <span class="price-period">Pago único por evento</span>
+        <ul class="price-features">
+          <li>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 6L9 17l-5-5"/>
+            </svg>
+            Buscador de Mesas QR
+          </li>
+          <li>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 6L9 17l-5-5"/>
+            </svg>
+            Fotos en pantalla gigante
+          </li>
+          <li>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 6L9 17l-5-5"/>
+            </svg>
+            Invitación Digital Premium
+          </li>
+          <li>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 6L9 17l-5-5"/>
+            </svg>
+            Moderación de fotos móvil
+          </li>
+        </ul>
+        <a href="https://wa.me/5491136125026?text=Hola!%20Me%20interesa%20contratar%20el%20Plan%20Full%20Combo%20de%20MiFiestAPP." class="btn-primary" style="margin-top: auto;">Contratar Plan</a>
+      </div>
+
+      <!-- Plan 3 -->
+      <div class="price-card">
+        <h3 class="price-title">Social Plus</h3>
+        <div class="price-value">$14.900</div>
+        <span class="price-period">Pago único por evento</span>
+        <ul class="price-features">
+          <li>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 6L9 17l-5-5"/>
+            </svg>
+            Buscador de Mesas QR
+          </li>
+          <li>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 6L9 17l-5-5"/>
+            </svg>
+            Fotos en pantalla gigante
+          </li>
+          <li class="disabled">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+            Invitación Digital Premium
+          </li>
+          <li>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 6L9 17l-5-5"/>
+            </svg>
+            Moderación de fotos móvil
+          </li>
+        </ul>
+        <a href="https://wa.me/5491136125026?text=Hola!%20Me%20interesa%20contratar%20el%20Plan%20Social%20Plus%20de%20MiFiestAPP." target="_blank" class="btn-secondary" style="margin-top: auto;">Contratar Plan</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ Section -->
+  <section id="faq">
+    <div class="sec-header">
+      <span class="sec-tag">FAQ</span>
+      <h2 class="sec-title">Preguntas Frecuentes</h2>
+      <p class="sec-desc">
+        ¿Tenés dudas? Aquí respondemos las preguntas más comunes sobre el servicio.
+      </p>
+    </div>
+    <div class="faq-list">
+      <!-- Item 1 -->
+      <div class="faq-item">
+        <div class="faq-q">
+          <h3>¿Cómo acceden los invitados al buscador y la subida de fotos?</h3>
+          <svg class="faq-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
           </svg>
         </div>
-        <h2 class="service-title">Invitación</h2>
-        <p class="service-desc">Explorá la invitación interactiva con itinerario y mapas del evento.</p>
-        <button class="service-btn">Ver Invitación</button>
-      </a>
+        <div class="faq-a">
+          <div class="faq-a-inner">
+            Es súper simple: tus invitados solo tienen que escanear un código QR impreso que colocamos en la recepción o en las mesas. No necesitan descargar ninguna aplicación ni registrarse con contraseñas. Acceden directamente desde el navegador de su propio celular.
+          </div>
+        </div>
+      </div>
+      <!-- Item 2 -->
+      <div class="faq-item">
+        <div class="faq-q">
+          <h3>¿Cómo funciona la moderación de fotos?</h3>
+          <svg class="faq-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </div>
+        <div class="faq-a">
+          <div class="faq-a-inner">
+            Para garantizar que solo se proyecten fotos familiares y divertidas, te proveemos de una clave de moderación. El organizador, un familiar o tu DJ pueden ingresar al panel de moderación desde su propio celular y aprobar o eliminar cada foto enviada antes de que aparezca en la pantalla del salón.
+          </div>
+        </div>
+      </div>
+      <!-- Item 3 -->
+      <div class="faq-item">
+        <div class="faq-q">
+          <h3>¿Cómo subo mi lista de mesas e invitados?</h3>
+          <svg class="faq-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </div>
+        <div class="faq-a">
+          <div class="faq-a-inner">
+            Te proporcionamos una plantilla de Excel muy sencilla. Completás los nombres y apellidos de tus invitados, la subís al panel de administración con un solo clic y automáticamente la lista queda cargada para comenzar a armar las mesas de forma interactiva cuando te confirmen asistencia.
+          </div>
+        </div>
+      </div>
+      <!-- Item 4 -->
+      <div class="faq-item">
+        <div class="faq-q">
+          <h3>¿Por cuánto tiempo permanece activo el servicio?</h3>
+          <svg class="faq-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </div>
+        <div class="faq-a">
+          <div class="faq-a-inner">
+            El servicio se activa desde la fecha de contratación (ideal para enviar la invitación digital anticipadamente) y permanece habilitado hasta 7 días posteriores al evento para que puedas descargar todas las fotos y dedicatorias que subieron tus invitados.
+          </div>
+        </div>
+      </div>
     </div>
-  </main>
+  </section>
 
-  <footer>
-    &copy; 2026 <a href="https://www.janoseventos.com" target="_blank">Jano's Eventos</a>. Todos los derechos reservados.
+  <!-- Footer / Contact CTA -->
+  <footer class="footer-cta">
+    <h2 class="footer-cta-title">Hacé que tu Fiesta sea <span class="text-gold">Inolvidable</span></h2>
+    <p class="footer-cta-desc">
+      Contactanos hoy mismo por WhatsApp y reservá la licencia interactiva de MiFiestAPP para tu gran noche.
+    </p>
+    <a href="https://wa.me/5491136125026?text=Hola!%20Me%20interesa%20adquirir%20el%20servicio%20de%20MiFiestAPP%20para%20mi%20evento." target="_blank" class="btn-primary" style="display: inline-flex; align-items: center; gap: 10px;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="vertical-align: middle;">
+        <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.504-5.724-1.465L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.37 9.863-9.755.002-2.61-1.01-5.063-2.85-6.907C16.645 2.1 14.2 1.085 11.999 1.085c-5.444 0-9.87 4.372-9.873 9.76-.001 1.768.473 3.493 1.371 5.04l-.997 3.645 3.753-.984c1.513.882 3.09 1.332 4.704 1.332zM17.487 14.39c-.3-.15-1.782-.88-2.062-.98-.28-.1-.484-.15-.688.15-.204.3-.79.98-.97 1.18-.18.2-.36.22-.66.07-2.012-.99-3.238-1.8-4.521-4.004-.34-.58.34-.54.97-1.8.1-.2.05-.37-.02-.52-.07-.15-.688-1.66-.943-2.27-.247-.597-.5-.515-.688-.525l-.59-.01c-.2 0-.528.075-.805.375-.278.3-1.06 1.035-1.06 2.525s1.08 2.93 1.23 3.13c.15.2 2.128 3.25 5.156 4.56.72.31 1.28.5 1.72.64.724.23 1.38.2 1.9.12.58-.087 1.782-.73 2.032-1.397.25-.667.25-1.24.177-1.398-.073-.15-.278-.23-.578-.38z"/>
+      </svg>
+      <span>Contactar a Ventas</span>
+    </a>
+    <div class="footer-bottom">
+      &copy; 2026 <a href="/">MiFiestAPP</a>. Todos los derechos reservados.
+    </div>
   </footer>
 
-  <script>
-    // Extract event query parameter for multi-tenancy context propagation
-    const urlParams = new URLSearchParams(window.location.search);
-    const eventId = urlParams.get('event') || 'default';
+  <!-- Floating WhatsApp Action -->
+  <a href="https://wa.me/5491136125026?text=Hola!%20Me%20interesa%20adquirir%20el%20servicio%20de%20MiFiestAPP%20para%20mi%20evento." target="_blank" class="whatsapp-float" aria-label="Contacto WhatsApp">
+    <svg viewBox="0 0 24 24">
+      <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.504-5.724-1.465L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.37 9.863-9.755.002-2.61-1.01-5.063-2.85-6.907C16.645 2.1 14.2 1.085 11.999 1.085c-5.444 0-9.87 4.372-9.873 9.76-.001 1.768.473 3.493 1.371 5.04l-.997 3.645 3.753-.984c1.513.882 3.09 1.332 4.704 1.332zM17.487 14.39c-.3-.15-1.782-.88-2.062-.98-.28-.1-.484-.15-.688.15-.204.3-.79.98-.97 1.18-.18.2-.36.22-.66.07-2.012-.99-3.238-1.8-4.521-4.004-.34-.58.34-.54.97-1.8.1-.2.05-.37-.02-.52-.07-.15-.688-1.66-.943-2.27-.247-.597-.5-.515-.688-.525l-.59-.01c-.2 0-.528.075-.805.375-.278.3-1.06 1.035-1.06 2.525s1.08 2.93 1.23 3.13c.15.2 2.128 3.25 5.156 4.56.72.31 1.28.5 1.72.64.724.23 1.38.2 1.9.12.58-.087 1.782-.73 2.032-1.397.25-.667.25-1.24.177-1.398-.073-.15-.278-.23-.578-.38z"/>
+    </svg>
+  </a>
 
-    // Propagate event ID parameter to all navigation links
-    document.querySelectorAll('.service-card').forEach(card => {
-      const currentHref = card.getAttribute('href');
-      if (currentHref) {
-        card.setAttribute('href', `${currentHref}?event=${encodeURIComponent(eventId)}`);
-      }
-    });
-
-    const uploadLink = document.getElementById('btn-service-photos-upload');
-    if (uploadLink) {
-      uploadLink.setAttribute('href', `/fotos?event=${encodeURIComponent(eventId)}`);
-    }
-    const moderateLink = document.getElementById('btn-service-photos-moderate');
-    if (moderateLink) {
-      moderateLink.setAttribute('href', `/admin?event=${encodeURIComponent(eventId)}&service=photos`);
-    }
-
-    function getGreeting(name) {
-      if (!name) return "";
-      let cleanName = name.replace(/^(boda|xv|mis xv|cumpleaños|cumple|fiesta)\s+de\s+/i, '').trim();
+  <!-- Client Login Modal -->
+  <div class="login-modal-overlay" id="client-login-modal">
+    <div class="login-modal-card">
+      <button class="login-modal-close" id="close-client-login-btn">&times;</button>
       
-      if (cleanName.includes('&') || /\s+y\s+/i.test(cleanName) || cleanName.includes(',')) {
-        return `¡Bienvenidos, ${cleanName}!`;
-      }
+      <svg viewBox="0 0 24 24" class="login-modal-icon">
+        <path d="M2 22h20V10l-4-4-4 4-4-4-4 4-4-4v12zm10-7.5c1.38 0 2.5 1.12 2.5 2.5s-1.12 2.5-2.5 2.5-2.5-1.12-2.5-2.5 1.12-2.5 2.5-2.5z"/>
+      </svg>
       
-      const firstWord = cleanName.split(' ')[0].replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ]/g, '');
-      const lastChar = firstWord.slice(-1).toLowerCase();
+      <h3 class="login-modal-title">Acceso MiFiestAPP</h3>
+      <p class="login-modal-desc">Ingresá el email con el que registraste tu fiesta y la contraseña creada para acceder al panel.</p>
       
-      if (lastChar === 'a' || lastChar === 'á') {
-        return `¡Bienvenida, ${cleanName}!`;
-      }
-      return `¡Bienvenido, ${cleanName}!`;
-    }
+      <form id="modal-login-form">
+        <div class="modal-form-group">
+          <label for="modal-email">Email Registrado</label>
+          <input type="email" id="modal-email" class="modal-form-control" placeholder="ejemplo@correo.com" required autocomplete="username">
+        </div>
+        
+        <div class="modal-form-group">
+          <label for="modal-password">Contraseña de Acceso</label>
+          <input type="password" id="modal-password" class="modal-form-control" placeholder="••••••••" required autocomplete="current-password">
+        </div>
+        
+        <button type="submit" class="modal-submit-btn">Ingresar al Panel</button>
+        <div id="modal-error-message" class="modal-login-error"></div>
+      </form>
+    </div>
+  </div>
 
-    // Fetch configuration title for specific event
-    fetch(`/api/config?event=${encodeURIComponent(eventId)}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data && data.eventTitle) {
-          document.getElementById('event-title').textContent = data.eventTitle;
-        } else {
-          document.getElementById('event-title').textContent = "Jano's Eventos";
-        }
-
-        const greetingEl = document.getElementById('welcome-greeting');
-        const nameToUse = data.clientName || data.eventTitle || '';
-        if (nameToUse && eventId !== 'default') {
-          greetingEl.textContent = getGreeting(nameToUse);
-          greetingEl.style.display = 'block';
-        } else {
-          greetingEl.style.display = 'none';
-        }
-
-        // Dynamic service hiding based on tenant config
-        if (data) {
-          if (data.serviceTables === false) {
-            const el = document.getElementById('card-service-tables');
-            if (el) el.style.display = 'none';
-          }
-          if (data.servicePhotos === false) {
-            const el = document.getElementById('card-service-photos');
-            if (el) el.style.display = 'none';
-          }
-          if (data.serviceInvitation === false) {
-            const el = document.getElementById('card-service-invitation');
-            if (el) el.style.display = 'none';
-          }
-        }
-      })
-      .catch(() => {
-        document.getElementById('event-title').textContent = "Jano's Eventos";
-      });
-
-    // Elegant Mouse Hover Effect for Radial Glow Background on Cards
-    const cards = document.querySelectorAll('.service-card:not(.disabled)');
-    cards.forEach(card => {
-      card.addEventListener('mousemove', (e) => {
-        const rect = card.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        card.style.setProperty('--x', `${x}px`);
-        card.style.setProperty('--y', `${y}px`);
-      });
-    });
-  </script>
+  <!-- Scripts -->
+  <script src="/js/landing.js"></script>
 </body>
 </html>

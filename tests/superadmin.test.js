@@ -133,7 +133,7 @@ async function runTests() {
       path: '/api/superadmin/login',
       method: 'POST',
       headers: { 'Content-Type': 'application/json' }
-    }, { password: 'janos-superadmin' });
+    }, { password: 'mifiestapp-superadmin' });
     
     assert.strictEqual(loginRes.statusCode, 200, 'Login should succeed');
     assert.ok(loginRes.body.success, 'Login success field must be true');
@@ -217,6 +217,33 @@ async function runTests() {
       headers: { 'Content-Type': 'application/json' }
     }, { password: 'wrong-pass' });
     assert.strictEqual(clientLoginFailRes.statusCode, 401, 'Incorrect client login must fail');
+
+    // Test API: Client Admin Login by Email
+    console.log('- Test client admin login by email with correct credentials');
+    const clientLoginEmailRes = await request({
+      hostname: 'localhost',
+      port: port,
+      path: '/api/admin/login',
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    }, { email: 'api-client@example.com', password: 'cliente-api-pass' });
+    
+    assert.strictEqual(clientLoginEmailRes.statusCode, 200, 'Client login by email should succeed');
+    assert.strictEqual(clientLoginEmailRes.body.success, true);
+    assert.strictEqual(clientLoginEmailRes.body.eventId, apiTestId, 'Returned eventId must match');
+    assert.ok(clientLoginEmailRes.headers['set-cookie'], 'Client login by email must set cookie');
+    const clientEmailCookie = clientLoginEmailRes.headers['set-cookie'][0].split(';')[0];
+    assert.ok(clientEmailCookie.startsWith(`admin_session_${apiTestId}=`), 'Cookie name must match event ID');
+
+    console.log('- Test client admin login by email with incorrect credentials');
+    const clientLoginEmailFailRes = await request({
+      hostname: 'localhost',
+      port: port,
+      path: '/api/admin/login',
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    }, { email: 'api-client@example.com', password: 'wrong-password' });
+    assert.strictEqual(clientLoginEmailFailRes.statusCode, 401, 'Incorrect credentials must fail');
 
     // Test Middleware: Validate event routing (Active event)
     console.log('- Test page routing for active event (should serve landing page)');

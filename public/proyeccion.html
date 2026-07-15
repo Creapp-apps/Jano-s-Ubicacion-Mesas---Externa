@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Transmisión en Vivo | Jano's Eventos</title>
+  <title>Transmisión en Vivo | MiFiestAPP</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -23,9 +23,19 @@
   <!-- Header Banner -->
   <header class="projector-header">
     <div class="logo-box">
-      <img src="/assets/LOGO_JANOS.png" alt="Logo Jano's">
+      <svg viewBox="0 0 24 24" style="height: 45px; width: 45px; fill: var(--gold-primary); filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.35));">
+        <path d="M2 22h20V10l-4-4-4 4-4-4-4 4-4-4v12zm10-7.5c1.38 0 2.5 1.12 2.5 2.5s-1.12 2.5-2.5 2.5-2.5-1.12-2.5-2.5 1.12-2.5 2.5-2.5z"/>
+      </svg>
     </div>
-    <div class="event-title-banner" id="event-title">Jano's Eventos</div>
+    <div class="header-right-group">
+      <div class="event-title-banner" id="event-title">Mi Fiesta</div>
+      
+      <!-- Connectivity Status Indicator -->
+      <div class="connectivity-status" id="connectivity-status">
+        <span class="status-dot"></span>
+        <span class="status-text">En Línea</span>
+      </div>
+    </div>
   </header>
 
   <!-- Interactive Floating Dedication Box -->
@@ -38,31 +48,56 @@
     </div>
   </div>
 
-  <!-- Empty State (No photos approved yet) -->
+  <!-- Empty State (No photos approved yet or Screensaver mode) -->
   <div class="empty-state-container" id="empty-state" style="display: none;">
     <div class="empty-card">
-      <div class="logo-large">
-        <img src="/assets/LOGO_JANOS.png" alt="Logo Jano's">
-      </div>
-      <h2>¡Sube tus fotos a la Pantalla!</h2>
-      <p class="subtitle-empty" id="empty-event-title">Jano's Eventos</p>
-      
-      <div class="instruction-box">
-        <div class="instruction-step">
-          <span class="number">1</span>
-          <span>Escanea el código QR en las pantallas o mesas del salón.</span>
+      <div class="empty-state-content">
+        <!-- Left Column: Instructions -->
+        <div class="instructions-steps-wrapper">
+          <div class="logo-large">
+            <svg viewBox="0 0 24 24" style="height: 60px; width: 60px; fill: var(--gold-primary); filter: drop-shadow(0 0 12px rgba(212, 175, 55, 0.4));">
+              <path d="M2 22h20V10l-4-4-4 4-4-4-4 4-4-4v12zm10-7.5c1.38 0 2.5 1.12 2.5 2.5s-1.12 2.5-2.5 2.5-2.5-1.12-2.5-2.5 1.12-2.5 2.5-2.5z"/>
+            </svg>
+          </div>
+          <h2>¡Subí tu foto en vivo y en directo!</h2>
+          <p class="subtitle-empty" id="empty-event-title">Mi Fiesta</p>
+          
+          <div class="instruction-box">
+            <div class="instruction-step">
+              <span class="number">1</span>
+              <span>Escaneá el código QR en pantalla</span>
+            </div>
+            <div class="instruction-step">
+              <span class="number">2</span>
+              <span>Escribí tu mensaje y nombre</span>
+            </div>
+            <div class="instruction-step">
+              <span class="number">3</span>
+              <span>¡Posá, sonreí y mirá la pantalla!</span>
+            </div>
+          </div>
         </div>
-        <div class="instruction-step">
-          <span class="number">2</span>
-          <span>Tómate una foto o selecciona una desde tu galería.</span>
-        </div>
-        <div class="instruction-step">
-          <span class="number">3</span>
-          <span>Escribe tus felicitaciones y envíala en vivo.</span>
+
+        <!-- Right Column: QR Code -->
+        <div class="qr-display-box">
+          <div id="projector-qr-container" class="qr-glow-box">
+            <!-- Dynamic QR Image injected here -->
+          </div>
+          <span class="qr-scan-hint">Escaneá para comenzar</span>
         </div>
       </div>
     </div>
   </div>
+
+  <!-- Floating Fullscreen Toggle Button -->
+  <button id="fullscreen-btn" class="fullscreen-btn" aria-label="Pantalla completa">
+    <svg viewBox="0 0 24 24" class="icon-enter">
+      <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+    </svg>
+    <svg viewBox="0 0 24 24" class="icon-exit" style="display: none;">
+      <path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>
+    </svg>
+  </button>
 
   <script src="/js/proyeccion.js"></script>
 </body>

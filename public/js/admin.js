@@ -1,6 +1,10 @@
 document.addEventListener('DOMContentLoaded', () => {
   const urlParams = new URLSearchParams(window.location.search);
   const eventId = urlParams.get('event') || 'default';
+  const btnBackToPortal = document.getElementById('btn-back-to-portal');
+  if (btnBackToPortal) {
+    btnBackToPortal.href = `/event.html?event=${encodeURIComponent(eventId)}`;
+  }
 
   // Elements
   const fileDropZone = document.getElementById('file-drop-zone');
@@ -45,11 +49,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let activeConfirmCallback = null;
 
+  // Guest List Modal Elements
+  const guestListModal = document.getElementById('guest-list-modal');
+  const btnCloseGuestListModal = document.getElementById('btn-close-guest-list-modal');
+  const modalGuestSearch = document.getElementById('modal-guest-search');
+  const btnModalAddGuest = document.getElementById('btn-modal-add-guest');
+  const modalTabAll = document.getElementById('modal-tab-all');
+  const modalTabTables = document.getElementById('modal-tab-tables');
+  const modalTabNoMesa = document.getElementById('modal-tab-nomesa');
+  const modalGuestListContent = document.getElementById('modal-guest-list-content');
+
+  let activeModalTab = 'all'; // 'all', 'tables', 'nomesa'
+
   // Tabs elements
   const tabBtnMesas = document.getElementById('tab-btn-mesas');
   const tabBtnFotos = document.getElementById('tab-btn-fotos');
+  const tabBtnInvitacion = document.getElementById('tab-btn-invitacion');
+  const tabBtnTrivia = document.getElementById('tab-btn-trivia');
   const tabMesas = document.getElementById('tab-mesas');
   const tabFotos = document.getElementById('tab-fotos');
+  const tabInvitacion = document.getElementById('tab-invitacion');
+  const tabTrivia = document.getElementById('tab-trivia');
 
   // Photo grid elements
   const pendingPhotosGrid = document.getElementById('pending-photos-grid');
@@ -57,23 +77,89 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Photo polling state
   let photoIntervalId = null;
+  let triviaIntervalId = null;
+  let triviaQuestionsData = [];
+  let triviaEventSource = null;
 
   function switchTab(tabId) {
     if (tabId === 'mesas') {
       if (tabBtnMesas) tabBtnMesas.classList.add('active');
       if (tabBtnFotos) tabBtnFotos.classList.remove('active');
+      if (tabBtnInvitacion) tabBtnInvitacion.classList.remove('active');
+      if (tabBtnTrivia) tabBtnTrivia.classList.remove('active');
       if (tabMesas) tabMesas.classList.add('active');
       if (tabFotos) tabFotos.classList.remove('active');
+      if (tabInvitacion) tabInvitacion.classList.remove('active');
+      if (tabTrivia) tabTrivia.classList.remove('active');
       stopPhotoPolling();
+      stopTriviaPolling();
     } else if (tabId === 'fotos') {
       if (tabBtnMesas) tabBtnMesas.classList.remove('active');
       if (tabBtnFotos) tabBtnFotos.classList.add('active');
+      if (tabBtnInvitacion) tabBtnInvitacion.classList.remove('active');
+      if (tabBtnTrivia) tabBtnTrivia.classList.remove('active');
       if (tabMesas) tabMesas.classList.remove('active');
       if (tabFotos) tabFotos.classList.add('active');
+      if (tabInvitacion) tabInvitacion.classList.remove('active');
+      if (tabTrivia) tabTrivia.classList.remove('active');
       loadPhotos();
       startPhotoPolling();
+      stopTriviaPolling();
+    } else if (tabId === 'invitacion') {
+      if (tabBtnMesas) tabBtnMesas.classList.remove('active');
+      if (tabBtnFotos) tabBtnFotos.classList.remove('active');
+      if (tabBtnInvitacion) tabBtnInvitacion.classList.add('active');
+      if (tabBtnTrivia) tabBtnTrivia.classList.remove('active');
+      if (tabMesas) tabMesas.classList.remove('active');
+      if (tabFotos) tabFotos.classList.remove('active');
+      if (tabInvitacion) tabInvitacion.classList.add('active');
+      if (tabTrivia) tabTrivia.classList.remove('active');
+      stopPhotoPolling();
+      stopTriviaPolling();
+      loadRsvps();
+      loadGuests();
+    } else if (tabId === 'trivia') {
+      if (tabBtnMesas) tabBtnMesas.classList.remove('active');
+      if (tabBtnFotos) tabBtnFotos.classList.remove('active');
+      if (tabBtnInvitacion) tabBtnInvitacion.classList.remove('active');
+      if (tabBtnTrivia) tabBtnTrivia.classList.add('active');
+      if (tabMesas) tabMesas.classList.remove('active');
+      if (tabFotos) tabFotos.classList.remove('active');
+      if (tabInvitacion) tabInvitacion.classList.remove('active');
+      if (tabTrivia) tabTrivia.classList.add('active');
+      stopPhotoPolling();
+      loadTriviaConfig();
+      startTriviaPolling();
     }
   }
+
+  window.switchSubTab = function(subTabId) {
+    const subtabs = ['informacion', 'diseno', 'regalos', 'confirmaciones', 'respuestas', 'invitados'];
+    subtabs.forEach(t => {
+      const btn = document.getElementById(`subtab-btn-${t}`);
+      const wrapper = document.getElementById(`subtab-${t}`);
+      if (t === subTabId) {
+        if (btn) btn.classList.add('active');
+        if (wrapper) {
+          wrapper.style.display = ''; // Clear inline styles
+          wrapper.classList.add('active-subtab');
+          wrapper.offsetHeight; // Force reflow
+          wrapper.classList.add('fade-in-subtab');
+        }
+      } else {
+        if (btn) btn.classList.remove('active');
+        if (wrapper) {
+          wrapper.classList.remove('fade-in-subtab');
+          setTimeout(() => {
+            if (!wrapper.classList.contains('fade-in-subtab')) {
+              wrapper.classList.remove('active-subtab');
+              wrapper.style.display = ''; // Clear inline styles
+            }
+          }, 250);
+        }
+      }
+    });
+  };
 
   function startPhotoPolling() {
     if (photoIntervalId) clearInterval(photoIntervalId);
@@ -215,6 +301,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Active guest list state
   let allGuests = [];
+  let allRsvps = [];
 
   // Set up QR codes pointing to Guest view
   const siteOrigin = window.location.origin;
@@ -227,12 +314,99 @@ document.addEventListener('DOMContentLoaded', () => {
   const photosTitleStatus = document.getElementById('photos-title-status');
   const btnClearPhotos = document.getElementById('btn-clear-photos');
   const btnViewGuestView = document.getElementById('btn-view-guest-view');
+  const btnScreenMode = document.getElementById('btn-screen-mode');
+  
+  // Google Drive integration variables
+  const btnSyncDrive = document.getElementById('btn-sync-drive');
+  const syncDriveStatus = document.getElementById('sync-drive-status');
+  const driveLinkContainer = document.getElementById('drive-link-container');
+  const driveFolderUrl = document.getElementById('drive-folder-url');
+  const btnCopyDriveUrl = document.getElementById('btn-copy-drive-url');
+
+  // Phase 3 Invitation Elements
+  const invTitleInput = document.getElementById('inv-title-input');
+  const invDateOnlyInput = document.getElementById('inv-date-only-input');
+  const invTimeOnlyInput = document.getElementById('inv-time-only-input');
+  const invMusicInput = document.getElementById('inv-music-input');
+  const invAudioUpload = document.getElementById('inv-audio-upload');
+  const invAudioUploadStatus = document.getElementById('inv-audio-upload-status');
+  const invAddressInput = document.getElementById('inv-address-input');
+  const invMapsInput = document.getElementById('inv-maps-input');
+  const invDressInput = document.getElementById('inv-dress-input');
+  const invBankHolderInput = document.getElementById('inv-bank-holder-input');
+  const invCbuInput = document.getElementById('inv-cbu-input');
+  const invAliasInput = document.getElementById('inv-alias-input');
+  const invThemeFont = document.getElementById('inv-theme-font');
+  const invThemeColor = document.getElementById('inv-theme-color');
+  const invBgEffect = document.getElementById('inv-bg-effect');
+  const invWaxSeal = document.getElementById('inv-wax-seal');
+  const invBgUrl = document.getElementById('inv-bg-url');
+  const invCoverUrl = document.getElementById('inv-cover-url');
+  const invPhoto1 = document.getElementById('inv-photo-1');
+  const invPhoto2 = document.getElementById('inv-photo-2');
+  const invPhoto3 = document.getElementById('inv-photo-3');
+  const invPhoto4 = document.getElementById('inv-photo-4');
+  const invPhoto5 = document.getElementById('inv-photo-5');
+  const btnSaveInvitationConfig = document.getElementById('btn-save-invitation-config');
+  const invConfigStatus = document.getElementById('inv-config-status');
+  
+  // Real-Time Preview Elements
+  const previewScreen = document.getElementById('preview-screen');
+  const previewIframe = document.getElementById('preview-iframe');
+  const btnPrevViewEnvelope = document.getElementById('btn-prev-view-envelope');
+  const btnPrevViewCard = document.getElementById('btn-prev-view-card');
+  let isIframeLoaded = false;
+
+  if (previewIframe) {
+    previewIframe.src = `/invitacion.html?event=${encodeURIComponent(eventId)}&preview=true`;
+    previewIframe.addEventListener('load', () => {
+      isIframeLoaded = true;
+      updateRealTimePreview();
+    });
+  }
+
+  // Handle messages from the iframe (e.g. envelope opened event)
+  window.addEventListener('message', (event) => {
+    if (!event.data) return;
+    
+    if (event.data.type === 'invitation-envelope-opened') {
+      if (btnPrevViewCard && btnPrevViewEnvelope) {
+        btnPrevViewCard.style.background = 'var(--gold-gradient)';
+        btnPrevViewCard.style.color = '#0b0b0c';
+        btnPrevViewCard.style.borderColor = 'rgba(255,255,255,0.1)';
+        
+        btnPrevViewEnvelope.style.background = 'rgba(255, 255, 255, 0.05)';
+        btnPrevViewEnvelope.style.color = '#888';
+        btnPrevViewEnvelope.style.borderColor = 'rgba(255,255,255,0.05)';
+      }
+    }
+  });
+  
+  const invitationPublicUrl = document.getElementById('invitation-public-url');
+  const btnCopyInvitationUrl = document.getElementById('btn-copy-invitation-url');
+  const btnPrintInvitationQr = document.getElementById('btn-print-invitation-qr');
+  const qrInvitationCodeContainer = document.getElementById('qr-invitation-code-container');
+  
+  const rsvpStatConfirmed = document.getElementById('rsvp-stat-confirmed');
+  const rsvpStatDeclined = document.getElementById('rsvp-stat-declined');
+  const rsvpStatTotalGuests = document.getElementById('rsvp-stat-total-guests');
+  const rsvpDietBreakdown = document.getElementById('rsvp-diet-breakdown');
+  const rsvpSongsList = document.getElementById('rsvp-songs-list');
+  const rsvpSearchInput = document.getElementById('rsvp-search-input');
+  const rsvpTableBody = document.getElementById('rsvp-table-body');
 
   const activeService = urlParams.get('service');
 
   function updateQR() {
     const isPhotos = (activeService === 'photos');
-    const targetPath = isPhotos ? '/fotos' : '/mesas';
+    const isInvitation = (activeService === 'invitacion' || activeService === 'invitation');
+    const isTrivia = (activeService === 'trivia');
+    
+    let targetPath = '/mesas';
+    if (isPhotos) targetPath = '/fotos';
+    if (isInvitation) targetPath = '/invitacion.html';
+    if (isTrivia) targetPath = '/trivia-client.html';
+    
     const targetUrl = `${siteOrigin}${targetPath}?event=${encodeURIComponent(eventId)}`;
 
     // Generate QR code URLs
@@ -243,21 +417,35 @@ document.addEventListener('DOMContentLoaded', () => {
     if (isPhotos) {
       const qrPhotosContainer = document.getElementById('qr-photos-code-container');
       if (qrPhotosContainer) {
-        qrPhotosContainer.innerHTML = `<img src="${screenQrUrl}" alt="QR Code" style="display: block;">`;
+        qrPhotosContainer.innerHTML = `<img src="${screenQrUrl}" alt="QR Code" style="display: block; margin: 0 auto;">`;
       }
       
       const qrPhotosInstructionsText = document.getElementById('qr-photos-instructions-text');
       if (qrPhotosInstructionsText) {
         qrPhotosInstructionsText.textContent = 'Imprime el cartel con el QR oficial para ubicarlo en el salón. Los invitados podrán escanearlo para subir y compartir sus fotos al instante.';
       }
+    } else if (isInvitation) {
+      if (qrInvitationCodeContainer) {
+        qrInvitationCodeContainer.innerHTML = `<img src="${screenQrUrl}" alt="QR Code" style="display: block; margin: 0 auto;">`;
+      }
     } else {
       if (qrCodeContainer) {
-        qrCodeContainer.innerHTML = `<img src="${screenQrUrl}" alt="QR Code" style="display: block;">`;
+        qrCodeContainer.innerHTML = `<img src="${screenQrUrl}" alt="QR Code" style="display: block; margin: 0 auto;">`;
       }
       
       if (qrInstructionsText) {
         qrInstructionsText.textContent = 'Imprime el cartel con el QR oficial para ubicarlo en la recepción del salón. Los invitados podrán escanearlo al llegar para encontrar su mesa asignada.';
       }
+    }
+
+    // Always keep invitation URL and QR input populated on invitation tab
+    const invitationUrlVal = `${siteOrigin}/invitacion.html?event=${encodeURIComponent(eventId)}`;
+    if (invitationPublicUrl) {
+      invitationPublicUrl.value = invitationUrlVal;
+    }
+    if (qrInvitationCodeContainer) {
+      const invScreenQrUrl = `${qrBaseUrl}?size=150x150&data=${encodeURIComponent(invitationUrlVal)}&color=0b0b0c&bgcolor=ffffff`;
+      qrInvitationCodeContainer.innerHTML = `<img src="${invScreenQrUrl}" alt="QR Code" style="display: block; margin: 0 auto;">`;
     }
 
     // Common/Print QR image configuration for window.print()
@@ -271,17 +459,33 @@ document.addEventListener('DOMContentLoaded', () => {
     const printInstructions = document.querySelector('.print-instructions');
 
     if (printTitle) {
-      printTitle.textContent = isPhotos ? 'Muro de Fotos' : 'Ubicación de Mesas';
+      printTitle.textContent = isPhotos ? 'Muro de Fotos' : (isInvitation ? 'Invitación Interactiva' : (isTrivia ? 'Juego de Trivia' : 'Ubicación de Mesas'));
     }
     if (printSubtitle) {
-      printSubtitle.textContent = isPhotos ? 'Comparte tus Momentos' : 'Encuentra tu Mesa';
+      printSubtitle.textContent = isPhotos ? 'Comparte tus Momentos' : (isInvitation ? 'Accede a la Invitación' : (isTrivia ? 'Compite con tus amigos' : 'Encuentra tu Mesa'));
     }
     if (printInstructions) {
       printInstructions.innerHTML = isPhotos 
         ? 'Escanéa este código con la cámara de tu celular<br>para subir fotos y mensajes al muro.'
-        : 'Escanéa este código con la cámara de tu celular<br>para consultar tu mesa asignada.';
+        : (isInvitation 
+           ? 'Escanéa este código con la cámara de tu celular<br>para abrir la invitación interactiva y confirmar asistencia.'
+           : (isTrivia 
+              ? 'Escanéa este código con la cámara de tu celular<br>para unirte al juego de trivia y responder preguntas.'
+              : 'Escanéa este código con la cámara de tu celular<br>para consultar tu mesa asignada.'));
     }
   }
+
+  // Collapsible headers logic
+  document.querySelectorAll('.collapsible-header').forEach(header => {
+    header.addEventListener('click', () => {
+      const targetId = header.dataset.target;
+      const target = document.getElementById(targetId);
+      if (target) {
+        header.classList.toggle('collapsed');
+        target.classList.toggle('collapsed');
+      }
+    });
+  });
 
   // Trigger initial QR render
   updateQR();
@@ -299,17 +503,88 @@ document.addEventListener('DOMContentLoaded', () => {
   // Switch display container and load data based on the service param
   if (activeService === 'photos') {
     switchTab('fotos');
+  } else if (activeService === 'invitacion' || activeService === 'invitation') {
+    switchTab('invitacion');
+  } else if (activeService === 'trivia') {
+    switchTab('trivia');
   } else {
     switchTab('mesas');
     loadStats();
     loadGuests();
   }
 
-  // Set header guest view link path
+  function openGuestListModal() {
+    if (guestListModal) {
+      guestListModal.classList.add('active');
+      activeModalTab = 'all';
+      updateModalTabsUI();
+      if (modalGuestSearch) modalGuestSearch.value = '';
+      renderModalGuestList();
+    }
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeGuestListModal() {
+    if (guestListModal) {
+      guestListModal.classList.remove('active');
+    }
+    document.body.style.overflow = '';
+  }
+
+  // Wire up guest list modal events
   if (btnViewGuestView) {
-    btnViewGuestView.href = (activeService === 'photos')
-      ? `/fotos?event=${encodeURIComponent(eventId)}`
-      : `/mesas?event=${encodeURIComponent(eventId)}`;
+    btnViewGuestView.addEventListener('click', openGuestListModal);
+  }
+
+  if (btnCloseGuestListModal) {
+    btnCloseGuestListModal.addEventListener('click', closeGuestListModal);
+  }
+
+  if (guestListModal) {
+    guestListModal.addEventListener('click', (e) => {
+      if (e.target === guestListModal) {
+        closeGuestListModal();
+      }
+    });
+  }
+
+  if (modalTabAll) {
+    modalTabAll.addEventListener('click', () => {
+      activeModalTab = 'all';
+      updateModalTabsUI();
+      renderModalGuestList();
+    });
+  }
+  if (modalTabTables) {
+    modalTabTables.addEventListener('click', () => {
+      activeModalTab = 'tables';
+      updateModalTabsUI();
+      renderModalGuestList();
+    });
+  }
+  if (modalTabNoMesa) {
+    modalTabNoMesa.addEventListener('click', () => {
+      activeModalTab = 'nomesa';
+      updateModalTabsUI();
+      renderModalGuestList();
+    });
+  }
+
+  if (modalGuestSearch) {
+    modalGuestSearch.addEventListener('input', () => {
+      renderModalGuestList();
+    });
+  }
+
+  if (btnModalAddGuest) {
+    btnModalAddGuest.addEventListener('click', () => {
+      modalTitle.textContent = 'Agregar Invitado';
+      guestIndexInput.value = '';
+      modalFirstName.value = '';
+      modalLastName.value = '';
+      modalTable.value = '';
+      guestModal.classList.add('active');
+    });
   }
 
   // Wire Photos specific settings listeners
@@ -355,6 +630,32 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 4000);
   }
 
+
+
+  if (btnCopyDriveUrl && driveFolderUrl) {
+    btnCopyDriveUrl.addEventListener('click', () => {
+      driveFolderUrl.select();
+      driveFolderUrl.setSelectionRange(0, 99999); // For mobile devices
+      
+      navigator.clipboard.writeText(driveFolderUrl.value)
+        .then(() => {
+          const originalText = btnCopyDriveUrl.textContent;
+          btnCopyDriveUrl.textContent = '¡Copiado!';
+          btnCopyDriveUrl.style.background = '#28a745';
+          btnCopyDriveUrl.style.color = 'white';
+          
+          setTimeout(() => {
+            btnCopyDriveUrl.textContent = originalText;
+            btnCopyDriveUrl.style.background = 'var(--accent-gold)';
+            btnCopyDriveUrl.style.color = 'black';
+          }, 2000);
+        })
+        .catch(err => {
+          console.error('Failed to copy text: ', err);
+        });
+    });
+  }
+
   if (btnClearPhotos) {
     btnClearPhotos.addEventListener('click', () => {
       showConfirm(
@@ -382,16 +683,24 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Print QR Poster trigger
+  // Print QR Poster triggers
   if (btnPrintQr) {
     btnPrintQr.addEventListener('click', () => {
-      window.print();
+      preparePrintPoster('tables');
+      setTimeout(() => window.print(), 150);
     });
   }
 
   if (btnPrintPhotosQr) {
     btnPrintPhotosQr.addEventListener('click', () => {
-      window.print();
+      preparePrintPoster('photos');
+      setTimeout(() => window.print(), 150);
+    });
+  }
+
+  if (btnScreenMode) {
+    btnScreenMode.addEventListener('click', () => {
+      window.open(`/proyeccion?event=${encodeURIComponent(eventId)}`, '_blank');
     });
   }
 
@@ -434,52 +743,56 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Clear database button
-  btnClearDb.addEventListener('click', () => {
-    showConfirm(
-      'Limpiar Base de Datos',
-      '¿Está seguro de que desea limpiar toda la base de datos de invitados? Esta acción no se puede deshacer.',
-      () => {
-        clearDatabase();
-      }
-    );
-  });
+  if (btnClearDb) {
+    btnClearDb.addEventListener('click', () => {
+      showConfirm(
+        'Limpiar Base de Datos',
+        '¿Está seguro de que desea limpiar toda la base de datos de invitados? Esta acción no se puede deshacer.',
+        () => {
+          clearDatabase();
+        }
+      );
+    });
+  }
 
   // Drag and Drop events
-  fileDropZone.addEventListener('click', (e) => {
-    if (e.target !== fileInput) {
-      fileInput.click();
-    }
-  });
+  if (fileDropZone && fileInput) {
+    fileDropZone.addEventListener('click', (e) => {
+      if (e.target !== fileInput) {
+        fileInput.click();
+      }
+    });
 
-  fileInput.addEventListener('click', (e) => {
-    e.stopPropagation();
-  });
+    fileInput.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
 
-  fileInput.addEventListener('change', () => {
-    if (fileInput.files.length > 0) {
-      handleFileUpload(fileInput.files[0]);
-    }
-  });
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files.length > 0) {
+        handleFileUpload(fileInput.files[0]);
+      }
+    });
 
-  ['dragenter', 'dragover'].forEach(eventName => {
-    fileDropZone.addEventListener(eventName, (e) => {
+    ['dragenter', 'dragover'].forEach(eventName => {
+      fileDropZone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        fileDropZone.classList.add('dragover');
+      });
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      fileDropZone.addEventListener(eventName, () => {
+        fileDropZone.classList.remove('dragover');
+      });
+    });
+
+    fileDropZone.addEventListener('drop', (e) => {
       e.preventDefault();
-      fileDropZone.classList.add('dragover');
+      if (e.dataTransfer.files.length > 0) {
+        handleFileUpload(e.dataTransfer.files[0]);
+      }
     });
-  });
-
-  ['dragleave', 'drop'].forEach(eventName => {
-    fileDropZone.addEventListener(eventName, () => {
-      fileDropZone.classList.remove('dragover');
-    });
-  });
-
-  fileDropZone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    if (e.dataTransfer.files.length > 0) {
-      handleFileUpload(e.dataTransfer.files[0]);
-    }
-  });
+  }
 
   // Search/Filter guest list table
   adminGuestSearch.addEventListener('input', () => {
@@ -511,11 +824,13 @@ document.addEventListener('DOMContentLoaded', () => {
       .then(res => res.json())
       .then(data => {
         if (!data.loggedIn) {
-          window.location.href = `/login.html?event=${encodeURIComponent(eventId)}`;
+          const serviceParam = activeService ? `&service=${encodeURIComponent(activeService)}` : '';
+          window.location.href = `/login?event=${encodeURIComponent(eventId)}${serviceParam}`;
         }
       })
       .catch(() => {
-        window.location.href = `/login.html?event=${encodeURIComponent(eventId)}`;
+        const serviceParam = activeService ? `&service=${encodeURIComponent(activeService)}` : '';
+        window.location.href = `/login?event=${encodeURIComponent(eventId)}${serviceParam}`;
       });
   }
 
@@ -530,6 +845,122 @@ document.addEventListener('DOMContentLoaded', () => {
         if (eventTitleInput) eventTitleInput.value = data.eventTitle || '';
         if (eventTitlePhotosInput) eventTitlePhotosInput.value = data.eventTitle || '';
         
+        // Populate Phase 3 Invitation Fields
+        if (invTitleInput) invTitleInput.value = data.eventTitle || '';
+        if (data.invitationEventDate) {
+          try {
+            const parts = data.invitationEventDate.split('T');
+            let dateVal = '';
+            let timeVal = '';
+            if (parts.length >= 2) {
+              dateVal = parts[0];
+              timeVal = parts[1].substring(0, 5); // Keep HH:MM
+            } else {
+              const d = new Date(data.invitationEventDate);
+              if (!isNaN(d.getTime())) {
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                const hours = String(d.getHours()).padStart(2, '0');
+                const minutes = String(d.getMinutes()).padStart(2, '0');
+                dateVal = `${year}-${month}-${day}`;
+                timeVal = `${hours}:${minutes}`;
+              }
+            }
+
+            if (invDateOnlyInput && dateVal) {
+              // Convert YYYY-MM-DD to DD/MM/YYYY
+              const dp = dateVal.split('-');
+              if (dp.length === 3) {
+                invDateOnlyInput.value = `${dp[2]}/${dp[1]}/${dp[0]}`;
+              } else {
+                invDateOnlyInput.value = dateVal;
+              }
+            }
+            if (invTimeOnlyInput && timeVal) {
+              invTimeOnlyInput.value = timeVal;
+            }
+          } catch (e) {
+            console.error('Error parsing date for input:', e);
+          }
+        }
+        if (invMusicInput) invMusicInput.value = data.invitationMusicUrl || '';
+        if (invAddressInput) invAddressInput.value = data.invitationPartyAddress || '';
+        if (invMapsInput) invMapsInput.value = data.invitationPartyMapsUrl || '';
+        if (invDressInput) invDressInput.value = data.invitationDressCode || '';
+        if (invBankHolderInput) invBankHolderInput.value = data.invitationBankHolder || '';
+        if (invCbuInput) invCbuInput.value = data.invitationCbu || '';
+        if (invAliasInput) invAliasInput.value = data.invitationAlias || '';
+        if (invThemeFont) {
+          invThemeFont.value = data.invitationThemeFont || 'classic-editorial';
+          invThemeFont.dispatchEvent(new Event('change'));
+        }
+        if (invThemeColor) {
+          invThemeColor.value = data.invitationThemeColor || 'golden-luxury';
+          invThemeColor.dispatchEvent(new Event('change'));
+        }
+        if (invBgEffect) {
+          invBgEffect.value = data.invitationBgEffect || 'golden-dust';
+          invBgEffect.dispatchEvent(new Event('change'));
+        }
+        if (invWaxSeal) {
+          invWaxSeal.value = data.invitationWaxSealDesign || 'rings';
+          invWaxSeal.dispatchEvent(new Event('change'));
+        }
+        if (invBgUrl) invBgUrl.value = data.invitationBgUrl || '';
+        if (invCoverUrl) invCoverUrl.value = data.invitationCoverUrl || '';
+        if (invPhoto1) invPhoto1.value = data.invitationPhoto1 || '';
+        if (invPhoto2) invPhoto2.value = data.invitationPhoto2 || '';
+        if (invPhoto3) invPhoto3.value = data.invitationPhoto3 || '';
+        if (invPhoto4) invPhoto4.value = data.invitationPhoto4 || '';
+        if (invPhoto5) invPhoto5.value = data.invitationPhoto5 || '';
+
+        // Update real-time preview after population
+        updateRealTimePreview();
+
+        const driveLoadingContainer = document.getElementById('drive-loading-container');
+        let pollCount = 0;
+        
+        function checkFolderUrl(currentUrl) {
+          if (currentUrl) {
+            if (driveLoadingContainer) driveLoadingContainer.style.display = 'none';
+            if (driveLinkContainer) driveLinkContainer.style.display = 'block';
+            if (driveFolderUrl) driveFolderUrl.value = currentUrl;
+          } else {
+            if (eventId === 'default') {
+              if (driveLoadingContainer) {
+                driveLoadingContainer.style.display = 'block';
+                driveLoadingContainer.textContent = 'Carpeta de Google Drive no requerida en evento por defecto.';
+              }
+              return;
+            }
+            if (pollCount < 15) {
+              pollCount++;
+              setTimeout(() => {
+                fetch(`/api/config?event=${encodeURIComponent(eventId)}`)
+                  .then(res => res.json())
+                  .then(newData => {
+                    if (newData && newData.googleDriveFolderUrl) {
+                      checkFolderUrl(newData.googleDriveFolderUrl);
+                    } else {
+                      checkFolderUrl(null);
+                    }
+                  })
+                  .catch(() => {
+                    checkFolderUrl(null);
+                  });
+              }, 3000);
+            } else {
+              if (driveLoadingContainer) {
+                driveLoadingContainer.style.display = 'block';
+                driveLoadingContainer.textContent = 'No se pudo generar la carpeta en Google Drive. Verifica la configuración de la cuenta de servicio.';
+              }
+            }
+          }
+        }
+        
+        checkFolderUrl(data ? data.googleDriveFolderUrl : null);
+        
         if (printEventTitle) {
           printEventTitle.textContent = data.eventTitle || 'Ubicación de Mesas';
         }
@@ -537,10 +968,21 @@ document.addEventListener('DOMContentLoaded', () => {
         if (data.clientName) {
           const headerTitle = document.querySelector('.logo-group h1');
           const isPhotos = (activeService === 'photos');
+          const isInvitation = (activeService === 'invitacion' || activeService === 'invitation');
+          const isTrivia = (activeService === 'trivia');
+          let serviceName = 'Control de Mesas';
+          if (isPhotos) serviceName = 'Control de Fotos';
+          if (isInvitation) serviceName = 'Invitación & RSVPs';
+          if (isTrivia) serviceName = 'Control de Trivia';
+          
           if (headerTitle) {
-            headerTitle.textContent = `${isPhotos ? 'Control de Fotos' : 'Control de Mesas'} • ${data.clientName}`;
+            headerTitle.textContent = `${serviceName} • ${data.clientName}`;
           }
-          document.title = `${isPhotos ? 'Moderación de Fotos' : 'Control de Mesas'} | ${data.clientName}`;
+          let pageTitle = 'Control de Mesas';
+          if (isPhotos) pageTitle = 'Moderación de Fotos';
+          if (isInvitation) pageTitle = 'Invitación & RSVPs';
+          if (isTrivia) pageTitle = 'Control de Trivia';
+          document.title = `${pageTitle} | ${data.clientName}`;
         }
       })
       .catch(err => console.error('Error config:', err));
@@ -578,6 +1020,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         allGuests = data;
         renderGuestsTable();
+        renderModalGuestList();
+        renderInvitadosTable();
       })
       .catch(err => {
         console.error('Error fetching guests:', err);
@@ -604,9 +1048,19 @@ document.addEventListener('DOMContentLoaded', () => {
   // Render guest list table (with search filtering)
   function renderGuestsTable() {
     const filter = adminGuestSearch.value.trim().toLowerCase();
+    
+    // Find confirmed guests (RSVPs with attending = true)
+    const confirmedNames = new Set(
+      allRsvps
+        .filter(r => r.attending === true)
+        .map(r => r.name.trim().toLowerCase())
+    );
+
     const filteredGuests = allGuests.map((g, index) => ({ ...g, originalIndex: index }))
       .filter(g => {
-        const fullName = `${g.firstName} ${g.lastName}`.toLowerCase();
+        const fullName = `${g.firstName} ${g.lastName}`.trim().toLowerCase();
+        if (!confirmedNames.has(fullName)) return false;
+
         const table = String(g.table).toLowerCase();
         return fullName.includes(filter) || table.includes(filter);
       });
@@ -633,6 +1087,159 @@ document.addEventListener('DOMContentLoaded', () => {
         </td>
       </tr>
     `).join('');
+  }
+
+  // Update modal tabs presentation
+  function updateModalTabsUI() {
+    const tabs = [modalTabAll, modalTabTables, modalTabNoMesa];
+    const activeTab = activeModalTab === 'all' ? modalTabAll
+                    : activeModalTab === 'tables' ? modalTabTables
+                    : modalTabNoMesa;
+    
+    tabs.forEach(t => {
+      if (t) {
+        t.classList.remove('active');
+        t.style.borderBottomColor = 'transparent';
+        t.style.color = 'var(--text-muted)';
+      }
+    });
+    
+    if (activeTab) {
+      activeTab.classList.add('active');
+      activeTab.style.borderBottomColor = 'var(--gold-primary)';
+      activeTab.style.color = 'white';
+    }
+  }
+
+  // Render the detailed guest list in the modal with search and tab categorization
+  function renderModalGuestList() {
+    if (!modalGuestListContent) return;
+
+    // Trigger smooth fade-in/slide-up transition on content change
+    modalGuestListContent.classList.remove('modal-content-animate');
+    void modalGuestListContent.offsetWidth; // Force reflow to restart CSS animation
+    modalGuestListContent.classList.add('modal-content-animate');
+
+    const filter = (modalGuestSearch ? modalGuestSearch.value : '').trim().toLowerCase();
+    
+    // Find confirmed guests (RSVPs with attending = true)
+    const confirmedNames = new Set(
+      allRsvps
+        .filter(r => r.attending === true)
+        .map(r => r.name.trim().toLowerCase())
+    );
+
+    // Filter the guests based on the search query first
+    const filtered = allGuests.map((g, index) => ({ ...g, originalIndex: index }))
+      .filter(g => {
+        const fullName = `${g.firstName} ${g.lastName}`.trim().toLowerCase();
+        if (!confirmedNames.has(fullName)) return false;
+
+        const table = String(g.table).toLowerCase();
+        return fullName.includes(filter) || table.includes(filter);
+      });
+
+    modalGuestListContent.innerHTML = '';
+
+    if (filtered.length === 0) {
+      modalGuestListContent.innerHTML = `
+        <div style="padding: 30px; text-align: center; color: var(--text-muted); font-family: 'Montserrat', sans-serif;">
+          No se encontraron invitados.
+        </div>
+      `;
+      return;
+    }
+
+    if (activeModalTab === 'all' || activeModalTab === 'nomesa') {
+      const tabFiltered = filtered.filter(g => {
+        if (activeModalTab === 'nomesa') {
+          return !g.table || String(g.table).trim() === '' || String(g.table).toLowerCase() === 'sin mesa';
+        }
+        return true;
+      });
+
+      if (tabFiltered.length === 0) {
+        modalGuestListContent.innerHTML = `
+          <div style="padding: 30px; text-align: center; color: var(--text-muted); font-family: 'Montserrat', sans-serif;">
+            No hay invitados en esta categoría.
+          </div>
+        `;
+        return;
+      }
+
+      modalGuestListContent.innerHTML = tabFiltered.map(g => `
+        <div class="modal-guest-item">
+          <div>
+            <div style="color: white; font-weight: 600; font-family: 'Montserrat', sans-serif; font-size: 0.95rem;">
+              ${g.firstName} ${g.lastName}
+            </div>
+            <div style="color: var(--gold-primary); font-size: 0.8rem; font-weight: 500; margin-top: 3px; font-family: 'Montserrat', sans-serif;">
+              ${formatTableDisplay(g.table)}
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn-action edit" onclick="openEditGuestModal(${g.originalIndex})">Editar</button>
+            <button class="btn-action delete" onclick="confirmDeleteGuest(${g.originalIndex})">Eliminar</button>
+          </div>
+        </div>
+      `).join('');
+
+    } else if (activeModalTab === 'tables') {
+      const guestsWithTable = filtered.filter(g => g.table && String(g.table).trim() !== '' && String(g.table).toLowerCase() !== 'sin mesa');
+      
+      if (guestsWithTable.length === 0) {
+        modalGuestListContent.innerHTML = `
+          <div style="padding: 30px; text-align: center; color: var(--text-muted); font-family: 'Montserrat', sans-serif;">
+            No hay mesas asignadas.
+          </div>
+        `;
+        return;
+      }
+
+      const groups = {};
+      guestsWithTable.forEach(g => {
+        const tName = formatTableDisplay(g.table);
+        if (!groups[tName]) groups[tName] = [];
+        groups[tName].push(g);
+      });
+
+      const sortedTables = Object.keys(groups).sort((a, b) => {
+        const numA = parseInt(a.replace(/\D/g, ''));
+        const numB = parseInt(b.replace(/\D/g, ''));
+        if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+        return a.localeCompare(b);
+      });
+
+      modalGuestListContent.innerHTML = sortedTables.map(tName => {
+        const list = groups[tName];
+        const count = list.length;
+        const listHtml = list.map(g => `
+          <div class="modal-guest-item">
+            <div>
+              <div style="color: white; font-weight: 600; font-family: 'Montserrat', sans-serif; font-size: 0.95rem;">
+                ${g.firstName} ${g.lastName}
+              </div>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn-action edit" onclick="openEditGuestModal(${g.originalIndex})">Editar</button>
+              <button class="btn-action delete" onclick="confirmDeleteGuest(${g.originalIndex})">Eliminar</button>
+            </div>
+          </div>
+        `).join('');
+
+        return `
+          <div class="modal-table-group">
+            <div class="modal-table-header">
+              <span>${tName}</span>
+              <span class="modal-table-count">${count} ${count === 1 ? 'invitado' : 'invitados'}</span>
+            </div>
+            <div>
+              ${listHtml}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
   }
 
   // Render list of tables and guest counts
@@ -676,8 +1283,41 @@ document.addEventListener('DOMContentLoaded', () => {
       .then(data => {
         if (data.success) {
           guestModal.classList.remove('active');
-          loadStats();
-          loadGuests();
+          
+          // Auto-confirm guest RSVP if a table is assigned
+          const isTableAssigned = guestData.table && guestData.table.trim() !== '' && guestData.table.toLowerCase() !== 'sin mesa';
+          if (isTableAssigned) {
+            const fullName = `${guestData.firstName} ${guestData.lastName}`;
+            const existingRsvp = allRsvps.find(r => r.name.trim().toLowerCase() === fullName.trim().toLowerCase());
+            if (!existingRsvp || !existingRsvp.attending) {
+              const payload = {
+                name: fullName,
+                attending: true,
+                companionsCount: existingRsvp ? existingRsvp.companionsCount : 0,
+                companionsNames: existingRsvp ? existingRsvp.companionsNames : '',
+                dietaryRestrictions: existingRsvp ? existingRsvp.dietaryRestrictions : 'Ninguno',
+                suggestedSong: existingRsvp ? existingRsvp.suggestedSong : ''
+              };
+              
+              fetch(`/api/public/rsvp?event=${encodeURIComponent(eventId)}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+              })
+              .then(() => {
+                loadRsvps();
+                loadStats();
+                loadGuests();
+              });
+            } else {
+              loadStats();
+              loadGuests();
+            }
+          } else {
+            loadStats();
+            loadGuests();
+          }
+
           showToast('Invitado guardado correctamente', 'success');
         } else {
           showToast('Error al guardar el invitado: ' + (data.error || 'error desconocido'), 'error');
@@ -815,5 +1455,1580 @@ document.addEventListener('DOMContentLoaded', () => {
       localStorage.setItem(`onboarding_dismissed_${eventId}`, 'true');
     });
   }
+
+  // --- Phase 3: Invitation & RSVP Management Logic ---
+  
+  function saveInvitationConfig() {
+    const statusMsgs = document.querySelectorAll('.inv-config-status');
+    statusMsgs.forEach(msg => {
+      msg.textContent = 'Guardando...';
+      msg.className = 'status-msg loading';
+      msg.style.display = 'block';
+    });
+
+    const payload = {
+      eventTitle: invTitleInput ? invTitleInput.value.trim() : '',
+      invitationEventDate: (function() {
+        if (invDateOnlyInput && invDateOnlyInput.value) {
+          // Convert DD/MM/YYYY to YYYY-MM-DD
+          let isoDate = '';
+          const parts = invDateOnlyInput.value.trim().split('/');
+          if (parts.length === 3) {
+            isoDate = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+          } else {
+            isoDate = invDateOnlyInput.value.trim();
+          }
+
+          const timeVal = (invTimeOnlyInput && invTimeOnlyInput.value) ? invTimeOnlyInput.value.trim() : '00:00';
+          let formattedTime = '00:00';
+          const timeParts = timeVal.split(':');
+          if (timeParts.length >= 1) {
+            let h = parseInt(timeParts[0], 10);
+            if (isNaN(h) || h < 0 || h > 23) h = 0;
+            let m = 0;
+            if (timeParts.length >= 2) {
+              m = parseInt(timeParts[1], 10);
+              if (isNaN(m) || m < 0 || m > 59) m = 0;
+            }
+            formattedTime = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+          }
+          return `${isoDate}T${formattedTime}`;
+        }
+        return '';
+      })(),
+      invitationMusicUrl: invMusicInput ? invMusicInput.value.trim() : '',
+      invitationPartyAddress: invAddressInput ? invAddressInput.value.trim() : '',
+      invitationPartyMapsUrl: invMapsInput ? invMapsInput.value.trim() : '',
+      invitationCbu: invCbuInput ? invCbuInput.value.trim() : '',
+      invitationAlias: invAliasInput ? invAliasInput.value.trim() : '',
+      invitationBankHolder: invBankHolderInput ? invBankHolderInput.value.trim() : '',
+      invitationDressCode: invDressInput ? invDressInput.value.trim() : '',
+      invitationThemeFont: invThemeFont ? invThemeFont.value : 'classic-editorial',
+      invitationThemeColor: invThemeColor ? invThemeColor.value : 'golden-luxury',
+      invitationBgEffect: invBgEffect ? invBgEffect.value : 'golden-dust',
+      invitationWaxSealDesign: invWaxSeal ? invWaxSeal.value : 'rings',
+      invitationBgUrl: invBgUrl ? invBgUrl.value.trim() : '',
+      invitationCoverUrl: invCoverUrl ? invCoverUrl.value.trim() : '',
+      invitationPhoto1: invPhoto1 ? invPhoto1.value.trim() : '',
+      invitationPhoto2: invPhoto2 ? invPhoto2.value.trim() : '',
+      invitationPhoto3: invPhoto3 ? invPhoto3.value.trim() : '',
+      invitationPhoto4: invPhoto4 ? invPhoto4.value.trim() : '',
+      invitationPhoto5: invPhoto5 ? invPhoto5.value.trim() : ''
+    };
+
+    if (!payload.eventTitle) {
+      statusMsgs.forEach(msg => {
+        msg.textContent = 'El título del evento es obligatorio.';
+        msg.className = 'status-msg error';
+        msg.style.display = 'block';
+      });
+      return;
+    }
+
+    fetch(`/api/config?event=${encodeURIComponent(eventId)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        statusMsgs.forEach(msg => {
+          msg.textContent = 'Configuración de la invitación guardada con éxito.';
+          msg.className = 'status-msg success';
+          msg.style.display = 'block';
+        });
+        
+        // Propagate event title updates to other tabs/inputs
+        const eventTitleInput = document.getElementById('event-title-input');
+        const eventTitlePhotosInput = document.getElementById('event-title-photos-input');
+        if (eventTitleInput) eventTitleInput.value = payload.eventTitle;
+        if (eventTitlePhotosInput) eventTitlePhotosInput.value = payload.eventTitle;
+        if (printEventTitle) printEventTitle.textContent = payload.eventTitle;
+      } else {
+        statusMsgs.forEach(msg => {
+          msg.textContent = data.error || 'Error al guardar la configuración.';
+          msg.className = 'status-msg error';
+          msg.style.display = 'block';
+        });
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      statusMsgs.forEach(msg => {
+        msg.textContent = 'Error de red al intentar guardar.';
+        msg.className = 'status-msg error';
+        msg.style.display = 'block';
+      });
+    });
+  }
+
+  function loadRsvps() {
+    fetch(`/api/rsvps?event=${encodeURIComponent(eventId)}`)
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`Server returned status ${res.status}`);
+        }
+        return res.json();
+      })
+      .then(data => {
+        if (data && data.error) {
+          throw new Error(data.error);
+        }
+        if (!Array.isArray(data)) {
+          throw new Error('Response is not a valid RSVP list array');
+        }
+        allRsvps = data;
+        renderRsvpStats();
+        renderRsvpTable();
+        renderInvitadosTable();
+      })
+      .catch(err => {
+        console.error('Error fetching RSVPs:', err);
+        if (rsvpTableBody) {
+          rsvpTableBody.innerHTML = `
+            <tr>
+              <td colspan="5" style="text-align: center; color: var(--error); padding: 30px;">
+                Error al cargar el listado de confirmaciones: ${err.message || err}
+              </td>
+            </tr>
+          `;
+        }
+      });
+  }
+
+  function renderRsvpStats() {
+    let confirmedCount = 0;
+    let declinedCount = 0;
+    let totalCount = 0;
+    const dietaryMap = {};
+    const songs = [];
+
+    allRsvps.forEach(rsvp => {
+      if (rsvp.attending) {
+        const companions = parseInt(rsvp.companionsCount, 10) || 0;
+        confirmedCount += (1 + companions);
+        
+        if (rsvp.dietaryRestrictions && rsvp.dietaryRestrictions !== 'Ninguno') {
+          dietaryMap[rsvp.dietaryRestrictions] = (dietaryMap[rsvp.dietaryRestrictions] || 0) + 1;
+        }
+        
+        if (rsvp.suggestedSong && rsvp.suggestedSong.trim() !== '') {
+          songs.push({ name: rsvp.name, song: rsvp.suggestedSong.trim() });
+        }
+      } else {
+        declinedCount += 1;
+      }
+      totalCount += 1;
+    });
+
+    if (rsvpStatConfirmed) rsvpStatConfirmed.textContent = confirmedCount;
+    if (rsvpStatDeclined) rsvpStatDeclined.textContent = declinedCount;
+    if (rsvpStatTotalGuests) rsvpStatTotalGuests.textContent = totalCount;
+
+    if (rsvpDietBreakdown) {
+      const dietaryKeys = Object.keys(dietaryMap);
+      if (dietaryKeys.length === 0) {
+        rsvpDietBreakdown.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 0.75rem; padding: 10px;">Ninguna restricción reportada.</div>`;
+      } else {
+        rsvpDietBreakdown.innerHTML = dietaryKeys.map(key => `
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; border-bottom: 1px solid rgba(255,255,255,0.03); font-size: 0.75rem;">
+            <span>${key}</span>
+            <span style="font-weight: bold; color: var(--accent-gold);">${dietaryMap[key]}</span>
+          </div>
+        `).join('');
+      }
+    }
+
+    if (rsvpSongsList) {
+      if (songs.length === 0) {
+        rsvpSongsList.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 0.75rem; padding: 10px;">No hay sugerencias musicales.</div>`;
+      } else {
+        rsvpSongsList.innerHTML = songs.map(s => `
+          <div style="padding: 6px 10px; border-bottom: 1px solid rgba(255,255,255,0.03); font-size: 0.75rem; line-height: 1.4;">
+            <div style="font-weight: bold; color: white;">${s.song}</div>
+            <div style="color: var(--text-muted); font-size: 0.65rem;">Sugerido por: ${s.name}</div>
+          </div>
+        `).join('');
+      }
+    }
+  }
+
+  function renderRsvpTable() {
+    if (!rsvpTableBody) return;
+    const filter = rsvpSearchInput ? rsvpSearchInput.value.trim().toLowerCase() : '';
+    const filteredRsvps = allRsvps.filter(rsvp => {
+      return rsvp.name.toLowerCase().includes(filter) || 
+             (rsvp.companionsNames && rsvp.companionsNames.toLowerCase().includes(filter)) ||
+             (rsvp.dietaryRestrictions && rsvp.dietaryRestrictions.toLowerCase().includes(filter));
+    });
+
+    if (filteredRsvps.length === 0) {
+      rsvpTableBody.innerHTML = `
+        <tr>
+          <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 30px;">
+            ${allRsvps.length === 0 ? 'No hay confirmaciones de asistencia recibidas.' : 'No se encontraron coincidencias.'}
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    rsvpTableBody.innerHTML = filteredRsvps.map(rsvp => {
+      const attendingText = rsvp.attending 
+        ? `<span style="color: #2ec4b6; font-weight: bold;">Sí, asiste</span>` 
+        : `<span style="color: var(--error); font-weight: bold;">No asiste</span>`;
+      
+      const companionsText = rsvp.companionsCount > 0 
+        ? `<span>${rsvp.companionsCount} (${rsvp.companionsNames || ''})</span>` 
+        : `<span style="color: var(--text-muted);">-</span>`;
+      
+      const dietText = rsvp.dietaryRestrictions && rsvp.dietaryRestrictions !== 'Ninguno'
+        ? `<span style="color: #f3e5ab; font-weight: 500;">${rsvp.dietaryRestrictions}</span>`
+        : `<span style="color: var(--text-muted);">-</span>`;
+
+      return `
+        <tr data-id="${rsvp.id}">
+          <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.03); color: white;">${rsvp.name}</td>
+          <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.03);">${attendingText}</td>
+          <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.03); color: white;">${companionsText}</td>
+          <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.03);">${dietText}</td>
+          <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.03); text-align: center;">
+            <button class="btn btn-delete-rsvp" data-id="${rsvp.id}" style="padding: 4px 8px; border-radius: 6px; font-size: 0.65rem; background: rgba(255,0,0,0.15); color: #ff4d4d; border: 1px solid rgba(255,0,0,0.3); cursor: pointer;">
+              Eliminar
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    rsvpTableBody.querySelectorAll('.btn-delete-rsvp').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-id');
+        deleteRsvpEntry(id);
+      });
+    });
+  }
+
+  function deleteRsvpEntry(id) {
+    showConfirm(
+      '¿Eliminar Confirmación?',
+      '¿Estás seguro de que deseas eliminar esta confirmación de asistencia? Esta acción no se puede deshacer.',
+      () => {
+        fetch(`/api/rsvps/${id}?event=${encodeURIComponent(eventId)}`, {
+          method: 'DELETE'
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            loadRsvps();
+            showToast('Confirmación eliminada correctamente', 'success');
+          } else {
+            showToast(data.error || 'Error al eliminar la confirmación.', 'error');
+          }
+        })
+        .catch(err => {
+          console.error('Error deleting RSVP:', err);
+          showToast('Error de conexión con el servidor.', 'error');
+        });
+      }
+    );
+  }
+
+  function preparePrintPoster(serviceType) {
+    const isPhotos = (serviceType === 'photos');
+    const isInvitation = (serviceType === 'invitation');
+    
+    let targetPath = '/mesas';
+    if (isPhotos) targetPath = '/fotos';
+    if (isInvitation) targetPath = '/invitacion.html';
+    
+    const targetUrl = `${siteOrigin}${targetPath}?event=${encodeURIComponent(eventId)}`;
+    const printQrUrl = `${qrBaseUrl}?size=500x500&data=${encodeURIComponent(targetUrl)}&color=000000&bgcolor=ffffff`;
+
+    if (printQrImg) {
+      printQrImg.src = printQrUrl;
+    }
+
+    const printTitle = document.getElementById('print-event-title');
+    const printSubtitle = document.querySelector('.print-subtitle');
+    const printInstructions = document.querySelector('.print-instructions');
+
+    if (printTitle) {
+      printTitle.textContent = isPhotos ? 'Muro de Fotos' : (isInvitation ? 'Invitación Interactiva' : 'Ubicación de Mesas');
+    }
+    if (printSubtitle) {
+      printSubtitle.textContent = isPhotos ? 'Comparte tus Momentos' : (isInvitation ? 'Accede a la Invitación' : 'Encuentra tu Mesa');
+    }
+    if (printInstructions) {
+      printInstructions.innerHTML = isPhotos 
+        ? 'Escanéa este código con la cámara de tu celular<br>para subir fotos y mensajes al muro.'
+        : (isInvitation 
+           ? 'Escanéa este código con la cámara de tu celular<br>para abrir la invitación interactiva y confirmar asistencia.'
+           : 'Escanéa este código con la cámara de tu celular<br>para consultar tu mesa asignada.');
+    }
+  }
+
+  // --- Bind Phase 3 Event Listeners ---
+  
+  if (tabBtnInvitacion) {
+    tabBtnInvitacion.addEventListener('click', () => switchTab('invitacion'));
+  }
+
+  const btnSaveInvitationConfigs = document.querySelectorAll('.btn-save-invitation-config');
+  btnSaveInvitationConfigs.forEach(btn => {
+    btn.addEventListener('click', saveInvitationConfig);
+  });
+
+  if (invAudioUpload) {
+    invAudioUpload.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      // Validate file size (15MB limit)
+      const maxSize = 15 * 1024 * 1024;
+      if (file.size > maxSize) {
+        if (invAudioUploadStatus) {
+          invAudioUploadStatus.textContent = 'Error: El archivo supera el límite de 15MB.';
+          invAudioUploadStatus.style.color = '#ef4444';
+        }
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('audio', file);
+
+      if (invAudioUploadStatus) {
+        invAudioUploadStatus.textContent = 'Subiendo pista de audio...';
+        invAudioUploadStatus.style.color = '#d4af37';
+      }
+
+      try {
+        const response = await fetch(`/api/audio/upload?event=${encodeURIComponent(eventId)}`, {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await response.json();
+        if (response.ok && data.success) {
+          if (invMusicInput) {
+            invMusicInput.value = data.url;
+            invMusicInput.dispatchEvent(new Event('input'));
+          }
+          if (invAudioUploadStatus) {
+            invAudioUploadStatus.textContent = '¡Pista subida con éxito!';
+            invAudioUploadStatus.style.color = '#10b981';
+          }
+        } else {
+          throw new Error(data.error || 'Error al subir el archivo');
+        }
+      } catch (err) {
+        console.error('Audio upload error:', err);
+        if (invAudioUploadStatus) {
+          invAudioUploadStatus.textContent = `Error: ${err.message}`;
+          invAudioUploadStatus.style.color = '#ef4444';
+        }
+      } finally {
+        invAudioUpload.value = '';
+      }
+    });
+  }
+
+  if (invTimeOnlyInput) {
+    invTimeOnlyInput.addEventListener('input', (e) => {
+      let val = e.target.value.replace(/[^0-9:]/g, '');
+      if (val.length === 4 && !val.includes(':')) {
+        val = val.substring(0, 2) + ':' + val.substring(2);
+      }
+      e.target.value = val;
+    });
+
+    invTimeOnlyInput.addEventListener('blur', (e) => {
+      let val = e.target.value.trim();
+      if (!val) return;
+      
+      if (/^\d+$/.test(val)) {
+        if (val.length === 1) val = '0' + val + ':00';
+        else if (val.length === 2) val = val + ':00';
+        else if (val.length === 3) val = '0' + val.substring(0,1) + ':' + val.substring(1);
+        else if (val.length === 4) val = val.substring(0, 2) + ':' + val.substring(2);
+      }
+      
+      const match = val.match(/^(\d{1,2}):(\d{2})$/);
+      if (match) {
+        let hrs = parseInt(match[1], 10);
+        let mins = parseInt(match[2], 10);
+        if (hrs > 23) hrs = 23;
+        if (mins > 59) mins = 59;
+        e.target.value = `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+      } else {
+        e.target.value = '21:00';
+      }
+    });
+  }
+
+  if (rsvpSearchInput) {
+    rsvpSearchInput.addEventListener('input', renderRsvpTable);
+  }
+
+  if (btnCopyInvitationUrl) {
+    btnCopyInvitationUrl.addEventListener('click', () => {
+      if (invitationPublicUrl) {
+        invitationPublicUrl.select();
+        navigator.clipboard.writeText(invitationPublicUrl.value).then(() => {
+          const prevText = btnCopyInvitationUrl.textContent;
+          btnCopyInvitationUrl.textContent = '¡Copiado!';
+          btnCopyInvitationUrl.style.background = 'var(--accent-gold)';
+          btnCopyInvitationUrl.style.color = '#0b0b0c';
+          
+          if (navigator.vibrate) navigator.vibrate(40);
+          
+          setTimeout(() => {
+            btnCopyInvitationUrl.textContent = prevText;
+            btnCopyInvitationUrl.style.background = 'var(--accent-gold)';
+            btnCopyInvitationUrl.style.color = 'black';
+          }, 2000);
+        });
+      }
+    });
+  }
+
+
+  // --- REAL-TIME PREVIEW LOGIC ---
+  const fontPairings = {
+    'classic-editorial': {
+      title: "'Playfair Display', serif",
+      body: "'Montserrat', sans-serif"
+    },
+    'romantic-charms': {
+      title: "'Great Vibes', cursive",
+      body: "'Open Sans', sans-serif"
+    },
+    'cinematic-roman': {
+      title: "'Cinzel', serif",
+      body: "'Lora', serif"
+    },
+    'modern-minimalist': {
+      title: "'Outfit', sans-serif",
+      body: "'Outfit', sans-serif"
+    }
+  };
+
+  const colorThemes = {
+    'golden-luxury': {
+      bgDark: '#0b0b0c',
+      bgCard: 'rgba(22, 22, 25, 0.45)',
+      goldPrimary: '#d4af37',
+      goldGradient: 'linear-gradient(135deg, #f3e5ab 0%, #d4af37 50%, #aa7c11 100%)',
+      borderGold: 'rgba(212, 175, 55, 0.15)',
+      textMuted: '#a0a0a5'
+    },
+    'romantic-rose': {
+      bgDark: '#1f1618',
+      bgCard: 'rgba(40, 28, 30, 0.45)',
+      goldPrimary: '#b76e79',
+      goldGradient: 'linear-gradient(135deg, #ffd1dc 0%, #b76e79 50%, #8a4f58 100%)',
+      borderGold: 'rgba(183, 110, 121, 0.15)',
+      textMuted: '#c7b0b3'
+    },
+    'emerald-forest': {
+      bgDark: '#071510',
+      bgCard: 'rgba(12, 33, 26, 0.45)',
+      goldPrimary: '#c5a059',
+      goldGradient: 'linear-gradient(135deg, #f1dfbe 0%, #c5a059 50%, #8d6e32 100%)',
+      borderGold: 'rgba(197, 160, 89, 0.15)',
+      textMuted: '#a5b5af'
+    },
+    'midnight-blue': {
+      bgDark: '#080d1a',
+      bgCard: 'rgba(15, 23, 42, 0.45)',
+      goldPrimary: '#a0aec0',
+      goldGradient: 'linear-gradient(135deg, #edf2f7 0%, #a0aec0 50%, #718096 100%)',
+      borderGold: 'rgba(160, 174, 192, 0.15)',
+      textMuted: '#a0a5b5'
+    },
+    'minimalist-pearl': {
+      bgDark: '#121212',
+      bgCard: 'rgba(30, 30, 30, 0.45)',
+      goldPrimary: '#ffffff',
+      goldGradient: 'linear-gradient(135deg, #e2e8f0 0%, #ffffff 50%, #888888 100%)',
+      borderGold: 'rgba(255, 255, 255, 0.10)',
+      textMuted: '#a0a0a0'
+    }
+  };
+
+  const waxSeals = {
+    rings: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="9" cy="12" r="5"></circle><circle cx="15" cy="12" r="5"></circle></svg>`,
+    heart: `<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`,
+    crown: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7z"></path><path d="M5 20h14"></path></svg>`,
+    star: `<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`
+  };
+
+  function updateRealTimePreview() {
+    if (!previewIframe || !isIframeLoaded) return;
+
+    const configPayload = {
+      invThemeColor: invThemeColor ? invThemeColor.value : 'golden-luxury',
+      invThemeFont: invThemeFont ? invThemeFont.value : 'classic-editorial',
+      invWaxSeal: invWaxSeal ? invWaxSeal.value : 'rings',
+      invBgEffect: invBgEffect ? invBgEffect.value : 'none',
+      invBgUrl: invBgUrl ? invBgUrl.value.trim() : '',
+      invCoverUrl: invCoverUrl ? invCoverUrl.value.trim() : '',
+      invPhoto1: invPhoto1 ? invPhoto1.value.trim() : '',
+      invPhoto2: invPhoto2 ? invPhoto2.value.trim() : '',
+      invPhoto3: invPhoto3 ? invPhoto3.value.trim() : '',
+      invPhoto4: invPhoto4 ? invPhoto4.value.trim() : '',
+      invPhoto5: invPhoto5 ? invPhoto5.value.trim() : '',
+      title: invTitleInput ? invTitleInput.value.trim() : '',
+      date: invDateOnlyInput ? invDateOnlyInput.value.trim() : '',
+      time: invTimeOnlyInput ? invTimeOnlyInput.value.trim() : '21:00'
+    };
+
+    previewIframe.contentWindow.postMessage({
+      type: 'invitation-preview-update',
+      config: configPayload
+    }, '*');
+  }
+
+  // --- Real-time preview input listeners ---
+  const inputsToListen = [
+    invThemeFont, invThemeColor, invBgEffect, invWaxSeal,
+    invBgUrl, invCoverUrl, invTitleInput, invDateOnlyInput, invTimeOnlyInput,
+    invPhoto1, invPhoto2, invPhoto3, invPhoto4, invPhoto5
+  ];
+
+  inputsToListen.forEach(input => {
+    if (input) {
+      input.addEventListener('change', updateRealTimePreview);
+      input.addEventListener('input', updateRealTimePreview);
+    }
+  });
+
+  // --- View Toggle Buttons Logic ---
+  if (btnPrevViewEnvelope && btnPrevViewCard) {
+    btnPrevViewEnvelope.addEventListener('click', () => {
+      if (previewIframe && isIframeLoaded) {
+        previewIframe.contentWindow.postMessage({
+          type: 'invitation-preview-toggle',
+          view: 'envelope'
+        }, '*');
+      }
+      
+      btnPrevViewEnvelope.style.background = 'var(--gold-gradient)';
+      btnPrevViewEnvelope.style.color = '#0b0b0c';
+      btnPrevViewEnvelope.style.borderColor = 'rgba(255,255,255,0.1)';
+      
+      btnPrevViewCard.style.background = 'rgba(255, 255, 255, 0.05)';
+      btnPrevViewCard.style.color = '#888';
+      btnPrevViewCard.style.borderColor = 'rgba(255,255,255,0.05)';
+    });
+
+    btnPrevViewCard.addEventListener('click', () => {
+      if (previewIframe && isIframeLoaded) {
+        previewIframe.contentWindow.postMessage({
+          type: 'invitation-preview-toggle',
+          view: 'card'
+        }, '*');
+      }
+      
+      btnPrevViewCard.style.background = 'var(--gold-gradient)';
+      btnPrevViewCard.style.color = '#0b0b0c';
+      btnPrevViewCard.style.borderColor = 'rgba(255,255,255,0.1)';
+      
+      btnPrevViewEnvelope.style.background = 'rgba(255, 255, 255, 0.05)';
+      btnPrevViewEnvelope.style.color = '#888';
+      btnPrevViewEnvelope.style.borderColor = 'rgba(255,255,255,0.05)';
+    });
+  }
+
+  if (btnPrintInvitationQr) {
+    btnPrintInvitationQr.addEventListener('click', () => {
+      preparePrintPoster('invitation');
+      setTimeout(() => window.print(), 150);
+    });
+  }
+
+  // Custom Datepicker Logic
+  function initCustomDatePicker() {
+    const container = document.getElementById('datepicker-container');
+    const toggleBtn = document.getElementById('btn-datepicker-toggle');
+    const dropdown = document.getElementById('custom-datepicker-dropdown');
+    
+    if (!container || !toggleBtn || !dropdown || !invDateOnlyInput) return;
+
+    let currentDate = new Date(); // Month/year currently viewed in calendar
+    
+    // Toggle dropdown
+    toggleBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      dropdown.classList.toggle('active');
+      if (dropdown.classList.contains('active')) {
+        // Parse current input date or default to today
+        const parsed = parseInputDate(invDateOnlyInput.value);
+        currentDate = parsed || new Date();
+        renderCalendar(currentDate);
+      }
+    });
+
+    // Close on click outside
+    document.addEventListener('click', (e) => {
+      if (!container.contains(e.target)) {
+        dropdown.classList.remove('active');
+      }
+    });
+
+    // Format typing input: auto-adds slashes
+    invDateOnlyInput.addEventListener('input', (e) => {
+      let val = e.target.value.replace(/\D/g, ''); // Numbers only
+      if (val.length > 8) val = val.substring(0, 8);
+      
+      let formatted = '';
+      if (val.length > 0) {
+        formatted += val.substring(0, 2);
+      }
+      if (val.length > 2) {
+        formatted += '/' + val.substring(2, 4);
+      }
+      if (val.length > 4) {
+        formatted += '/' + val.substring(4, 8);
+      }
+      
+      e.target.value = formatted;
+      updateRealTimePreview();
+    });
+
+    // Parse DD/MM/YYYY to Date object
+    function parseInputDate(str) {
+      if (!str) return null;
+      const parts = str.split('/');
+      if (parts.length === 3) {
+        const day = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1;
+        const year = parseInt(parts[2], 10);
+        const d = new Date(year, month, day);
+        if (!isNaN(d.getTime())) return d;
+      }
+      return null;
+    }
+
+    // Helper: format Date object to DD/MM/YYYY
+    function formatDate(d) {
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      return `${day}/${month}/${year}`;
+    }
+
+    const monthNames = [
+      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    ];
+
+    function renderCalendar(date) {
+      dropdown.innerHTML = '';
+      
+      const year = date.getFullYear();
+      const month = date.getMonth();
+
+      // Header
+      const header = document.createElement('div');
+      header.className = 'calendar-header';
+
+      const prevBtn = document.createElement('button');
+      prevBtn.type = 'button';
+      prevBtn.className = 'btn-cal-prev';
+      prevBtn.innerHTML = '‹';
+      prevBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        currentDate.setMonth(currentDate.getMonth() - 1);
+        renderCalendar(currentDate);
+      });
+
+      const title = document.createElement('span');
+      title.className = 'calendar-month-year';
+      title.textContent = `${monthNames[month]} ${year}`;
+
+      const nextBtn = document.createElement('button');
+      nextBtn.type = 'button';
+      nextBtn.className = 'btn-cal-next';
+      nextBtn.innerHTML = '›';
+      nextBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        currentDate.setMonth(currentDate.getMonth() + 1);
+        renderCalendar(currentDate);
+      });
+
+      header.appendChild(prevBtn);
+      header.appendChild(title);
+      header.appendChild(nextBtn);
+      dropdown.appendChild(header);
+
+      // Weekdays
+      const weekdays = document.createElement('div');
+      weekdays.className = 'calendar-weekdays';
+      ['L', 'M', 'M', 'J', 'V', 'S', 'D'].forEach(day => {
+        const span = document.createElement('span');
+        span.textContent = day;
+        weekdays.appendChild(span);
+      });
+      dropdown.appendChild(weekdays);
+
+      // Days grid
+      const daysGrid = document.createElement('div');
+      daysGrid.className = 'calendar-days';
+
+      // First day of month
+      const firstDay = new Date(year, month, 1);
+      let startDayIndex = firstDay.getDay() - 1;
+      if (startDayIndex < 0) startDayIndex = 6; // Sunday becomes index 6
+
+      // Days in current month
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      
+      // Days in previous month
+      const prevMonthDays = new Date(year, month, 0).getDate();
+
+      // Selected date if matches month/year
+      const selectedDate = parseInputDate(invDateOnlyInput.value);
+
+      // Render previous month cells (padding)
+      for (let i = startDayIndex - 1; i >= 0; i--) {
+        const cell = document.createElement('button');
+        cell.type = 'button';
+        cell.className = 'calendar-day-cell other-month';
+        const cellDay = prevMonthDays - i;
+        cell.textContent = cellDay;
+        
+        cell.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const targetDate = new Date(year, month - 1, cellDay);
+          invDateOnlyInput.value = formatDate(targetDate);
+          updateRealTimePreview();
+          dropdown.classList.remove('active');
+        });
+        
+        daysGrid.appendChild(cell);
+      }
+
+      // Render current month cells
+      const today = new Date();
+      for (let i = 1; i <= daysInMonth; i++) {
+        const cell = document.createElement('button');
+        cell.type = 'button';
+        cell.className = 'calendar-day-cell';
+        cell.textContent = i;
+
+        // Check if selected
+        if (selectedDate && 
+            selectedDate.getDate() === i && 
+            selectedDate.getMonth() === month && 
+            selectedDate.getFullYear() === year) {
+          cell.classList.add('selected');
+        }
+
+        // Check if today
+        if (today.getDate() === i && 
+            today.getMonth() === month && 
+            today.getFullYear() === year) {
+          cell.classList.add('today');
+        }
+
+        cell.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const targetDate = new Date(year, month, i);
+          invDateOnlyInput.value = formatDate(targetDate);
+          updateRealTimePreview();
+          dropdown.classList.remove('active');
+        });
+
+        daysGrid.appendChild(cell);
+      }
+
+      // Render next month padding
+      const totalCells = startDayIndex + daysInMonth;
+      const remainingCells = 42 - totalCells; // Render full 6 rows (42 cells)
+      for (let i = 1; i <= remainingCells; i++) {
+        const cell = document.createElement('button');
+        cell.type = 'button';
+        cell.className = 'calendar-day-cell other-month';
+        cell.textContent = i;
+
+        cell.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const targetDate = new Date(year, month + 1, i);
+          invDateOnlyInput.value = formatDate(targetDate);
+          updateRealTimePreview();
+          dropdown.classList.remove('active');
+        });
+
+        daysGrid.appendChild(cell);
+      }
+
+      dropdown.appendChild(daysGrid);
+    }
+  }
+
+  // Initialize custom datepicker
+  initCustomDatePicker();
+
+  // Custom Select Dropdown logic
+  function initCustomDropdown(selectId) {
+    const select = typeof selectId === 'string' ? document.getElementById(selectId) : selectId;
+    if (!select) return;
+
+    // Check if we already initialized custom select for this element
+    const containerId = select.id ? `${select.id}-custom-container` : null;
+    if (containerId && document.getElementById(containerId)) return;
+    
+    // Fallback check: if there is a nextSibling with class 'custom-select-container'
+    if (!containerId && select.nextSibling && select.nextSibling.classList && select.nextSibling.classList.contains('custom-select-container')) {
+      return;
+    }
+
+    // Create wrapper container
+    const container = document.createElement('div');
+    container.className = 'custom-select-container';
+    if (containerId) {
+      container.id = containerId;
+    }
+
+    // Create trigger
+    const trigger = document.createElement('div');
+    trigger.className = 'custom-select-trigger';
+
+    const triggerText = document.createElement('span');
+    triggerText.className = 'custom-select-trigger-text';
+
+    // Get active option text
+    const activeOption = select.options[select.selectedIndex];
+    triggerText.textContent = activeOption ? activeOption.textContent : '';
+
+    const triggerArrow = document.createElement('span');
+    triggerArrow.className = 'custom-select-trigger-arrow';
+    triggerArrow.innerHTML = `
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="6 9 12 15 18 9"></polyline>
+      </svg>
+    `;
+
+    trigger.appendChild(triggerText);
+    trigger.appendChild(triggerArrow);
+
+    // Create dropdown menu
+    const dropdown = document.createElement('div');
+    dropdown.className = 'custom-select-dropdown';
+
+    // Build options
+    function rebuildOptions() {
+      dropdown.innerHTML = '';
+      Array.from(select.options).forEach(opt => {
+        const optionDiv = document.createElement('div');
+        optionDiv.className = 'custom-select-option';
+        optionDiv.textContent = opt.textContent;
+        optionDiv.dataset.value = opt.value;
+        if (opt.selected) {
+          optionDiv.classList.add('selected');
+        }
+
+        optionDiv.addEventListener('click', (e) => {
+          e.stopPropagation();
+          select.value = opt.value;
+          select.dispatchEvent(new Event('change'));
+          container.classList.remove('open');
+        });
+
+        dropdown.appendChild(optionDiv);
+      });
+    }
+
+    rebuildOptions();
+
+    // Append everything
+    container.appendChild(trigger);
+    container.appendChild(dropdown);
+
+    // Insert custom container in the DOM right after the select, then hide the original select
+    select.parentNode.insertBefore(container, select.nextSibling);
+    select.style.display = 'none';
+
+    // Toggle dropdown open state
+    trigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      
+      // Close other custom select dropdowns
+      document.querySelectorAll('.custom-select-container').forEach(c => {
+        if (c !== container) c.classList.remove('open');
+      });
+      
+      container.classList.toggle('open');
+    });
+
+    // Handle outside clicks to close
+    document.addEventListener('click', () => {
+      container.classList.remove('open');
+    });
+
+    // Sync back when the underlying select value changes programmatically (e.g. on loadConfig)
+    select.addEventListener('change', () => {
+      const activeOpt = select.options[select.selectedIndex];
+      triggerText.textContent = activeOpt ? activeOpt.textContent : '';
+      
+      // Rebuild classes on change to ensure "selected" class is updated
+      Array.from(dropdown.children).forEach(child => {
+        if (child.dataset.value === select.value) {
+          child.classList.add('selected');
+        } else {
+          child.classList.remove('selected');
+        }
+      });
+    });
+
+    // Listen for changes that might reset options dynamically
+    const observer = new MutationObserver(() => {
+      const activeOpt = select.options[select.selectedIndex];
+      triggerText.textContent = activeOpt ? activeOpt.textContent : '';
+      rebuildOptions();
+    });
+    observer.observe(select, { childList: true });
+  }
+
+  // Initialize custom dropdowns
+  ['inv-theme-font', 'inv-theme-color', 'inv-bg-effect', 'inv-wax-seal', 'trivia-enabled-toggle'].forEach(id => {
+    initCustomDropdown(id);
+  });
+
+  // --- Módulo Invitados Subtab ---
+  const invitadosGuestSearch = document.getElementById('invitados-guest-search');
+  const btnAddGuestInvitados = document.getElementById('btn-add-guest-invitados');
+  const fileDropZoneInvitados = document.getElementById('file-drop-zone-invitados');
+  const fileInputInvitados = document.getElementById('excel-file-input-invitados');
+  const uploadStatusInvitados = document.getElementById('upload-status-invitados');
+  const btnClearDbInvitados = document.getElementById('btn-clear-db-invitados');
+
+  if (invitadosGuestSearch) {
+    invitadosGuestSearch.addEventListener('input', () => {
+      renderInvitadosTable();
+    });
+  }
+
+  if (btnAddGuestInvitados) {
+    btnAddGuestInvitados.addEventListener('click', () => {
+      modalTitle.textContent = 'Agregar Invitado';
+      guestIndexInput.value = '';
+      modalFirstName.value = '';
+      modalLastName.value = '';
+      modalTable.value = '';
+      guestModal.classList.add('active');
+    });
+  }
+
+  if (fileDropZoneInvitados && fileInputInvitados) {
+    fileDropZoneInvitados.addEventListener('click', (e) => {
+      if (e.target !== fileInputInvitados) {
+        fileInputInvitados.click();
+      }
+    });
+
+    fileInputInvitados.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+
+    fileInputInvitados.addEventListener('change', () => {
+      if (fileInputInvitados.files.length > 0) {
+        handleFileUploadInvitados(fileInputInvitados.files[0]);
+      }
+    });
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+      fileDropZoneInvitados.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        fileDropZoneInvitados.classList.add('dragover');
+      });
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      fileDropZoneInvitados.addEventListener(eventName, () => {
+        fileDropZoneInvitados.classList.remove('dragover');
+      });
+    });
+
+    fileDropZoneInvitados.addEventListener('drop', (e) => {
+      e.preventDefault();
+      if (e.dataTransfer.files.length > 0) {
+        handleFileUploadInvitados(e.dataTransfer.files[0]);
+      }
+    });
+  }
+
+  function handleFileUploadInvitados(file) {
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (!['xlsx', 'xls', 'csv'].includes(ext)) {
+      showStatusInvitados('Tipo de archivo no permitido. Suba un .xlsx, .xls o .csv.', 'error');
+      return;
+    }
+
+    showStatusInvitados('Subiendo y procesando archivo...', 'success');
+    fileDropZoneInvitados.style.opacity = '0.5';
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    fetch(`/api/upload?event=${encodeURIComponent(eventId)}`, {
+      method: 'POST',
+      body: formData
+    })
+      .then(res => res.json())
+      .then(data => {
+        fileDropZoneInvitados.style.opacity = '1';
+        fileInputInvitados.value = '';
+        
+        if (data.success) {
+          showStatusInvitados(`¡Lista cargada con éxito! Se procesaron ${data.count} invitados.`, 'success');
+          loadStats();
+          loadGuests();
+        } else {
+          showStatusInvitados(data.error || 'Error al procesar el archivo.', 'error');
+        }
+      })
+      .catch(err => {
+        fileDropZoneInvitados.style.opacity = '1';
+        fileInputInvitados.value = '';
+        console.error('Error uploading file:', err);
+        showStatusInvitados('Error al subir el archivo al servidor.', 'error');
+      });
+  }
+
+  function showStatusInvitados(message, type) {
+    if (!uploadStatusInvitados) return;
+    uploadStatusInvitados.textContent = message;
+    uploadStatusInvitados.className = 'status-msg'; // reset classes
+    uploadStatusInvitados.classList.add(type);
+  }
+
+  if (btnClearDbInvitados) {
+    btnClearDbInvitados.addEventListener('click', () => {
+      showConfirm(
+        'Limpiar Base de Datos',
+        '¿Está seguro de que desea limpiar toda la base de datos de invitados? Esta acción no se puede deshacer.',
+        () => {
+          fetch(`/api/clear?event=${encodeURIComponent(eventId)}`, { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+              if (data.success) {
+                showToast('Base de datos limpiada correctamente.', 'success');
+                loadStats();
+                loadGuests();
+              } else {
+                showToast('Error al limpiar la base de datos.', 'error');
+              }
+            })
+            .catch(err => {
+              console.error('Error clearing database:', err);
+              showToast('Error de conexión con el servidor.', 'error');
+            });
+        }
+      );
+    });
+  }
+
+  function renderInvitadosTable() {
+    const tableBody = document.getElementById('invitados-table-body');
+    if (!tableBody) return;
+
+    const filter = invitadosGuestSearch ? invitadosGuestSearch.value.trim().toLowerCase() : '';
+    
+    const filteredGuests = allGuests.map((g, index) => ({ ...g, originalIndex: index }))
+      .filter(g => {
+        const fullName = `${g.firstName} ${g.lastName}`.toLowerCase();
+        const table = String(g.table).toLowerCase();
+        return fullName.includes(filter) || table.includes(filter);
+      });
+
+    if (filteredGuests.length === 0) {
+      tableBody.innerHTML = `
+        <tr>
+          <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 30px;">
+            ${allGuests.length === 0 ? 'No hay invitados registrados en la base de datos.' : 'No se encontraron coincidencias.'}
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    const currentOrigin = window.location.origin;
+    tableBody.innerHTML = filteredGuests.map(g => {
+      const personalUrl = `${currentOrigin}/invitacion.html?event=${encodeURIComponent(eventId)}&n=${encodeURIComponent(g.firstName + ' ' + g.lastName)}`;
+      
+      const fullName = `${g.firstName} ${g.lastName}`.trim().toLowerCase();
+      const rsvp = allRsvps.find(r => r.name.trim().toLowerCase() === fullName);
+      
+      let rowClass = 'row-pending';
+      if (rsvp) {
+        rowClass = rsvp.attending ? 'row-confirmed' : 'row-declined';
+      }
+
+      let rsvpStatusHtml = `
+        <select class="form-control-admin select-rsvp-status" 
+                style="padding: 6px 12px; border-radius: 12px; font-size: 0.75rem; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; cursor: pointer; font-family: 'Montserrat', sans-serif; text-align: center; text-align-last: center;"
+                data-guest-name="${g.firstName} ${g.lastName}"
+                data-rsvp-id="${rsvp ? rsvp.id : ''}">
+          <option value="pending" style="background: #111; color: var(--text-muted);" ${!rsvp ? 'selected' : ''}>⏳ Pendiente</option>
+          <option value="confirmed" style="background: #111; color: #2ec4b6;" ${rsvp && rsvp.attending ? 'selected' : ''}>✅ Asistirá</option>
+          <option value="declined" style="background: #111; color: var(--error);" ${rsvp && !rsvp.attending ? 'selected' : ''}>❌ No Asistirá</option>
+        </select>
+      `;
+
+      return `
+        <tr class="${rowClass}">
+          <td style="color: var(--text-main); font-weight: 500;">${g.firstName}</td>
+          <td style="color: var(--text-main); font-weight: 500;">${g.lastName}</td>
+          <td style="color: var(--gold-primary); font-weight: 600;">${formatTableDisplay(g.table)}</td>
+          <td style="text-align: center; vertical-align: middle;">${rsvpStatusHtml}</td>
+          <td>
+            <div style="display: flex; gap: 8px; align-items: center; width: 100%; max-width: 180px;">
+              <input type="text" readonly value="${personalUrl}" class="form-control-admin" style="padding: 6px 12px; font-size: 0.7rem; border-radius: 12px; width: 100%; min-width: 0; border: 1px solid rgba(255,255,255,0.05); background: rgba(0,0,0,0.2); text-overflow: ellipsis; white-space: nowrap; overflow: hidden; pointer-events: none;" id="guest-url-${g.originalIndex}">
+            </div>
+          </td>
+          <td style="text-align: center; vertical-align: middle;">
+            <div style="display: flex; justify-content: center; gap: 6px; flex-wrap: nowrap;">
+              <button class="btn-action edit" onclick="openEditGuestModal(${g.originalIndex})">Editar</button>
+              <button class="btn-action edit" style="border-color: var(--gold-primary); color: var(--gold-primary);" onclick="copyGuestUrl(${g.originalIndex}, this)">Copiar</button>
+              <button class="btn-action delete" onclick="confirmDeleteGuest(${g.originalIndex})">Eliminar</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  // Change event listener for interactive RSVP status update
+  document.addEventListener('change', (e) => {
+    if (e.target && e.target.classList.contains('select-rsvp-status')) {
+      const select = e.target;
+      const guestName = select.getAttribute('data-guest-name');
+      const rsvpId = select.getAttribute('data-rsvp-id');
+      const newValue = select.value;
+
+      updateGuestRsvpStatus(guestName, rsvpId, newValue);
+    }
+  });
+
+  function updateGuestRsvpStatus(guestName, rsvpId, statusValue) {
+    if (statusValue === 'pending') {
+      if (!rsvpId) {
+        loadRsvps();
+        return;
+      }
+      fetch(`/api/rsvps/${rsvpId}?event=${encodeURIComponent(eventId)}`, {
+        method: 'DELETE'
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          loadRsvps();
+          loadStats();
+          showToast('Estado de confirmación actualizado', 'success');
+        } else {
+          showToast(data.error || 'Error al actualizar el estado', 'error');
+          loadRsvps();
+        }
+      })
+      .catch(err => {
+        console.error('Error deleting RSVP:', err);
+        showToast('Error al conectar con el servidor', 'error');
+        loadRsvps();
+      });
+    } else {
+      const existingRsvp = allRsvps.find(r => r.name.trim().toLowerCase() === guestName.trim().toLowerCase());
+      const payload = {
+        name: guestName,
+        attending: statusValue === 'confirmed',
+        companionsCount: existingRsvp ? existingRsvp.companionsCount : 0,
+        companionsNames: existingRsvp ? existingRsvp.companionsNames : '',
+        dietaryRestrictions: existingRsvp ? existingRsvp.dietaryRestrictions : 'Ninguno',
+        suggestedSong: existingRsvp ? existingRsvp.suggestedSong : ''
+      };
+
+      fetch(`/api/public/rsvp?event=${encodeURIComponent(eventId)}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          loadRsvps();
+          loadStats();
+          showToast('Estado de confirmación actualizado', 'success');
+        } else {
+          showToast(data.error || 'Error al actualizar el estado', 'error');
+          loadRsvps();
+        }
+      })
+      .catch(err => {
+        console.error('Error saving RSVP:', err);
+        showToast('Error al conectar con el servidor', 'error');
+        loadRsvps();
+      });
+    }
+  }
+
+  // --- TRIVIA MANAGEMENT FUNCTIONS ---
+
+  function getDefaultQuestions() {
+    return [
+      {
+        question: "¿Dónde se conocieron los novios/agasajados?",
+        options: ["En el colegio/universidad", "En una fiesta/boliche", "Por redes sociales", "En el trabajo"],
+        correctIndex: 0
+      },
+      {
+        question: "¿Cuál es el plato de comida preferido del agasajado/a?",
+        options: ["Asado", "Pastas", "Sushi", "Hamburguesa"],
+        correctIndex: 1
+      },
+      {
+        question: "¿Cuál es su destino soñado para viajar?",
+        options: ["Caribe/Playa", "Europa/Histórico", "Asia/Aventura", "Bariloche/Nieve"],
+        correctIndex: 0
+      }
+    ];
+  }
+
+  function loadTriviaConfig() {
+    fetch(`/api/config?event=${encodeURIComponent(eventId)}`)
+      .then(res => res.json())
+      .then(data => {
+        const toggle = document.getElementById('trivia-enabled-toggle');
+        if (toggle) {
+          toggle.value = (data.serviceTrivia === true || data.serviceTrivia === 'true') ? 'true' : 'false';
+          toggle.dispatchEvent(new Event('change'));
+        }
+
+        try {
+          triviaQuestionsData = JSON.parse(data.triviaQuestions || '[]');
+        } catch (e) {
+          triviaQuestionsData = [];
+        }
+
+        if (!Array.isArray(triviaQuestionsData) || triviaQuestionsData.length === 0) {
+          triviaQuestionsData = getDefaultQuestions();
+        }
+
+        renderTriviaQuestionsEditor();
+      })
+      .catch(err => {
+        console.error('Error loading trivia config:', err);
+        showToast('Error al cargar la configuración de la trivia', 'error');
+      });
+  }
+  window.loadTriviaConfig = loadTriviaConfig;
+
+  function renderTriviaQuestionsEditor() {
+    const listContainer = document.getElementById('trivia-questions-list');
+    if (!listContainer) return;
+
+    listContainer.innerHTML = '';
+
+    triviaQuestionsData.forEach((q, qIndex) => {
+      const qDiv = document.createElement('div');
+      qDiv.className = 'question-editor-card';
+      qDiv.style.background = 'rgba(255,255,255,0.03)';
+      qDiv.style.padding = '15px';
+      qDiv.style.borderRadius = '15px';
+      qDiv.style.border = '1px solid var(--card-border)';
+      qDiv.style.position = 'relative';
+      qDiv.style.marginBottom = '15px';
+
+      qDiv.innerHTML = `
+        <button type="button" class="btn-delete-q" onclick="deleteTriviaQuestion(${qIndex})" style="position: absolute; right: 10px; top: 10px; background: transparent; border: none; color: #ff4d4d; font-size: 1.5rem; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; padding: 0;">&times;</button>
+        <div style="margin-bottom: 10px;">
+          <label style="display: block; font-size: 0.7rem; text-transform: uppercase; color: var(--gold-light); margin-bottom: 4px; font-weight:600;">Pregunta ${qIndex + 1}</label>
+          <input type="text" class="form-control-admin q-text-input" value="${q.question.replace(/"/g, '&quot;')}" style="width: 100%;" onchange="updateTriviaQuestionText(${qIndex}, this.value)">
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+          ${q.options.map((opt, oIndex) => `
+            <div>
+              <label style="display: block; font-size: 0.65rem; color: var(--text-muted); margin-bottom: 2px;">Opción ${String.fromCharCode(65 + oIndex)}</label>
+              <input type="text" class="form-control-admin q-opt-input" value="${opt.replace(/"/g, '&quot;')}" style="width:100%; font-size:0.75rem; padding:8px 10px;" onchange="updateTriviaOptionText(${qIndex}, ${oIndex}, this.value)">
+            </div>
+          `).join('')}
+        </div>
+        <div>
+          <label style="display: block; font-size: 0.7rem; text-transform: uppercase; color: var(--gold-light); margin-bottom: 4px; font-weight:600;">Respuesta Correcta</label>
+          <select class="form-control-admin trivia-correct-select" style="width: 100%;" onchange="updateTriviaCorrectIndex(${qIndex}, parseInt(this.value))">
+            ${q.options.map((opt, oIndex) => `
+              <option value="${oIndex}" ${oIndex === q.correctIndex ? 'selected' : ''}>Opción ${String.fromCharCode(65 + oIndex)}: ${opt.substring(0, 30)}</option>
+            `).join('')}
+          </select>
+        </div>
+      `;
+
+      listContainer.appendChild(qDiv);
+    });
+
+    // Initialize custom dropdowns for each question's select
+    listContainer.querySelectorAll('.trivia-correct-select').forEach(select => {
+      initCustomDropdown(select);
+    });
+  }
+
+  window.deleteTriviaQuestion = function(index) {
+    triviaQuestionsData.splice(index, 1);
+    renderTriviaQuestionsEditor();
+  };
+
+  window.updateTriviaQuestionText = function(qIndex, val) {
+    if (triviaQuestionsData[qIndex]) {
+      triviaQuestionsData[qIndex].question = val;
+    }
+  };
+
+  window.updateTriviaOptionText = function(qIndex, oIndex, val) {
+    if (triviaQuestionsData[qIndex] && triviaQuestionsData[qIndex].options) {
+      triviaQuestionsData[qIndex].options[oIndex] = val;
+      renderTriviaQuestionsEditor(); // Refresh dropdown labels
+    }
+  };
+
+  window.updateTriviaCorrectIndex = function(qIndex, val) {
+    if (triviaQuestionsData[qIndex]) {
+      triviaQuestionsData[qIndex].correctIndex = val;
+    }
+  };
+
+  // Add Question Button
+  const btnAddTriviaQuestion = document.getElementById('btn-add-trivia-question');
+  if (btnAddTriviaQuestion) {
+    btnAddTriviaQuestion.addEventListener('click', () => {
+      triviaQuestionsData.push({
+        question: "Nueva Pregunta",
+        options: ["Opción A", "Opción B", "Opción C", "Opción D"],
+        correctIndex: 0
+      });
+      renderTriviaQuestionsEditor();
+      
+      const listContainer = document.getElementById('trivia-questions-list');
+      if (listContainer) {
+        listContainer.scrollTop = listContainer.scrollHeight;
+      }
+    });
+  }
+
+  // Save Questions Button
+  const btnSaveTriviaQuestions = document.getElementById('btn-save-trivia-questions');
+  if (btnSaveTriviaQuestions) {
+    btnSaveTriviaQuestions.addEventListener('click', async () => {
+      const toggle = document.getElementById('trivia-enabled-toggle');
+      const isEnabled = toggle ? toggle.value === 'true' : false;
+
+      const titleEl = document.getElementById('event-title-input') || document.getElementById('event-title-photos-input') || document.getElementById('inv-title-input');
+      const currentTitle = titleEl ? titleEl.value.trim() : 'Mi Gran Fiesta';
+
+      const cleanedQuestions = triviaQuestionsData.map(q => ({
+        question: q.question.trim(),
+        options: q.options.map(opt => opt.trim()),
+        correctIndex: q.correctIndex
+      })).filter(q => q.question !== '');
+
+      try {
+        const response = await fetch(`/api/config?event=${encodeURIComponent(eventId)}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            eventTitle: currentTitle,
+            serviceTrivia: isEnabled,
+            triviaQuestions: JSON.stringify(cleanedQuestions)
+          })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          showToast('Configuración de Trivia guardada correctamente', 'success');
+          // Reload state in memory coordinator!
+          await fetch(`/api/trivia/control?event=${encodeURIComponent(eventId)}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ action: 'init' })
+          });
+        } else {
+          showToast(data.error || 'Error al guardar configuración', 'error');
+        }
+      } catch (err) {
+        console.error('Error saving trivia config:', err);
+        showToast('Error al conectar con el servidor', 'error');
+      }
+    });
+  }
+
+  // Console control actions
+  async function triggerTriviaAction(actionName) {
+    try {
+      const res = await fetch(`/api/trivia/control?event=${encodeURIComponent(eventId)}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ action: actionName })
+      });
+      const data = await res.json();
+      if (!data.success) {
+        showToast(data.error || `Error al realizar acción: ${actionName}`, 'error');
+      } else {
+        showToast(`Acción '${actionName}' ejecutada con éxito`, 'success');
+      }
+    } catch (err) {
+      console.error(`Error sending trivia action ${actionName}:`, err);
+      showToast('Error de comunicación con el servidor', 'error');
+    }
+  }
+
+  function startTriviaPolling() {
+    if (triviaEventSource) triviaEventSource.close();
+    triviaEventSource = new EventSource(`/api/trivia/stream?event=${encodeURIComponent(eventId)}&role=admin`);
+    
+    triviaEventSource.onmessage = (e) => {
+      try {
+        const msg = JSON.parse(e.data);
+        if (msg.type === 'INITIAL_STATE' || msg.type === 'STATE_UPDATE') {
+          renderAdminTriviaState(msg.data);
+        }
+      } catch (err) {
+        console.error('Error parsing SSE msg:', err);
+      }
+    };
+
+    triviaEventSource.onerror = (e) => {
+      console.warn('SSE Error/Disconnect, re-establishing...');
+    };
+  }
+  window.startTriviaPolling = startTriviaPolling;
+
+  function stopTriviaPolling() {
+    if (triviaEventSource) {
+      triviaEventSource.close();
+      triviaEventSource = null;
+    }
+  }
+  window.stopTriviaPolling = stopTriviaPolling;
+
+  function renderAdminTriviaState(state) {
+    const badge = document.getElementById('admin-trivia-status-badge');
+    if (badge) {
+      badge.textContent = state.status;
+      if (state.status === 'LOBBY') {
+        badge.style.background = '#4da6ff';
+        badge.style.color = '#fff';
+      } else if (state.status === 'QUESTION_ACTIVE') {
+        badge.style.background = '#2ec7c9';
+        badge.style.color = '#000';
+      } else if (state.status === 'REVEAL_ANSWER') {
+        badge.style.background = '#2ecc71';
+        badge.style.color = '#fff';
+      } else if (state.status === 'LEADERBOARD') {
+        badge.style.background = '#f1c40f';
+        badge.style.color = '#000';
+      } else if (state.status === 'PODIUM') {
+        badge.style.background = '#9b59b6';
+        badge.style.color = '#fff';
+      } else {
+        badge.style.background = 'var(--gold-primary)';
+        badge.style.color = '#000';
+      }
+    }
+
+    const qIndexEl = document.getElementById('admin-trivia-question-index');
+    if (qIndexEl) {
+      if (state.status === 'LOBBY') {
+        qIndexEl.textContent = 'Esperando jugadores (Lobby)';
+      } else if (state.status === 'PODIUM') {
+        qIndexEl.textContent = 'Juego Terminado (Podio)';
+      } else {
+        const total = state.totalQuestions || 0;
+        const current = (state.currentQuestionIndex !== undefined) ? (state.currentQuestionIndex + 1) : '-';
+        qIndexEl.textContent = `Pregunta ${current} de ${total}`;
+      }
+    }
+
+    const tbody = document.getElementById('admin-trivia-players-tbody');
+    const countEl = document.getElementById('admin-trivia-players-count');
+    if (tbody) {
+      tbody.innerHTML = '';
+      const players = state.players || [];
+      if (countEl) countEl.textContent = players.length;
+
+      if (players.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="3" style="text-align: center; padding: 15px; color: var(--text-muted);">Ningún jugador conectado.</td>
+          </tr>
+        `;
+      } else {
+        const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
+        sortedPlayers.forEach((p, idx) => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td style="font-weight: bold; color: var(--gold-light);">${idx + 1}</td>
+            <td style="color: white; font-weight: 500;">${p.nickname}</td>
+            <td style="text-align: right; color: var(--gold-primary); font-weight: 600;">${p.score} pts</td>
+          `;
+          tbody.appendChild(row);
+        });
+      }
+    }
+  }
+
+  // Bind console controls
+  const btnTriviaInit = document.getElementById('btn-admin-trivia-init');
+  const btnTriviaStart = document.getElementById('btn-admin-trivia-start');
+  const btnTriviaReveal = document.getElementById('btn-admin-trivia-reveal');
+  const btnTriviaLeaderboard = document.getElementById('btn-admin-trivia-leaderboard');
+  const btnTriviaNext = document.getElementById('btn-admin-trivia-next');
+
+  if (btnTriviaInit) btnTriviaInit.addEventListener('click', () => triggerTriviaAction('init'));
+  if (btnTriviaStart) btnTriviaStart.addEventListener('click', () => triggerTriviaAction('start'));
+  if (btnTriviaReveal) btnTriviaReveal.addEventListener('click', () => triggerTriviaAction('reveal'));
+  if (btnTriviaLeaderboard) btnTriviaLeaderboard.addEventListener('click', () => triggerTriviaAction('leaderboard'));
+  if (btnTriviaNext) btnTriviaNext.addEventListener('click', () => triggerTriviaAction('next'));
+
+  const btnTriviaProjector = document.getElementById('btn-admin-trivia-projector');
+  if (btnTriviaProjector) {
+    btnTriviaProjector.addEventListener('click', () => {
+      window.open(`/trivia-screen.html?event=${encodeURIComponent(eventId)}`, '_blank');
+    });
+  }
+
+  window.copyGuestUrl = (index, btnElement) => {
+    const inputElement = document.getElementById(`guest-url-${index}`);
+    if (!inputElement) return;
+
+    const urlText = inputElement.value;
+    navigator.clipboard.writeText(urlText)
+      .then(() => {
+        const originalText = btnElement.textContent;
+        btnElement.textContent = '¡Copiado!';
+        btnElement.style.background = 'var(--gold-gradient)';
+        btnElement.style.color = '#0b0b0c';
+        btnElement.style.borderColor = 'transparent';
+        showToast('Enlace de invitación copiado al portapapeles', 'success');
+        
+        setTimeout(() => {
+          btnElement.textContent = originalText;
+          btnElement.style.background = 'transparent';
+          btnElement.style.color = 'var(--gold-primary)';
+          btnElement.style.borderColor = 'var(--gold-primary)';
+        }, 2000);
+      })
+      .catch(err => {
+        console.error('Failed to copy: ', err);
+        showToast('Error al copiar el enlace', 'error');
+      });
+  };
 });
 

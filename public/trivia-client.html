@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trivia Gamepad | MiFiestAPP</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #090214;
+      --panel-bg: rgba(255, 255, 255, 0.05);
+      --panel-border: rgba(255, 255, 255, 0.1);
+      --text-main: #f3f0fa;
+      --text-muted: #a59cb5;
+      
+      --color-red: hsl(355, 100%, 60%);
+      --color-blue: hsl(210, 100%, 65%);
+      --color-yellow: hsl(45, 100%, 55%);
+      --color-green: hsl(145, 100%, 50%);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: 'Outfit', 'Montserrat', sans-serif;
+      background: radial-gradient(circle at center, #1b0a3a 0%, var(--bg-dark) 100%);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1.5rem;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      justify-content: center;
+    }
+
+    /* Glassmorphic Panel Card */
+    .card {
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 24px;
+      padding: 2.5rem 1.8rem;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+      text-align: center;
+      display: none;
+    }
+
+    .card.active {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    /* Screen Titles & Subtitles */
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #fff, #c3b4fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+    }
+
+    p.subtitle {
+      font-size: 1rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* Form control & Custom Input */
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+      text-align: left;
+      margin-top: 1rem;
+    }
+
+    label {
+      font-weight: 600;
+      font-size: 0.9rem;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    input[type="text"] {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      padding: 1rem;
+      font-size: 1.1rem;
+      color: white;
+      outline: none;
+      transition: all 0.3s ease;
+      font-family: inherit;
+    }
+
+    input[type="text"]:focus {
+      border-color: var(--color-blue);
+      box-shadow: 0 0 15px rgba(74, 144, 226, 0.2);
+    }
+
+    .btn {
+      background: linear-gradient(135deg, var(--color-blue), #9b51e0);
+      border: none;
+      border-radius: 12px;
+      padding: 1.1rem;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: white;
+      cursor: pointer;
+      box-shadow: 0 8px 25px rgba(155, 81, 224, 0.3);
+      transition: all 0.2s ease;
+    }
+
+    .btn:active {
+      transform: scale(0.97);
+      box-shadow: 0 4px 10px rgba(155, 81, 224, 0.2);
+    }
+
+    .error-msg {
+      color: var(--color-red);
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin-top: 0.5rem;
+      display: none;
+    }
+
+    /* Animated spinner */
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid rgba(255,255,255,0.1);
+      border-top-color: var(--color-blue);
+      border-radius: 50%;
+      margin: 1.5rem auto;
+      animation: spin 1s infinite linear;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* GAMEPAD / OPTION BUTTONS */
+    .gamepad-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.2rem;
+      width: 100%;
+      flex: 1;
+    }
+
+    .game-button {
+      border: none;
+      border-radius: 20px;
+      font-size: 3rem;
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+      transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .game-button:active {
+      transform: scale(0.95);
+    }
+
+    .btn-red { background-color: var(--color-red); }
+    .btn-blue { background-color: var(--color-blue); }
+    .btn-yellow { background-color: var(--color-yellow); }
+    .btn-green { background-color: var(--color-green); }
+
+    /* Disabled/Inactive buttons state */
+    .gamepad-grid.disabled .game-button {
+      opacity: 0.3;
+      pointer-events: none;
+      transform: scale(0.96);
+    }
+
+    .gamepad-grid.disabled .game-button.selected {
+      opacity: 1;
+      box-shadow: 0 0 20px rgba(255,255,255,0.4);
+    }
+
+    /* Feedback Cards */
+    .feedback-icon {
+      font-size: 5rem;
+      margin: 1rem 0;
+    }
+
+    .feedback-points {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-top: 0.5rem;
+    }
+
+    .feedback-correct {
+      color: var(--color-green);
+    }
+
+    .feedback-incorrect {
+      color: var(--color-red);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+
+    <!-- 1. LOGIN / NICKNAME CARD -->
+    <div id="card-login" class="card active">
+      <h1>Trivia en Vivo</h1>
+      <p class="subtitle">Ingresá con tu nombre para unirte al juego. Recordá que debés tener la asistencia confirmada.</p>
+      
+      <div class="input-group">
+        <label for="nickname">Tu Nombre</label>
+        <input type="text" id="nickname" placeholder="Ej. Tatiana" autocomplete="off">
+      </div>
+
+      <div class="error-msg" id="login-error"></div>
+      
+      <button class="btn" id="btn-join">Unirse a la Trivia</button>
+    </div>
+
+    <!-- 2. LOBBY CARD -->
+    <div id="card-lobby" class="card">
+      <div class="spinner"></div>
+      <h1>¡Conectado!</h1>
+      <p class="subtitle" id="lobby-welcome">Esperando que el organizador inicie la trivia...</p>
+    </div>
+
+    <!-- 3. GAMEPAD CARD -->
+    <div id="card-gamepad" class="card" style="padding: 1rem;">
+      <h2 style="font-size: 1.4rem; margin-bottom: 1rem;">¡Elegí la respuesta correcta!</h2>
+      <div class="gamepad-grid" id="gamepad-grid">
+        <button class="game-button btn-red" data-index="0">▲</button>
+        <button class="game-button btn-blue" data-index="1">♦</button>
+        <button class="game-button btn-yellow" data-index="2">●</button>
+        <button class="game-button btn-green" data-index="3">■</button>
+      </div>
+    </div>
+
+    <!-- 4. FEEDBACK / SCORE CARD -->
+    <div id="card-feedback" class="card">
+      <div id="feedback-content">
+        <!-- Injected feedback -->
+      </div>
+    </div>
+
+    <!-- 5. END / LEADERBOARD CARD -->
+    <div id="card-end" class="card">
+      <div class="feedback-icon">🏆</div>
+      <h1>¡Trivia Finalizada!</h1>
+      <p class="subtitle">Mirá la pantalla principal para conocer el podio y los ganadores del evento.</p>
+    </div>
+
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const eventId = urlParams.get('event') || 'default';
+    
+    let nickname = localStorage.getItem(`trivia_nick_${eventId}`) || '';
+    let eventSource = null;
+    let hasAnswered = false;
+    let questionStartTime = 0;
+
+    // Auto login if nickname is stored
+    if (nickname) {
+      document.getElementById('nickname').value = nickname;
+      joinGame();
+    }
+
+    document.getElementById('btn-join').addEventListener('click', joinGame);
+
+    function joinGame() {
+      const inputNick = document.getElementById('nickname').value.trim();
+      if (!inputNick) {
+        showError('Por favor, ingresá tu nombre.');
+        return;
+      }
+
+      fetch('/api/trivia/join', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventId, nickname: inputNick })
+      })
+      .then(res => {
+        if (!res.ok) {
+          return res.json().then(data => { throw new Error(data.error); });
+        }
+        return res.json();
+      })
+      .then(data => {
+        if (data.success) {
+          nickname = inputNick;
+          localStorage.setItem(`trivia_nick_${eventId}`, nickname);
+          setupSSE();
+          switchCard('card-lobby');
+          document.getElementById('lobby-welcome').textContent = `Hola ${nickname}, preparate para jugar en breve...`;
+        }
+      })
+      .catch(err => {
+        showError(err.message || 'Error de conexión.');
+      });
+    }
+
+    function setupSSE() {
+      if (eventSource) eventSource.close();
+      
+      eventSource = new EventSource(`/api/trivia/stream?event=${eventId}&role=player&nickname=${encodeURIComponent(nickname)}`);
+      
+      eventSource.onmessage = (e) => {
+        const msg = JSON.parse(e.data);
+        if (msg.type === 'INITIAL_STATE' || msg.type === 'STATE_UPDATE') {
+          handleStateUpdate(msg.data);
+        }
+      };
+    }
+
+    function handleStateUpdate(state) {
+      if (state.status === 'LOBBY') {
+        switchCard('card-lobby');
+        hasAnswered = false;
+        enableGamepad(true);
+      }
+      
+      else if (state.status === 'QUESTION_ACTIVE') {
+        switchCard('card-gamepad');
+        if (!hasAnswered) {
+          enableGamepad(true);
+          questionStartTime = Date.now();
+        }
+      }
+      
+      else if (state.status === 'REVEAL_ANSWER') {
+        showFeedback(state);
+      }
+      
+      else if (state.status === 'LEADERBOARD') {
+        switchCard('card-lobby');
+        document.getElementById('lobby-welcome').textContent = 'Mirá la pantalla para ver las posiciones parciales...';
+        hasAnswered = false;
+        enableGamepad(true);
+      }
+      
+      else if (state.status === 'PODIUM') {
+        switchCard('card-end');
+      }
+    }
+
+    function switchCard(cardId) {
+      document.querySelectorAll('.card').forEach(card => {
+        card.classList.remove('active');
+      });
+      document.getElementById(cardId).classList.add('active');
+    }
+
+    function showError(msg) {
+      const errEl = document.getElementById('login-error');
+      errEl.textContent = msg;
+      errEl.style.display = 'block';
+    }
+
+    // Handle gamepad click
+    document.querySelectorAll('.game-button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (hasAnswered) return;
+        
+        hasAnswered = true;
+        const optionIndex = parseInt(btn.getAttribute('data-index'));
+        const timeTakenMs = Date.now() - questionStartTime;
+
+        // Visual select state
+        btn.classList.add('selected');
+        document.getElementById('gamepad-grid').classList.add('disabled');
+
+        fetch('/api/trivia/respond', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ eventId, nickname, optionIndex, timeTakenMs })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (!data.success) {
+            console.warn('Answer rejected by coordinator');
+          }
+        });
+      });
+    });
+
+    function enableGamepad(enable) {
+      const grid = document.getElementById('gamepad-grid');
+      if (enable) {
+        grid.classList.remove('disabled');
+        document.querySelectorAll('.game-button').forEach(b => b.classList.remove('selected'));
+      } else {
+        grid.classList.add('disabled');
+      }
+    }
+
+    function showFeedback(state) {
+      switchCard('card-feedback');
+      
+      fetch(`/api/trivia/leaderboard?event=${eventId}`)
+        .then(res => res.json())
+        .then(data => {
+          const players = data.leaderboard || [];
+          const playerObj = players.find(p => p.nickname === nickname);
+          
+          const content = document.getElementById('feedback-content');
+          if (playerObj) {
+            if (playerObj.lastCorrect) {
+              content.innerHTML = `
+                <div class="feedback-icon feedback-correct">✓</div>
+                <h2 class="feedback-correct">¡Correcto!</h2>
+                <p class="subtitle">Sumaste</p>
+                <div class="feedback-points feedback-correct">+${playerObj.lastPoints}</div>
+                <p style="margin-top: 1rem; font-weight: 600;">Total: ${playerObj.score} pts</p>
+              `;
+            } else {
+              content.innerHTML = `
+                <div class="feedback-icon feedback-incorrect">✗</div>
+                <h2 class="feedback-incorrect">Incorrecto</h2>
+                <p class="subtitle">No sumaste puntos en esta pregunta.</p>
+                <p style="margin-top: 1.5rem; font-weight: 600;">Total: ${playerObj.score} pts</p>
+              `;
+            }
+          }
+        });
+    }
+  </script>
+</body>
+</html>

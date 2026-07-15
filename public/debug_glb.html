@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>3D GLB Inspector</title>
+  <style>
+    body {
+      margin: 0;
+      background: #111;
+      color: #eee;
+      font-family: sans-serif;
+      overflow: hidden;
+    }
+    #canvas-container {
+      width: 100vw;
+      height: 100vh;
+    }
+    #ui-overlay {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(0,0,0,0.8);
+      padding: 15px;
+      border-radius: 8px;
+      max-width: 300px;
+      font-size: 13px;
+      pointer-events: auto;
+      border: 1px solid #444;
+    }
+    .mesh-item {
+      margin: 5px 0;
+    }
+    label {
+      cursor: pointer;
+    }
+    input[type="range"] {
+      width: 100%;
+    }
+  </style>
+  <!-- Three.js and OrbitControls -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+</head>
+<body>
+  <div id="canvas-container"></div>
+  <div id="ui-overlay">
+    <h3>Cofre 3D Inspector</h3>
+    <p>Usa el mouse para rotar (Click izq), panear (Click der) y zoom (Rueda).</p>
+    <div id="mesh-toggles"></div>
+    <hr>
+    <div>
+      <label>Rotación Tapa (X):</label>
+      <input type="range" id="lid-rotation" min="-180" max="0" value="0">
+      <span id="rotation-val">0°</span>
+    </div>
+    <hr>
+    <div>
+      <button id="btn-toggle-wireframe">Toggle Wireframe</button>
+    </div>
+  </div>
+
+  <script>
+    const container = document.getElementById('canvas-container');
+    const togglesContainer = document.getElementById('mesh-toggles');
+    
+    // Scene setup
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x1a1a1a);
+    
+    // Camera
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.set(0, 2, 5);
+    
+    // Renderer
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    container.appendChild(renderer.domElement);
+    
+    // Controls
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.maxPolarAngle = Math.PI / 2 + 0.1; // Don't go too far below ground
+    
+    // Lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+    
+    const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight1.position.set(5, 10, 7);
+    dirLight1.castShadow = true;
+    scene.add(dirLight1);
+    
+    const dirLight2 = new THREE.DirectionalLight(0xffffff, 0.3);
+    dirLight2.position.set(-5, 5, -5);
+    scene.add(dirLight2);
+    
+    const gridHelper = new THREE.GridHelper(10, 10, 0x444444, 0x222222);
+    gridHelper.position.y = -0.5;
+    scene.add(gridHelper);
+
+    // Loader
+    const loader = new THREE.GLTFLoader();
+    let chestGroup = null;
+    const meshMap = {};
+
+    loader.load('/assets/treasure_chest.glb', (gltf) => {
+      chestGroup = gltf.scene;
+      
+      // Center model
+      const box = new THREE.Box3().setFromObject(chestGroup);
+      const center = box.getCenter(new THREE.Vector3());
+      const size = box.getSize(new THREE.Vector3());
+      
+      console.log('Model Size: x=' + size.x + ' y=' + size.y + ' z=' + size.z);
+      console.log('Model Center: x=' + center.x + ' y=' + center.y + ' z=' + center.z);
+      
+      // Center the chest at origin
+      chestGroup.position.x = -center.x;
+      chestGroup.position.y = -box.min.y; // Sit on the grid
+      chestGroup.position.z = -center.z;
+      
+      scene.add(chestGroup);
+      
+      // Traverse nodes
+      chestGroup.traverse((child) => {
+        if (child.isMesh) {
+          const cBox = new THREE.Box3().setFromObject(child);
+          const cCenter = cBox.getCenter(new THREE.Vector3());
+          console.log('MESH_INFO: name=' + child.name + ' parent=' + child.parent.name + ' yCenter=' + cCenter.y + ' yMin=' + cBox.min.y + ' yMax=' + cBox.max.y);
+
+          child.castShadow = true;
+          child.receiveShadow = true;
+          
+          const name = child.name || child.uuid.substring(0, 6);
+          meshMap[name] = child;
+          
+          // Create a toggle checkbox
+          const div = document.createElement('div');
+          div.className = 'mesh-item';
+          div.innerHTML = `
+            <label>
+              <input type="checkbox" checked data-name="${name}">
+              ${name} (${child.material.name || 'no material'})
+            </label>
+          `;
+          togglesContainer.appendChild(div);
+        }
+      });
+      
+      // Setup toggles events
+      togglesContainer.querySelectorAll('input').forEach(input => {
+        input.addEventListener('change', (e) => {
+          const name = e.target.getAttribute('data-name');
+          if (meshMap[name]) {
+            meshMap[name].visible = e.target.checked;
+          }
+        });
+      });
+      
+    }, undefined, (err) => {
+      console.error('Error loading glb:', err);
+    });
+
+    // Wireframe toggle
+    let wireframe = false;
+    document.getElementById('btn-toggle-wireframe').addEventListener('click', () => {
+      wireframe = !wireframe;
+      if (chestGroup) {
+        chestGroup.traverse(child => {
+          if (child.isMesh && child.material) {
+            child.material.wireframe = wireframe;
+          }
+        });
+      }
+    });
+
+    // Lid rotation slider
+    const rotationSlider = document.getElementById('lid-rotation');
+    const rotationVal = document.getElementById('rotation-val');
+    rotationSlider.addEventListener('input', (e) => {
+      const deg = parseInt(e.target.value);
+      rotationVal.textContent = deg + '°';
+      const rad = THREE.MathUtils.degToRad(deg);
+      
+      // Try to rotate the mesh that looks like the lid
+      // We will look for meshes or nodes in chestGroup
+      if (chestGroup) {
+        // Let's print out rotations or apply it to a mesh
+        // Object_2 and Object_3 are under the main group. Let's see which one rotates.
+        chestGroup.traverse(child => {
+          if (child.isMesh) {
+            // For testing, let's rotate individual parts or the whole thing if we don't know
+            // In the real scene we want to identify the lid mesh.
+            console.log('Rotating target child:', child.name);
+          }
+        });
+        
+        // Let's rotate Object_2 and Object_3 for testing to see which is which
+        const lidMesh = chestGroup.getObjectByName('Object_2'); // typical mesh name in sketchfab models
+        if (lidMesh) {
+          lidMesh.rotation.x = rad;
+        }
+      }
+    });
+
+    // Animation Loop
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    
+    animate();
+    
+    // Resize handler
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>

@@ -17,27 +17,28 @@ async function sendWelcomeEmail(clientEmail, clientName, eventId, password) {
     return { success: false, error: 'No client email provided' };
   }
 
-  const subject = `¡Tu Combo Digital para "${clientName}" está listo! 🚀`;
+  const baseUrl = process.env.APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://mifiestapp.com');
+  const subject = `¡Tu servicio de MiFiestAPP para "${clientName}" está listo! 🚀`;
 
-  // HTML template matching Jano's / Combo Digital premium aesthetic
+  // HTML template matching MiFiestAPP premium aesthetic
   const html = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff; color: #1a202c;">
       <div style="text-align: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; margin-bottom: 20px;">
-        <h1 style="color: #d4af37; font-size: 24px; margin: 0; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Combo Digital</h1>
+        <h1 style="color: #d4af37; font-size: 24px; margin: 0; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">MiFiestAPP</h1>
         <p style="font-size: 14px; color: #718096; margin: 5px 0 0 0;">Gestión de Mesas y Eventos Premium</p>
       </div>
       
       <div style="line-height: 1.6; font-size: 16px;">
         <p>Hola <strong>${clientName}</strong>,</p>
         
-        <p>¡Queremos darte la bienvenida a tu <strong>Combo Digital</strong>! Ya hemos dado de alta tu evento en nuestro sistema y está listo para ser configurado.</p>
+        <p>¡Queremos darte la bienvenida a <strong>MiFiestAPP</strong>! Ya hemos dado de alta tu evento en nuestro sistema y está listo para ser configurado.</p>
         
         <div style="background-color: #f7fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 25px 0;">
           <h3 style="margin-top: 0; color: #2d3748; font-size: 16px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">🔑 Datos de Acceso al Panel de Administración</h3>
           <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
             <tr>
               <td style="padding: 6px 0; color: #718096; width: 40%;"><strong>URL de Administración:</strong></td>
-              <td style="padding: 6px 0;"><a href="https://mesas.combodigital.com.ar/admin?event=${eventId}" style="color: #3182ce; text-decoration: none; font-weight: 600;">Acceder al Panel</a></td>
+              <td style="padding: 6px 0;"><a href="${baseUrl}/admin?event=${eventId}" style="color: #3182ce; text-decoration: none; font-weight: 600;">Acceder al Panel</a></td>
             </tr>
             <tr>
               <td style="padding: 6px 0; color: #718096;"><strong>ID de Evento:</strong></td>
@@ -54,18 +55,18 @@ async function sendWelcomeEmail(clientEmail, clientName, eventId, password) {
         <ul style="padding-left: 20px; color: #4a5568;">
           <li style="margin-bottom: 8px;">Cargar la lista de invitados desde un archivo de Excel para asignar las mesas.</li>
           <li style="margin-bottom: 8px;">Moderar en tiempo real las fotos enviadas por los invitados a la pantalla gigante.</li>
-          <li style="margin-bottom: 8px;">Personalizar el banner de bienvenida y la música del evento.</li>
+          <li style="margin-bottom: 8px;">Personalizar el banner de bienvenida y ver estadísticas de tu evento.</li>
         </ul>
 
-        <p style="margin-top: 25px;">Para tus invitados, el enlace de acceso directo al localizador de mesas es:</p>
+        <p style="margin-top: 25px;">Para tus invitados, el enlace de acceso directo es:</p>
         <div style="text-align: center; margin: 20px 0;">
-          <a href="https://mesas.combodigital.com.ar/?event=${eventId}" style="background-color: #d4af37; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 30px; font-weight: 600; display: inline-block; box-shadow: 0 4px 6px rgba(212, 175, 55, 0.2);">Ver Buscador de Mesas (Invitados)</a>
+          <a href="${baseUrl}/?event=${eventId}" style="background-color: #d4af37; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 30px; font-weight: 600; display: inline-block; box-shadow: 0 4px 6px rgba(212, 175, 55, 0.2);">Ver Buscador de Mesas (Invitados)</a>
         </div>
       </div>
       
       <div style="border-top: 1px solid #e2e8f0; padding-top: 20px; margin-top: 30px; text-align: center; font-size: 12px; color: #a0aec0;">
         <p>Este es un correo automático de bienvenida. Por favor, no respondas a este mensaje.</p>
-        <p>&copy; 2026 Combo Digital. Todos los derechos reservados.</p>
+        <p>&copy; 2026 MiFiestAPP. Todos los derechos reservados.</p>
       </div>
     </div>
   `;

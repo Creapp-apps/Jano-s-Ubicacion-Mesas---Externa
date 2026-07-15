@@ -236,3 +236,258 @@
   from { opacity: 0; }
   to { opacity: 1; }
 }
+
+#camera-video.mirror {
+  transform: scaleX(-1);
+}
+
+/* Filter selector bar and buttons */
+.filter-selector-bar {
+  display: none;
+  width: 100%;
+  margin: 12px 0 5px 0;
+  overflow-x: auto;
+  padding: 5px 0;
+  gap: 12px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  white-space: nowrap;
+}
+.filter-selector-bar::-webkit-scrollbar {
+  display: none;
+}
+.filter-btn {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  padding: 4px 8px;
+}
+.filter-btn.active {
+  color: var(--gold-primary);
+  font-weight: 700;
+}
+.filter-preview-circle {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 2px solid var(--card-border);
+  background: #222;
+  transition: all 0.3s ease;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.filter-btn.active .filter-preview-circle {
+  border-color: var(--gold-primary);
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.4);
+  transform: scale(1.08);
+}
+
+#camera-overlay-canvas.mirror {
+  transform: scaleX(-1);
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Camera ornament viewport decorations (luxury gold theme) */
+.camera-ornament {
+  position: absolute;
+  width: 35px;
+  height: 35px;
+  border: 2px solid transparent;
+  z-index: 8;
+  pointer-events: none;
+  filter: drop-shadow(0 0 5px rgba(212, 175, 55, 0.45));
+}
+
+.camera-ornament::before {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border: 1px solid var(--gold-light);
+  border-radius: 1px;
+}
+
+.camera-ornament.tl {
+  top: 0;
+  left: 0;
+  border-top: 2.5px solid var(--gold-primary);
+  border-left: 2.5px solid var(--gold-primary);
+  border-top-left-radius: 12px;
+}
+.camera-ornament.tl::before {
+  top: 8px;
+  left: 8px;
+  border-right: none;
+  border-bottom: none;
+}
+
+.camera-ornament.tr {
+  top: 0;
+  right: 0;
+  border-top: 2.5px solid var(--gold-primary);
+  border-right: 2.5px solid var(--gold-primary);
+  border-top-right-radius: 12px;
+}
+.camera-ornament.tr::before {
+  top: 8px;
+  right: 8px;
+  border-left: none;
+  border-bottom: none;
+}
+
+.camera-ornament.bl {
+  bottom: 0;
+  left: 0;
+  border-bottom: 2.5px solid var(--gold-primary);
+  border-left: 2.5px solid var(--gold-primary);
+  border-bottom-left-radius: 12px;
+}
+.camera-ornament.bl::before {
+  bottom: 8px;
+  left: 8px;
+  border-right: none;
+  border-top: none;
+}
+
+.camera-ornament.br {
+  bottom: 0;
+  right: 0;
+  border-bottom: 2.5px solid var(--gold-primary);
+  border-right: 2.5px solid var(--gold-primary);
+  border-bottom-right-radius: 12px;
+}
+.camera-ornament.br::before {
+  bottom: 8px;
+  right: 8px;
+  border-left: none;
+  border-top: none;
+}
+
+/* Countdown Overlay UI & Animations */
+.countdown-ring-container {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 25px;
+}
+
+.countdown-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: rotate(-90deg);
+  width: 100%;
+  height: 100%;
+}
+
+.countdown-circle-bg {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-width: 5px;
+}
+
+.countdown-circle-progress {
+  fill: none;
+  stroke: var(--gold-primary);
+  stroke-width: 5px;
+  stroke-linecap: round;
+  stroke-dasharray: 314; /* 2 * PI * r (where r = 50) */
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 0.1s linear, stroke 0.3s ease;
+  filter: drop-shadow(0 0 6px rgba(212, 175, 55, 0.7));
+}
+
+.countdown-number {
+  font-family: 'Cinzel', serif;
+  font-size: 3.5rem;
+  font-weight: 700;
+  color: var(--gold-light);
+  z-index: 2;
+  text-shadow: 0 0 15px rgba(212, 175, 55, 0.6);
+  user-select: none;
+}
+
+.countdown-number.animate-tick {
+  animation: popInScale 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.countdown-message {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.95rem;
+  color: #ffffff;
+  text-align: center;
+  font-weight: 500;
+  letter-spacing: 1px;
+  padding: 0 20px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+  min-height: 24px;
+}
+
+.countdown-message.animate-tick {
+  animation: fadeInDown 0.4s ease forwards;
+}
+
+/* Shutter Flash Animation */
+.camera-flash-active {
+  animation: quickFlash 0.35s ease-out forwards;
+}
+
+@keyframes popInScale {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+    filter: blur(4px);
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+    filter: blur(0);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInDown {
+  0% {
+    transform: translateY(-8px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes quickFlash {
+  0% {
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+    background-color: #ffffff;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+

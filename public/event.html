@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MiFiestAPP | Portal del Invitado</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-color: #0b0b0c;
+      --card-bg: rgba(22, 22, 25, 0.45);
+      --card-border: rgba(212, 175, 55, 0.15);
+      --card-border-hover: rgba(212, 175, 55, 0.6);
+      --gold-primary: #d4af37;
+      --gold-gradient: linear-gradient(135deg, #f3e5ab 0%, #d4af37 50%, #aa7c11 100%);
+      --text-main: #ffffff;
+      --text-muted: #a0a0a5;
+      --success: #2ec4b6;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      font-family: 'Montserrat', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      overflow-x: hidden;
+      position: relative;
+      padding: 40px 20px;
+    }
+
+    /* Ambient background glows wrapper */
+    .bg-glows {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .bg-glow-1 {
+      position: absolute;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(212, 175, 55, 0.08) 0%, transparent 70%);
+      top: -100px;
+      left: -100px;
+    }
+
+    .bg-glow-2 {
+      position: absolute;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(212, 175, 55, 0.05) 0%, transparent 70%);
+      bottom: -150px;
+      right: -100px;
+    }
+
+    header {
+      width: 100%;
+      max-width: 800px;
+      text-align: center;
+      z-index: 10;
+      margin-bottom: 20px;
+      animation: fadeInDown 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    .logo-container {
+      margin-bottom: 15px;
+    }
+
+    .logo-container img {
+      height: 55px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.2));
+    }
+
+    .event-title {
+      font-family: 'Cinzel', serif;
+      font-size: 0.8rem;
+      letter-spacing: 3px;
+      color: var(--gold-primary);
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-bottom: 20px;
+      opacity: 0.9;
+    }
+
+    .welcome-greeting {
+      font-family: 'Cinzel', serif;
+      font-size: 1.8rem;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 8px;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+      letter-spacing: 1px;
+    }
+
+    .main-title {
+      font-family: 'Cinzel', serif;
+      font-size: 2.2rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      background: var(--gold-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 10px;
+      text-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+    }
+
+    .tagline {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      max-width: 500px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    main {
+      width: 100%;
+      max-width: 1000px;
+      z-index: 10;
+      margin: 30px 0;
+      display: flex;
+      justify-content: center;
+    }
+
+    .grid-container {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 25px;
+      width: 100%;
+      max-width: 1100px;
+    }
+
+    @media (max-width: 1120px) and (min-width: 851px) {
+      .grid-container {
+        grid-template-columns: repeat(2, 1fr);
+        max-width: 700px;
+      }
+    }
+
+    /* Service Card Design */
+    .service-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 40px 30px;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* Background glow inside the card */
+    .service-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: radial-gradient(800px circle at var(--x, 0px) var(--y, 0px), rgba(212, 175, 55, 0.08), transparent 40%);
+      z-index: -1;
+      opacity: 0;
+      transition: opacity 0.5s;
+    }
+
+    .service-card:hover::before {
+      opacity: 1;
+    }
+
+    .service-card:hover {
+      transform: translateY(-8px);
+      border-color: var(--card-border-hover);
+      box-shadow: 0 20px 40px rgba(212, 175, 55, 0.15);
+    }
+
+    /* Icon Styling */
+    .icon-wrapper {
+      width: 80px;
+      height: 80px;
+      background: rgba(212, 175, 55, 0.05);
+      border: 1px solid rgba(212, 175, 55, 0.15);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 25px;
+      color: var(--gold-primary);
+      transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+      position: relative;
+    }
+
+    .icon-wrapper::after {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 1px solid var(--gold-primary);
+      opacity: 0;
+      transform: scale(1.1);
+      transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+    }
+
+    .service-card:hover .icon-wrapper {
+      background: rgba(212, 175, 55, 0.15);
+      color: #fff;
+      transform: scale(1.05);
+      box-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
+    }
+
+    .service-card:hover .icon-wrapper::after {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .icon-wrapper svg {
+      width: 32px;
+      height: 32px;
+      stroke-width: 1.5;
+    }
+
+    /* Card Text content */
+    .service-title {
+      font-family: 'Cinzel', serif;
+      font-size: 1.3rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+      color: #ffffff;
+      transition: color 0.3s;
+    }
+
+    .service-card:hover .service-title {
+      color: var(--gold-primary);
+    }
+
+    .service-desc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 30px;
+      flex-grow: 1;
+      max-width: 250px;
+    }
+
+    /* Button inside the card */
+    .service-btn {
+      width: 100%;
+      padding: 12px 24px;
+      border-radius: 30px;
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      background: transparent;
+      color: var(--text-main);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      font-weight: 600;
+      transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+      position: relative;
+      overflow: hidden;
+      z-index: 1;
+    }
+
+    .service-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--gold-gradient);
+      z-index: -1;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .service-card:hover .service-btn:not(.secondary-btn) {
+      border-color: transparent;
+      color: #0b0b0c;
+    }
+
+    .service-card:hover .service-btn:not(.secondary-btn)::before {
+      opacity: 1;
+    }
+
+    .secondary-btn {
+      border-color: rgba(255, 255, 255, 0.15) !important;
+      color: var(--text-muted) !important;
+      margin-top: 10px;
+    }
+
+    .secondary-btn:hover {
+      border-color: var(--gold-primary) !important;
+      color: var(--gold-primary) !important;
+      background: rgba(212, 175, 55, 0.05) !important;
+    }
+
+    .secondary-btn::before {
+      display: none !important;
+    }
+
+    /* Disabled/Coming Soon Card Styling */
+    .service-card.disabled {
+      cursor: not-allowed;
+      border-color: rgba(255, 255, 255, 0.05);
+      background: rgba(15, 15, 17, 0.2);
+    }
+
+    .service-card.disabled:hover {
+      transform: none;
+      border-color: rgba(255, 255, 255, 0.05);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+    }
+
+    .service-card.disabled .icon-wrapper {
+      color: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.05);
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .service-card.disabled:hover .icon-wrapper {
+      transform: none;
+      background: rgba(255, 255, 255, 0.02);
+      color: rgba(255, 255, 255, 0.2);
+      box-shadow: none;
+    }
+
+    .service-card.disabled:hover .icon-wrapper::after {
+      opacity: 0;
+    }
+
+    .service-card.disabled .service-title {
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    .service-card.disabled .service-desc {
+      color: rgba(255, 255, 255, 0.25);
+    }
+
+    .service-card.disabled .service-btn {
+      border-color: rgba(255, 255, 255, 0.08);
+      color: rgba(255, 255, 255, 0.3);
+      pointer-events: none;
+    }
+
+    /* Premium Coming Soon Badge */
+    .badge-upcoming {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: rgba(212, 175, 55, 0.1);
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      padding: 6px 12px;
+      border-radius: 12px;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      font-weight: 700;
+      color: var(--gold-primary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .badge-upcoming::before {
+      content: '';
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: var(--gold-primary);
+      box-shadow: 0 0 8px var(--gold-primary);
+      animation: pulseGlow 1.8s infinite;
+    }
+
+    footer {
+      width: 100%;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      letter-spacing: 1px;
+      z-index: 10;
+      margin-top: 40px;
+      animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    footer a {
+      color: var(--gold-primary);
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.3s;
+    }
+
+    footer a:hover {
+      color: #fff;
+    }
+
+    /* Grid cards entry animations */
+    .service-card:nth-child(1) { animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both; }
+    .service-card:nth-child(2) { animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both; }
+    .service-card:nth-child(3) { animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both; }
+    .service-card:nth-child(4) { animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.4s both; }
+
+    @keyframes fadeInDown {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes pulseGlow {
+      0% {
+        transform: scale(0.9);
+        box-shadow: 0 0 4px var(--gold-primary);
+        opacity: 0.6;
+      }
+      50% {
+        transform: scale(1.1);
+        box-shadow: 0 0 12px var(--gold-primary);
+        opacity: 1;
+      }
+      100% {
+        transform: scale(0.9);
+        box-shadow: 0 0 4px var(--gold-primary);
+        opacity: 0.6;
+      }
+    }
+
+    @media (max-width: 850px) {
+      body {
+        padding: 30px 15px;
+      }
+
+      .main-title {
+        font-size: 1.8rem;
+      }
+
+      .grid-container {
+        grid-template-columns: 1fr;
+        max-width: 320px;
+      }
+
+      .service-card {
+        padding: 35px 25px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-glows">
+    <div class="bg-glow-1"></div>
+    <div class="bg-glow-2"></div>
+  </div>
+
+  <header>
+    <div class="logo-container">
+      <svg viewBox="0 0 24 24" style="height: 55px; width: 55px; fill: var(--gold-primary); margin: 0 auto; filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.2));">
+        <path d="M2 22h20V10l-4-4-4 4-4-4-4 4-4-4v12zm10-7.5c1.38 0 2.5 1.12 2.5 2.5s-1.12 2.5-2.5 2.5-2.5-1.12-2.5-2.5 1.12-2.5 2.5-2.5z"/>
+      </svg>
+    </div>
+    <div class="event-title" id="event-title">Cargando evento...</div>
+    <h2 class="welcome-greeting" id="welcome-greeting" style="display: none;"></h2>
+    <h1 class="main-title">MiFiest<span class="text-gold" style="font-family: inherit; color: var(--gold-primary);">APP</span></h1>
+    <p class="tagline">Elegí uno de nuestros servicios interactivos para disfrutar al máximo de la celebración.</p>
+  </header>
+
+  <main>
+    <div class="grid-container">
+      <!-- Service 1: Invitación -->
+      <div class="service-card" id="card-service-invitation" style="cursor: default;">
+        <div class="icon-wrapper">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 19v-8.93a2 2 0 01.89-1.664l8-5.333a2 2 0 012.22 0l8 5.333A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-2.25-1.5a2 2 0 00-2.22 0l-2.25 1.5"></path>
+          </svg>
+        </div>
+        <h2 class="service-title">Invitación</h2>
+        <p class="service-desc">Explorá la invitación interactiva con itinerario y mapas del evento.</p>
+        <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; z-index: 5; position: relative;">
+          <a id="btn-service-invitation-personalize" href="/admin" class="service-btn" style="text-decoration: none; text-align: center; display: block;">Personalizar Invitación</a>
+          <a id="btn-service-invitation-view" href="/invitacion" class="service-btn secondary-btn" style="text-decoration: none; text-align: center; display: block; margin-top: 0;">Ver Invitación</a>
+        </div>
+      </div>
+
+      <!-- Service 2: Buscador de Mesas -->
+      <a href="/mesas" class="service-card" id="card-service-tables">
+        <div class="icon-wrapper">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+          </svg>
+        </div>
+        <h2 class="service-title">Buscador de Mesas</h2>
+        <p class="service-desc">Los invitados podrán saber en qué mesa están ubicados, a través de un código QR interactivo.</p>
+        <button class="service-btn">Buscar Mesa</button>
+      </a>
+
+      <!-- Service 3: Fotos -->
+      <div class="service-card" id="card-service-photos" style="cursor: default;">
+        <div class="icon-wrapper">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+          </svg>
+        </div>
+        <h2 class="service-title">Fotos en Pantalla</h2>
+        <p class="service-desc">Subí tus fotos y dedicatorias a la pantalla gigante en tiempo real.</p>
+        <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; z-index: 5; position: relative;">
+          <a id="btn-service-photos-upload" href="/fotos" class="service-btn" style="text-decoration: none; text-align: center; display: block;">Subir Foto</a>
+          <a id="btn-service-photos-moderate" href="/admin" class="service-btn secondary-btn" style="text-decoration: none; text-align: center; display: block;">Moderar fotos</a>
+        </div>
+      </div>
+
+      <!-- Service 4: Trivia -->
+      <div class="service-card" id="card-service-trivia" style="cursor: default;">
+        <div class="icon-wrapper">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.663 17h4.673M12 3v1m6.364 .364l-.707 .707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 113.536 0V21h2v-4.643M12 7v4"></path>
+          </svg>
+        </div>
+        <h2 class="service-title">Trivia Show</h2>
+        <p class="service-desc">Jugá en tiempo real respondiendo preguntas acerca de los agasajados.</p>
+        <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; z-index: 5; position: relative;">
+          <a id="btn-service-trivia-play" href="/trivia-client.html" class="service-btn" style="text-decoration: none; text-align: center; display: block;">Jugar Trivia</a>
+          <a id="btn-service-trivia-personalize" href="/admin" class="service-btn secondary-btn" style="text-decoration: none; text-align: center; display: block; margin-top: 0;">Configurar</a>
+        </div>
+      </div>
+    </div>
+  </main>
+ 
+  <footer>
+    &copy; 2026 <a href="/">MiFiestAPP</a>. Todos los derechos reservados.
+  </footer>
+ 
+  <script>
+    // Extract event query parameter for multi-tenancy context propagation
+    const urlParams = new URLSearchParams(window.location.search);
+    const eventId = urlParams.get('event') || 'default';
+ 
+    // Propagate all parameters to links
+    document.querySelectorAll('.service-card').forEach(card => {
+      const currentHref = card.getAttribute('href');
+      if (currentHref) {
+        const baseHref = currentHref.split('?')[0];
+        const cardParams = new URLSearchParams(window.location.search);
+        card.setAttribute('href', `${baseHref}?${cardParams.toString()}`);
+      }
+    });
+ 
+    const uploadLink = document.getElementById('btn-service-photos-upload');
+    if (uploadLink) {
+      const cardParams = new URLSearchParams(window.location.search);
+      uploadLink.setAttribute('href', `/fotos?${cardParams.toString()}`);
+    }
+    const moderateLink = document.getElementById('btn-service-photos-moderate');
+    if (moderateLink) {
+      const cardParams = new URLSearchParams(window.location.search);
+      cardParams.set('service', 'photos');
+      moderateLink.setAttribute('href', `/admin?${cardParams.toString()}`);
+    }
+    const personalizeLink = document.getElementById('btn-service-invitation-personalize');
+    if (personalizeLink) {
+      const cardParams = new URLSearchParams(window.location.search);
+      cardParams.set('service', 'invitacion');
+      personalizeLink.setAttribute('href', `/admin?${cardParams.toString()}`);
+    }
+    const viewLink = document.getElementById('btn-service-invitation-view');
+    if (viewLink) {
+      const cardParams = new URLSearchParams(window.location.search);
+      viewLink.setAttribute('href', `/invitacion?${cardParams.toString()}`);
+    }
+
+    const playLink = document.getElementById('btn-service-trivia-play');
+    if (playLink) {
+      const cardParams = new URLSearchParams(window.location.search);
+      playLink.setAttribute('href', `/trivia-client.html?${cardParams.toString()}`);
+    }
+    const configTriviaLink = document.getElementById('btn-service-trivia-personalize');
+    if (configTriviaLink) {
+      const cardParams = new URLSearchParams(window.location.search);
+      cardParams.set('service', 'trivia');
+      configTriviaLink.setAttribute('href', `/admin?${cardParams.toString()}`);
+    }
+
+    function getGreeting(name) {
+      if (!name) return "";
+      let cleanName = name.replace(/^(boda|xv|mis xv|cumpleaños|cumple|fiesta)\s+de\s+/i, '').trim();
+      
+      if (cleanName.includes('&') || /\s+y\s+/i.test(cleanName) || cleanName.includes(',')) {
+        return `¡Bienvenidos, ${cleanName}!`;
+      }
+      
+      const firstWord = cleanName.split(' ')[0].replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ]/g, '');
+      const lastChar = firstWord.slice(-1).toLowerCase();
+      
+      if (lastChar === 'a' || lastChar === 'á') {
+        return `¡Bienvenida, ${cleanName}!`;
+      }
+      return `¡Bienvenido, ${cleanName}!`;
+    }
+
+    // Fetch configuration title for specific event
+    fetch(`/api/config?event=${encodeURIComponent(eventId)}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.eventTitle) {
+          document.getElementById('event-title').textContent = data.eventTitle;
+        } else {
+          document.getElementById('event-title').textContent = "Mi Fiesta";
+        }
+
+        const greetingEl = document.getElementById('welcome-greeting');
+        const nameToUse = data.clientName || data.eventTitle || '';
+        if (nameToUse && eventId !== 'default') {
+          greetingEl.textContent = getGreeting(nameToUse);
+          greetingEl.style.display = 'block';
+        } else {
+          greetingEl.style.display = 'none';
+        }
+
+        // Dynamic service hiding based on tenant config
+        if (data) {
+          if (data.serviceTables === false) {
+            const el = document.getElementById('card-service-tables');
+            if (el) el.style.display = 'none';
+          }
+          if (data.servicePhotos === false) {
+            const el = document.getElementById('card-service-photos');
+            if (el) el.style.display = 'none';
+          }
+          if (data.serviceInvitation === false) {
+            const el = document.getElementById('card-service-invitation');
+            if (el) el.style.display = 'none';
+          }
+          if (data.serviceTrivia === false) {
+            const el = document.getElementById('card-service-trivia');
+            if (el) el.style.display = 'none';
+          }
+        }
+      })
+      .catch(() => {
+        document.getElementById('event-title').textContent = "Mi Fiesta";
+      });
+
+    // Elegant Mouse Hover Effect for Radial Glow Background on Cards
+    const cards = document.querySelectorAll('.service-card:not(.disabled)');
+    cards.forEach(card => {
+      card.addEventListener('mousemove', (e) => {
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        card.style.setProperty('--x', `${x}px`);
+        card.style.setProperty('--y', `${y}px`);
+      });
+    });
+  </script>
+</body>
+</html>

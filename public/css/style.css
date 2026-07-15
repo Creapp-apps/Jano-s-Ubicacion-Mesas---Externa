@@ -501,3 +501,25 @@ footer a:hover {
   color: var(--text-main);
   font-weight: 600;
 }
+
+/* Premium Staggered entry animation & Hover effects for onboarding cards */
+.onboarding-container .card,
+div.card#onboarding-card {
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s ease, box-shadow 0.4s ease !important;
+}
+
+.onboarding-container .card:nth-child(1),
+div.card#onboarding-card {
+  animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+}
+
+.onboarding-container .card:nth-child(2) {
+  animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
+}
+
+.onboarding-container .card:hover,
+div.card#onboarding-card:hover {
+  transform: translateY(-8px) !important;
+  border-color: var(--gold-primary) !important;
+  box-shadow: 0 12px 40px rgba(212, 175, 55, 0.12), var(--card-shadow) !important;
+}

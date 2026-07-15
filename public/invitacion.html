@@ -532,11 +532,34 @@
     // Global references and settings
     let invitationData = {};
     let isMusicPlaying = false;
+    let isEnvelopeOpened = false;
     let activeSlide = 0;
     let slides = [];
     let dots = [];
     let spotifySearchResults = [];
     let updateCarousel;
+
+    async function resolveSpotifyToPreview(spotifyUrl) {
+      try {
+        const oembedUrl = `https://open.spotify.com/oembed?url=${encodeURIComponent(spotifyUrl)}`;
+        const response = await fetch(oembedUrl);
+        if (!response.ok) return null;
+        const oembedData = await response.json();
+        const title = oembedData.title;
+        if (!title) return null;
+
+        const itunesUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(title)}&media=music&limit=3`;
+        const itunesResponse = await fetch(itunesUrl);
+        if (!itunesResponse.ok) return null;
+        const itunesData = await itunesResponse.json();
+        if (itunesData.results && itunesData.results.length > 0) {
+          return itunesData.results[0].previewUrl;
+        }
+      } catch (err) {
+        console.error('Error resolving Spotify track to preview:', err);
+      }
+      return null;
+    }
 
     // Ambient Gold Particles System
     function initAmbientParticles() {
@@ -683,6 +706,22 @@
       const musicPlayerBtn = document.getElementById('music-player-btn');
       const musicDiscVisual = document.getElementById('music-disc-visual');
       const musicStatusLbl = document.getElementById('music-status-lbl');
+      
+      function playBgMusic() {
+        if (!bgAudio.src || isMusicPlaying) return;
+        bgAudio.volume = 0;
+        bgAudio.play().then(() => {
+          isMusicPlaying = true;
+          musicDiscVisual.classList.add('playing');
+          musicStatusLbl.textContent = 'Música On';
+          gsap.to(bgAudio, { volume: 0.5, duration: 3.0 });
+        }).catch(err => {
+          console.log('Autoplay restriction:', err);
+          isMusicPlaying = false;
+          musicDiscVisual.classList.remove('playing');
+          musicStatusLbl.textContent = 'Música Off';
+        });
+      }
       
       const eventSubtitle = document.getElementById('event-subtitle');
       const mainEventTitle = document.getElementById('main-event-title');
@@ -1334,7 +1373,22 @@
           document.getElementById('bank-alias-lbl').textContent = data.invitationAlias || '-';
           
           if (data.invitationMusicUrl) {
-            bgAudio.src = data.invitationMusicUrl;
+            const musicUrl = data.invitationMusicUrl;
+            if (musicUrl.includes('spotify.com')) {
+              resolveSpotifyToPreview(musicUrl).then(previewUrl => {
+                if (previewUrl) {
+                  bgAudio.src = previewUrl;
+                  if (isEnvelopeOpened) {
+                    playBgMusic();
+                  }
+                }
+              });
+            } else {
+              bgAudio.src = musicUrl;
+              if (isEnvelopeOpened) {
+                playBgMusic();
+              }
+            }
           }
           
           document.getElementById('carousel-img-0').src = data.invitationPhoto1 || defaultPhotos[0];
@@ -1705,20 +1759,8 @@
           startTypewriter('welcome-instructions', 'Faltan muy pocos días para compartir este momento especial:');
         }, 1400);
 
-        if (bgAudio.src) {
-          bgAudio.volume = 0;
-          bgAudio.play().then(() => {
-            isMusicPlaying = true;
-            musicDiscVisual.classList.add('playing');
-            musicStatusLbl.textContent = 'Música On';
-            gsap.to(bgAudio, { volume: 0.5, duration: 3.0 });
-          }).catch(err => {
-            console.log('Autoplay restriction:', err);
-            isMusicPlaying = false;
-            musicDiscVisual.classList.remove('playing');
-            musicStatusLbl.textContent = 'Música Off';
-          });
-        }
+        isEnvelopeOpened = true;
+        playBgMusic();
       }
 
       if (waxSealBtn) waxSealBtn.addEventListener('click', triggerEnvelopeOpening);
@@ -1732,12 +1774,7 @@
             musicDiscVisual.classList.remove('playing');
             musicStatusLbl.textContent = 'Música Off';
           } else {
-            bgAudio.play().then(() => {
-              isMusicPlaying = true;
-              musicDiscVisual.classList.add('playing');
-              musicStatusLbl.textContent = 'Música On';
-              bgAudio.volume = 0.5;
-            }).catch(e => console.log('Playback error:', e));
+            playBgMusic();
           }
         });
       }
