@@ -1219,11 +1219,14 @@ app.put('/api/admin/photos/:id/approve', requireAuth, async (req, res) => {
     const eventId = req.query.event || 'default';
     await db.approvePhoto(eventId, req.params.id);
     
-    // Automatically trigger Google Drive sync in background to upload the newly approved photo
+    // Await the Google Drive sync for this specific photo to ensure Vercel doesn't freeze the environment before the upload is completed.
     const { syncPhotosToDrive } = require('./utils/googleDrive');
-    syncPhotosToDrive(eventId).catch(err => {
-      console.error(`[Google Drive] Error sync-on-approval for event ${eventId}:`, err);
-    });
+    try {
+      await syncPhotosToDrive(eventId, req.params.id);
+    } catch (driveErr) {
+      console.error(`[Google Drive] Error syncing photo ${req.params.id} on approval:`, driveErr);
+      // We don't block the API response if Google Drive sync has an issue, so the moderation interface remains responsive.
+    }
 
     res.json({ success: true });
   } catch (error) {

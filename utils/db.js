@@ -534,6 +534,44 @@ async function getPhotos(eventId = 'default', onlyApproved = false) {
 }
 
 /**
+ * Get a single photo by ID
+ */
+async function getPhoto(eventId = 'default', photoId) {
+  if (isSupabaseEnabled) {
+    const { data, error } = await supabase
+      .from('photos')
+      .select('id, guest_name, message, photo_url, approved, created_at')
+      .eq('event_id', eventId)
+      .eq('id', photoId)
+      .maybeSingle();
+    if (error) {
+      console.error('Error fetching single photo from Supabase:', error);
+      return null;
+    }
+    if (!data) return null;
+    return {
+      id: data.id,
+      guestName: data.guest_name,
+      message: data.message,
+      photoUrl: data.photo_url,
+      approved: data.approved,
+      createdAt: data.created_at
+    };
+  } else {
+    const { photosFile } = getEventFiles(eventId);
+    if (!fs.existsSync(photosFile)) return null;
+    try {
+      const fileData = fs.readFileSync(photosFile, 'utf8');
+      const photos = JSON.parse(fileData);
+      return photos.find(p => String(p.id) === String(photoId)) || null;
+    } catch (err) {
+      console.error('Error reading local photos file for single photo:', err);
+      return null;
+    }
+  }
+}
+
+/**
  * Add a photo submission
  */
 async function addPhoto(eventId = 'default', { guestName, message, photoUrl }) {
@@ -1336,6 +1374,7 @@ module.exports = {
   getEventTitle,
   setEventTitle,
   getPhotos,
+  getPhoto,
   addPhoto,
   approvePhoto,
   deletePhoto,

@@ -44,9 +44,10 @@ function getDriveClient() {
 /**
  * Synchronize approved photos of an event to Google Drive folder
  * @param {string} eventId 
+ * @param {string|number|null} photoId Optional ID of a specific photo to sync
  * @returns {Promise<string>} Shareable Google Drive folder URL
  */
-async function syncPhotosToDrive(eventId = 'default') {
+async function syncPhotosToDrive(eventId = 'default', photoId = null) {
   const drive = getDriveClient();
 
   // 1. Get Event Details to build the folder name matching the ClientName - DD-MM-YYYY format
@@ -111,20 +112,50 @@ async function syncPhotosToDrive(eventId = 'default') {
   }
 
   // 4. Fetch list of files already uploaded to prevent duplicates
-  const existingFilesResponse = await drive.files.list({
-    q: `'${folderId}' in parents and trashed = false`,
-    fields: 'files(id, name)',
-    pageSize: 1000,
-    supportsAllDrives: true,
-    includeItemsFromAllDrives: true
-  });
-
-  const existingFileNames = new Set(
-    (existingFilesResponse.data.files || []).map(f => f.name)
-  );
+  let existingFileNames = new Set();
+  if (photoId) {
+    // If syncing a single photo, check if that specific filename already exists in Google Drive
+    const singlePhoto = await db.getPhoto(eventId, photoId);
+    if (singlePhoto) {
+      const sanitizedName = (singlePhoto.guestName || 'Invitado').replace(/[^a-zA-Z0-9]/g, '_');
+      const targetFilename = `${singlePhoto.id}-${sanitizedName}.jpg`;
+      
+      const fileCheckResponse = await drive.files.list({
+        q: `'${folderId}' in parents and name = '${targetFilename.replace(/'/g, "\\'")}' and trashed = false`,
+        fields: 'files(id, name)',
+        supportsAllDrives: true,
+        includeItemsFromAllDrives: true
+      });
+      if (fileCheckResponse.data.files && fileCheckResponse.data.files.length > 0) {
+        existingFileNames.add(targetFilename);
+      }
+    }
+  } else {
+    const existingFilesResponse = await drive.files.list({
+      q: `'${folderId}' in parents and trashed = false`,
+      fields: 'files(id, name)',
+      pageSize: 1000,
+      supportsAllDrives: true,
+      includeItemsFromAllDrives: true
+    });
+    existingFileNames = new Set(
+      (existingFilesResponse.data.files || []).map(f => f.name)
+    );
+  }
 
   // 5. Get approved photos for the event
-  const photos = await db.getPhotos(eventId, true);
+  let photos = [];
+  if (photoId) {
+    const singlePhoto = await db.getPhoto(eventId, photoId);
+    if (singlePhoto && singlePhoto.approved) {
+      photos = [singlePhoto];
+    } else {
+      console.log(`[Google Drive] Foto ${photoId} no encontrada o no aprobada. Nada que sincronizar.`);
+      return folderUrl;
+    }
+  } else {
+    photos = await db.getPhotos(eventId, true);
+  }
   console.log(`[Google Drive] Encontradas ${photos.length} fotos aprobadas para sincronizar.`);
 
   // 6. Upload new photos
