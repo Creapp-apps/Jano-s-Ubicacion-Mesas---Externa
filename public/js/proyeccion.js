@@ -93,62 +93,67 @@ document.addEventListener('DOMContentLoaded', () => {
       const response = await fetch(`/api/public/photos?event=${encodeURIComponent(eventId)}`);
       if (!response.ok) throw new Error('Photos fetch failed');
       const data = await response.json();
-      
-      updateConnectivity(true);
-      
       if (Array.isArray(data)) {
-        photos = data;
-        
-        if (photos.length === 0) {
-          // No photos approved, show empty state standby screen
-          isShowingScreensaver = true;
-          emptyState.style.display = 'flex';
-          // Force reflow
-          emptyState.offsetHeight;
-          emptyState.classList.add('visible');
-
-          slideshowContainer.style.display = 'none';
-          dedicationCardWrapper.style.display = 'none';
-          stopSlideshow();
-          seenPhotoIds.clear();
-          newPhotosQueue = [];
-          isFirstLoad = true;
-        } else {
-          // If we have photos and we are NOT currently in screensaver loop injection
-          if (!isShowingScreensaver) {
-            emptyState.classList.remove('visible');
-            emptyState.style.display = 'none';
-            slideshowContainer.style.display = 'block';
-            dedicationCardWrapper.style.display = 'flex';
-          }
-          
-          let hasNewPhotos = false;
-          
-          // Identify new photos
-          data.forEach(photo => {
-            if (!seenPhotoIds.has(photo.id)) {
-              seenPhotoIds.add(photo.id);
-              if (!isFirstLoad) {
-                newPhotosQueue.push(photo);
-                hasNewPhotos = true;
-              }
-            }
-          });
-          
-          if (isFirstLoad) {
-            isFirstLoad = false;
-            currentIndex = 0;
-            slidesSinceLastScreensaver = 0;
-            startSlideshow();
-          } else if (hasNewPhotos) {
-            // Trigger immediate queue processing if new photos arrived
-            triggerImmediateQueueProcessing();
-          }
-        }
+        handlePhotosUpdate(data);
       }
     } catch (err) {
       console.error('Error fetching approved photos:', err);
       updateConnectivity(false);
+    }
+  };
+
+  const handlePhotosUpdate = (data) => {
+    updateConnectivity(true);
+    
+    if (Array.isArray(data)) {
+      photos = data;
+      
+      if (photos.length === 0) {
+        // No photos approved, show empty state standby screen
+        isShowingScreensaver = true;
+        emptyState.style.display = 'flex';
+        // Force reflow
+        emptyState.offsetHeight;
+        emptyState.classList.add('visible');
+
+        slideshowContainer.style.display = 'none';
+        dedicationCardWrapper.style.display = 'none';
+        stopSlideshow();
+        seenPhotoIds.clear();
+        newPhotosQueue = [];
+        isFirstLoad = true;
+      } else {
+        // If we have photos and we are NOT currently in screensaver loop injection
+        if (!isShowingScreensaver) {
+          emptyState.classList.remove('visible');
+          emptyState.style.display = 'none';
+          slideshowContainer.style.display = 'block';
+          dedicationCardWrapper.style.display = 'flex';
+        }
+        
+        let hasNewPhotos = false;
+        
+        // Identify new photos
+        data.forEach(photo => {
+          if (!seenPhotoIds.has(photo.id)) {
+            seenPhotoIds.add(photo.id);
+            if (!isFirstLoad) {
+              newPhotosQueue.push(photo);
+              hasNewPhotos = true;
+            }
+          }
+        });
+        
+        if (isFirstLoad) {
+          isFirstLoad = false;
+          currentIndex = 0;
+          slidesSinceLastScreensaver = 0;
+          startSlideshow();
+        } else if (hasNewPhotos) {
+          // Trigger immediate queue processing if new photos arrived
+          triggerImmediateQueueProcessing();
+        }
+      }
     }
   };
 
@@ -315,9 +320,60 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  // 6. Setup polling for live updates (every 5 seconds)
-  fetchPhotos();
-  setInterval(fetchPhotos, 5000); 
+  // 6. Setup real-time updates with polling fallback
+  let photosEventSource = null;
+  let photosIntervalId = null;
+
+  const startPhotosRealtime = () => {
+    stopPhotosRealtime();
+    
+    if (typeof EventSource !== 'undefined') {
+      console.log('Initializing Real-time Photo Projection Stream...');
+      photosEventSource = new EventSource(`/api/public/photos/stream?event=${encodeURIComponent(eventId)}`);
+      
+      photosEventSource.onmessage = (e) => {
+        try {
+          const eventData = JSON.parse(e.data);
+          if (eventData.type === 'INITIAL_STATE' || eventData.type === 'PHOTOS_UPDATE') {
+            if (Array.isArray(eventData.data)) {
+              handlePhotosUpdate(eventData.data);
+            }
+          }
+        } catch (err) {
+          console.error('Error parsing photos stream message:', err);
+        }
+      };
+
+      photosEventSource.onerror = (err) => {
+        console.warn('Photo stream connection lost, falling back to polling...', err);
+        if (photosEventSource) {
+          photosEventSource.close();
+          photosEventSource = null;
+        }
+        if (!photosIntervalId) {
+          photosIntervalId = setInterval(fetchPhotos, 5000);
+        }
+      };
+    } else {
+      photosIntervalId = setInterval(fetchPhotos, 5000);
+    }
+    
+    // Initial fetch
+    fetchPhotos();
+  };
+
+  const stopPhotosRealtime = () => {
+    if (photosEventSource) {
+      photosEventSource.close();
+      photosEventSource = null;
+    }
+    if (photosIntervalId) {
+      clearInterval(photosIntervalId);
+      photosIntervalId = null;
+    }
+  };
+
+  startPhotosRealtime(); 
 
   // 7. Fullscreen Toggle Logic
   const fullscreenBtn = document.getElementById('fullscreen-btn');

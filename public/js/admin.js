@@ -77,6 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Photo polling state
   let photoIntervalId = null;
+  let photoEventSource = null;
   let triviaIntervalId = null;
   let triviaQuestionsData = [];
   let triviaEventSource = null;
@@ -162,11 +163,50 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   function startPhotoPolling() {
-    if (photoIntervalId) clearInterval(photoIntervalId);
-    photoIntervalId = setInterval(loadPhotos, 10000);
+    stopPhotoPolling(); // Clean up any existing connection/polling
+    
+    if (typeof EventSource !== 'undefined') {
+      console.log('Initializing Real-time Photo Stream...');
+      photoEventSource = new EventSource(`/api/admin/photos/stream?event=${encodeURIComponent(eventId)}`);
+      
+      photoEventSource.onmessage = (e) => {
+        try {
+          const eventData = JSON.parse(e.data);
+          if (eventData.type === 'INITIAL_STATE' || eventData.type === 'PHOTOS_UPDATE') {
+            if (Array.isArray(eventData.data)) {
+              renderPhotos(eventData.data);
+            }
+          }
+        } catch (err) {
+          console.error('Error parsing photo stream message:', err);
+        }
+      };
+
+      photoEventSource.onerror = (err) => {
+        console.warn('Photo Stream encountered an error, falling back to polling:', err);
+        if (photoEventSource) {
+          photoEventSource.close();
+          photoEventSource = null;
+        }
+        // Fallback to interval polling
+        if (!photoIntervalId) {
+          photoIntervalId = setInterval(loadPhotos, 10000);
+        }
+      };
+    } else {
+      // Fallback directly for browsers without EventSource
+      photoIntervalId = setInterval(loadPhotos, 10000);
+    }
+    
+    // Perform an initial fetch just to be immediate while stream connects
+    loadPhotos();
   }
 
   function stopPhotoPolling() {
+    if (photoEventSource) {
+      photoEventSource.close();
+      photoEventSource = null;
+    }
     if (photoIntervalId) {
       clearInterval(photoIntervalId);
       photoIntervalId = null;

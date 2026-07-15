@@ -1150,6 +1150,41 @@ app.post('/api/audio/upload', requireAuth, upload.single('audio'), async (req, r
 });
 
 
+// Real-time photo stream managers
+const photoAdminClients = {}; // eventId -> Array of res
+const photoPublicClients = {}; // eventId -> Array of res
+
+function broadcastPhotoUpdate(eventId) {
+  db.getPhotos(eventId, false)
+    .then(allPhotos => {
+      // 1. Notify admins
+      const adminClients = photoAdminClients[eventId] || [];
+      const adminMessage = `data: ${JSON.stringify({ type: 'PHOTOS_UPDATE', data: allPhotos })}\n\n`;
+      adminClients.forEach(clientRes => {
+        try {
+          clientRes.write(adminMessage);
+        } catch (err) {
+          console.error('[SSE Admin] Error writing update:', err);
+        }
+      });
+      
+      // 2. Notify public / projection clients
+      const approvedPhotos = allPhotos.filter(p => p.approved);
+      const publicClients = photoPublicClients[eventId] || [];
+      const publicMessage = `data: ${JSON.stringify({ type: 'PHOTOS_UPDATE', data: approvedPhotos })}\n\n`;
+      publicClients.forEach(clientRes => {
+        try {
+          clientRes.write(publicMessage);
+        } catch (err) {
+          console.error('[SSE Public] Error writing update:', err);
+        }
+      });
+    })
+    .catch(err => {
+      console.error('[SSE Broadcast] Error loading photos for broadcast:', err);
+    });
+}
+
 // API: Upload guest photo
 app.post('/api/photos/upload', upload.single('photo'), async (req, res) => {
   if (!req.file) {
@@ -1169,6 +1204,7 @@ app.post('/api/photos/upload', upload.single('photo'), async (req, res) => {
     
     await db.addPhoto(eventId, { guestName, message, photoUrl });
     res.json({ success: true, photoUrl });
+    broadcastPhotoUpdate(eventId);
   } catch (error) {
     console.error('Error uploading photo:', error);
     if (req.file && fs.existsSync(req.file.path)) {
@@ -1200,6 +1236,66 @@ app.get('/api/public/photos', async (req, res) => {
   }
 });
 
+// SSE: Admin photos stream
+app.get('/api/admin/photos/stream', requireAuth, (req, res) => {
+  const eventId = req.query.event || 'default';
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+
+  if (!photoAdminClients[eventId]) {
+    photoAdminClients[eventId] = [];
+  }
+  photoAdminClients[eventId].push(res);
+
+  // Send initial state
+  db.getPhotos(eventId, false)
+    .then(allPhotos => {
+      res.write(`data: ${JSON.stringify({ type: 'INITIAL_STATE', data: allPhotos })}\n\n`);
+    })
+    .catch(err => {
+      console.error('[SSE Admin] Error fetching initial photos:', err);
+    });
+
+  req.on('close', () => {
+    if (photoAdminClients[eventId]) {
+      photoAdminClients[eventId] = photoAdminClients[eventId].filter(c => c !== res);
+    }
+  });
+});
+
+// SSE: Public/Projection photos stream
+app.get('/api/public/photos/stream', (req, res) => {
+  const eventId = req.query.event || 'default';
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+
+  if (!photoPublicClients[eventId]) {
+    photoPublicClients[eventId] = [];
+  }
+  photoPublicClients[eventId].push(res);
+
+  // Send initial state (approved only)
+  db.getPhotos(eventId, true)
+    .then(approvedPhotos => {
+      res.write(`data: ${JSON.stringify({ type: 'INITIAL_STATE', data: approvedPhotos })}\n\n`);
+    })
+    .catch(err => {
+      console.error('[SSE Public] Error fetching initial photos:', err);
+    });
+
+  req.on('close', () => {
+    if (photoPublicClients[eventId]) {
+      photoPublicClients[eventId] = photoPublicClients[eventId].filter(c => c !== res);
+    }
+  });
+});
+
 // API: Sync photos to Google Drive (Admin)
 app.post('/api/admin/photos/sync-drive', requireAuth, async (req, res) => {
   try {
@@ -1229,6 +1325,7 @@ app.put('/api/admin/photos/:id/approve', requireAuth, async (req, res) => {
     }
 
     res.json({ success: true });
+    broadcastPhotoUpdate(eventId);
   } catch (error) {
     res.status(500).json({ error: 'Error al aprobar la foto.' });
   }
@@ -1240,6 +1337,7 @@ app.delete('/api/admin/photos/:id', requireAuth, async (req, res) => {
     const eventId = req.query.event || 'default';
     await db.deletePhoto(eventId, req.params.id);
     res.json({ success: true });
+    broadcastPhotoUpdate(eventId);
   } catch (error) {
     res.status(500).json({ error: 'Error al rechazar la foto.' });
   }
@@ -1251,6 +1349,7 @@ app.post('/api/admin/photos/clear', requireAuth, async (req, res) => {
     const eventId = req.query.event || 'default';
     await db.clearPhotos(eventId);
     res.json({ success: true });
+    broadcastPhotoUpdate(eventId);
   } catch (error) {
     console.error('Error clearing photos:', error);
     res.status(500).json({ error: 'Error al limpiar la galería de fotos.' });
