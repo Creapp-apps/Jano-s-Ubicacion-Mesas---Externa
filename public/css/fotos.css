@@ -491,3 +491,52 @@
   }
 }
 
+/* Gold pulsing breath button */
+.btn-gold-pulse {
+  width: 100%;
+  padding: 16px 24px;
+  background: var(--gold-gradient);
+  color: #000;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: 'Cinzel', serif;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3), 0 0 0 0 rgba(212, 175, 55, 0.4);
+  animation: goldPulseBreath 2s infinite ease-in-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.btn-gold-pulse:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 22px rgba(212, 175, 55, 0.6);
+  filter: brightness(1.15);
+}
+
+.btn-gold-pulse:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);
+}
+
+@keyframes goldPulseBreath {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3), 0 0 0 0 rgba(212, 175, 55, 0.5);
+  }
+  50% {
+    transform: scale(1.03);
+    box-shadow: 0 6px 25px rgba(212, 175, 55, 0.55), 0 0 0 12px rgba(212, 175, 55, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3), 0 0 0 0 rgba(212, 175, 55, 0);
+  }
+}
+
