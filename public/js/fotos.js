@@ -176,40 +176,45 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Snapchat Camera Kit integration logic
   async function initSnapCamera() {
-    stopCamera();
-    showCameraLoader("Iniciando cámara AR...");
-
-    const snapCanvas = document.getElementById('snap-canvas');
-    if (!snapCanvas) throw new Error("snap-canvas element not found");
-
-    if (cameraVideo) cameraVideo.style.display = 'none';
-    if (overlayCanvas) overlayCanvas.style.display = 'none';
-
+    isApplyingFilter = true;
     try {
-      snapCanvas.width = 1280;
-      snapCanvas.height = 960;
-    } catch (err) {
-      console.warn("Could not set snap-canvas dimensions (already transferred offscreen):", err.message);
-    }
-    snapCanvas.style.display = 'block';
+      stopCamera();
+      showCameraLoader("Iniciando cámara AR...");
 
-    try {
+      const snapCanvas = document.getElementById('snap-canvas');
+      if (!snapCanvas) throw new Error("snap-canvas element not found");
+
+      if (cameraVideo) cameraVideo.style.display = 'none';
+      if (overlayCanvas) overlayCanvas.style.display = 'none';
+
+      try {
+        snapCanvas.width = 1280;
+        snapCanvas.height = 960;
+      } catch (err) {
+        console.warn("Could not set snap-canvas dimensions (already transferred offscreen):", err.message);
+      }
+      snapCanvas.style.display = 'block';
+
       if (!snapCameraKit) {
         if (typeof window.SnapCameraHelper === 'undefined') {
           throw new Error("SnapCameraHelper SDK is not loaded");
         }
 
-        snapCameraKit = await window.SnapCameraHelper.bootstrap({
-          apiToken: snapApiToken
-        });
+        snapCameraKit = await withTimeout(
+          window.SnapCameraHelper.bootstrap({ apiToken: snapApiToken }),
+          10000,
+          "SnapCameraHelper bootstrap timed out"
+        );
         window.snapCameraKit = snapCameraKit;
         window.snapGroupId = snapGroupId;
       }
 
       if (!snapSession) {
-        snapSession = await snapCameraKit.createSession({
-          liveRenderTarget: snapCanvas
-        });
+        snapSession = await withTimeout(
+          snapCameraKit.createSession({ liveRenderTarget: snapCanvas }),
+          10000,
+          "Snap session creation timed out"
+        );
       }
 
       const constraints = {
@@ -221,9 +226,21 @@ document.addEventListener('DOMContentLoaded', () => {
         audio: false
       };
 
-      stream = await navigator.mediaDevices.getUserMedia(constraints);
-      await snapSession.setSource(stream);
-      await snapSession.play();
+      stream = await withTimeout(
+        navigator.mediaDevices.getUserMedia(constraints),
+        10000,
+        "Camera stream acquisition timed out"
+      );
+      await withTimeout(
+        snapSession.setSource(stream),
+        10000,
+        "Snap session setSource timed out"
+      );
+      await withTimeout(
+        snapSession.play(),
+        10000,
+        "Snap session play timed out"
+      );
 
       // Configure background video stream for MediaPipe fallback
       if (cameraVideo) {
@@ -255,38 +272,68 @@ document.addEventListener('DOMContentLoaded', () => {
         cameraVideo.play().catch(err => console.log("Background video play deferred:", err));
       }
 
-      if (cameraStreamContainer) cameraStreamContainer.style.display = 'block';
+      if (cameraStreamContainer) cameraStreamContainer.style.display = 'flex';
       if (filterSelectorBar) filterSelectorBar.style.display = 'flex';
-      if (cameraTrigger) cameraTrigger.style.display = 'none';
       if (previewWrapper) previewWrapper.style.display = 'none';
 
-      // Load and apply initial active filter
+      isApplyingFilter = false;
       await applyActiveFilter();
-
       hideCameraLoader();
     } catch (err) {
+      isApplyingFilter = false;
       console.error("Snap Camera Kit initialization failed:", err);
       hideCameraLoader();
       throw err;
     }
   }
 
+  // Helper to wrap promises with a timeout
+  function withTimeout(promise, ms, errorMessage = "Timeout exceeded") {
+    let timeoutId;
+    const timeoutPromise = new Promise((_, reject) => {
+      timeoutId = setTimeout(() => {
+        reject(new Error(errorMessage));
+      }, ms);
+    });
+    return Promise.race([
+      promise.then(result => {
+        clearTimeout(timeoutId);
+        return result;
+      }),
+      timeoutPromise
+    ]);
+  }
+
   async function applySnapLens(filterKey) {
+    console.log(`[SnapCamera] applySnapLens called with key: ${filterKey}. snapSession: ${!!snapSession}, snapCameraKit: ${!!snapCameraKit}`);
     if (!snapSession || !snapCameraKit) return false;
     try {
       const lensId = snapLenses[filterKey];
+      console.log(`[SnapCamera] lensId for ${filterKey}: ${lensId}. snapGroupId: ${snapGroupId}`);
       if (lensId) {
         showCameraLoader("Aplicando lente...");
-        const lens = await snapCameraKit.lensRepository.loadLens(lensId, snapGroupId);
-        await snapSession.applyLens(lens);
+        console.log(`[SnapCamera] loading lens: ${lensId} inside group: ${snapGroupId}`);
+        const lens = await withTimeout(
+          snapCameraKit.lensRepository.loadLens(lensId, snapGroupId),
+          12000,
+          `Loading lens ${lensId} timed out`
+        );
+        console.log(`[SnapCamera] lens loaded successfully: ${lens.name || lens.id}. Applying to session...`);
+        await withTimeout(
+          snapSession.applyLens(lens),
+          12000,
+          `Applying lens ${lensId} timed out`
+        );
+        console.log(`[SnapCamera] lens applied successfully!`);
         hideCameraLoader();
         return true;
       } else {
+        console.log(`[SnapCamera] no lensId for ${filterKey}, removing lens.`);
         await snapSession.removeLens();
         return false;
       }
     } catch (err) {
-      console.error("Error switching Snap lens:", err);
+      console.error(`[SnapCamera] Error switching Snap lens for ${filterKey}:`, err);
       try {
         await snapSession.removeLens();
       } catch (e) {}
@@ -295,21 +342,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  async function applyActiveFilter() {
+  let isApplyingFilter = false;
+  let pendingFilterToApply = null;
+
+  async function runFilterApplication(filterKey) {
+    console.log(`[SnapCamera] runFilterApplication: ${filterKey}`);
     if (activeFilterBadge) {
-      activeFilterBadge.textContent = activeFilter.toUpperCase();
+      activeFilterBadge.textContent = filterKey.toUpperCase();
     }
+    
     // 1. If Snap Camera is active
     if (snapSession && snapApiToken) {
       const snapCanvas = document.getElementById('snap-canvas');
       if (snapCanvas) {
-        snapCanvas.style.filter = filtersMap[activeFilter];
+        snapCanvas.style.filter = filtersMap[filterKey];
       }
       
-      const success = await applySnapLens(activeFilter);
+      const success = await applySnapLens(filterKey);
       
       if (success) {
         // Snap lens is active! Turn off MediaPipe drawing & hide overlay canvas
+        console.log(`[SnapCamera] Lens application successful. Disabling MediaPipe overlays.`);
         if (activeAnimationId) {
           cancelAnimationFrame(activeAnimationId);
           activeAnimationId = null;
@@ -320,7 +373,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       } else {
         // Fallback to MediaPipe/CSS filters for this specific filter (since Snap lens failed or is not set)
-        if (isArFilter(activeFilter)) {
+        console.log(`[SnapCamera] Lens application unsuccessful. Falling back to MediaPipe for ${filterKey}.`);
+        if (isArFilter(filterKey)) {
           if (overlayCanvas) {
             overlayCanvas.style.display = 'block';
             // Match overlay dimensions to stream / video
@@ -350,10 +404,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 2. If Snap Camera is NOT active (Fallback to normal camera & MediaPipe)
     if (cameraVideo) {
-      cameraVideo.style.filter = filtersMap[activeFilter];
+      cameraVideo.style.filter = filtersMap[filterKey];
     }
 
-    if (isArFilter(activeFilter)) {
+    if (isArFilter(filterKey)) {
       if (overlayCanvas) {
         overlayCanvas.style.display = 'block';
       }
@@ -374,9 +428,35 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  async function applyActiveFilter() {
+    if (isApplyingFilter) {
+      pendingFilterToApply = activeFilter;
+      console.log(`[SnapCamera] applyActiveFilter queued request for: ${activeFilter}`);
+      return;
+    }
+    isApplyingFilter = true;
+    
+    try {
+      while (true) {
+        const filterToLoad = activeFilter;
+        await runFilterApplication(filterToLoad);
+        
+        if (pendingFilterToApply === null || pendingFilterToApply === filterToLoad) {
+          break;
+        }
+        activeFilter = pendingFilterToApply;
+        pendingFilterToApply = null;
+      }
+    } finally {
+      isApplyingFilter = false;
+      pendingFilterToApply = null;
+    }
+  }
+
 
   // Camera Management
   async function initCamera() {
+    isApplyingFilter = true;
     tempCapturedBlob = null;
     if (cameraVideo) {
       try {
@@ -429,6 +509,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (overlayCanvas) overlayCanvas.style.display = 'block';
 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      isApplyingFilter = false;
       showFallback();
       return;
     }
@@ -483,13 +564,18 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
       }
+      isApplyingFilter = false;
+      await applyActiveFilter();
     } catch (err) {
+      isApplyingFilter = false;
       console.warn('Camera stream setup failed, showing fallback selector:', err);
       showFallback();
     }
   }
 
    function stopCamera() {
+    isApplyingFilter = false;
+    pendingFilterToApply = null;
     if (snapSession) {
       try {
         snapSession.pause();
@@ -2144,31 +2230,69 @@ document.addEventListener('DOMContentLoaded', () => {
   // Retake photo action inside camera overlay
   if (retakePhotoBtn) {
     retakePhotoBtn.addEventListener('click', async () => {
-      tempCapturedBlob = null;
-      if (postCaptureControls) postCaptureControls.style.display = 'none';
-      if (capturePhotoBtn) {
-        capturePhotoBtn.style.display = 'block';
-        capturePhotoBtn.disabled = false;
-        capturePhotoBtn.style.pointerEvents = 'auto';
-        capturePhotoBtn.style.opacity = '1';
-      }
-      if (switchCameraBtn) switchCameraBtn.style.display = 'flex';
-      if (filterSelectorBar) {
-        filterSelectorBar.style.opacity = '1';
-        filterSelectorBar.style.pointerEvents = 'auto';
-      }
-      
-      if (snapSession) {
-        try {
-          await snapSession.play();
-        } catch(e) {}
-      } else if (cameraVideo) {
-        try {
-          cameraVideo.play();
-          if (isArFilter(activeFilter)) {
-            startFaceTracking();
+      isApplyingFilter = true;
+      try {
+        tempCapturedBlob = null;
+        if (postCaptureControls) postCaptureControls.style.display = 'none';
+        if (capturePhotoBtn) {
+          capturePhotoBtn.style.display = 'block';
+          capturePhotoBtn.disabled = false;
+          capturePhotoBtn.style.pointerEvents = 'auto';
+          capturePhotoBtn.style.opacity = '1';
+        }
+        if (switchCameraBtn) switchCameraBtn.style.display = 'flex';
+        if (filterSelectorBar) {
+          filterSelectorBar.style.opacity = '1';
+          filterSelectorBar.style.pointerEvents = 'auto';
+        }
+        
+        // Enforce a stable camera hardware re-acquisition sequence
+        if (stream) {
+          stream.getTracks().forEach(track => track.stop());
+          stream = null;
+        }
+
+        const constraints = {
+          video: {
+            facingMode: currentFacingMode,
+            width: { ideal: 1280 },
+            height: { ideal: 960 }
+          },
+          audio: false
+        };
+
+        stream = await withTimeout(
+          navigator.mediaDevices.getUserMedia(constraints),
+          10000,
+          "Camera stream re-acquisition timed out"
+        );
+
+        if (snapSession && snapApiToken) {
+          await withTimeout(
+            snapSession.setSource(stream),
+            10000,
+            "Snap session setSource during retake timed out"
+          );
+          await withTimeout(
+            snapSession.play(),
+            10000,
+            "Snap session play during retake timed out"
+          );
+          
+          if (cameraVideo) {
+            cameraVideo.srcObject = stream;
+            cameraVideo.play().catch(err => console.log("Background video play deferred:", err));
           }
-        } catch(e) {}
+        } else if (cameraVideo) {
+          cameraVideo.srcObject = stream;
+          await cameraVideo.play();
+        }
+      } catch (err) {
+        console.error("Error during retake re-acquisition:", err);
+        showToast("No se pudo reiniciar la cámara.", "error");
+      } finally {
+        isApplyingFilter = false;
+        await applyActiveFilter();
       }
     });
   }

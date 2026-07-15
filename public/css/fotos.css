@@ -253,7 +253,7 @@
   max-width: 100vw;
   margin: 0;
   overflow-x: auto;
-  padding: 20px calc(50vw - 40px) 10px calc(50vw - 40px); /* mathematical center padding for 80px item width, 20px top, 10px bottom */
+  padding: 20px calc(50% - 40px) 10px calc(50% - 40px); /* mathematical center padding for 80px item width, 20px top, 10px bottom */
   gap: 16px;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
@@ -589,15 +589,15 @@
   border-width: 3.5px;
   z-index: 10;
 }
-.camera-overlay-fullscreen .camera-ornament.tl { top: calc(20px + env(safe-area-inset-top, 0px)); left: 20px; }
-.camera-overlay-fullscreen .camera-ornament.tr { top: calc(20px + env(safe-area-inset-top, 0px)); right: 20px; }
+.camera-overlay-fullscreen .camera-ornament.tl { top: calc(28px + env(safe-area-inset-top, 0px)); left: 20px; }
+.camera-overlay-fullscreen .camera-ornament.tr { top: calc(28px + env(safe-area-inset-top, 0px)); right: 20px; }
 .camera-overlay-fullscreen .camera-ornament.bl { bottom: calc(20px + env(safe-area-inset-bottom, 0px)); left: 20px; }
 .camera-overlay-fullscreen .camera-ornament.br { bottom: calc(20px + env(safe-area-inset-bottom, 0px)); right: 20px; }
 
 /* Viewfinder Controls Header */
 .camera-header-controls {
   position: absolute;
-  top: calc(20px + env(safe-area-inset-top, 0px));
+  top: calc(28px + env(safe-area-inset-top, 0px));
   left: 0;
   right: 0;
   display: flex;
