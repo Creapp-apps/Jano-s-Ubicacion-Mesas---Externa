@@ -12,7 +12,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const charCountEl = document.getElementById('char-count');
   
   const fileInput = document.getElementById('photo-file-input');
-  const cameraTrigger = document.getElementById('btn-trigger-camera');
+  const openCameraOverlayBtn = document.getElementById('btn-open-camera-overlay');
+  const closeCameraOverlayBtn = document.getElementById('btn-close-camera-overlay');
+  const galleryFallbackBtn = document.getElementById('btn-trigger-gallery-fallback');
+  const retakePhotoBtn = document.getElementById('btn-retake-photo');
+  const usePhotoBtn = document.getElementById('btn-use-photo');
+  const postCaptureControls = document.getElementById('camera-post-capture-controls');
+  const activeFilterBadge = document.getElementById('active-filter-badge');
   const previewWrapper = document.getElementById('preview-wrapper');
   const imagePreview = document.getElementById('image-preview');
   const removePhotoBtn = document.getElementById('btn-remove-photo');
@@ -37,8 +43,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const cameraLoaderText = document.getElementById('camera-loader-text');
   
   let selectedFile = null;
+  let tempCapturedBlob = null;
   let stream = null;
-  let currentFacingMode = 'environment'; // default to back camera
+  let currentFacingMode = 'user'; // default to front camera for selfie-style experience
 
   // Snap Camera Kit variables
   let snapApiToken = '';
@@ -289,6 +296,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function applyActiveFilter() {
+    if (activeFilterBadge) {
+      activeFilterBadge.textContent = activeFilter.toUpperCase();
+    }
     // 1. If Snap Camera is active
     if (snapSession && snapApiToken) {
       const snapCanvas = document.getElementById('snap-canvas');
@@ -367,6 +377,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Camera Management
   async function initCamera() {
+    tempCapturedBlob = null;
+    if (cameraVideo) {
+      try {
+        cameraVideo.play();
+      } catch (e) {}
+    }
+    if (capturePhotoBtn) {
+      capturePhotoBtn.style.display = 'flex';
+      capturePhotoBtn.disabled = false;
+      capturePhotoBtn.style.pointerEvents = 'auto';
+      capturePhotoBtn.style.opacity = '1';
+    }
+    if (postCaptureControls) postCaptureControls.style.display = 'none';
+    if (switchCameraBtn) switchCameraBtn.style.display = 'flex';
+    if (filterSelectorBar) {
+      filterSelectorBar.style.opacity = '1';
+      filterSelectorBar.style.pointerEvents = 'auto';
+    }
+
     if (snapApiToken) {
       try {
         await initSnapCamera();
@@ -431,9 +460,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Apply active filter
         cameraVideo.style.filter = filtersMap[activeFilter];
 
-        if (cameraStreamContainer) cameraStreamContainer.style.display = 'block';
+        if (cameraStreamContainer) cameraStreamContainer.style.display = 'flex';
         if (filterSelectorBar) filterSelectorBar.style.display = 'flex';
-        if (cameraTrigger) cameraTrigger.style.display = 'none';
         if (previewWrapper) previewWrapper.style.display = 'none';
 
         // Auto-start face tracking if active filter is AR
@@ -486,7 +514,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function showFallback() {
     if (cameraStreamContainer) cameraStreamContainer.style.display = 'none';
     if (filterSelectorBar) filterSelectorBar.style.display = 'none';
-    if (cameraTrigger) cameraTrigger.style.display = 'flex';
+    if (openCameraOverlayBtn) openCameraOverlayBtn.style.display = 'flex';
   }
 
   function resetFilter() {
@@ -1647,9 +1675,6 @@ document.addEventListener('DOMContentLoaded', () => {
         uploadCard.style.opacity = '1';
         uploadCard.style.transform = 'scale(1)';
         
-        // Auto-initialize camera stream
-        initCamera();
-
         setTimeout(() => {
           if (guestNameInput) guestNameInput.focus();
         }, 500);
@@ -1826,13 +1851,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (finalBlob) {
-          selectedFile = finalBlob;
-          imagePreview.src = URL.createObjectURL(finalBlob);
+          tempCapturedBlob = finalBlob;
           
-          stopCamera();
-          if (cameraStreamContainer) cameraStreamContainer.style.display = 'none';
-          if (previewWrapper) previewWrapper.style.display = 'block';
-          validateForm();
+          // Freeze the snap session live rendering
+          try {
+            snapSession.pause();
+          } catch (e) {
+            console.warn("Could not pause snap session:", e);
+          }
+
+          // Show confirmation controls, hide shutter and others
+          if (capturePhotoBtn) capturePhotoBtn.style.display = 'none';
+          if (postCaptureControls) postCaptureControls.style.display = 'flex';
+          if (filterSelectorBar) {
+            filterSelectorBar.style.opacity = '0.3';
+            filterSelectorBar.style.pointerEvents = 'none';
+          }
+          if (switchCameraBtn) switchCameraBtn.style.display = 'none';
         }
         hideCameraLoader();
         return;
@@ -1873,13 +1908,23 @@ document.addEventListener('DOMContentLoaded', () => {
     await new Promise(resolve => {
       canvas.toBlob((blob) => {
         if (blob) {
-          selectedFile = blob;
-          imagePreview.src = URL.createObjectURL(blob);
+          tempCapturedBlob = blob;
           
-          stopCamera();
-          if (cameraStreamContainer) cameraStreamContainer.style.display = 'none';
-          if (previewWrapper) previewWrapper.style.display = 'block';
-          validateForm();
+          // Freeze standard camera feed
+          cameraVideo.pause();
+          if (activeAnimationId) {
+            cancelAnimationFrame(activeAnimationId);
+            activeAnimationId = null;
+          }
+
+          // Show confirmation controls, hide shutter and others
+          if (capturePhotoBtn) capturePhotoBtn.style.display = 'none';
+          if (postCaptureControls) postCaptureControls.style.display = 'flex';
+          if (filterSelectorBar) {
+            filterSelectorBar.style.opacity = '0.3';
+            filterSelectorBar.style.pointerEvents = 'none';
+          }
+          if (switchCameraBtn) switchCameraBtn.style.display = 'none';
         }
         resolve();
       }, 'image/jpeg', 0.85);
@@ -2013,10 +2058,77 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Trigger native camera / file chooser (Fallback button)
-  if (cameraTrigger) {
-    cameraTrigger.addEventListener('click', () => {
+  // Open camera overlay button (Sacar Foto)
+  if (openCameraOverlayBtn) {
+    openCameraOverlayBtn.addEventListener('click', () => {
+      if (cameraStreamContainer) {
+        cameraStreamContainer.style.display = 'flex';
+      }
+      initCamera();
+    });
+  }
+
+  // Close camera overlay button (X)
+  if (closeCameraOverlayBtn) {
+    closeCameraOverlayBtn.addEventListener('click', () => {
+      if (cameraStreamContainer) {
+        cameraStreamContainer.style.display = 'none';
+      }
+      stopCamera();
+    });
+  }
+
+  // Fallback to gallery selection button
+  if (galleryFallbackBtn) {
+    galleryFallbackBtn.addEventListener('click', () => {
       if (fileInput) fileInput.click();
+    });
+  }
+
+  // Retake photo action inside camera overlay
+  if (retakePhotoBtn) {
+    retakePhotoBtn.addEventListener('click', async () => {
+      tempCapturedBlob = null;
+      if (postCaptureControls) postCaptureControls.style.display = 'none';
+      if (capturePhotoBtn) {
+        capturePhotoBtn.style.display = 'flex';
+        capturePhotoBtn.disabled = false;
+        capturePhotoBtn.style.pointerEvents = 'auto';
+        capturePhotoBtn.style.opacity = '1';
+      }
+      if (switchCameraBtn) switchCameraBtn.style.display = 'flex';
+      if (filterSelectorBar) {
+        filterSelectorBar.style.opacity = '1';
+        filterSelectorBar.style.pointerEvents = 'auto';
+      }
+      
+      if (snapSession) {
+        try {
+          await snapSession.play();
+        } catch(e) {}
+      } else if (cameraVideo) {
+        try {
+          cameraVideo.play();
+          if (isArFilter(activeFilter)) {
+            startFaceTracking();
+          }
+        } catch(e) {}
+      }
+    });
+  }
+
+  // Use captured photo action inside camera overlay
+  if (usePhotoBtn) {
+    usePhotoBtn.addEventListener('click', () => {
+      if (tempCapturedBlob) {
+        selectedFile = tempCapturedBlob;
+        if (imagePreview) imagePreview.src = URL.createObjectURL(selectedFile);
+        if (previewWrapper) previewWrapper.style.display = 'block';
+        
+        stopCamera();
+        if (cameraStreamContainer) cameraStreamContainer.style.display = 'none';
+        validateForm();
+      }
     });
   }
 
@@ -2039,7 +2151,6 @@ document.addEventListener('DOMContentLoaded', () => {
       reader.onload = (event) => {
         if (imagePreview) imagePreview.src = event.target.result;
         if (previewWrapper) previewWrapper.style.display = 'block';
-        if (cameraTrigger) cameraTrigger.style.display = 'none';
         validateForm();
       };
       reader.readAsDataURL(file);
@@ -2057,9 +2168,6 @@ document.addEventListener('DOMContentLoaded', () => {
       
       // Reset filter selection back to Normal
       resetFilter();
-      
-      // Restart camera stream automatically
-      initCamera();
     });
   }
 
@@ -2154,7 +2262,6 @@ document.addEventListener('DOMContentLoaded', () => {
           if (fileInput) fileInput.value = '';
           if (imagePreview) imagePreview.src = '';
           if (previewWrapper) previewWrapper.style.display = 'none';
-          if (cameraTrigger) cameraTrigger.style.display = 'flex';
           if (charCountEl) charCountEl.textContent = '0';
           
           resetFilter();
@@ -2186,7 +2293,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (submitBtn) submitBtn.textContent = 'Enviar a la Pantalla';
       validateForm();
       resetFilter();
-      initCamera();
     });
   }
 });

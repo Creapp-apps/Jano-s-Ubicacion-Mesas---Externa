@@ -243,15 +243,19 @@
 
 /* Filter selector bar and buttons */
 .filter-selector-bar {
-  display: none;
+  display: flex;
   width: 100%;
-  margin: 12px 0 5px 0;
+  max-width: 100vw;
+  margin: 10px 0;
   overflow-x: auto;
-  padding: 5px 0;
-  gap: 12px;
+  padding: 10px 20px;
+  gap: 16px;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
   white-space: nowrap;
+  align-items: center;
+  justify-content: flex-start;
+  box-sizing: border-box;
 }
 .filter-selector-bar::-webkit-scrollbar {
   display: none;
@@ -260,37 +264,39 @@
   display: inline-flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   background: transparent;
   border: none;
   cursor: pointer;
   color: var(--text-muted);
   font-family: 'Montserrat', sans-serif;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 500;
-  transition: all 0.2s ease;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   padding: 4px 8px;
+  flex-shrink: 0;
 }
 .filter-btn.active {
-  color: var(--gold-primary);
+  color: var(--gold-light);
   font-weight: 700;
 }
 .filter-preview-circle {
-  width: 52px;
-  height: 52px;
+  width: 58px;
+  height: 58px;
   border-radius: 50%;
-  border: 2px solid var(--card-border);
-  background: #222;
-  transition: all 0.3s ease;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  background: rgba(15, 15, 18, 0.6);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
 }
 .filter-btn.active .filter-preview-circle {
   border-color: var(--gold-primary);
-  box-shadow: 0 0 10px rgba(212, 175, 55, 0.4);
-  transform: scale(1.08);
+  box-shadow: 0 0 15px rgba(212, 175, 55, 0.6);
+  transform: scale(1.12);
 }
 
 #camera-overlay-canvas.mirror {
@@ -538,5 +544,278 @@
     transform: scale(1);
     box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3), 0 0 0 0 rgba(212, 175, 55, 0);
   }
+}
+
+/* Fullscreen Camera Overlay Layout (Instagram Style) */
+.camera-overlay-fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100dvh;
+  background-color: #050507;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.camera-overlay-fullscreen video,
+.camera-overlay-fullscreen canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 2;
+}
+
+/* Offsets for fullscreen ornaments to outline viewfinder */
+.camera-overlay-fullscreen .camera-ornament {
+  width: 45px;
+  height: 45px;
+  border-width: 3.5px;
+  z-index: 10;
+}
+.camera-overlay-fullscreen .camera-ornament.tl { top: 20px; left: 20px; }
+.camera-overlay-fullscreen .camera-ornament.tr { top: 20px; right: 20px; }
+.camera-overlay-fullscreen .camera-ornament.bl { bottom: 20px; left: 20px; }
+.camera-overlay-fullscreen .camera-ornament.br { bottom: 20px; right: 20px; }
+
+/* Viewfinder Controls Header */
+.camera-header-controls {
+  position: absolute;
+  top: 25px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 25px;
+  z-index: 12;
+}
+
+/* Premium Glassmorphic Header Buttons */
+.camera-hdr-btn {
+  background: rgba(15, 15, 18, 0.6);
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  color: var(--gold-light);
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.camera-hdr-btn:active {
+  transform: scale(0.9);
+  background: rgba(212, 175, 55, 0.2);
+  border-color: var(--gold-primary);
+}
+
+/* Active Filter Glass Badge */
+.filter-active-badge {
+  background: rgba(15, 15, 18, 0.7);
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  padding: 6px 18px;
+  border-radius: 20px;
+  font-family: 'Cinzel', serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--gold-primary);
+  letter-spacing: 2px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4), inset 0 0 5px rgba(212, 175, 55, 0.2);
+  text-shadow: 0 0 4px rgba(212, 175, 55, 0.4);
+  pointer-events: none;
+}
+
+/* Viewfinder Controls Footer Container */
+.camera-footer-controls {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(5, 5, 7, 0.95) 0%, rgba(5, 5, 7, 0.8) 50%, rgba(5, 5, 7, 0) 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  padding: 25px 0 35px 0;
+  z-index: 12;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+/* Bottom Action Row (shutter & confirmation controls) */
+.camera-actions-row {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 80px;
+}
+
+/* iOS/Instagram Style Dual Ring Shutter Button */
+.camera-shutter-btn {
+  position: relative;
+  width: 76px;
+  height: 76px;
+  border: 4px solid #ffffff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
+}
+
+.camera-shutter-btn:active {
+  transform: scale(0.92);
+}
+
+.camera-shutter-inner {
+  width: 60px;
+  height: 60px;
+  background: #ffffff;
+  border-radius: 50%;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.camera-shutter-btn:active .camera-shutter-inner {
+  transform: scale(0.9);
+  background: var(--gold-primary);
+}
+
+/* Post-Capture Dual Button Controls */
+.post-capture-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+  padding: 0 30px;
+}
+
+.btn-camera-primary {
+  flex: 1;
+  max-width: 160px;
+  padding: 14px 24px;
+  background: var(--gold-gradient);
+  color: #000;
+  border: none;
+  border-radius: 30px;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+  transition: all 0.2s ease;
+}
+
+.btn-camera-primary:active {
+  transform: translateY(1px);
+  filter: brightness(0.9);
+}
+
+.btn-camera-secondary {
+  flex: 1;
+  max-width: 160px;
+  padding: 13px 24px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  border-radius: 30px;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 600;
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+  cursor: pointer;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  transition: all 0.2s ease;
+}
+
+.btn-camera-secondary:active {
+  transform: translateY(1px);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Fallback button in primary form */
+.btn-select-gallery {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.85rem;
+  text-decoration: underline;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  padding: 5px 10px;
+}
+
+.btn-select-gallery:hover {
+  color: var(--gold-primary);
+}
+
+/* Image preview container inside main card form */
+.preview-wrapper {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 2px solid var(--gold-primary);
+  box-shadow: 0 4px 18px rgba(212, 175, 55, 0.25);
+  aspect-ratio: 4/3;
+  width: 100%;
+  max-width: 320px;
+  margin: 15px auto 5px auto;
+}
+
+.preview-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.btn-remove-photo {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(11, 11, 12, 0.85);
+  color: #fff;
+  border: 1.5px solid rgba(212, 175, 55, 0.4);
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  font-size: 1.3rem;
+  font-weight: 300;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  z-index: 5;
+}
+
+.btn-remove-photo:hover {
+  background: #ff3333;
+  border-color: #ff3333;
+  color: white;
 }
 

@@ -167,131 +167,26 @@
           <div class="char-counter"><span id="char-count">0</span>/200</div>
         </div>
 
-        <!-- Photo Selector -->
-        <div class="photo-selector-container" style="width: 100%;">
+        <!-- Photo Selector Trigger Block -->
+        <div class="camera-trigger-wrapper" style="width: 100%; margin: 25px 0; display: flex; flex-direction: column; align-items: center; gap: 12px;">
+          <button type="button" class="btn-gold-pulse" id="btn-open-camera-overlay">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="camera-icon"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+            <span>Sacar Foto</span>
+          </button>
+          
+          <button type="button" class="btn-select-gallery" id="btn-trigger-gallery-fallback">
+            o seleccionar desde tu galería
+          </button>
+          
           <input 
             type="file" 
             id="photo-file-input" 
             accept="image/*" 
-            capture="environment" 
             style="display: none;"
           >
           
-          <!-- Camera Stream Container (embedded camera) -->
-          <div id="camera-stream-container" style="display: none; position: relative; width: 100%; border-radius: 12px; overflow: hidden; background: #000; border: 1px solid var(--card-border); aspect-ratio: 4/3;">
-            <video id="camera-video" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover; display: block;"></video>
-            <canvas id="snap-canvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; object-fit: cover; z-index: 4;"></canvas>
-            <canvas id="camera-overlay-canvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5;"></canvas>
-            
-            <!-- Countdown Overlay -->
-            <div id="camera-countdown-overlay" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 12; align-items: center; justify-content: center; flex-direction: column; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);">
-              <div class="countdown-ring-container">
-                <svg width="120" height="120" viewBox="0 0 120 120" class="countdown-svg">
-                  <circle cx="60" cy="60" r="50" class="countdown-circle-bg" />
-                  <circle cx="60" cy="60" r="50" class="countdown-circle-progress" id="countdown-progress-bar" />
-                </svg>
-                <div class="countdown-number" id="countdown-number-display">3</div>
-              </div>
-              <div class="countdown-message" id="countdown-message-display">¡Posá, ponete lindo/linda!</div>
-            </div>
-
-            <!-- Shutter Flash Effect -->
-            <div id="camera-flash" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #ffffff; z-index: 20; pointer-events: none;"></div>
-            
-            <!-- Camera Corner Ornaments -->
-            <div class="camera-ornament tl"></div>
-            <div class="camera-ornament tr"></div>
-            <div class="camera-ornament bl"></div>
-            <div class="camera-ornament br"></div>
-            
-            <!-- Camera Loading Overlay -->
-            <div id="camera-loader" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 11, 12, 0.95); z-index: 15; flex-direction: column; align-items: center; justify-content: center; gap: 15px; color: #fff; font-family: 'Montserrat', sans-serif;">
-              <div class="camera-spinner" style="width: 40px; height: 40px; border: 3px solid rgba(212, 175, 55, 0.2); border-top-color: var(--gold-primary); border-radius: 50%; animation: spin 1s linear infinite;"></div>
-              <span id="camera-loader-text" style="font-size: 0.85rem; letter-spacing: 1px; font-weight: 500;">Iniciando filtros AR...</span>
-            </div>
-            
-            <!-- Shutter button -->
-            <button type="button" id="btn-capture-photo" style="position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%); background: var(--gold-gradient); color: #000; border: none; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4); transition: transform 0.2s ease; z-index: 10;">
-              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="camera-icon"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
-            </button>
-            
-            <!-- Switch Camera Button -->
-            <button type="button" id="btn-switch-camera" style="position: absolute; top: 15px; right: 15px; background: rgba(11, 11, 12, 0.7); color: var(--gold-primary); border: 1px solid rgba(212, 175, 55, 0.3); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; backdrop-filter: blur(4px); transition: all 0.3s ease; z-index: 10;">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-            </button>
-          </div>
-          
-          <!-- Filter Selector Bar -->
-          <div id="filter-selector-bar" class="filter-selector-bar">
-            <button type="button" class="filter-btn active" data-filter="normal">
-              <div class="filter-preview-circle" style="background: linear-gradient(45deg, #333, #888);"></div>
-              <span>Normal</span>
-            </button>
-            <button type="button" class="filter-btn" data-filter="vintage">
-              <div class="filter-preview-circle" style="background: linear-gradient(45deg, #5c4308, #b59410); filter: sepia(0.6);"></div>
-              <span>Retro</span>
-            </button>
-            <button type="button" class="filter-btn" data-filter="cyberpunk">
-              <div class="filter-preview-circle" style="background: linear-gradient(45deg, #7b085c, #0ea3b5); filter: hue-rotate(280deg) saturate(1.8);"></div>
-              <span>Cyberpunk</span>
-            </button>
-            <button type="button" class="filter-btn" data-filter="perrito">
-              <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🐶</div>
-              <span>Perrito</span>
-            </button>
-            <button type="button" class="filter-btn" data-filter="cotillon">
-              <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🥳</div>
-              <span>Cotillón</span>
-            </button>
-            <button type="button" class="filter-btn" data-filter="makeup">
-              <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">💄</div>
-              <span>Glam</span>
-            </button>
-            <button type="button" class="filter-btn" data-filter="angel">
-              <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">😇</div>
-              <span>Ángel</span>
-            </button>
-            <button type="button" class="filter-btn" data-filter="demonio">
-              <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">😈</div>
-              <span>Demonio</span>
-            </button>
-            <button type="button" class="filter-btn" data-filter="payaso">
-              <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🤡</div>
-              <span>Payaso</span>
-            </button>
-            <button type="button" class="filter-btn" data-filter="pirata">
-              <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🏴‍☠️</div>
-              <span>Pirata</span>
-            </button>
-            <button type="button" class="filter-btn" data-filter="cybervisor">
-              <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🕶️</div>
-              <span>Cyber-Visor</span>
-            </button>
-            <button type="button" class="filter-btn" data-filter="gato">
-              <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🐱</div>
-              <span>Gatito</span>
-            </button>
-            <button type="button" class="filter-btn" data-filter="corona">
-              <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">👑</div>
-              <span>Corona</span>
-            </button>
-            <button type="button" class="filter-btn" data-filter="vampiro">
-              <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🧛</div>
-              <span>Vampiro</span>
-            </button>
-            <button type="button" class="filter-btn" data-filter="mono">
-              <div class="filter-preview-circle" style="background: linear-gradient(45deg, #222, #aaa); filter: grayscale(1);"></div>
-              <span>B&N</span>
-            </button>
-          </div>
-
-          <button type="button" class="btn-select-photo" id="btn-trigger-camera">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="camera-icon"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
-            <span>Tomar o Elegir Foto</span>
-          </button>
-          
           <!-- Preview container -->
-          <div class="preview-wrapper" id="preview-wrapper" style="display: none;">
+          <div class="preview-wrapper" id="preview-wrapper" style="display: none; width: 100%;">
             <img id="image-preview" src="" alt="Vista previa">
             <button type="button" class="btn-remove-photo" id="btn-remove-photo" title="Eliminar foto">&times;</button>
           </div>
@@ -301,6 +196,135 @@
           Enviar a la Pantalla
         </button>
       </form>
+    </div>
+
+    <!-- Fullscreen Camera Overlay (Instagram Style) -->
+    <div id="camera-stream-container" class="camera-overlay-fullscreen" style="display: none;">
+      <!-- Main Stream Elements -->
+      <video id="camera-video" autoplay playsinline></video>
+      <canvas id="snap-canvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; object-fit: cover; z-index: 4;"></canvas>
+      <canvas id="camera-overlay-canvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5;"></canvas>
+
+      <!-- Shutter Flash Effect -->
+      <div id="camera-flash" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #ffffff; z-index: 20; pointer-events: none;"></div>
+
+      <!-- Countdown Overlay -->
+      <div id="camera-countdown-overlay" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 12; align-items: center; justify-content: center; flex-direction: column; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);">
+        <div class="countdown-ring-container">
+          <svg width="120" height="120" viewBox="0 0 120 120" class="countdown-svg">
+            <circle cx="60" cy="60" r="50" class="countdown-circle-bg" />
+            <circle cx="60" cy="60" r="50" class="countdown-circle-progress" id="countdown-progress-bar" />
+          </svg>
+          <div class="countdown-number" id="countdown-number-display">3</div>
+        </div>
+        <div class="countdown-message" id="countdown-message-display">¡Posá, ponete lindo/linda!</div>
+      </div>
+
+      <!-- Luxury Gold Corner Viewfinder Ornaments -->
+      <div class="camera-ornament tl"></div>
+      <div class="camera-ornament tr"></div>
+      <div class="camera-ornament bl"></div>
+      <div class="camera-ornament br"></div>
+
+      <!-- Camera Loader -->
+      <div id="camera-loader" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 11, 12, 0.95); z-index: 15; flex-direction: column; align-items: center; justify-content: center; gap: 15px; color: #fff; font-family: 'Montserrat', sans-serif;">
+        <div class="camera-spinner" style="width: 40px; height: 40px; border: 3px solid rgba(212, 175, 55, 0.2); border-top-color: var(--gold-primary); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+        <span id="camera-loader-text" style="font-size: 0.85rem; letter-spacing: 1px; font-weight: 500;">Iniciando filtros AR...</span>
+      </div>
+
+      <!-- Viewfinder UI Header -->
+      <div class="camera-header-controls">
+        <button type="button" id="btn-close-camera-overlay" class="camera-hdr-btn" title="Cerrar cámara">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+        
+        <div id="active-filter-badge" class="filter-active-badge">NORMAL</div>
+
+        <button type="button" id="btn-switch-camera" class="camera-hdr-btn" title="Girar cámara">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+        </button>
+      </div>
+
+      <!-- Viewfinder UI Footer -->
+      <div class="camera-footer-controls">
+        <!-- Horizontally Scrollable Filter Track -->
+        <div id="filter-selector-bar" class="filter-selector-bar">
+          <button type="button" class="filter-btn active" data-filter="normal">
+            <div class="filter-preview-circle" style="background: linear-gradient(45deg, #333, #888);"></div>
+            <span>Normal</span>
+          </button>
+          <button type="button" class="filter-btn" data-filter="vintage">
+            <div class="filter-preview-circle" style="background: linear-gradient(45deg, #5c4308, #b59410); filter: sepia(0.6);"></div>
+            <span>Retro</span>
+          </button>
+          <button type="button" class="filter-btn" data-filter="cyberpunk">
+            <div class="filter-preview-circle" style="background: linear-gradient(45deg, #7b085c, #0ea3b5); filter: hue-rotate(280deg) saturate(1.8);"></div>
+            <span>Cyberpunk</span>
+          </button>
+          <button type="button" class="filter-btn" data-filter="perrito">
+            <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🐶</div>
+            <span>Perrito</span>
+          </button>
+          <button type="button" class="filter-btn" data-filter="cotillon">
+            <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🥳</div>
+            <span>Cotillón</span>
+          </button>
+          <button type="button" class="filter-btn" data-filter="makeup">
+            <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">💄</div>
+            <span>Glam</span>
+          </button>
+          <button type="button" class="filter-btn" data-filter="angel">
+            <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">😇</div>
+            <span>Ángel</span>
+          </button>
+          <button type="button" class="filter-btn" data-filter="demonio">
+            <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">😈</div>
+            <span>Demonio</span>
+          </button>
+          <button type="button" class="filter-btn" data-filter="payaso">
+            <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🤡</div>
+            <span>Payaso</span>
+          </button>
+          <button type="button" class="filter-btn" data-filter="pirata">
+            <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🏴‍☠️</div>
+            <span>Pirata</span>
+          </button>
+          <button type="button" class="filter-btn" data-filter="cybervisor">
+            <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🕶️</div>
+            <span>Cyber-Visor</span>
+          </button>
+          <button type="button" class="filter-btn" data-filter="gato">
+            <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🐱</div>
+            <span>Gatito</span>
+          </button>
+          <button type="button" class="filter-btn" data-filter="corona">
+            <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">👑</div>
+            <span>Corona</span>
+          </button>
+          <button type="button" class="filter-btn" data-filter="vampiro">
+            <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🧛</div>
+            <span>Vampiro</span>
+          </button>
+          <button type="button" class="filter-btn" data-filter="mono">
+            <div class="filter-preview-circle" style="background: linear-gradient(45deg, #222, #aaa); filter: grayscale(1);"></div>
+            <span>B&N</span>
+          </button>
+        </div>
+
+        <!-- Actions Area -->
+        <div class="camera-actions-row">
+          <!-- Capture Button -->
+          <button type="button" id="btn-capture-photo" class="camera-shutter-btn" title="Tomar foto">
+            <div class="camera-shutter-inner"></div>
+          </button>
+          
+          <!-- Post-Capture Options (Hidden initially) -->
+          <div id="camera-post-capture-controls" class="post-capture-controls" style="display: none;">
+            <button type="button" id="btn-retake-photo" class="btn-camera-secondary">Repetir</button>
+            <button type="button" id="btn-use-photo" class="btn-camera-primary">Usar Foto</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Success Feedback Overlay Card (Hidden initially) -->
