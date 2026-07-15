@@ -204,8 +204,8 @@ document.addEventListener('DOMContentLoaded', () => {
             <img src="${p.photoUrl}" alt="Foto de ${p.guestName}" loading="lazy">
           </div>
           <div class="photo-card-info">
-            <h4>${escapeHtml(p.guestName)}</h4>
-            <p>${escapeHtml(p.message || '')}</p>
+            <h4 class="photo-card-guest">${escapeHtml(p.guestName)}</h4>
+            <p class="photo-card-message">${escapeHtml(p.message || '')}</p>
             <div class="photo-card-actions">
               <button class="btn btn-danger" onclick="rejectPhotoCard('${p.id}')">Rechazar</button>
               <button class="btn btn-primary" onclick="approvePhotoCard('${p.id}')">Aprobar</button>
@@ -225,8 +225,8 @@ document.addEventListener('DOMContentLoaded', () => {
             <img src="${p.photoUrl}" alt="Foto de ${p.guestName}" loading="lazy">
           </div>
           <div class="photo-card-info">
-            <h4>${escapeHtml(p.guestName)}</h4>
-            <p>${escapeHtml(p.message || '')}</p>
+            <h4 class="photo-card-guest">${escapeHtml(p.guestName)}</h4>
+            <p class="photo-card-message">${escapeHtml(p.message || '')}</p>
             <div class="photo-card-actions">
               <button class="btn btn-danger" style="width: 100%;" onclick="rejectPhotoCard('${p.id}')">Eliminar</button>
             </div>
