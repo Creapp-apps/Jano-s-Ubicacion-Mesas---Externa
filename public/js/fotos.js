@@ -83,6 +83,21 @@ document.addEventListener('DOMContentLoaded', () => {
   const urlParams = new URLSearchParams(window.location.search);
   const eventId = urlParams.get('event') || 'default';
 
+  // Conditionally hide the moderation card for public guests
+  const adminOnboardingCard = document.getElementById('admin-onboarding-card');
+  const isAdmin = urlParams.get('admin') === 'true';
+  if (adminOnboardingCard) {
+    if (isAdmin) {
+      adminOnboardingCard.style.display = 'flex';
+    } else {
+      adminOnboardingCard.style.display = 'none';
+      if (onboardingCard) {
+        onboardingCard.style.setProperty('max-width', '480px', 'important');
+        onboardingCard.style.setProperty('grid-template-columns', '1fr', 'important');
+      }
+    }
+  }
+
   // 1. Load dynamic event title
   fetch(`/api/config?event=${encodeURIComponent(eventId)}`)
     .then(r => r.json())
