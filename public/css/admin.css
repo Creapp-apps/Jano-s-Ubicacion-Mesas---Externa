@@ -762,7 +762,26 @@ h1 {
 
 .photo-card-actions {
   display: flex;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 12px;
   border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+.photo-card-actions .btn {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
+  border-radius: 20px;
+  min-width: 0;
+  text-align: center;
+  white-space: nowrap;
+  text-transform: uppercase;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .photo-card-btn {

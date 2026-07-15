@@ -2159,6 +2159,9 @@ document.addEventListener('DOMContentLoaded', () => {
           
           resetFilter();
 
+          // Restore submit button text
+          submitBtn.textContent = 'Enviar a la Pantalla';
+
           if (uploadCard) uploadCard.style.display = 'none';
           if (successCard) successCard.style.display = 'block';
         } else {
@@ -2180,6 +2183,7 @@ document.addEventListener('DOMContentLoaded', () => {
     uploadAnotherBtn.addEventListener('click', () => {
       if (successCard) successCard.style.display = 'none';
       if (uploadCard) uploadCard.style.display = 'block';
+      if (submitBtn) submitBtn.textContent = 'Enviar a la Pantalla';
       validateForm();
       resetFilter();
       initCamera();
