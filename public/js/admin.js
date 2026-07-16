@@ -7,6 +7,21 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function showToast(type, title, message, duration = 3000) {
+    // Backwards compatibility for:
+    // 1. showToast(message, type)
+    // 2. showToast(message)
+    if (!title && !message) {
+      // Single argument call: showToast(message)
+      message = type;
+      type = 'success';
+      title = '¡Éxito!';
+    } else if (title === 'success' || title === 'error' || title === 'loading') {
+      // Two arguments call: showToast(message, type)
+      message = type;
+      type = title;
+      title = (type === 'success') ? '¡Éxito!' : (type === 'error') ? 'Error' : '';
+    }
+
     const existingToast = document.getElementById('floating-toast');
     if (existingToast) {
       existingToast.remove();
@@ -1053,6 +1068,7 @@ document.addEventListener('DOMContentLoaded', () => {
           throw new Error('Response is not a valid guest list array');
         }
         allGuests = data;
+        updateTablesDatalist();
         renderGuestsTable();
         renderModalGuestList();
         renderInvitadosTable();
@@ -1067,6 +1083,28 @@ document.addEventListener('DOMContentLoaded', () => {
           </tr>
         `;
       });
+  }
+
+  function updateTablesDatalist() {
+    const datalist = document.getElementById('tables-datalist');
+    if (!datalist) return;
+
+    const uniqueTables = [...new Set(
+      allGuests
+        .map(g => g.table ? String(g.table).trim() : '')
+        .filter(t => t && t.toLowerCase() !== 'sin mesa')
+    )].sort((a, b) => {
+      const numA = parseInt(a.replace(/\D/g, ''), 10);
+      const numB = parseInt(b.replace(/\D/g, ''), 10);
+      if (!isNaN(numA) && !isNaN(numB)) {
+        return numA - numB;
+      }
+      return a.localeCompare(b);
+    });
+
+    datalist.innerHTML = uniqueTables
+      .map(t => `<option value="${t}"></option>`)
+      .join('');
   }
 
   function formatTableDisplay(table) {
