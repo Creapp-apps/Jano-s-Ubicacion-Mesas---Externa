@@ -1846,52 +1846,245 @@ document.addEventListener('DOMContentLoaded', () => {
     return optimal;
   }
 
+  function createAudioUploadProgressModal() {
+    // Remove existing if any
+    const existing = document.getElementById('audio-upload-progress-modal');
+    if (existing) {
+      existing.remove();
+    }
+
+    // Backdrop
+    const backdrop = document.createElement('div');
+    backdrop.id = 'audio-upload-progress-modal';
+    backdrop.className = 'audio-up-backdrop';
+
+    // Modal Card
+    const modal = document.createElement('div');
+    modal.className = 'audio-up-modal';
+
+    modal.innerHTML = `
+      <div class="audio-up-header">
+        <h3>Cargando Pista de Audio</h3>
+        <button class="audio-up-close" style="display: none;">&times;</button>
+      </div>
+      <div class="audio-up-progress-wrap">
+        <svg class="audio-up-svg" viewBox="0 0 100 100">
+          <circle class="audio-up-bg-circle" cx="50" cy="50" r="40"></circle>
+          <circle class="audio-up-fill-circle" id="audio-up-circle-fill" cx="50" cy="50" r="40"></circle>
+        </svg>
+        <div class="audio-up-progress-text" id="audio-up-text">0%</div>
+      </div>
+      <div class="audio-up-status-title" id="audio-up-status-title">Iniciando...</div>
+      
+      <ul class="audio-up-steps">
+        <li class="audio-up-step" id="audio-up-step-analyze">
+          <span class="audio-up-step-icon"></span>
+          <span class="audio-up-step-label">Analizando pista de audio</span>
+        </li>
+        <li class="audio-up-step" id="audio-up-step-compress">
+          <span class="audio-up-step-icon"></span>
+          <span class="audio-up-step-label">Optimizando y comprimiendo</span>
+        </li>
+        <li class="audio-up-step" id="audio-up-step-upload">
+          <span class="audio-up-step-icon"></span>
+          <span class="audio-up-step-label">Subiendo al servidor</span>
+        </li>
+      </ul>
+    `;
+
+    backdrop.appendChild(modal);
+    document.body.appendChild(backdrop);
+
+    // Trigger CSS animations
+    setTimeout(() => {
+      backdrop.classList.add('active');
+    }, 10);
+
+    const fillCircle = document.getElementById('audio-up-circle-fill');
+    const progressText = document.getElementById('audio-up-text');
+    const statusTitle = document.getElementById('audio-up-status-title');
+    const closeBtn = backdrop.querySelector('.audio-up-close');
+
+    closeBtn.addEventListener('click', () => {
+      closeModal();
+    });
+
+    const circumference = 251.2;
+    fillCircle.style.strokeDasharray = circumference;
+    fillCircle.style.strokeDashoffset = circumference;
+
+    function setProgress(percent) {
+      const offset = circumference - (percent / 100) * circumference;
+      fillCircle.style.strokeDashoffset = offset;
+      progressText.textContent = `${Math.round(percent)}%`;
+    }
+
+    function closeModal() {
+      backdrop.classList.remove('active');
+      setTimeout(() => {
+        if (backdrop.parentNode) {
+          backdrop.remove();
+        }
+      }, 350);
+    }
+
+    return {
+      updateProgress: (percent) => {
+        setProgress(percent);
+      },
+      updateStep: (step, status, details = '') => {
+        const stepEl = document.getElementById(`audio-up-step-${step}`);
+        if (!stepEl) return;
+
+        stepEl.classList.remove('active', 'completed', 'error');
+        
+        if (status === 'active') {
+          stepEl.classList.add('active');
+          if (details) {
+            statusTitle.textContent = details;
+          } else {
+            statusTitle.textContent = stepEl.querySelector('.audio-up-step-label').textContent + '...';
+          }
+        } else if (status === 'completed') {
+          stepEl.classList.add('completed');
+        } else if (status === 'error') {
+          stepEl.classList.add('error');
+        }
+      },
+      setSuccess: () => {
+        setProgress(100);
+        statusTitle.textContent = '¡Pista guardada con éxito!';
+        statusTitle.style.color = 'var(--success)';
+        fillCircle.style.stroke = 'var(--success)';
+        progressText.innerHTML = '✓';
+        progressText.style.color = 'var(--success)';
+        
+        ['analyze', 'compress', 'upload'].forEach(s => {
+          const el = document.getElementById(`audio-up-step-${s}`);
+          if (el && !el.classList.contains('error')) {
+            el.classList.remove('active');
+            el.classList.add('completed');
+          }
+        });
+
+        setTimeout(() => {
+          closeModal();
+        }, 2000);
+      },
+      setError: (msg) => {
+        statusTitle.textContent = msg;
+        statusTitle.style.color = 'var(--error)';
+        fillCircle.style.stroke = 'var(--error)';
+        progressText.innerHTML = '✕';
+        progressText.style.color = 'var(--error)';
+        closeBtn.style.display = 'block';
+      },
+      close: closeModal
+    };
+  }
+
+  function uploadAudioWithProgress(uploadFile, progressModal, eventId) {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      const formData = new FormData();
+      formData.append('audio', uploadFile, 'audio.mp3');
+
+      xhr.open('POST', `/api/audio/upload?event=${encodeURIComponent(eventId)}`);
+
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+          const uploadPercent = (e.loaded / e.total) * 100;
+          const overallPercent = 60 + (uploadPercent * 0.4);
+          progressModal.updateProgress(overallPercent);
+          progressModal.updateStep('upload', 'active', `Subiendo archivo: ${Math.round(uploadPercent)}%`);
+        }
+      });
+
+      xhr.onload = () => {
+        let data;
+        const contentType = xhr.getResponseHeader('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          try {
+            data = JSON.parse(xhr.responseText);
+          } catch (e) {
+            return reject(new Error('Respuesta de servidor inválida.'));
+          }
+        }
+
+        if (xhr.status >= 200 && xhr.status < 300) {
+          if (data && data.success) {
+            resolve(data);
+          } else {
+            reject(new Error((data && data.error) || 'Error al subir el archivo'));
+          }
+        } else {
+          if (xhr.status === 413) {
+            const maxMb = (maxUploadSize / (1024 * 1024)).toFixed(1);
+            reject(new Error(`El archivo de audio es demasiado grande para el servidor (límite de ${maxMb}MB).`));
+          } else {
+            reject(new Error((data && data.error) || xhr.responseText.substring(0, 100) || `Error del servidor (código ${xhr.status})`));
+          }
+        }
+      };
+
+      xhr.onerror = () => {
+        reject(new Error('Error de conexión con el servidor.'));
+      };
+
+      xhr.send(formData);
+    });
+  }
+
   if (invAudioUpload) {
     invAudioUpload.addEventListener('change', async (e) => {
       const file = e.target.files[0];
       if (!file) return;
 
       let uploadFile = file;
+      const progressModal = createAudioUploadProgressModal();
 
-      // Validate/Compress file size dynamically (limit set by backend config)
-      if (file.size > maxUploadSize) {
-        if (invAudioUploadStatus) {
-          invAudioUploadStatus.textContent = 'El archivo supera el límite. Iniciando compresión automática...';
-          invAudioUploadStatus.style.color = '#d4af37';
+      try {
+        // --- STEP 1: ANALYZE ---
+        progressModal.updateStep('analyze', 'active', 'Analizando pista de audio...');
+        progressModal.updateProgress(5);
+
+        const arrayBuffer = await file.arrayBuffer();
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        let audioBuffer;
+        try {
+          audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+        } catch (decodeErr) {
+          throw new Error('No se pudo decodificar el archivo de audio. Asegúrate de que sea un archivo de sonido válido.');
         }
 
-        try {
-          await loadLamejs();
-          const arrayBuffer = await file.arrayBuffer();
-          const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        progressModal.updateProgress(12);
+
+        const targetSampleRate = audioBuffer.sampleRate > 32000 ? 32000 : audioBuffer.sampleRate;
+        const offlineCtx = new OfflineAudioContext(
+          1, // mono
+          Math.round(audioBuffer.duration * targetSampleRate),
+          targetSampleRate
+        );
+
+        const bufferSource = offlineCtx.createBufferSource();
+        bufferSource.buffer = audioBuffer;
+        bufferSource.connect(offlineCtx.destination);
+        bufferSource.start();
+
+        const renderedBuffer = await offlineCtx.startRendering();
+        const duration = renderedBuffer.duration;
+        const optimalBitrate = getOptimalBitrate(maxUploadSize, duration);
+
+        progressModal.updateProgress(20);
+        progressModal.updateStep('analyze', 'completed');
+
+        // --- STEP 2: COMPRESS ---
+        if (file.size > maxUploadSize) {
+          progressModal.updateStep('compress', 'active', `Optimizando audio a ${optimalBitrate}kbps...`);
           
-          let audioBuffer;
-          try {
-            audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-          } catch (decodeErr) {
-            throw new Error('No se pudo decodificar el archivo de audio. Asegúrate de que sea un archivo de sonido válido.');
-          }
-
-          const targetSampleRate = audioBuffer.sampleRate > 32000 ? 32000 : audioBuffer.sampleRate;
-          const offlineCtx = new OfflineAudioContext(
-            1, // 1 channel (mono)
-            Math.round(audioBuffer.duration * targetSampleRate),
-            targetSampleRate
-          );
-
-          const bufferSource = offlineCtx.createBufferSource();
-          bufferSource.buffer = audioBuffer;
-          bufferSource.connect(offlineCtx.destination);
-          bufferSource.start();
-
-          const renderedBuffer = await offlineCtx.startRendering();
-          const duration = renderedBuffer.duration;
-          const optimalBitrate = getOptimalBitrate(maxUploadSize, duration);
-
-          if (invAudioUploadStatus) {
-            invAudioUploadStatus.textContent = `Optimizando audio (${optimalBitrate}kbps mono)...`;
-          }
-
+          await loadLamejs();
+          
           const channelData = renderedBuffer.getChannelData(0);
           const pcmData = floatTo16BitPCM(channelData);
           
@@ -1899,12 +2092,20 @@ document.addEventListener('DOMContentLoaded', () => {
           const mp3Data = [];
           const sampleBlockSize = 1152;
           
-          for (let i = 0; i < pcmData.length; i += sampleBlockSize) {
+          const totalLength = pcmData.length;
+          
+          for (let i = 0; i < totalLength; i += sampleBlockSize) {
             const chunk = pcmData.subarray(i, i + sampleBlockSize);
             const mp3buf = mp3encoder.encodeBuffer(chunk);
             if (mp3buf.length > 0) {
               mp3Data.push(mp3buf);
             }
+            
+            // Map 0-100% of compression loop to 20-60% of total ring progress
+            const compPercent = (i / totalLength) * 100;
+            const overallPercent = 20 + (compPercent * 0.4);
+            progressModal.updateProgress(overallPercent);
+            progressModal.updateStep('compress', 'active', `Optimizando audio: ${Math.round(compPercent)}%`);
           }
           
           const endBuf = mp3encoder.flush();
@@ -1921,58 +2122,47 @@ document.addEventListener('DOMContentLoaded', () => {
 
           uploadFile = compressedBlob;
           console.log(`Audio compressed successfully: ${file.size} bytes -> ${compressedBlob.size} bytes (Bitrate: ${optimalBitrate}kbps)`);
-        } catch (compressErr) {
-          console.error('Audio compression failed:', compressErr);
-          if (invAudioUploadStatus) {
-            invAudioUploadStatus.textContent = `Error de optimización: ${compressErr.message}`;
-            invAudioUploadStatus.style.color = '#ef4444';
-          }
-          invAudioUpload.value = '';
-          return;
-        }
-      }
-
-      const formData = new FormData();
-      formData.append('audio', uploadFile, 'audio.mp3');
-
-      if (invAudioUploadStatus) {
-        invAudioUploadStatus.textContent = 'Subiendo pista de audio...';
-        invAudioUploadStatus.style.color = '#d4af37';
-      }
-
-      try {
-        const response = await fetch(`/api/audio/upload?event=${encodeURIComponent(eventId)}`, {
-          method: 'POST',
-          body: formData
-        });
-
-        let data;
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-          data = await response.json();
+          
+          progressModal.updateProgress(60);
+          progressModal.updateStep('compress', 'completed');
         } else {
-          const text = await response.text();
-          if (response.status === 413) {
-            const maxMb = (maxUploadSize / (1024 * 1024)).toFixed(1);
-            throw new Error(`El archivo de audio es demasiado grande para el servidor (límite de ${maxMb}MB).`);
-          }
-          throw new Error(text.substring(0, 100) || `Error del servidor (código ${response.status})`);
+          // Compression not required
+          progressModal.updateStep('compress', 'active', 'Optimizando archivo (Compresión no requerida)...');
+          await new Promise(resolve => setTimeout(resolve, 600)); // small delay for visual rhythm
+          progressModal.updateProgress(60);
+          progressModal.updateStep('compress', 'completed');
         }
 
-        if (response.ok && data.success) {
-          if (invMusicInput) {
-            invMusicInput.value = data.url;
-            invMusicInput.dispatchEvent(new Event('input'));
-          }
-          if (invAudioUploadStatus) {
-            invAudioUploadStatus.textContent = '¡Pista subida con éxito!';
-            invAudioUploadStatus.style.color = '#10b981';
-          }
-        } else {
-          throw new Error(data.error || 'Error al subir el archivo');
+        // --- STEP 3: UPLOAD ---
+        progressModal.updateStep('upload', 'active', 'Subiendo pista de audio...');
+        const data = await uploadAudioWithProgress(uploadFile, progressModal, eventId);
+
+        // Success finalization
+        progressModal.updateStep('upload', 'completed');
+        progressModal.setSuccess();
+
+        if (invMusicInput) {
+          invMusicInput.value = data.url;
+          invMusicInput.dispatchEvent(new Event('input'));
+        }
+        if (invAudioUploadStatus) {
+          invAudioUploadStatus.textContent = '¡Pista subida con éxito!';
+          invAudioUploadStatus.style.color = '#10b981';
         }
       } catch (err) {
-        console.error('Audio upload error:', err);
+        console.error('Audio process/upload failed:', err);
+        
+        // Find which step failed and mark it
+        if (!document.getElementById('audio-up-step-analyze').classList.contains('completed')) {
+          progressModal.updateStep('analyze', 'error');
+        } else if (!document.getElementById('audio-up-step-compress').classList.contains('completed')) {
+          progressModal.updateStep('compress', 'error');
+        } else {
+          progressModal.updateStep('upload', 'error');
+        }
+
+        progressModal.setError(err.message);
+
         if (invAudioUploadStatus) {
           invAudioUploadStatus.textContent = `Error: ${err.message}`;
           invAudioUploadStatus.style.color = '#ef4444';
