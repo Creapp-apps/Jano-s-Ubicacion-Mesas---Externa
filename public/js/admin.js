@@ -490,7 +490,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const invBgEffect = document.getElementById('inv-bg-effect');
   const invWaxSeal = document.getElementById('inv-wax-seal');
   const invBgUrl = document.getElementById('inv-bg-url');
-  const invCoverUrl = document.getElementById('inv-cover-url');
   const invPhoto1 = document.getElementById('inv-photo-1');
   const invPhoto2 = document.getElementById('inv-photo-2');
   const invPhoto3 = document.getElementById('inv-photo-3');
@@ -1003,7 +1002,6 @@ document.addEventListener('DOMContentLoaded', () => {
           invWaxSeal.dispatchEvent(new Event('change'));
         }
         if (invBgUrl) invBgUrl.value = data.invitationBgUrl || '';
-        if (invCoverUrl) invCoverUrl.value = data.invitationCoverUrl || '';
         if (invPhoto1) invPhoto1.value = data.invitationPhoto1 || '';
         if (invPhoto2) invPhoto2.value = data.invitationPhoto2 || '';
         if (invPhoto3) invPhoto3.value = data.invitationPhoto3 || '';
@@ -1666,7 +1664,6 @@ document.addEventListener('DOMContentLoaded', () => {
       invitationBgEffect: invBgEffect ? invBgEffect.value : 'golden-dust',
       invitationWaxSealDesign: invWaxSeal ? invWaxSeal.value : 'rings',
       invitationBgUrl: invBgUrl ? invBgUrl.value.trim() : '',
-      invitationCoverUrl: invCoverUrl ? invCoverUrl.value.trim() : '',
       invitationPhoto1: invPhoto1 ? invPhoto1.value.trim() : '',
       invitationPhoto2: invPhoto2 ? invPhoto2.value.trim() : '',
       invitationPhoto3: invPhoto3 ? invPhoto3.value.trim() : '',
@@ -2435,7 +2432,6 @@ document.addEventListener('DOMContentLoaded', () => {
       invWaxSeal: invWaxSeal ? invWaxSeal.value : 'rings',
       invBgEffect: invBgEffect ? invBgEffect.value : 'none',
       invBgUrl: invBgUrl ? invBgUrl.value.trim() : '',
-      invCoverUrl: invCoverUrl ? invCoverUrl.value.trim() : '',
       invPhoto1: invPhoto1 ? invPhoto1.value.trim() : '',
       invPhoto2: invPhoto2 ? invPhoto2.value.trim() : '',
       invPhoto3: invPhoto3 ? invPhoto3.value.trim() : '',
@@ -2455,7 +2451,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- Real-time preview input listeners ---
   const inputsToListen = [
     invThemeFont, invThemeColor, invBgEffect, invWaxSeal,
-    invBgUrl, invCoverUrl, invTitleInput, invDateOnlyInput, invTimeOnlyInput,
+    invBgUrl, invTitleInput, invDateOnlyInput, invTimeOnlyInput,
     invPhoto1, invPhoto2, invPhoto3, invPhoto4, invPhoto5
   ];
 
@@ -3069,20 +3065,38 @@ document.addEventListener('DOMContentLoaded', () => {
       const fullName = `${g.firstName} ${g.lastName}`.trim().toLowerCase();
       const rsvp = allRsvps.find(r => r.name.trim().toLowerCase() === fullName);
       
+      let status = 'pending';
+      let statusLabel = '⏳ Pendiente';
       let rowClass = 'row-pending';
       if (rsvp) {
+        status = rsvp.attending ? 'confirmed' : 'declined';
+        statusLabel = rsvp.attending ? '✅ Asistirá' : '❌ No Asistirá';
         rowClass = rsvp.attending ? 'row-confirmed' : 'row-declined';
       }
 
       let rsvpStatusHtml = `
-        <select class="form-control-admin select-rsvp-status" 
-                style="padding: 6px 12px; border-radius: 12px; font-size: 0.75rem; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; cursor: pointer; font-family: 'Montserrat', sans-serif; text-align: center; text-align-last: center;"
-                data-guest-name="${g.firstName} ${g.lastName}"
-                data-rsvp-id="${rsvp ? rsvp.id : ''}">
-          <option value="pending" style="background: #111; color: var(--text-muted);" ${!rsvp ? 'selected' : ''}>⏳ Pendiente</option>
-          <option value="confirmed" style="background: #111; color: #2ec4b6;" ${rsvp && rsvp.attending ? 'selected' : ''}>✅ Asistirá</option>
-          <option value="declined" style="background: #111; color: var(--error);" ${rsvp && !rsvp.attending ? 'selected' : ''}>❌ No Asistirá</option>
-        </select>
+        <div class="custom-rsvp-dropdown">
+          <button type="button" class="rsvp-dropdown-trigger" 
+                  data-guest-name="${escapeHtml(g.firstName + ' ' + g.lastName)}"
+                  data-rsvp-id="${rsvp ? rsvp.id : ''}">
+            <span>${statusLabel}</span>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="transition: transform 0.2s; pointer-events: none;"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="custom-rsvp-dropdown-menu">
+            <div class="rsvp-dropdown-item ${status === 'pending' ? 'selected' : ''}" data-value="pending">
+              <span class="check-icon">${status === 'pending' ? '✓' : ''}</span>
+              <span>⏳ Pendiente</span>
+            </div>
+            <div class="rsvp-dropdown-item ${status === 'confirmed' ? 'selected' : ''}" data-value="confirmed">
+              <span class="check-icon">${status === 'confirmed' ? '✓' : ''}</span>
+              <span>✅ Asistirá</span>
+            </div>
+            <div class="rsvp-dropdown-item ${status === 'declined' ? 'selected' : ''}" data-value="declined">
+              <span class="check-icon">${status === 'declined' ? '✓' : ''}</span>
+              <span>❌ No Asistirá</span>
+            </div>
+          </div>
+        </div>
       `;
 
       return `
@@ -3147,16 +3161,58 @@ document.addEventListener('DOMContentLoaded', () => {
     renderInvitadosTable();
   });
 
-  // Change event listener for interactive RSVP status update
-  document.addEventListener('change', (e) => {
-    if (e.target && e.target.classList.contains('select-rsvp-status')) {
-      const select = e.target;
-      const guestName = select.getAttribute('data-guest-name');
-      const rsvpId = select.getAttribute('data-rsvp-id');
-      const newValue = select.value;
+  // Click event listener for interactive RSVP custom dropdown update
+  document.addEventListener('click', (e) => {
+    // 1. Toggle custom RSVP dropdown
+    const trigger = e.target.closest('.rsvp-dropdown-trigger');
+    if (trigger) {
+      e.preventDefault();
+      e.stopPropagation();
+      const dropdownMenu = trigger.nextElementSibling;
+      const isVisible = dropdownMenu.style.display === 'block';
+      
+      // Close all other rsvp dropdowns first
+      document.querySelectorAll('.custom-rsvp-dropdown-menu').forEach(menu => {
+        menu.style.display = 'none';
+      });
+      document.querySelectorAll('.rsvp-dropdown-trigger svg').forEach(svg => {
+        svg.style.transform = 'rotate(0deg)';
+      });
+
+      if (!isVisible) {
+        dropdownMenu.style.display = 'block';
+        const svg = trigger.querySelector('svg');
+        if (svg) svg.style.transform = 'rotate(180deg)';
+      }
+      return;
+    }
+
+    // 2. Handle item selection inside dropdown
+    const rsvpItem = e.target.closest('.rsvp-dropdown-item');
+    if (rsvpItem) {
+      e.preventDefault();
+      e.stopPropagation();
+      const dropdownMenu = rsvpItem.parentNode;
+      const trigger = dropdownMenu.previousElementSibling;
+      const guestName = trigger.getAttribute('data-guest-name');
+      const rsvpId = trigger.getAttribute('data-rsvp-id');
+      const newValue = rsvpItem.getAttribute('data-value');
+      
+      dropdownMenu.style.display = 'none';
+      const svg = trigger.querySelector('svg');
+      if (svg) svg.style.transform = 'rotate(0deg)';
 
       updateGuestRsvpStatus(guestName, rsvpId, newValue);
+      return;
     }
+
+    // 3. Close all dropdowns when clicking outside
+    document.querySelectorAll('.custom-rsvp-dropdown-menu').forEach(menu => {
+      menu.style.display = 'none';
+    });
+    document.querySelectorAll('.rsvp-dropdown-trigger svg').forEach(svg => {
+      svg.style.transform = 'rotate(0deg)';
+    });
   });
 
   function updateGuestRsvpStatus(guestName, rsvpId, statusValue) {
@@ -3630,21 +3686,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // Sync Cover image thumbnail
-    const coverInput = document.getElementById('inv-cover-url');
-    const coverThumb = document.getElementById('prev-thumb-cover');
-    const coverIcon = document.getElementById('prev-icon-cover');
-    if (coverInput && coverThumb && coverIcon) {
-      const val = coverInput.value.trim();
-      if (val) {
-        coverThumb.src = val;
-        coverThumb.style.display = 'block';
-        coverIcon.style.display = 'none';
-      } else {
-        coverThumb.style.display = 'none';
-        coverIcon.style.display = 'block';
-      }
-    }
+    // Cover image sync is deprecated
   };
 
   let previewActiveCarouselIndex = 0;
@@ -3813,8 +3855,6 @@ document.addEventListener('DOMContentLoaded', () => {
       let photoName = '';
       if (currentUploadPhotoId === 'bg') {
         photoName = 'Imagen de Fondo';
-      } else if (currentUploadPhotoId === 'cover') {
-        photoName = 'Imagen del Sobre';
       } else {
         photoName = currentUploadPhotoId === '1' ? 'Foto 1 (Principal)' : `Foto ${currentUploadPhotoId}`;
       }
@@ -4082,8 +4122,6 @@ document.addEventListener('DOMContentLoaded', () => {
       let targetInput;
       if (currentUploadPhotoId === 'bg') {
         targetInput = document.getElementById('inv-bg-url');
-      } else if (currentUploadPhotoId === 'cover') {
-        targetInput = document.getElementById('inv-cover-url');
       } else {
         targetInput = document.getElementById(`inv-photo-${currentUploadPhotoId}`);
       }
