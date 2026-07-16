@@ -1806,23 +1806,134 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.addEventListener('click', saveInvitationConfig);
   });
 
+  // Dynamic audio compression helpers
+  function loadLamejs() {
+    return new Promise((resolve, reject) => {
+      if (window.lamejs) {
+        resolve();
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/@breezystack/lamejs@1.2.7/lamejs.iife.js';
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error('No se pudo cargar la librería de compresión de audio.'));
+      document.head.appendChild(script);
+    });
+  }
+
+  function floatTo16BitPCM(input) {
+    const output = new Int16Array(input.length);
+    for (let i = 0; i < input.length; i++) {
+      const s = Math.max(-1, Math.min(1, input[i]));
+      output[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+    }
+    return output;
+  }
+
+  function getOptimalBitrate(maxBytes, duration) {
+    const standardBitrates = [32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320];
+    const maxBits = (maxBytes * 0.92) * 8; // 8% safety margin for MP3 headers
+    const maxKbps = maxBits / (duration * 1000);
+    
+    let optimal = 32;
+    for (const rate of standardBitrates) {
+      if (rate <= maxKbps) {
+        optimal = rate;
+      } else {
+        break;
+      }
+    }
+    return optimal;
+  }
+
   if (invAudioUpload) {
     invAudioUpload.addEventListener('change', async (e) => {
       const file = e.target.files[0];
       if (!file) return;
 
-      // Validate file size dynamically (limit set by backend config)
+      let uploadFile = file;
+
+      // Validate/Compress file size dynamically (limit set by backend config)
       if (file.size > maxUploadSize) {
         if (invAudioUploadStatus) {
-          const maxMb = (maxUploadSize / (1024 * 1024)).toFixed(1);
-          invAudioUploadStatus.textContent = `Error: El archivo supera el límite de ${maxMb}MB.`;
-          invAudioUploadStatus.style.color = '#ef4444';
+          invAudioUploadStatus.textContent = 'El archivo supera el límite. Iniciando compresión automática...';
+          invAudioUploadStatus.style.color = '#d4af37';
         }
-        return;
+
+        try {
+          await loadLamejs();
+          const arrayBuffer = await file.arrayBuffer();
+          const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          
+          let audioBuffer;
+          try {
+            audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+          } catch (decodeErr) {
+            throw new Error('No se pudo decodificar el archivo de audio. Asegúrate de que sea un archivo de sonido válido.');
+          }
+
+          const targetSampleRate = audioBuffer.sampleRate > 32000 ? 32000 : audioBuffer.sampleRate;
+          const offlineCtx = new OfflineAudioContext(
+            1, // 1 channel (mono)
+            Math.round(audioBuffer.duration * targetSampleRate),
+            targetSampleRate
+          );
+
+          const bufferSource = offlineCtx.createBufferSource();
+          bufferSource.buffer = audioBuffer;
+          bufferSource.connect(offlineCtx.destination);
+          bufferSource.start();
+
+          const renderedBuffer = await offlineCtx.startRendering();
+          const duration = renderedBuffer.duration;
+          const optimalBitrate = getOptimalBitrate(maxUploadSize, duration);
+
+          if (invAudioUploadStatus) {
+            invAudioUploadStatus.textContent = `Optimizando audio (${optimalBitrate}kbps mono)...`;
+          }
+
+          const channelData = renderedBuffer.getChannelData(0);
+          const pcmData = floatTo16BitPCM(channelData);
+          
+          const mp3encoder = new lamejs.Mp3Encoder(1, targetSampleRate, optimalBitrate);
+          const mp3Data = [];
+          const sampleBlockSize = 1152;
+          
+          for (let i = 0; i < pcmData.length; i += sampleBlockSize) {
+            const chunk = pcmData.subarray(i, i + sampleBlockSize);
+            const mp3buf = mp3encoder.encodeBuffer(chunk);
+            if (mp3buf.length > 0) {
+              mp3Data.push(mp3buf);
+            }
+          }
+          
+          const endBuf = mp3encoder.flush();
+          if (endBuf.length > 0) {
+            mp3Data.push(endBuf);
+          }
+
+          const compressedBlob = new Blob(mp3Data, { type: 'audio/mp3' });
+          
+          if (compressedBlob.size > maxUploadSize) {
+            const maxMb = (maxUploadSize / (1024 * 1024)).toFixed(1);
+            throw new Error(`El archivo es demasiado largo (${Math.round(duration)}s) para comprimirse bajo el límite de ${maxMb}MB.`);
+          }
+
+          uploadFile = compressedBlob;
+          console.log(`Audio compressed successfully: ${file.size} bytes -> ${compressedBlob.size} bytes (Bitrate: ${optimalBitrate}kbps)`);
+        } catch (compressErr) {
+          console.error('Audio compression failed:', compressErr);
+          if (invAudioUploadStatus) {
+            invAudioUploadStatus.textContent = `Error de optimización: ${compressErr.message}`;
+            invAudioUploadStatus.style.color = '#ef4444';
+          }
+          invAudioUpload.value = '';
+          return;
+        }
       }
 
       const formData = new FormData();
-      formData.append('audio', file);
+      formData.append('audio', uploadFile, 'audio.mp3');
 
       if (invAudioUploadStatus) {
         invAudioUploadStatus.textContent = 'Subiendo pista de audio...';
