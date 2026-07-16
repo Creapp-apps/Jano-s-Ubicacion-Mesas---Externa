@@ -210,7 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   window.switchSubTab = function(subTabId) {
-    const subtabs = ['informacion', 'diseno', 'regalos', 'confirmaciones', 'respuestas', 'invitados'];
+    const subtabs = ['informacion', 'diseno', 'fotos-inv', 'regalos', 'confirmaciones', 'respuestas', 'invitados'];
     subtabs.forEach(t => {
       const btn = document.getElementById(`subtab-btn-${t}`);
       const wrapper = document.getElementById(`subtab-${t}`);
@@ -971,6 +971,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Update real-time preview after population
         updateRealTimePreview();
+        if (window.syncPhotoPreviewImages) {
+          window.syncPhotoPreviewImages();
+        }
+        const prevTitle = document.getElementById('prev-event-title');
+        if (prevTitle) {
+          prevTitle.textContent = data.eventTitle || 'JANO\'S EVENTOS';
+        }
 
         const driveLoadingContainer = document.getElementById('drive-loading-container');
         let pollCount = 0;
@@ -2306,6 +2313,9 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   function updateRealTimePreview() {
+    if (window.syncPhotoPreviewImages) {
+      window.syncPhotoPreviewImages();
+    }
     if (!previewIframe || !isIframeLoaded) return;
 
     const configPayload = {
@@ -3454,5 +3464,186 @@ document.addEventListener('DOMContentLoaded', () => {
         showToast('Error al copiar el enlace', 'error');
       });
   };
+
+  // --- Administrative Photo Carousel (Live 3D Preview) ---
+  const defaultPhotos = [
+    "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?q=80&w=600",
+    "https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=600",
+    "https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?q=80&w=600",
+    "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?q=80&w=600",
+    "https://images.unsplash.com/photo-1504196606672-aef5c9cefc92?q=80&w=600"
+  ];
+
+  window.syncPhotoPreviewImages = function() {
+    for (let i = 1; i <= 5; i++) {
+      const input = document.getElementById(`inv-photo-${i}`);
+      const thumbImg = document.getElementById(`prev-thumb-${i}`);
+      const thumbIcon = document.getElementById(`prev-icon-${i}`);
+      const previewImg = document.getElementById(`preview-carousel-img-${i - 1}`);
+      
+      const val = input ? input.value.trim() : '';
+      const displayUrl = val || defaultPhotos[i - 1];
+      
+      // Update Thumbnail
+      if (thumbImg && thumbIcon) {
+        if (val) {
+          thumbImg.src = val;
+          thumbImg.style.display = 'block';
+          thumbIcon.style.display = 'none';
+        } else {
+          thumbImg.style.display = 'none';
+          thumbIcon.style.display = 'block';
+        }
+      }
+      
+      // Update Preview Image
+      if (previewImg) {
+        previewImg.src = displayUrl;
+      }
+    }
+  };
+
+  let previewActiveCarouselIndex = 0;
+  const previewTotalCarouselItems = 5;
+  let previewCarouselItems = [];
+  let previewCarouselDots = [];
+  
+  function initPreviewCarousel() {
+    previewCarouselItems = Array.from(document.querySelectorAll('#preview-carousel-track .carousel-item'));
+    previewCarouselDots = Array.from(document.querySelectorAll('#preview-carousel-dots-container .carousel-dot'));
+    
+    updatePreviewCarousel();
+    
+    const prevBtn = document.getElementById('preview-carousel-prev-btn');
+    const nextBtn = document.getElementById('preview-carousel-next-btn');
+    
+    if (prevBtn) {
+      prevBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        previewActiveCarouselIndex = (previewActiveCarouselIndex - 1 + previewTotalCarouselItems) % previewTotalCarouselItems;
+        updatePreviewCarousel();
+      });
+    }
+    
+    if (nextBtn) {
+      nextBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        previewActiveCarouselIndex = (previewActiveCarouselIndex + 1) % previewTotalCarouselItems;
+        updatePreviewCarousel();
+      });
+    }
+    
+    previewCarouselDots.forEach((dot, idx) => {
+      dot.addEventListener('click', (e) => {
+        e.preventDefault();
+        previewActiveCarouselIndex = idx;
+        updatePreviewCarousel();
+      });
+    });
+    
+    previewCarouselItems.forEach((item, idx) => {
+      item.addEventListener('click', (e) => {
+        e.preventDefault();
+        previewActiveCarouselIndex = idx;
+        updatePreviewCarousel();
+      });
+    });
+
+    // Swipe / Drag interactive control for preview
+    const previewContainer = document.querySelector('.carousel-preview-card .carousel-container');
+    if (previewContainer) {
+      let startX = 0;
+      let isDragging = false;
+      const dragThreshold = 40;
+      
+      function handleStart(e) {
+        isDragging = true;
+        startX = e.pageX || (e.touches && e.touches[0] ? e.touches[0].pageX : 0);
+      }
+      
+      function handleMove(e) {
+        if (!isDragging) return;
+        const currentX = e.pageX || (e.touches && e.touches[0] ? e.touches[0].pageX : 0);
+        if (!currentX) return;
+        
+        const diffX = currentX - startX;
+        
+        if (Math.abs(diffX) > dragThreshold) {
+          if (diffX > 0) {
+            previewActiveCarouselIndex = (previewActiveCarouselIndex - 1 + previewTotalCarouselItems) % previewTotalCarouselItems;
+          } else {
+            previewActiveCarouselIndex = (previewActiveCarouselIndex + 1) % previewTotalCarouselItems;
+          }
+          updatePreviewCarousel();
+          startX = currentX;
+          isDragging = false;
+        }
+      }
+      
+      function handleEnd() {
+        isDragging = false;
+      }
+      
+      previewContainer.addEventListener('mousedown', handleStart);
+      previewContainer.addEventListener('mousemove', handleMove);
+      window.addEventListener('mouseup', handleEnd);
+      
+      previewContainer.addEventListener('touchstart', handleStart, { passive: true });
+      previewContainer.addEventListener('touchmove', handleMove, { passive: true });
+      previewContainer.addEventListener('touchend', handleEnd, { passive: true });
+    }
+  }
+
+  function updatePreviewCarousel() {
+    if (!previewCarouselItems.length) return;
+    previewCarouselItems.forEach((item, index) => {
+      let diff = index - previewActiveCarouselIndex;
+      if (diff < -2) diff += previewTotalCarouselItems;
+      if (diff > 2) diff -= previewTotalCarouselItems;
+      
+      const absDiff = Math.abs(diff);
+      
+      const xVal = diff * 70; 
+      const zVal = -absDiff * 80; 
+      const rYVal = diff * -30;
+      const scaleVal = 1 - absDiff * 0.18;
+      const opacityVal = absDiff > 2 ? 0 : (1 - absDiff * 0.4);
+      
+      if (window.gsap) {
+        gsap.to(item, {
+          x: xVal,
+          z: zVal,
+          rotationY: rYVal,
+          scale: scaleVal,
+          opacity: opacityVal,
+          zIndex: 10 - absDiff,
+          duration: 0.6,
+          ease: 'power2.out'
+        });
+      } else {
+        item.style.transform = `translateX(${xVal}px) translateZ(${zVal}px) rotateY(${rYVal}deg) scale(${scaleVal})`;
+        item.style.opacity = opacityVal;
+        item.style.zIndex = 10 - absDiff;
+      }
+    });
+    
+    previewCarouselDots.forEach((dot, index) => {
+      if (index === previewActiveCarouselIndex) dot.classList.add('active');
+      else dot.classList.remove('active');
+    });
+  }
+
+  // Initialize carousel on DOM load
+  initPreviewCarousel();
+
+  // Watch for title updates specifically to reflect in the preview card
+  if (invTitleInput) {
+    invTitleInput.addEventListener('input', () => {
+      const prevTitle = document.getElementById('prev-event-title');
+      if (prevTitle) {
+        prevTitle.textContent = invTitleInput.value.trim() || 'JANO\'S EVENTOS';
+      }
+    });
+  }
 });
 
