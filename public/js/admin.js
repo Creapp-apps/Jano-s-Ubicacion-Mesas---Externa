@@ -2425,10 +2425,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const fileDropZoneInvitados = document.getElementById('file-drop-zone-invitados');
   const fileInputInvitados = document.getElementById('excel-file-input-invitados');
   const btnClearDbInvitados = document.getElementById('btn-clear-db-invitados');
+  const btnExportExcelInvitados = document.getElementById('btn-export-excel-invitados');
 
   if (invitadosGuestSearch) {
     invitadosGuestSearch.addEventListener('input', () => {
       renderInvitadosTable();
+    });
+  }
+
+  if (btnExportExcelInvitados) {
+    btnExportExcelInvitados.addEventListener('click', () => {
+      window.location.href = `/api/admin/export-guests?event=${encodeURIComponent(eventId)}`;
     });
   }
 

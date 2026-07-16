@@ -983,6 +983,195 @@ app.delete('/api/guests/:index', requireAuth, async (req, res) => {
   }
 });
 
+// API: Export Guests to Excel (Admin)
+app.get('/api/admin/export-guests', requireAuth, async (req, res) => {
+  try {
+    const eventId = req.query.event || 'default';
+    const guests = await db.getGuests(eventId);
+    const rsvps = await db.getRsvps(eventId);
+
+    const formatTableDisplay = (table) => {
+      if (!table) return 'Sin Mesa';
+      const t = String(table).trim();
+      if (t.toLowerCase() === 'sin mesa') return 'Sin Mesa';
+      if (/^mesa\b/i.test(t)) {
+        return t.charAt(0).toUpperCase() + t.slice(1);
+      }
+      return `Mesa ${t}`;
+    };
+
+    // Get dynamic event title from config
+    let eventTitle = "JANO'S EVENTOS - LISTADO FINAL DE INVITADOS";
+    try {
+      const configTitle = await db.getEventTitle(eventId);
+      eventTitle = `JANO'S EVENTOS - LISTADO DE INVITADOS: ${configTitle.toUpperCase()}`;
+    } catch (err) {
+      // Ignore
+    }
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Invitados & Confirmaciones');
+
+    worksheet.views = [{ showGridLines: true }];
+
+    const columnsConfig = [
+      { header: 'Nombre', key: 'firstName', width: 20 },
+      { header: 'Apellido', key: 'lastName', width: 20 },
+      { header: 'Mesa', key: 'table', width: 15 },
+      { header: 'Confirmación', key: 'confirmation', width: 18 },
+      { header: 'Cant. Acompañantes', key: 'companionsCount', width: 20 },
+      { header: 'Nombres Acompañantes', key: 'companionsNames', width: 30 },
+      { header: 'Restricciones Alimenticias', key: 'dietary', width: 30 },
+      { header: 'Canción Sugerida', key: 'song', width: 28 },
+      { header: 'Enlace de Invitación', key: 'url', width: 45 }
+    ];
+
+    worksheet.columns = columnsConfig.map(col => ({ key: col.key, width: col.width }));
+
+    // Row 1: Merged Title
+    const totalCols = columnsConfig.length;
+    const endColLetter = String.fromCharCode(65 + totalCols - 1); // e.g. 'I'
+    worksheet.mergeCells(`A1:${endColLetter}1`);
+    const titleRow = worksheet.getRow(1);
+    titleRow.height = 45;
+
+    const titleCell = worksheet.getCell('A1');
+    titleCell.value = eventTitle;
+    titleCell.font = {
+      name: 'Segoe UI',
+      family: 2,
+      size: 14,
+      bold: true,
+      color: { argb: 'FFD4AF37' } // Gold
+    };
+    titleCell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF1A1A1A' } // Charcoal Dark
+    };
+    titleCell.alignment = { vertical: 'middle', horizontal: 'center' };
+
+    // Row 2: Headers
+    const headerRow = worksheet.getRow(2);
+    headerRow.height = 28;
+
+    const colLetters = Array.from({ length: totalCols }, (_, i) => String.fromCharCode(65 + i));
+    
+    colLetters.forEach((col, idx) => {
+      const cell = worksheet.getCell(`${col}2`);
+      cell.value = columnsConfig[idx].header;
+      cell.font = {
+        name: 'Segoe UI',
+        size: 11,
+        bold: true,
+        color: { argb: 'FFD4AF37' } // Gold
+      };
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF2A2A2A' } // Charcoal Medium
+      };
+      cell.alignment = { vertical: 'middle', horizontal: 'center' };
+      cell.border = {
+        top: { style: 'thin', color: { argb: 'FF444444' } },
+        left: { style: 'thin', color: { argb: 'FF444444' } },
+        bottom: { style: 'medium', color: { argb: 'FFD4AF37' } },
+        right: { style: 'thin', color: { argb: 'FF444444' } }
+      };
+    });
+
+    // Populate data
+    guests.forEach((g, index) => {
+      const rowIndex = index + 3;
+      const row = worksheet.getRow(rowIndex);
+      row.height = 22;
+
+      const fullName = `${g.firstName} ${g.lastName}`.trim().toLowerCase();
+      const rsvp = rsvps.find((r) => r.name.trim().toLowerCase() === fullName);
+
+      let confirmationStatus = 'Pendiente';
+      let companionsCount = 0;
+      let companionsNames = '';
+      let dietaryRestrictions = '';
+      let songSuggestion = '';
+
+      if (rsvp) {
+        confirmationStatus = rsvp.attending ? 'Asistirá' : 'No asistirá';
+        companionsCount = rsvp.companionsCount || 0;
+        companionsNames = rsvp.companionsNames || '';
+        dietaryRestrictions = rsvp.dietaryRestrictions || '';
+        songSuggestion = rsvp.suggestedSong || '';
+      }
+
+      // Generate the personal URL
+      const host = req.get('host');
+      const protocol = req.protocol;
+      const personalUrl = `${protocol}://${host}/invitacion.html?event=${encodeURIComponent(eventId)}&n=${encodeURIComponent(g.firstName + ' ' + g.lastName)}`;
+
+      worksheet.getCell(`A${rowIndex}`).value = g.firstName || '';
+      worksheet.getCell(`B${rowIndex}`).value = g.lastName || '';
+      worksheet.getCell(`C${rowIndex}`).value = formatTableDisplay(g.table);
+      worksheet.getCell(`D${rowIndex}`).value = confirmationStatus;
+      worksheet.getCell(`E${rowIndex}`).value = companionsCount;
+      worksheet.getCell(`F${rowIndex}`).value = companionsNames;
+      worksheet.getCell(`G${rowIndex}`).value = dietaryRestrictions;
+      worksheet.getCell(`H${rowIndex}`).value = songSuggestion;
+      worksheet.getCell(`I${rowIndex}`).value = personalUrl;
+
+      // Color coding for confirmation status cell
+      const confCell = worksheet.getCell(`D${rowIndex}`);
+      if (confirmationStatus === 'Asistirá') {
+        confCell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF1B4332' } };
+        confCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD8F3DC' } }; // Light green
+      } else if (confirmationStatus === 'No asistirá') {
+        confCell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF7209B7' } };
+        confCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0E6FF' } }; // Light purple
+      } else {
+        confCell.font = { name: 'Segoe UI', size: 10, color: { argb: 'FF555555' } };
+      }
+
+      colLetters.forEach(col => {
+        const cell = worksheet.getCell(`${col}${rowIndex}`);
+        
+        // If it's not the confirmation status cell (which has its own styling), apply zebra pattern
+        if (col !== 'D') {
+          cell.font = {
+            name: 'Segoe UI',
+            size: 10,
+            color: { argb: 'FF333333' }
+          };
+
+          const isEven = rowIndex % 2 === 0;
+          cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: isEven ? 'FFF9F9F9' : 'FFFFFFFF' }
+          };
+        }
+
+        cell.alignment = { vertical: 'middle', horizontal: col === 'F' || col === 'G' || col === 'I' ? 'left' : 'center' };
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FFDCDCDC' } },
+          left: { style: 'thin', color: { argb: 'FFDCDCDC' } },
+          bottom: { style: 'thin', color: { argb: 'FFDCDCDC' } },
+          right: { style: 'thin', color: { argb: 'FFDCDCDC' } }
+        };
+      });
+    });
+
+    res.setHeader('Content-Disposition', `attachment; filename="invitados_${eventId}_final.xlsx"`);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    console.error('Error generating Excel:', error);
+    res.status(500).json({ error: 'Error al generar el archivo Excel' });
+  }
+});
+
+
+
 
 // API: Upload Excel or CSV file
 app.post('/api/upload', requireAuth, upload.single('file'), (req, res) => {
