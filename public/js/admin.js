@@ -149,6 +149,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (tabTrivia) tabTrivia.classList.remove('active');
       stopPhotoPolling();
       stopTriviaPolling();
+      loadStats();
+      loadRsvps();
+      loadGuests();
     } else if (tabId === 'fotos') {
       if (tabBtnMesas) tabBtnMesas.classList.remove('active');
       if (tabBtnFotos) tabBtnFotos.classList.add('active');
@@ -602,8 +605,6 @@ document.addEventListener('DOMContentLoaded', () => {
     switchTab('trivia');
   } else {
     switchTab('mesas');
-    loadStats();
-    loadGuests();
   }
 
   function openGuestListModal() {
@@ -1080,7 +1081,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Render guest list table (with search filtering)
   function renderGuestsTable() {
-    const filter = adminGuestSearch.value.trim().toLowerCase();
+    if (!guestsTableBody) return;
+    const filter = adminGuestSearch ? adminGuestSearch.value.trim().toLowerCase() : '';
     
     // Find confirmed guests (RSVPs with attending = true)
     const confirmedNames = new Set(
@@ -1519,6 +1521,8 @@ document.addEventListener('DOMContentLoaded', () => {
         renderRsvpStats();
         renderRsvpTable();
         renderInvitadosTable();
+        renderGuestsTable();
+        renderModalGuestList();
       })
       .catch(err => {
         console.error('Error fetching RSVPs:', err);
