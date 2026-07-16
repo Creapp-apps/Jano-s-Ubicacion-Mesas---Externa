@@ -1804,6 +1804,8 @@ app.post('/api/trivia/control', requireAuth, async (req, res) => {
   } else {
     res.status(400).json({ error: 'Acción no válida' });
   }
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('[Error Handler]', err);
