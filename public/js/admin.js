@@ -2217,15 +2217,17 @@ document.addEventListener('DOMContentLoaded', () => {
         navigator.clipboard.writeText(invitationPublicUrl.value).then(() => {
           const prevText = btnCopyInvitationUrl.textContent;
           btnCopyInvitationUrl.textContent = '¡Copiado!';
-          btnCopyInvitationUrl.style.background = 'var(--accent-gold)';
+          btnCopyInvitationUrl.style.background = 'var(--success)';
           btnCopyInvitationUrl.style.color = '#0b0b0c';
+          btnCopyInvitationUrl.style.borderColor = 'var(--success)';
           
           if (navigator.vibrate) navigator.vibrate(40);
           
           setTimeout(() => {
             btnCopyInvitationUrl.textContent = prevText;
-            btnCopyInvitationUrl.style.background = 'var(--accent-gold)';
-            btnCopyInvitationUrl.style.color = 'black';
+            btnCopyInvitationUrl.style.background = 'var(--gold-gradient)';
+            btnCopyInvitationUrl.style.color = '#0b0b0c';
+            btnCopyInvitationUrl.style.borderColor = 'var(--gold-primary)';
           }, 2000);
         });
       }
