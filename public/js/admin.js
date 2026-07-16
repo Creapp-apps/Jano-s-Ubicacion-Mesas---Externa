@@ -1883,11 +1883,11 @@ document.addEventListener('DOMContentLoaded', () => {
         </li>
         <li class="audio-up-step" id="audio-up-step-compress">
           <span class="audio-up-step-icon"></span>
-          <span class="audio-up-step-label">Optimizando y comprimiendo</span>
+          <span class="audio-up-step-label">Subiendo tu pista</span>
         </li>
         <li class="audio-up-step" id="audio-up-step-upload">
           <span class="audio-up-step-icon"></span>
-          <span class="audio-up-step-label">Subiendo al servidor</span>
+          <span class="audio-up-step-label">Finalizando</span>
         </li>
       </ul>
     `;
@@ -1996,7 +1996,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const uploadPercent = (e.loaded / e.total) * 100;
           const overallPercent = 60 + (uploadPercent * 0.4);
           progressModal.updateProgress(overallPercent);
-          progressModal.updateStep('upload', 'active', `Subiendo archivo: ${Math.round(uploadPercent)}%`);
+          progressModal.updateStep('upload', 'active', `Finalizando: ${Math.round(uploadPercent)}%`);
         }
       });
 
@@ -2081,7 +2081,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // --- STEP 2: COMPRESS ---
         if (file.size > maxUploadSize) {
-          progressModal.updateStep('compress', 'active', `Optimizando audio a ${optimalBitrate}kbps...`);
+          progressModal.updateStep('compress', 'active', 'Subiendo tu pista...');
           
           await loadLamejs();
           
@@ -2105,7 +2105,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const compPercent = (i / totalLength) * 100;
             const overallPercent = 20 + (compPercent * 0.4);
             progressModal.updateProgress(overallPercent);
-            progressModal.updateStep('compress', 'active', `Optimizando audio: ${Math.round(compPercent)}%`);
+            progressModal.updateStep('compress', 'active', `Subiendo tu pista: ${Math.round(compPercent)}%`);
           }
           
           const endBuf = mp3encoder.flush();
@@ -2127,14 +2127,14 @@ document.addEventListener('DOMContentLoaded', () => {
           progressModal.updateStep('compress', 'completed');
         } else {
           // Compression not required
-          progressModal.updateStep('compress', 'active', 'Optimizando archivo (Compresión no requerida)...');
+          progressModal.updateStep('compress', 'active', 'Subiendo tu pista...');
           await new Promise(resolve => setTimeout(resolve, 600)); // small delay for visual rhythm
           progressModal.updateProgress(60);
           progressModal.updateStep('compress', 'completed');
         }
 
         // --- STEP 3: UPLOAD ---
-        progressModal.updateStep('upload', 'active', 'Subiendo pista de audio...');
+        progressModal.updateStep('upload', 'active', 'Finalizando...');
         const data = await uploadAudioWithProgress(uploadFile, progressModal, eventId);
 
         // Success finalization
