@@ -6,14 +6,70 @@ document.addEventListener('DOMContentLoaded', () => {
     btnBackToPortal.href = `/event.html?event=${encodeURIComponent(eventId)}`;
   }
 
+  function showToast(type, title, message, duration = 3000) {
+    const existingToast = document.getElementById('floating-toast');
+    if (existingToast) {
+      existingToast.remove();
+    }
+    
+    const toast = document.createElement('div');
+    toast.id = 'floating-toast';
+    toast.className = 'toast-notification';
+    
+    let iconHtml = '';
+    if (type === 'loading') {
+      iconHtml = `
+        <div class="toast-icon-wrapper">
+          <div class="toast-spinner"></div>
+        </div>
+      `;
+    } else if (type === 'success') {
+      iconHtml = `
+        <div class="toast-icon-wrapper">
+          <svg class="toast-checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+            <circle class="toast-checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+            <path class="toast-checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+          </svg>
+        </div>
+      `;
+    } else if (type === 'error') {
+      iconHtml = `
+        <div class="toast-icon-wrapper">
+          <svg class="toast-error-cross" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+            <circle class="toast-error-circle" cx="26" cy="26" r="25" fill="none"/>
+            <path class="toast-error-line" fill="none" d="M16 16l20 20M36 16L16 36"/>
+          </svg>
+        </div>
+      `;
+    }
+    
+    toast.innerHTML = `
+      ${iconHtml}
+      ${title ? `<div class="toast-title">${title}</div>` : ''}
+      <div class="toast-message">${message}</div>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    toast.offsetHeight; // Force reflow
+    toast.classList.add('active');
+    
+    if (duration && type !== 'loading') {
+      setTimeout(() => {
+        toast.classList.remove('active');
+        setTimeout(() => {
+          if (toast.parentNode) {
+            toast.remove();
+          }
+        }, 400);
+      }, duration);
+    }
+  }
+
   // Elements
-  const fileDropZone = document.getElementById('file-drop-zone');
-  const fileInput = document.getElementById('excel-file-input');
-  const uploadStatus = document.getElementById('upload-status');
   const statGuests = document.getElementById('stat-guests');
   const statTables = document.getElementById('stat-tables');
   const tablesBreakdownList = document.getElementById('tables-breakdown-list');
-  const btnClearDb = document.getElementById('btn-clear-db');
   const qrCodeContainer = document.getElementById('qr-code-container');
   const btnPrintQr = document.getElementById('btn-print-qr');
   const printQrImg = document.getElementById('print-qr-img');
@@ -22,7 +78,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnLogout = document.getElementById('btn-logout');
   const eventTitleInput = document.getElementById('event-title-input');
   const btnSaveTitle = document.getElementById('btn-save-title');
-  const titleStatus = document.getElementById('title-status');
   const printEventTitle = document.getElementById('print-event-title');
   
   const adminGuestSearch = document.getElementById('admin-guest-search');
@@ -351,7 +406,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnPrintPhotosQr = document.getElementById('btn-print-photos-qr');
   const btnSavePhotosTitle = document.getElementById('btn-save-photos-title');
   const eventTitlePhotosInput = document.getElementById('event-title-photos-input');
-  const photosTitleStatus = document.getElementById('photos-title-status');
   const btnClearPhotos = document.getElementById('btn-clear-photos');
   const btnViewGuestView = document.getElementById('btn-view-guest-view');
   const btnScreenMode = document.getElementById('btn-screen-mode');
@@ -388,7 +442,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const invPhoto4 = document.getElementById('inv-photo-4');
   const invPhoto5 = document.getElementById('inv-photo-5');
   const btnSaveInvitationConfig = document.getElementById('btn-save-invitation-config');
-  const invConfigStatus = document.getElementById('inv-config-status');
   
   // Real-Time Preview Elements
   const previewScreen = document.getElementById('preview-screen');
@@ -627,14 +680,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Wire Photos specific settings listeners
   if (btnSavePhotosTitle && eventTitlePhotosInput) {
     btnSavePhotosTitle.addEventListener('click', () => {
       const eventTitle = eventTitlePhotosInput.value.trim();
       if (!eventTitle) {
-        showPhotosTitleStatus('Por favor, ingresa un nombre para el evento.', 'error');
+        showToast('error', '¡Atención!', 'Por favor, ingresa un nombre para el evento.', 4000);
         return;
       }
+
+      showToast('loading', '', 'Guardando cambios...');
 
       fetch(`/api/config?event=${encodeURIComponent(eventId)}`, {
         method: 'POST',
@@ -644,30 +698,19 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(res => res.json())
         .then(data => {
           if (data.success) {
-            showPhotosTitleStatus('Título del evento guardado correctamente.', 'success');
+            showToast('success', '¡Éxito!', 'Título del evento guardado correctamente.', 3000);
             if (printEventTitle) printEventTitle.textContent = eventTitle;
             // Sync the tables title input too if it exists on page
             if (eventTitleInput) eventTitleInput.value = eventTitle;
           } else {
-            showPhotosTitleStatus('Error al guardar la configuración.', 'error');
+            showToast('error', 'Error', 'Error al guardar la configuración.', 4000);
           }
         })
         .catch(err => {
           console.error(err);
-          showPhotosTitleStatus('Error de red al guardar la configuración.', 'error');
+          showToast('error', 'Error', 'Error de red al guardar la configuración.', 4000);
         });
     });
-  }
-
-  function showPhotosTitleStatus(message, type) {
-    if (!photosTitleStatus) return;
-    photosTitleStatus.textContent = message;
-    photosTitleStatus.className = 'status-msg';
-    photosTitleStatus.classList.add(type);
-    photosTitleStatus.style.display = 'block';
-    setTimeout(() => {
-      photosTitleStatus.style.display = 'none';
-    }, 4000);
   }
 
 
@@ -749,13 +792,14 @@ document.addEventListener('DOMContentLoaded', () => {
     window.location.href = `/?event=${encodeURIComponent(eventId)}`;
   });
 
-  // Save Event Title Config
   btnSaveTitle.addEventListener('click', () => {
     const eventTitle = eventTitleInput.value.trim();
     if (!eventTitle) {
-      showTitleStatus('Por favor, ingresa un nombre para el evento.', 'error');
+      showToast('error', '¡Atención!', 'Por favor, ingresa un nombre para el evento.', 4000);
       return;
     }
+
+    showToast('loading', '', 'Guardando cambios...');
 
     fetch(`/api/config?event=${encodeURIComponent(eventId)}`, {
       method: 'POST',
@@ -765,15 +809,15 @@ document.addEventListener('DOMContentLoaded', () => {
       .then(res => res.json())
       .then(data => {
         if (data.success) {
-          showTitleStatus('Título del evento guardado correctamente.', 'success');
+          showToast('success', '¡Éxito!', 'Título del evento guardado correctamente.', 3000);
           printEventTitle.textContent = eventTitle;
         } else {
-          showTitleStatus('Error al guardar la configuración.', 'error');
+          showToast('error', 'Error', 'Error al guardar la configuración.', 4000);
         }
       })
       .catch(err => {
         console.error(err);
-        showTitleStatus('Error de red al guardar la configuración.', 'error');
+        showToast('error', 'Error', 'Error de red al guardar la configuración.', 4000);
       });
   });
 
@@ -782,57 +826,6 @@ document.addEventListener('DOMContentLoaded', () => {
     window.location.href = `/api/admin/download-excel?event=${encodeURIComponent(eventId)}`;
   });
 
-  // Clear database button
-  if (btnClearDb) {
-    btnClearDb.addEventListener('click', () => {
-      showConfirm(
-        'Limpiar Base de Datos',
-        '¿Está seguro de que desea limpiar toda la base de datos de invitados? Esta acción no se puede deshacer.',
-        () => {
-          clearDatabase();
-        }
-      );
-    });
-  }
-
-  // Drag and Drop events
-  if (fileDropZone && fileInput) {
-    fileDropZone.addEventListener('click', (e) => {
-      if (e.target !== fileInput) {
-        fileInput.click();
-      }
-    });
-
-    fileInput.addEventListener('click', (e) => {
-      e.stopPropagation();
-    });
-
-    fileInput.addEventListener('change', () => {
-      if (fileInput.files.length > 0) {
-        handleFileUpload(fileInput.files[0]);
-      }
-    });
-
-    ['dragenter', 'dragover'].forEach(eventName => {
-      fileDropZone.addEventListener(eventName, (e) => {
-        e.preventDefault();
-        fileDropZone.classList.add('dragover');
-      });
-    });
-
-    ['dragleave', 'drop'].forEach(eventName => {
-      fileDropZone.addEventListener(eventName, () => {
-        fileDropZone.classList.remove('dragover');
-      });
-    });
-
-    fileDropZone.addEventListener('drop', (e) => {
-      e.preventDefault();
-      if (e.dataTransfer.files.length > 0) {
-        handleFileUpload(e.dataTransfer.files[0]);
-      }
-    });
-  }
 
   // Search/Filter guest list table
   adminGuestSearch.addEventListener('input', () => {
@@ -1369,81 +1362,6 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   }
 
-  // Clear database logic
-  function clearDatabase() {
-    fetch(`/api/clear?event=${encodeURIComponent(eventId)}`, { method: 'POST' })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          showStatus('Base de datos limpiada correctamente.', 'success');
-          loadStats();
-          loadGuests();
-        } else {
-          showStatus('Error al limpiar la base de datos.', 'error');
-        }
-      })
-      .catch(err => {
-        console.error('Error clearing database:', err);
-        showStatus('Error de conexión con el servidor.', 'error');
-      });
-  }
-
-  // Upload file logic
-  function handleFileUpload(file) {
-    const ext = file.name.split('.').pop().toLowerCase();
-    if (!['xlsx', 'xls', 'csv'].includes(ext)) {
-      showStatus('Tipo de archivo no permitido. Suba un .xlsx, .xls o .csv.', 'error');
-      return;
-    }
-
-    showStatus('Subiendo y procesando archivo...', 'success');
-    fileDropZone.style.opacity = '0.5';
-
-    const formData = new FormData();
-    formData.append('file', file);
-
-    fetch(`/api/upload?event=${encodeURIComponent(eventId)}`, {
-      method: 'POST',
-      body: formData
-    })
-      .then(res => res.json())
-      .then(data => {
-        fileDropZone.style.opacity = '1';
-        fileInput.value = ''; // Clear file input
-        
-        if (data.success) {
-          showStatus(`¡Lista cargada con éxito! Se procesaron ${data.count} invitados.`, 'success');
-          loadStats();
-          loadGuests();
-        } else {
-          showStatus(data.error || 'Error al procesar el archivo.', 'error');
-        }
-      })
-      .catch(err => {
-        fileDropZone.style.opacity = '1';
-        fileInput.value = '';
-        console.error('Error uploading file:', err);
-        showStatus('Error al subir el archivo al servidor.', 'error');
-      });
-  }
-
-  // Show status feedback helper
-  function showStatus(message, type) {
-    uploadStatus.textContent = message;
-    uploadStatus.className = 'status-msg'; // reset classes
-    uploadStatus.classList.add(type);
-  }
-
-  // Show title status helper
-  function showTitleStatus(message, type) {
-    titleStatus.textContent = message;
-    titleStatus.className = 'status-msg';
-    titleStatus.classList.add(type);
-    titleStatus.style.display = 'block';
-    setTimeout(() => {
-      titleStatus.style.display = 'none';
-    }, 4000);
-  }
 
   // Expose CRUD helper triggers to window since table templates use them inline
   window.openEditGuestModal = (index) => {
@@ -1499,12 +1417,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- Phase 3: Invitation & RSVP Management Logic ---
   
   function saveInvitationConfig() {
-    const statusMsgs = document.querySelectorAll('.inv-config-status');
-    statusMsgs.forEach(msg => {
-      msg.textContent = 'Guardando...';
-      msg.className = 'status-msg loading';
-      msg.style.display = 'block';
-    });
+    showToast('loading', '', 'Guardando cambios en tu invitación...');
 
     const payload = {
       eventTitle: invTitleInput ? invTitleInput.value.trim() : '',
@@ -1557,11 +1470,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     if (!payload.eventTitle) {
-      statusMsgs.forEach(msg => {
-        msg.textContent = 'El título del evento es obligatorio.';
-        msg.className = 'status-msg error';
-        msg.style.display = 'block';
-      });
+      showToast('error', '¡Atención!', 'El título del evento es obligatorio.', 4000);
       return;
     }
 
@@ -1573,11 +1482,7 @@ document.addEventListener('DOMContentLoaded', () => {
     .then(res => res.json())
     .then(data => {
       if (data.success) {
-        statusMsgs.forEach(msg => {
-          msg.textContent = 'Configuración de la invitación guardada con éxito.';
-          msg.className = 'status-msg success';
-          msg.style.display = 'block';
-        });
+        showToast('success', '¡Éxito!', 'Configuración de la invitación guardada correctamente!', 3000);
         
         // Propagate event title updates to other tabs/inputs
         const eventTitleInput = document.getElementById('event-title-input');
@@ -1586,20 +1491,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (eventTitlePhotosInput) eventTitlePhotosInput.value = payload.eventTitle;
         if (printEventTitle) printEventTitle.textContent = payload.eventTitle;
       } else {
-        statusMsgs.forEach(msg => {
-          msg.textContent = data.error || 'Error al guardar la configuración.';
-          msg.className = 'status-msg error';
-          msg.style.display = 'block';
-        });
+        showToast('error', 'Error', data.error || 'Error al guardar la configuración.', 4000);
       }
     })
     .catch(err => {
       console.error(err);
-      statusMsgs.forEach(msg => {
-        msg.textContent = 'Error de red al intentar guardar.';
-        msg.className = 'status-msg error';
-        msg.style.display = 'block';
-      });
+      showToast('error', 'Error', 'Error de red al intentar guardar.', 4000);
     });
   }
 
@@ -2442,7 +2339,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnAddGuestInvitados = document.getElementById('btn-add-guest-invitados');
   const fileDropZoneInvitados = document.getElementById('file-drop-zone-invitados');
   const fileInputInvitados = document.getElementById('excel-file-input-invitados');
-  const uploadStatusInvitados = document.getElementById('upload-status-invitados');
   const btnClearDbInvitados = document.getElementById('btn-clear-db-invitados');
 
   if (invitadosGuestSearch) {
@@ -2503,11 +2399,11 @@ document.addEventListener('DOMContentLoaded', () => {
   function handleFileUploadInvitados(file) {
     const ext = file.name.split('.').pop().toLowerCase();
     if (!['xlsx', 'xls', 'csv'].includes(ext)) {
-      showStatusInvitados('Tipo de archivo no permitido. Suba un .xlsx, .xls o .csv.', 'error');
+      showToast('error', '¡Atención!', 'Tipo de archivo no permitido. Suba un .xlsx, .xls o .csv.', 4000);
       return;
     }
 
-    showStatusInvitados('Subiendo y procesando archivo...', 'success');
+    showToast('loading', '', 'Subiendo y procesando lista de invitados...');
     fileDropZoneInvitados.style.opacity = '0.5';
 
     const formData = new FormData();
@@ -2523,26 +2419,19 @@ document.addEventListener('DOMContentLoaded', () => {
         fileInputInvitados.value = '';
         
         if (data.success) {
-          showStatusInvitados(`¡Lista cargada con éxito! Se procesaron ${data.count} invitados.`, 'success');
+          showToast('success', '¡Éxito!', `¡Lista cargada con éxito! Se procesaron ${data.count} invitados.`, 3000);
           loadStats();
           loadGuests();
         } else {
-          showStatusInvitados(data.error || 'Error al procesar el archivo.', 'error');
+          showToast('error', 'Error', data.error || 'Error al procesar el archivo.', 4000);
         }
       })
       .catch(err => {
         fileDropZoneInvitados.style.opacity = '1';
         fileInputInvitados.value = '';
         console.error('Error uploading file:', err);
-        showStatusInvitados('Error al subir el archivo al servidor.', 'error');
+        showToast('error', 'Error', 'Error al subir el archivo al servidor.', 4000);
       });
-  }
-
-  function showStatusInvitados(message, type) {
-    if (!uploadStatusInvitados) return;
-    uploadStatusInvitados.textContent = message;
-    uploadStatusInvitados.className = 'status-msg'; // reset classes
-    uploadStatusInvitados.classList.add(type);
   }
 
   if (btnClearDbInvitados) {
@@ -2555,16 +2444,16 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(res => res.json())
             .then(data => {
               if (data.success) {
-                showToast('Base de datos limpiada correctamente.', 'success');
+                showToast('success', '¡Éxito!', 'Base de datos de invitados limpiada correctamente.', 3000);
                 loadStats();
                 loadGuests();
               } else {
-                showToast('Error al limpiar la base de datos.', 'error');
+                showToast('error', 'Error', 'Error al limpiar la base de datos.', 4000);
               }
             })
             .catch(err => {
               console.error('Error clearing database:', err);
-              showToast('Error de conexión con el servidor.', 'error');
+              showToast('error', 'Error', 'Error de conexión con el servidor.', 4000);
             });
         }
       );

@@ -9,13 +9,12 @@
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/style.css">
   <style>
-    /* Premium layout for double onboarding cards */
+    /* Premium layout for single onboarding card */
     .onboarding-container {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 25px;
+      display: flex;
+      justify-content: center;
       width: 100%;
-      max-width: 900px;
+      max-width: 480px;
       margin: 0 auto;
       transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
     }
@@ -26,6 +25,7 @@
       justify-content: space-between;
       height: 100%;
       text-align: center;
+      width: 100%;
     }
     
     .btn-admin-action {
@@ -53,11 +53,7 @@
     
     @media (min-width: 768px) {
       main.wide-layout {
-        max-width: 950px;
-      }
-      .onboarding-container {
-        grid-template-columns: 1fr 1fr;
-        gap: 30px;
+        max-width: 550px;
       }
     }
   </style>
@@ -100,31 +96,6 @@
         </div>
         
         <button class="btn-search" id="btn-start-search" style="margin-top: 15px; width: 100%;">Comenzar Búsqueda</button>
-      </div>
-
-      <!-- Card 2: Organizer/Admin explanation -->
-      <div class="card onboarding-card">
-        <div>
-          <h2>Organizar Salón</h2>
-          <p class="instructions" style="margin-bottom: 25px;">Si sos el organizador o anfitrión, podés administrar la asignación de ubicaciones de tus invitados:</p>
-          
-          <div class="steps-container">
-            <div class="step-item">
-              <div class="step-num">1</div>
-              <div class="step-text"><strong>Cargá la base de datos</strong> subiendo tu archivo Excel con las ubicaciones de todos.</div>
-            </div>
-            <div class="step-item">
-              <div class="step-num">2</div>
-              <div class="step-text"><strong>Personalizá el título</strong> del evento que verán los invitados al buscarse.</div>
-            </div>
-            <div class="step-item">
-              <div class="step-num">3</div>
-              <div class="step-text"><strong>Gestioná en tiempo real</strong> agregando, editando o limpiando invitados de la lista.</div>
-            </div>
-          </div>
-        </div>
-        
-        <button class="btn-admin-action" id="btn-go-admin">Ir al Panel Admin</button>
       </div>
       
     </div>
@@ -188,16 +159,6 @@
           setTimeout(() => {
             mainEl.classList.remove('wide-layout');
           }, 500);
-        });
-      }
-      
-      // Admin button redirection with event parameter propagation
-      const goAdminBtn = document.getElementById('btn-go-admin');
-      if (goAdminBtn) {
-        goAdminBtn.addEventListener('click', () => {
-          const urlParams = new URLSearchParams(window.location.search);
-          const eventId = urlParams.get('event') || 'default';
-          window.location.href = `/admin?event=${encodeURIComponent(eventId)}`;
         });
       }
     });

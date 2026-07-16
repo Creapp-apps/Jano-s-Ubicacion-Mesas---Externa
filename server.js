@@ -1392,16 +1392,37 @@ app.get('/mesas', async (req, res) => {
 
 app.get('/invitacion', async (req, res) => {
   const eventId = req.query.event || 'default';
+  let eventTitle = '';
   try {
     const events = await db.getEvents();
     const event = events.find(e => e.id === eventId);
     if (event && event.serviceInvitation === false) {
       return res.redirect(`/event.html?event=${encodeURIComponent(eventId)}`);
     }
+    const config = await db.getConfigValues(eventId);
+    eventTitle = config['event_title'] || '';
   } catch (err) {
-    console.error('Error checking service availability:', err);
+    console.error('Error checking service availability or config:', err);
   }
-  res.sendFile(path.join(__dirname, 'public', 'invitacion.html'));
+
+  try {
+    const filePath = path.join(__dirname, 'public', 'invitacion.html');
+    let html = await fs.promises.readFile(filePath, 'utf8');
+    const displayTitle = eventTitle ? `Invitación Interactiva | ${eventTitle}` : 'Invitación Interactiva';
+    html = html.replace(/<title>.*?<\/title>/, `<title>${displayTitle}</title>`);
+    
+    // Inject Open Graph tags for rich previews
+    const ogMeta = `
+  <meta property="og:title" content="${displayTitle}" />
+  <meta property="og:description" content="Te invitamos a compartir este momento especial con nosotros." />
+  <meta property="og:type" content="website" />`;
+    html = html.replace('</head>', `${ogMeta}\n</head>`);
+    
+    res.send(html);
+  } catch (err) {
+    console.error('Error serving dynamic invitation page:', err);
+    res.sendFile(path.join(__dirname, 'public', 'invitacion.html'));
+  }
 });
 
 app.get('/', (req, res) => {
