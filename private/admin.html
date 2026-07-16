@@ -642,6 +642,15 @@
             </div>
           </div>
 
+          <!-- Filter Tabs for RSVP Status -->
+          <div class="filter-tabs-container" style="display: flex; gap: 8px; margin-top: 25px; margin-bottom: 5px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px; align-items: center; flex-wrap: wrap;">
+            <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--gold-primary); font-weight: 600; margin-right: 10px;">Filtrar por:</span>
+            <button type="button" class="filter-tab-btn active" data-status-filter="all">Todos (<span id="count-all">0</span>)</button>
+            <button type="button" class="filter-tab-btn" data-status-filter="confirmed">Confirmados (<span id="count-confirmed">0</span>)</button>
+            <button type="button" class="filter-tab-btn" data-status-filter="pending">Pendientes (<span id="count-pending">0</span>)</button>
+            <button type="button" class="filter-tab-btn" data-status-filter="declined">No asistirán (<span id="count-declined">0</span>)</button>
+          </div>
+
           <!-- Table of Guests & Personal Links -->
           <div class="table-wrapper" style="margin-top: 20px; max-height: 400px; overflow-y: auto; overflow-x: auto;">
             <table class="guests-table" style="font-size: 0.8rem;">

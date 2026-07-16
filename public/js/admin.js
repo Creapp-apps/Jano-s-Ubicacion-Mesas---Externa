@@ -130,6 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const modalGuestListContent = document.getElementById('modal-guest-list-content');
 
   let activeModalTab = 'all'; // 'all', 'tables', 'nomesa'
+  let activeInvitadosStatusFilter = 'all'; // 'all', 'confirmed', 'pending', 'declined'
 
   // Tabs elements
   const tabBtnMesas = document.getElementById('tab-btn-mesas');
@@ -2544,17 +2545,62 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  function updateInvitadosFilterCounts() {
+    let allCount = allGuests.length;
+    let confirmedCount = 0;
+    let pendingCount = 0;
+    let declinedCount = 0;
+
+    allGuests.forEach(g => {
+      const fullName = `${g.firstName} ${g.lastName}`.trim().toLowerCase();
+      const rsvp = allRsvps.find(r => r.name.trim().toLowerCase() === fullName);
+      if (!rsvp) {
+        pendingCount++;
+      } else if (rsvp.attending) {
+        confirmedCount++;
+      } else {
+        declinedCount++;
+      }
+    });
+
+    const elAll = document.getElementById('count-all');
+    const elConfirmed = document.getElementById('count-confirmed');
+    const elPending = document.getElementById('count-pending');
+    const elDeclined = document.getElementById('count-declined');
+
+    if (elAll) elAll.textContent = allCount;
+    if (elConfirmed) elConfirmed.textContent = confirmedCount;
+    if (elPending) elPending.textContent = pendingCount;
+    if (elDeclined) elDeclined.textContent = declinedCount;
+  }
+
   function renderInvitadosTable() {
     const tableBody = document.getElementById('invitados-table-body');
     if (!tableBody) return;
 
-    const filter = invitadosGuestSearch ? invitadosGuestSearch.value.trim().toLowerCase() : '';
+    // Update filter count labels
+    updateInvitadosFilterCounts();
+
+    const searchFilter = invitadosGuestSearch ? invitadosGuestSearch.value.trim().toLowerCase() : '';
     
     const filteredGuests = allGuests.map((g, index) => ({ ...g, originalIndex: index }))
       .filter(g => {
-        const fullName = `${g.firstName} ${g.lastName}`.toLowerCase();
+        // 1. Filter by RSVP Status
+        const fullName = `${g.firstName} ${g.lastName}`.trim().toLowerCase();
+        const rsvp = allRsvps.find(r => r.name.trim().toLowerCase() === fullName);
+        
+        let status = 'pending';
+        if (rsvp) {
+          status = rsvp.attending ? 'confirmed' : 'declined';
+        }
+
+        if (activeInvitadosStatusFilter !== 'all' && status !== activeInvitadosStatusFilter) {
+          return false;
+        }
+
+        // 2. Filter by search input
         const table = String(g.table).toLowerCase();
-        return fullName.includes(filter) || table.includes(filter);
+        return fullName.includes(searchFilter) || table.includes(searchFilter);
       });
 
     if (filteredGuests.length === 0) {
@@ -2633,6 +2679,24 @@ document.addEventListener('DOMContentLoaded', () => {
       chevron.style.transform = 'rotate(90deg)';
       header.classList.add('expanded');
     }
+  });
+
+  // Handle click on guest status filter tabs
+  document.addEventListener('click', (e) => {
+    const tabBtn = e.target.closest('[data-status-filter]');
+    if (!tabBtn) return;
+
+    // Remove active class from all filter tabs
+    document.querySelectorAll('[data-status-filter]').forEach(btn => {
+      btn.classList.remove('active');
+    });
+
+    // Add active class to clicked tab
+    tabBtn.classList.add('active');
+
+    // Update active filter value and re-render
+    activeInvitadosStatusFilter = tabBtn.getAttribute('data-status-filter');
+    renderInvitadosTable();
   });
 
   // Change event listener for interactive RSVP status update
