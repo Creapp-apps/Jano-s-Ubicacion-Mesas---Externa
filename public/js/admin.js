@@ -1326,13 +1326,55 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    tablesBreakdownList.innerHTML = tables.map(t => `
-      <div class="table-row">
-        <span class="table-row-name">${formatTableDisplay(t.name)}</span>
-        <span class="table-row-count">${t.count} ${t.count === 1 ? 'invitado' : 'invitados'}</span>
-      </div>
-    `).join('');
+    tablesBreakdownList.innerHTML = tables.map(t => {
+      // Find all guests assigned to this table
+      const guestsInTable = allGuests.filter(g => g.table === t.name);
+      
+      const guestsHtml = guestsInTable.map(g => {
+        const fullName = `${g.firstName} ${g.lastName}`.trim().toLowerCase();
+        const rsvp = allRsvps.find(r => r.name.trim().toLowerCase() === fullName);
+        
+        let rsvpStatus = 'pending';
+        let rsvpLabel = '⏳ Pendiente';
+        let rsvpStyle = 'background: rgba(255,255,255,0.05); color: var(--text-muted); border: 1px solid rgba(255,255,255,0.1);';
+        
+        if (rsvp) {
+          if (rsvp.attending) {
+            rsvpStatus = 'confirmed';
+            rsvpLabel = 'Asistirá';
+            rsvpStyle = 'background: rgba(46, 196, 182, 0.15); color: #2ec4b6; border: 1px solid rgba(46, 196, 182, 0.3);';
+          } else {
+            rsvpStatus = 'declined';
+            rsvpLabel = 'No Asistirá';
+            rsvpStyle = 'background: rgba(231, 76, 60, 0.15); color: #e74c3c; border: 1px solid rgba(231, 76, 60, 0.3);';
+          }
+        }
+        
+        return `
+          <div class="table-guest-item" style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; font-size: 0.75rem; border-bottom: 1px dashed rgba(255,255,255,0.05);">
+            <span style="color: var(--text-main); font-weight: 500;">${g.firstName} ${g.lastName}</span>
+            <span class="rsvp-badge badge-${rsvpStatus}" style="font-size: 0.65rem; padding: 2px 8px; border-radius: 10px; font-weight: 500; ${rsvpStyle}">${rsvpLabel}</span>
+          </div>
+        `;
+      }).join('');
+
+      return `
+        <div class="table-group">
+          <div class="table-row table-collapsible-header" data-table-name="${t.name}">
+            <span class="table-row-name" style="display: flex; align-items: center; gap: 8px;">
+              <svg class="table-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="transition: transform 0.2s;"><path d="m9 18 6-6-6-6"/></svg>
+              ${formatTableDisplay(t.name)}
+            </span>
+            <span class="table-row-count">${t.count} ${t.count === 1 ? 'confirmado' : 'confirmados'}</span>
+          </div>
+          <div class="table-row-details" style="display: none; padding: 5px 20px 10px 36px; background: rgba(0,0,0,0.15); border-bottom: 1px solid rgba(255,255,255,0.03);">
+            ${guestsHtml || '<div style="padding: 10px 0; color: var(--text-muted); font-style: italic; font-size: 0.75rem;">No hay invitados asignados.</div>'}
+          </div>
+        </div>
+      `;
+    }).join('');
   }
+
 
   // Add/Edit guest save operation
   function saveGuestForm() {
@@ -2571,6 +2613,27 @@ document.addEventListener('DOMContentLoaded', () => {
       `;
     }).join('');
   }
+
+  // Handle click on collapsible table headers
+  document.addEventListener('click', (e) => {
+    const header = e.target.closest('.table-collapsible-header');
+    if (!header) return;
+
+    const details = header.nextElementSibling;
+    const chevron = header.querySelector('.table-chevron');
+    if (!details || !chevron) return;
+
+    const isExpanded = details.style.display !== 'none';
+    if (isExpanded) {
+      details.style.display = 'none';
+      chevron.style.transform = 'rotate(0deg)';
+      header.classList.remove('expanded');
+    } else {
+      details.style.display = 'block';
+      chevron.style.transform = 'rotate(90deg)';
+      header.classList.add('expanded');
+    }
+  });
 
   // Change event listener for interactive RSVP status update
   document.addEventListener('change', (e) => {
