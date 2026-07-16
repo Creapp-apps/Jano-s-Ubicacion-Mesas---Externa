@@ -111,6 +111,38 @@ document.addEventListener('DOMContentLoaded', () => {
   const modalTable = document.getElementById('modal-table');
   const btnCloseModal = document.getElementById('btn-close-modal');
 
+  const toggleTableDropdownBtn = document.getElementById('btn-toggle-table-dropdown');
+
+  if (modalTable) {
+    modalTable.addEventListener('focus', () => {
+      showCustomDropdown();
+    });
+    modalTable.addEventListener('input', () => {
+      showCustomDropdown();
+    });
+  }
+
+  if (toggleTableDropdownBtn) {
+    toggleTableDropdownBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const dropdown = document.getElementById('table-custom-dropdown');
+      if (dropdown && dropdown.classList.contains('active')) {
+        hideCustomDropdown();
+      } else {
+        showCustomDropdown();
+      }
+    });
+  }
+
+  document.addEventListener('click', (e) => {
+    const dropdown = document.getElementById('table-custom-dropdown');
+    if (dropdown && dropdown.classList.contains('active')) {
+      if (e.target !== modalTable && e.target !== toggleTableDropdownBtn && !dropdown.contains(e.target)) {
+        hideCustomDropdown();
+      }
+    }
+  });
+
   // Confirm Modal Elements
   const confirmModal = document.getElementById('confirm-modal');
   const confirmTitle = document.getElementById('confirm-modal-title');
@@ -417,6 +449,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Active guest list state
   let allGuests = [];
   let allRsvps = [];
+  let allTables = [];
+  let uniqueTableNamesList = [];
 
   // Set up QR codes pointing to Guest view
   const siteOrigin = window.location.origin;
@@ -694,6 +728,7 @@ document.addEventListener('DOMContentLoaded', () => {
       modalFirstName.value = '';
       modalLastName.value = '';
       modalTable.value = '';
+      hideCustomDropdown();
       guestModal.classList.add('active');
     });
   }
@@ -857,11 +892,13 @@ document.addEventListener('DOMContentLoaded', () => {
     modalFirstName.value = '';
     modalLastName.value = '';
     modalTable.value = '';
+    hideCustomDropdown();
     guestModal.classList.add('active');
   });
 
   btnCloseModal.addEventListener('click', () => {
     guestModal.classList.remove('active');
+    hideCustomDropdown();
   });
 
   guestForm.addEventListener('submit', (e) => {
@@ -1056,7 +1093,9 @@ document.addEventListener('DOMContentLoaded', () => {
       .then(data => {
         statGuests.textContent = data.guestCount || 0;
         statTables.textContent = data.tableCount || 0;
-        renderTablesList(data.tables || []);
+        allTables = data.tables || [];
+        renderTablesList(allTables);
+        updateTablesDatalist();
       })
       .catch(err => {
         console.error('Error loading stats:', err);
@@ -1098,12 +1137,18 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function updateTablesDatalist() {
-    const datalist = document.getElementById('tables-datalist');
-    if (!datalist) return;
+    const dropdown = document.getElementById('table-custom-dropdown');
+    if (!dropdown) return;
 
-    const uniqueTables = [...new Set(
-      allGuests
-        .map(g => g.table ? String(g.table).trim() : '')
+    // Collect tables from created layout
+    const layoutTableNames = allTables.map(t => t.name ? String(t.name).trim() : '');
+    
+    // Collect tables from guest assignments
+    const guestTableNames = allGuests.map(g => g.table ? String(g.table).trim() : '');
+
+    // Merge and filter duplicates / empty values / 'sin mesa'
+    uniqueTableNamesList = [...new Set(
+      [...layoutTableNames, ...guestTableNames]
         .filter(t => t && t.toLowerCase() !== 'sin mesa')
     )].sort((a, b) => {
       const numA = parseInt(a.replace(/\D/g, ''), 10);
@@ -1114,9 +1159,66 @@ document.addEventListener('DOMContentLoaded', () => {
       return a.localeCompare(b);
     });
 
-    datalist.innerHTML = uniqueTables
-      .map(t => `<option value="${t}"></option>`)
+    renderCustomDropdown();
+  }
+
+  function renderCustomDropdown(filter = '') {
+    const dropdown = document.getElementById('table-custom-dropdown');
+    if (!dropdown) return;
+
+    const query = String(filter).trim().toLowerCase();
+    
+    // Filter tables list based on query
+    const filteredTables = uniqueTableNamesList.filter(t => 
+      t.toLowerCase().includes(query)
+    );
+
+    if (filteredTables.length === 0) {
+      dropdown.innerHTML = '<div class="custom-dropdown-no-results">Sin resultados</div>';
+      return;
+    }
+
+    dropdown.innerHTML = filteredTables
+      .map(t => `<div class="custom-dropdown-item" data-value="${t}">${formatTableDisplay(t)}</div>`)
       .join('');
+
+    // Attach click events to options
+    dropdown.querySelectorAll('.custom-dropdown-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        e.stopPropagation();
+        modalTable.value = item.getAttribute('data-value');
+        hideCustomDropdown();
+      });
+    });
+  }
+
+  function showCustomDropdown() {
+    const dropdown = document.getElementById('table-custom-dropdown');
+    const toggleBtn = document.getElementById('btn-toggle-table-dropdown');
+    if (!dropdown) return;
+    
+    // Populate/filter it before displaying
+    renderCustomDropdown(modalTable.value);
+    
+    dropdown.classList.add('active');
+    
+    if (toggleBtn) {
+      const svg = toggleBtn.querySelector('svg');
+      if (svg) svg.style.transform = 'rotate(180deg)';
+    }
+  }
+
+  function hideCustomDropdown() {
+    const dropdown = document.getElementById('table-custom-dropdown');
+    const toggleBtn = document.getElementById('btn-toggle-table-dropdown');
+    if (!dropdown) return;
+    
+    dropdown.classList.remove('active');
+    
+    if (toggleBtn) {
+      const svg = toggleBtn.querySelector('svg');
+      if (svg) svg.style.transform = 'rotate(0deg)';
+    }
   }
 
   function formatTableDisplay(table) {
@@ -1410,6 +1512,7 @@ document.addEventListener('DOMContentLoaded', () => {
       .then(data => {
         if (data.success) {
           guestModal.classList.remove('active');
+          hideCustomDropdown();
           
           // Auto-confirm guest RSVP if a table is assigned
           const isTableAssigned = guestData.table && guestData.table.trim() !== '' && guestData.table.toLowerCase() !== 'sin mesa';
@@ -1465,6 +1568,7 @@ document.addEventListener('DOMContentLoaded', () => {
     modalFirstName.value = guest.firstName;
     modalLastName.value = guest.lastName;
     modalTable.value = guest.table;
+    hideCustomDropdown();
     guestModal.classList.add('active');
   };
 
@@ -2775,6 +2879,7 @@ document.addEventListener('DOMContentLoaded', () => {
       modalFirstName.value = '';
       modalLastName.value = '';
       modalTable.value = '';
+      hideCustomDropdown();
       guestModal.classList.add('active');
     });
   }

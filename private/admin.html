@@ -905,10 +905,15 @@
           <label style="display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Apellido</label>
           <input type="text" id="modal-last-name" class="form-control-admin" placeholder="Ej. Pérez" required style="width: 100%; padding: 12px 18px; border-radius: 20px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif;">
         </div>
-        <div style="margin-bottom: 20px; text-align: left;">
+        <div style="margin-bottom: 20px; text-align: left; position: relative;">
           <label style="display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Número de Mesa</label>
-          <input type="text" id="modal-table" list="tables-datalist" class="form-control-admin" placeholder="Ej. 12" required style="width: 100%; padding: 12px 18px; border-radius: 20px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif;">
-          <datalist id="tables-datalist"></datalist>
+          <div style="position: relative; display: block; width: 100%;">
+            <input type="text" id="modal-table" autocomplete="off" class="form-control-admin" placeholder="Ej. 12" required style="width: 100%; padding: 12px 40px 12px 18px; border-radius: 20px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif;">
+            <button type="button" id="btn-toggle-table-dropdown" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--gold-primary); cursor: pointer; display: flex; align-items: center; justify-content: center; outline: none; padding: 5px; z-index: 10;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="transition: transform 0.3s ease; pointer-events: none;"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+          </div>
+          <div id="table-custom-dropdown" class="custom-dropdown-menu"></div>
         </div>
         <div class="modal-actions" style="display: flex; gap: 15px; margin-top: 30px;">
           <button type="button" class="btn btn-danger" id="btn-close-modal">Cancelar</button>
