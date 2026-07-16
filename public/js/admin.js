@@ -1814,7 +1814,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
       const script = document.createElement('script');
-      script.src = 'https://cdn.jsdelivr.net/npm/@breezystack/lamejs@1.2.7/lamejs.iife.js';
+      script.src = '/js/lame.min.js';
       script.onload = () => resolve();
       script.onerror = () => reject(new Error('No se pudo cargar la librería de compresión de audio.'));
       document.head.appendChild(script);
