@@ -1341,6 +1341,34 @@ app.post('/api/audio/upload', requireAuth, upload.single('audio'), async (req, r
   }
 });
 
+// API: Upload config image
+app.post('/api/admin/upload-image', requireAuth, upload.single('image'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No se subió ningún archivo de imagen.' });
+  }
+
+  const filePath = req.file.path;
+  const eventId = req.query.event || 'default';
+
+  try {
+    const fileBuffer = fs.readFileSync(filePath);
+    const publicUrl = await db.uploadPhotoFile(eventId, req.file.originalname, fileBuffer, req.file.mimetype);
+    
+    // Clean up temporary local file
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+
+    res.json({ success: true, url: publicUrl });
+  } catch (err) {
+    console.error('Error uploading admin image:', err);
+    if (req.file && fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+    res.status(500).json({ error: 'Error al subir la imagen.' });
+  }
+});
+
 
 // Real-time photo stream managers
 const photoAdminClients = {}; // eventId -> Array of res

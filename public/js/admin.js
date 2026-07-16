@@ -3645,5 +3645,259 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+
+  // --- Photo Upload Modal and Compression Workflow ---
+  const photoUploadModal = document.getElementById('photo-upload-modal');
+  const uploadPhotoTitle = document.getElementById('upload-photo-title');
+  const btnClosePhotoUpload = document.getElementById('btn-close-photo-upload');
+  const photoDragDropZone = document.getElementById('photo-drag-drop-zone');
+  const photoFileInput = document.getElementById('photo-file-input');
+  
+  const photoUploadLoading = document.getElementById('photo-upload-loading');
+  const photoProgressBar = document.getElementById('photo-upload-progress-bar');
+  const photoStepCompress = document.getElementById('photo-step-compress');
+  const photoStepUpload = document.getElementById('photo-step-upload');
+  const photoStepFinalize = document.getElementById('photo-step-finalize');
+
+  let currentUploadPhotoId = null;
+
+  // Open modal when any "Subir" button is clicked
+  document.querySelectorAll('.btn-trigger-upload').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      currentUploadPhotoId = btn.getAttribute('data-photo-id');
+      const photoName = currentUploadPhotoId === '1' ? 'Foto 1 (Principal)' : `Foto ${currentUploadPhotoId}`;
+      uploadPhotoTitle.textContent = photoName;
+      
+      // Reset modal state
+      photoFileInput.value = '';
+      if (photoUploadLoading) photoUploadLoading.style.display = 'none';
+      if (photoProgressBar) photoProgressBar.style.width = '0%';
+      [photoStepCompress, photoStepUpload, photoStepFinalize].forEach(step => {
+        if (step) step.className = 'audio-up-step';
+      });
+      
+      // Open modal
+      if (photoUploadModal) photoUploadModal.classList.add('active');
+    });
+  });
+
+  // Close modal
+  function closePhotoUploadModal() {
+    if (photoUploadModal) photoUploadModal.classList.remove('active');
+    currentUploadPhotoId = null;
+  }
+  
+  if (btnClosePhotoUpload) {
+    btnClosePhotoUpload.addEventListener('click', closePhotoUploadModal);
+  }
+
+  // Click on drop zone triggers file input
+  if (photoDragDropZone && photoFileInput) {
+    photoDragDropZone.addEventListener('click', () => {
+      photoFileInput.click();
+    });
+
+    // Drag & Drop events
+    ['dragenter', 'dragover'].forEach(eventName => {
+      photoDragDropZone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        photoDragDropZone.style.borderColor = 'var(--gold-light)';
+        photoDragDropZone.style.background = 'rgba(212,175,55,0.05)';
+      }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      photoDragDropZone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        photoDragDropZone.style.borderColor = 'rgba(212,175,55,0.4)';
+        photoDragDropZone.style.background = 'rgba(0,0,0,0.2)';
+      }, false);
+    });
+
+    photoDragDropZone.addEventListener('drop', (e) => {
+      const dt = e.dataTransfer;
+      const files = dt.files;
+      if (files && files.length > 0) {
+        handlePhotoUpload(files[0]);
+      }
+    });
+
+    photoFileInput.addEventListener('change', (e) => {
+      const files = e.target.files;
+      if (files && files.length > 0) {
+        handlePhotoUpload(files[0]);
+      }
+    });
+  }
+
+  // Client-side image compression
+  function compressImage(file, maxWidth, maxHeight, quality) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          // Resize proportionally
+          if (width > height) {
+            if (width > maxWidth) {
+              height = Math.round((height * maxWidth) / width);
+              width = maxWidth;
+            }
+          } else {
+            if (height > maxHeight) {
+              width = Math.round((width * maxHeight) / height);
+              height = maxHeight;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          canvas.toBlob((blob) => {
+            if (blob) {
+              resolve(blob);
+            } else {
+              reject(new Error('No se pudo comprimir la imagen.'));
+            }
+          }, 'image/jpeg', quality);
+        };
+        img.onerror = (err) => reject(err);
+      };
+      reader.onerror = (err) => reject(err);
+    });
+  }
+
+  // Handle Photo Upload Workflow
+  async function handlePhotoUpload(file) {
+    if (!file.type.startsWith('image/')) {
+      showToast('error', 'Error', 'El archivo seleccionado no es una imagen.');
+      return;
+    }
+
+    // Show loading section
+    if (photoUploadLoading) photoUploadLoading.style.display = 'block';
+    if (photoProgressBar) photoProgressBar.style.width = '0%';
+    
+    // Reset steps status
+    [photoStepCompress, photoStepUpload, photoStepFinalize].forEach(step => {
+      if (step) step.className = 'audio-up-step';
+    });
+
+    try {
+      // Step 1: Compress
+      if (photoStepCompress) photoStepCompress.classList.add('active');
+      if (photoProgressBar) photoProgressBar.style.width = '10%';
+      
+      console.log(`[Image Compressor] Original image size: ${(file.size / 1024).toFixed(2)} KB`);
+      
+      // Compress with 1200px max width/height and 80% quality
+      const compressedBlob = await compressImage(file, 1200, 1200, 0.8);
+      console.log(`[Image Compressor] Optimized image size: ${(compressedBlob.size / 1024).toFixed(2)} KB`);
+      
+      if (photoStepCompress) {
+        photoStepCompress.classList.remove('active');
+        photoStepCompress.classList.add('completed');
+      }
+      if (photoProgressBar) photoProgressBar.style.width = '30%';
+
+      // Step 2: Upload
+      if (photoStepUpload) photoStepUpload.classList.add('active');
+      
+      const formData = new FormData();
+      formData.append('image', compressedBlob, file.name || 'photo.jpg');
+
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', `/api/admin/upload-image?event=${encodeURIComponent(eventId)}`);
+
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+          const uploadPercent = (e.loaded / e.total) * 100;
+          // Scale from 30% to 90%
+          const progressPercent = 30 + (uploadPercent * 0.6);
+          if (photoProgressBar) photoProgressBar.style.width = `${progressPercent}%`;
+        }
+      });
+
+      const uploadPromise = new Promise((resolve, reject) => {
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const res = JSON.parse(xhr.responseText);
+              if (res.success && res.url) {
+                resolve(res.url);
+              } else {
+                reject(new Error(res.error || 'Error al subir la imagen.'));
+              }
+            } catch (err) {
+              reject(new Error('Respuesta inválida del servidor.'));
+            }
+          } else {
+            reject(new Error(`Error del servidor: ${xhr.status}`));
+          }
+        };
+        xhr.onerror = () => reject(new Error('Error de red.'));
+      });
+
+      xhr.send(formData);
+      const imageUrl = await uploadPromise;
+
+      if (photoStepUpload) {
+        photoStepUpload.classList.remove('active');
+        photoStepUpload.classList.add('completed');
+      }
+      if (photoProgressBar) photoProgressBar.style.width = '90%';
+
+      // Step 3: Finalize
+      if (photoStepFinalize) photoStepFinalize.classList.add('active');
+      
+      // Set value in the corresponding input
+      const targetInput = document.getElementById(`inv-photo-${currentUploadPhotoId}`);
+      if (targetInput) {
+        targetInput.value = imageUrl;
+        // Trigger input event to update thumbnail and live preview
+        targetInput.dispatchEvent(new Event('input'));
+      }
+
+      if (photoStepFinalize) {
+        photoStepFinalize.classList.remove('active');
+        photoStepFinalize.classList.add('completed');
+      }
+      if (photoProgressBar) photoProgressBar.style.width = '100%';
+
+      showToast('success', '¡Éxito!', 'Imagen subida y optimizada correctamente.');
+      
+      // Close modal automatically after 1.5s
+      setTimeout(() => {
+        closePhotoUploadModal();
+      }, 1500);
+
+    } catch (err) {
+      console.error('[Photo Upload] Error in workflow:', err);
+      showToast('error', 'Error', err.message || 'No se pudo subir la imagen.');
+      
+      // Mark active steps as error
+      if (photoStepCompress && photoStepCompress.classList.contains('active')) {
+        photoStepCompress.classList.remove('active');
+        photoStepCompress.classList.add('error');
+      } else if (photoStepUpload && photoStepUpload.classList.contains('active')) {
+        photoStepUpload.classList.remove('active');
+        photoStepUpload.classList.add('error');
+      } else if (photoStepFinalize) {
+        photoStepFinalize.classList.add('error');
+      }
+    }
+  }
 });
 
