@@ -409,14 +409,25 @@
                       </select>
                     </div>
 
-                    <div style="margin-bottom: 15px;">
-                      <label style="display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Imagen de Fondo (URL)</label>
-                      <input type="url" id="inv-bg-url" class="form-control-admin" placeholder="Ej. https://tuservidor.com/mi-fondo.jpg" style="width: 100%; padding: 12px 18px; border-radius: 20px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif;">
-                    </div>
-
-                    <div style="margin-bottom: 15px;">
-                      <label style="display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Imagen del Sobre (URL)</label>
-                      <input type="url" id="inv-cover-url" class="form-control-admin" placeholder="Ej. https://tuservidor.com/mi-portada.jpg" style="width: 100%; padding: 12px 18px; border-radius: 20px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif;">
+                    <!-- Imagen de Fondo -->
+                    <div id="drop-zone-bg" style="display: flex; gap: 15px; align-items: center; background: rgba(255,255,255,0.02); padding: 12px; border-radius: 20px; border: 1px solid var(--card-border); margin-bottom: 15px; transition: all 0.3s;">
+                      <div class="photo-preview-box" style="width: 60px; height: 60px; border-radius: 10px; border: 1px solid var(--gold-primary); background: #111; overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 0 8px rgba(212,175,55,0.1);">
+                        <img id="prev-thumb-bg" src="" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                        <span id="prev-icon-bg" style="color: var(--gold-primary); font-size: 1.2rem;">⚜</span>
+                      </div>
+                      <div style="flex: 1;">
+                        <label style="display: flex; align-items: center; justify-content: space-between; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--gold-primary); margin-bottom: 5px; font-weight: 600; width: 100%;">
+                          <span>Imagen de Fondo (URL)</span>
+                          <span style="font-size: 0.6rem; color: rgba(255,255,255,0.3); font-weight: normal; text-transform: none; letter-spacing: 0.5px; font-family: 'Montserrat', sans-serif;">Arrastra tu imagen para aplicar</span>
+                        </label>
+                        <div style="display: flex; gap: 8px;">
+                          <input type="url" id="inv-bg-url" class="form-control-admin" placeholder="Ej. https://tuservidor.com/mi-fondo.jpg" style="flex: 1; padding: 10px 14px; border-radius: 15px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif; font-size: 0.8rem;">
+                          <button type="button" class="btn-trigger-upload" data-photo-id="bg" style="padding: 10px 14px; border-radius: 15px; background: var(--gold-gradient); color: #0b0b0c; border: none; font-weight: bold; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 5px; flex-shrink: 0; box-shadow: 0 4px 10px rgba(212,175,55,0.2); transition: all 0.3s;">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                            Subir
+                          </button>
+                        </div>
+                      </div>
                     </div>
 
                     </div>

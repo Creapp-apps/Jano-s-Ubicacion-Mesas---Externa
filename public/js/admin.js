@@ -224,6 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (tabTrivia) tabTrivia.classList.remove('active');
       stopPhotoPolling();
       stopTriviaPolling();
+      loadStats();
       loadRsvps();
       loadGuests();
     } else if (tabId === 'trivia') {
@@ -526,6 +527,9 @@ document.addEventListener('DOMContentLoaded', () => {
         btnPrevViewEnvelope.style.color = '#888';
         btnPrevViewEnvelope.style.borderColor = 'rgba(255,255,255,0.05)';
       }
+    } else if (event.data.type === 'invitation-preview-ready') {
+      isIframeLoaded = true;
+      updateRealTimePreview();
     }
   });
   
@@ -1159,7 +1163,9 @@ document.addEventListener('DOMContentLoaded', () => {
       return a.localeCompare(b);
     });
 
-    renderCustomDropdown();
+    if (dropdown.classList.contains('active')) {
+      renderCustomDropdown(modalTable.value);
+    }
   }
 
   function renderCustomDropdown(filter = '') {
@@ -1198,6 +1204,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!dropdown) return;
     
     // Populate/filter it before displaying
+    updateTablesDatalist();
     renderCustomDropdown(modalTable.value);
     
     dropdown.classList.add('active');
@@ -3606,6 +3613,38 @@ document.addEventListener('DOMContentLoaded', () => {
         previewImg.src = displayUrl;
       }
     }
+
+    // Sync Background image thumbnail
+    const bgInput = document.getElementById('inv-bg-url');
+    const bgThumb = document.getElementById('prev-thumb-bg');
+    const bgIcon = document.getElementById('prev-icon-bg');
+    if (bgInput && bgThumb && bgIcon) {
+      const val = bgInput.value.trim();
+      if (val) {
+        bgThumb.src = val;
+        bgThumb.style.display = 'block';
+        bgIcon.style.display = 'none';
+      } else {
+        bgThumb.style.display = 'none';
+        bgIcon.style.display = 'block';
+      }
+    }
+
+    // Sync Cover image thumbnail
+    const coverInput = document.getElementById('inv-cover-url');
+    const coverThumb = document.getElementById('prev-thumb-cover');
+    const coverIcon = document.getElementById('prev-icon-cover');
+    if (coverInput && coverThumb && coverIcon) {
+      const val = coverInput.value.trim();
+      if (val) {
+        coverThumb.src = val;
+        coverThumb.style.display = 'block';
+        coverIcon.style.display = 'none';
+      } else {
+        coverThumb.style.display = 'none';
+        coverIcon.style.display = 'block';
+      }
+    }
   };
 
   let previewActiveCarouselIndex = 0;
@@ -3771,7 +3810,14 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.addEventListener('click', (e) => {
       e.preventDefault();
       currentUploadPhotoId = btn.getAttribute('data-photo-id');
-      const photoName = currentUploadPhotoId === '1' ? 'Foto 1 (Principal)' : `Foto ${currentUploadPhotoId}`;
+      let photoName = '';
+      if (currentUploadPhotoId === 'bg') {
+        photoName = 'Imagen de Fondo';
+      } else if (currentUploadPhotoId === 'cover') {
+        photoName = 'Imagen del Sobre';
+      } else {
+        photoName = currentUploadPhotoId === '1' ? 'Foto 1 (Principal)' : `Foto ${currentUploadPhotoId}`;
+      }
       uploadPhotoTitle.textContent = photoName;
       
       // Reset modal state
@@ -3837,6 +3883,71 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+
+  // Direct Drag & Drop for Background image panel
+  const directDropZones = [
+    { id: 'drop-zone-bg', type: 'bg', label: 'Imagen de Fondo' }
+  ];
+
+  directDropZones.forEach(zone => {
+    const el = document.getElementById(zone.id);
+    if (!el) return;
+
+    // Drag highlights
+    ['dragenter', 'dragover'].forEach(eventName => {
+      el.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        el.style.borderColor = 'var(--gold-primary)';
+        el.style.background = 'rgba(212,175,55,0.05)';
+        el.style.boxShadow = '0 0 15px rgba(212,175,55,0.2)';
+      }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      el.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        el.style.borderColor = 'var(--card-border)';
+        el.style.background = 'rgba(255,255,255,0.02)';
+        el.style.boxShadow = 'none';
+      }, false);
+    });
+
+    // Drop handler
+    el.addEventListener('drop', (e) => {
+      const dt = e.dataTransfer;
+      const files = dt.files;
+      if (files && files.length > 0) {
+        const file = files[0];
+        if (!file.type.startsWith('image/')) {
+          showToast('error', 'Error', 'Solo se permiten archivos de imagen.');
+          return;
+        }
+
+        // Set target photo ID and name for the modal
+        currentUploadPhotoId = zone.type;
+        if (uploadPhotoTitle) {
+          uploadPhotoTitle.textContent = zone.label;
+        }
+
+        // Reset and show upload progress modal
+        if (photoFileInput) photoFileInput.value = '';
+        if (photoUploadLoading) photoUploadLoading.style.display = 'none';
+        if (photoProgressBar) photoProgressBar.style.width = '0%';
+        [photoStepCompress, photoStepUpload, photoStepFinalize].forEach(step => {
+          if (step) step.className = 'audio-up-step';
+        });
+
+        if (photoUploadModal) {
+          photoUploadModal.classList.add('active');
+        }
+
+        // Trigger compression & upload workflow
+        handlePhotoUpload(file);
+      }
+    });
+  });
 
   // Client-side image compression
   function compressImage(file, maxWidth, maxHeight, quality) {
@@ -3968,7 +4079,15 @@ document.addEventListener('DOMContentLoaded', () => {
       if (photoStepFinalize) photoStepFinalize.classList.add('active');
       
       // Set value in the corresponding input
-      const targetInput = document.getElementById(`inv-photo-${currentUploadPhotoId}`);
+      let targetInput;
+      if (currentUploadPhotoId === 'bg') {
+        targetInput = document.getElementById('inv-bg-url');
+      } else if (currentUploadPhotoId === 'cover') {
+        targetInput = document.getElementById('inv-cover-url');
+      } else {
+        targetInput = document.getElementById(`inv-photo-${currentUploadPhotoId}`);
+      }
+
       if (targetInput) {
         targetInput.value = imageUrl;
         // Trigger input event to update thumbnail and live preview
