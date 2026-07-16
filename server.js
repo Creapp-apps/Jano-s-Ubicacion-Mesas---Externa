@@ -41,7 +41,8 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.json());
+app.use(express.json({ limit: '20mb' }));
+app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 
 // Validation Middleware: Ensure the Event ID is registered and active
 async function validateEventAccess(req, res, next) {
@@ -351,7 +352,8 @@ app.get('/api/config', async (req, res) => {
         gato: process.env.SNAP_LENS_GATO || process.env.SNAP_LENS_GATITO || '',
         corona: process.env.SNAP_LENS_CORONA || '',
         vampiro: process.env.SNAP_LENS_VAMPIRO || ''
-      }
+      },
+      maxUploadSize: process.env.VERCEL ? 4 * 1024 * 1024 : 15 * 1024 * 1024
     });
   } catch (error) {
     res.json({
@@ -393,7 +395,8 @@ app.get('/api/config', async (req, res) => {
         gato: process.env.SNAP_LENS_GATO || process.env.SNAP_LENS_GATITO || '',
         corona: process.env.SNAP_LENS_CORONA || '',
         vampiro: process.env.SNAP_LENS_VAMPIRO || ''
-      }
+      },
+      maxUploadSize: process.env.VERCEL ? 4 * 1024 * 1024 : 15 * 1024 * 1024
     });
   }
 });
@@ -1801,6 +1804,37 @@ app.post('/api/trivia/control', requireAuth, async (req, res) => {
   } else {
     res.status(400).json({ error: 'Acción no válida' });
   }
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('[Error Handler]', err);
+
+  // Handle multer error (e.g. file too large)
+  if (err instanceof multer.MulterError) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(413).json({
+        success: false,
+        error: 'El archivo es demasiado grande. El límite permitido es de 15MB.'
+      });
+    }
+    return res.status(400).json({
+      success: false,
+      error: `Error de carga: ${err.message}`
+    });
+  }
+
+  // Handle express body-parser 413 error (Request Entity Too Large)
+  if (err.status === 413 || err.statusCode === 413) {
+    return res.status(413).json({
+      success: false,
+      error: 'El cuerpo de la solicitud supera el tamaño máximo permitido.'
+    });
+  }
+
+  // Generic fallback
+  res.status(err.status || 500).json({
+    success: false,
+    error: err.message || 'Ha ocurrido un error en el servidor.'
+  });
 });
 
 // Handle 404

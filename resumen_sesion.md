@@ -141,3 +141,33 @@ En esta sesión, completamos la integración del servicio de **Trivia** en el Pa
 * **Servicio Operativo**: El panel de administración carga la trivia de forma limpia y fluida, sin warnings ni errores de JS en la consola.
 * **Sincronización en Vivo**: La conexión de Server-Sent Events (SSE) a `/api/trivia/stream` se establece de manera transparente al abrir la pestaña de Trivia.
 * **Siguiente Paso**: Iniciar pruebas del flujo interactivo con la vista del invitado (`public/event.html` -> Trivia) ingresando con un usuario que haya confirmado asistencia en el listado de RSVPs.
+
+---
+
+## 🌌 Sesión - Gestión de Invitados: Filtros por Estado de Confirmación y Exportación a Excel Premium
+
+En esta sesión se optimizó la sección de **Gestión de Invitados** del panel de administración incorporando filtros dinámicos por estado y la exportación final a planillas Excel de calidad profesional.
+
+### 🛠️ Logros e Implementaciones
+1. **Filtros por Estado de Confirmación (RSVP)**:
+   - Se crearon pestañas de filtro en la tabla de invitados ("Todos", "Confirmados", "Pendientes de Confirmación", "No asistirán") para segmentar la lista instantáneamente.
+   - Cada pestaña cuenta con contadores dinámicos que se actualizan en tiempo real calculados a partir de los datos en memoria (`allGuests` y `allRsvps`).
+   - Se aplicó diseño Premium de pestañas con bordes dorados activos y hover sutil, coherente con la identidad visual del portal.
+
+2. **Funcionalidad de Exportación a Excel Premium (`ExcelJS`)**:
+   - Se implementó el endpoint `/api/admin/export-guests` que genera un archivo `.xlsx` de alta fidelidad.
+   - Se incluyeron datos de gran valor para la organización del evento: **Nombre**, **Apellido**, **Mesa**, **Confirmación** (con código de color dinámico: verde claro para confirmados, morado claro para rechazados), **Cant. Acompañantes**, **Nombres de Acompañantes**, **Restricciones Alimenticias**, **Canción Sugerida** y el **Enlace Personalizado de Invitación**.
+   - Se aplicó autoajuste dinámico de anchos de columnas para evitar recortes de texto y mantener el formato limpio.
+   - Alineación configurada de forma inteligente (alineación izquierda para textos largos, central para nombres, mesas y números).
+
+3. **Consistencia de Datos e Interfaz**:
+   - Integración nativa de formato de mesa (`formatTableDisplay`) para homogeneizar las salidas ("Mesa X" o "Sin Mesa").
+   - Vinculación del botón **"Exportar Excel"** en la botonera de acciones del listado de invitados.
+
+4. **Verificación**:
+   - Todos los test unitarios y de integración continúan pasando al 100%.
+
+### 📌 Próximos Pasos y Estado Actual
+- **Estado**: La plataforma se encuentra totalmente estable, robusta y con la lista de invitados sincronizada.
+- **Próximos Pasos**: Monitorear el volumen de confirmaciones y proceder con la distribución de enlaces QR y visualización de mesas por parte de los invitados.
+

@@ -82,6 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Elements
+  let maxUploadSize = 15 * 1024 * 1024; // Default upload limit (dynamically updated by server config)
   const statGuests = document.getElementById('stat-guests');
   const statTables = document.getElementById('stat-tables');
   const tablesBreakdownList = document.getElementById('tables-breakdown-list');
@@ -891,6 +892,9 @@ document.addEventListener('DOMContentLoaded', () => {
       .then(data => {
         if (data && data.error) {
           throw new Error(data.error);
+        }
+        if (data && data.maxUploadSize) {
+          maxUploadSize = data.maxUploadSize;
         }
         if (eventTitleInput) eventTitleInput.value = data.eventTitle || '';
         if (eventTitlePhotosInput) eventTitlePhotosInput.value = data.eventTitle || '';
@@ -1807,11 +1811,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const file = e.target.files[0];
       if (!file) return;
 
-      // Validate file size (15MB limit)
-      const maxSize = 15 * 1024 * 1024;
-      if (file.size > maxSize) {
+      // Validate file size dynamically (limit set by backend config)
+      if (file.size > maxUploadSize) {
         if (invAudioUploadStatus) {
-          invAudioUploadStatus.textContent = 'Error: El archivo supera el límite de 15MB.';
+          const maxMb = (maxUploadSize / (1024 * 1024)).toFixed(1);
+          invAudioUploadStatus.textContent = `Error: El archivo supera el límite de ${maxMb}MB.`;
           invAudioUploadStatus.style.color = '#ef4444';
         }
         return;
@@ -1831,7 +1835,19 @@ document.addEventListener('DOMContentLoaded', () => {
           body: formData
         });
 
-        const data = await response.json();
+        let data;
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          data = await response.json();
+        } else {
+          const text = await response.text();
+          if (response.status === 413) {
+            const maxMb = (maxUploadSize / (1024 * 1024)).toFixed(1);
+            throw new Error(`El archivo de audio es demasiado grande para el servidor (límite de ${maxMb}MB).`);
+          }
+          throw new Error(text.substring(0, 100) || `Error del servidor (código ${response.status})`);
+        }
+
         if (response.ok && data.success) {
           if (invMusicInput) {
             invMusicInput.value = data.url;

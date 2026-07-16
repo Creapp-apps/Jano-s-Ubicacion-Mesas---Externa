@@ -89,6 +89,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Extract event query parameter for multi-tenancy
   const urlParams = new URLSearchParams(window.location.search);
   const eventId = urlParams.get('event') || 'default';
+  
+  let maxUploadSize = 15 * 1024 * 1024; // Default upload limit (dynamically updated by server config)
 
   // Conditionally hide the moderation card for public guests
   const adminOnboardingCard = document.getElementById('admin-onboarding-card');
@@ -111,6 +113,9 @@ document.addEventListener('DOMContentLoaded', () => {
     .then(data => {
       if (data && data.eventTitle) {
         subtitleEl.textContent = data.eventTitle;
+      }
+      if (data && data.maxUploadSize) {
+        maxUploadSize = data.maxUploadSize;
       }
       if (data && data.snapApiToken) {
         snapApiToken = data.snapApiToken;
@@ -2425,6 +2430,15 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         const compressedBlob = await compressImage(selectedFile);
         
+        // Validate compressed size dynamically (limit set by backend config)
+        if (compressedBlob.size > maxUploadSize) {
+          const maxMb = (maxUploadSize / (1024 * 1024)).toFixed(1);
+          showToast(`La foto es demasiado grande para el servidor (máximo ${maxMb}MB).`, 'error');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Enviar a la Pantalla';
+          return;
+        }
+
         const formData = new FormData();
         formData.append('guestName', guestNameInput.value.trim());
         formData.append('message', guestMessageInput ? guestMessageInput.value.trim() : '');
@@ -2435,7 +2449,19 @@ document.addEventListener('DOMContentLoaded', () => {
           body: formData
         });
 
-        const result = await response.json();
+        let result;
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          result = await response.json();
+        } else {
+          const text = await response.text();
+          if (response.status === 413) {
+            const maxMb = (maxUploadSize / (1024 * 1024)).toFixed(1);
+            throw new Error(`La foto es demasiado grande para el servidor (límite de ${maxMb}MB).`);
+          }
+          throw new Error(text.substring(0, 100) || `Error del servidor (código ${response.status})`);
+        }
+
         if (response.ok && result.success) {
           uploadForm.reset();
           selectedFile = null;
@@ -2458,7 +2484,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       } catch (err) {
         console.error(err);
-        showToast('Error de conexión al subir la foto.', 'error');
+        showToast(err.message || 'Error de conexión al subir la foto.', 'error');
         submitBtn.disabled = false;
         submitBtn.textContent = 'Enviar a la Pantalla';
       }
