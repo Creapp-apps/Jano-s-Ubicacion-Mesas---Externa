@@ -4092,6 +4092,244 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // Direct Drag & Drop for individual photo rows
+  document.querySelectorAll('.individual-photo-row').forEach(row => {
+    // Drag highlights
+    ['dragenter', 'dragover'].forEach(eventName => {
+      row.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        row.style.borderColor = 'var(--gold-primary)';
+        row.style.background = 'rgba(212,175,55,0.05)';
+        row.style.boxShadow = '0 0 10px rgba(212,175,55,0.15)';
+      }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      row.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        row.style.borderColor = 'var(--card-border)';
+        row.style.background = 'rgba(255,255,255,0.02)';
+        row.style.boxShadow = 'none';
+      }, false);
+    });
+
+    // Drop handler
+    row.addEventListener('drop', (e) => {
+      const dt = e.dataTransfer;
+      const files = dt.files;
+      if (files && files.length > 0) {
+        const file = files[0];
+        if (!file.type.startsWith('image/')) {
+          showToast('error', 'Error', 'Solo se permiten archivos de imagen.');
+          return;
+        }
+
+        const photoId = row.getAttribute('data-photo-id');
+        currentUploadPhotoId = photoId;
+        
+        if (uploadPhotoTitle) {
+          uploadPhotoTitle.textContent = photoId === '1' ? 'Foto 1 (Principal)' : `Foto ${photoId}`;
+        }
+
+        // Reset and show upload progress modal
+        if (photoFileInput) photoFileInput.value = '';
+        if (photoUploadLoading) photoUploadLoading.style.display = 'none';
+        if (photoProgressBar) photoProgressBar.style.width = '0%';
+        [photoStepCompress, photoStepUpload, photoStepFinalize].forEach(step => {
+          if (step) step.className = 'audio-up-step';
+        });
+
+        if (photoUploadModal) {
+          photoUploadModal.classList.add('active');
+        }
+
+        // Trigger compression & upload workflow
+        handlePhotoUpload(file);
+      }
+    });
+  });
+
+  // Bulk Upload functionality
+  const bulkDropZone = document.getElementById('bulk-photo-dropzone');
+  const bulkFileInput = document.getElementById('bulk-photo-file-input');
+
+  if (bulkDropZone && bulkFileInput) {
+    bulkDropZone.addEventListener('click', () => {
+      bulkFileInput.click();
+    });
+
+    // Drag highlights
+    ['dragenter', 'dragover'].forEach(eventName => {
+      bulkDropZone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        bulkDropZone.style.borderColor = 'var(--gold-primary)';
+        bulkDropZone.style.background = 'rgba(212,175,55,0.05)';
+        bulkDropZone.style.boxShadow = '0 0 15px rgba(212,175,55,0.2)';
+      }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      bulkDropZone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        bulkDropZone.style.borderColor = 'rgba(212,175,55,0.3)';
+        bulkDropZone.style.background = 'rgba(255,255,255,0.01)';
+        bulkDropZone.style.boxShadow = 'inset 0 0 15px rgba(0,0,0,0.2)';
+      }, false);
+    });
+
+    bulkDropZone.addEventListener('drop', (e) => {
+      const dt = e.dataTransfer;
+      const files = dt.files;
+      if (files && files.length > 0) {
+        handleBulkPhotoUpload(files);
+      }
+    });
+
+    bulkFileInput.addEventListener('change', (e) => {
+      const files = e.target.files;
+      if (files && files.length > 0) {
+        handleBulkPhotoUpload(files);
+      }
+    });
+  }
+
+  // Handle Bulk Photo Upload Workflow Sequentially
+  async function handleBulkPhotoUpload(files) {
+    const filesToUpload = Array.from(files).filter(f => f.type.startsWith('image/')).slice(0, 5);
+    if (filesToUpload.length === 0) {
+      showToast('error', 'Error', 'No se encontraron imágenes válidas.');
+      return;
+    }
+
+    // Open upload progress modal
+    if (photoUploadModal) {
+      photoUploadModal.classList.add('active');
+    }
+
+    showToast('info', 'Subiendo Fotos', `Comenzando subida de ${filesToUpload.length} fotos...`);
+
+    for (let i = 0; i < filesToUpload.length; i++) {
+      const file = filesToUpload[i];
+      const photoId = i + 1;
+
+      // Update current target ID
+      currentUploadPhotoId = photoId.toString();
+
+      // Update modal title
+      if (uploadPhotoTitle) {
+        uploadPhotoTitle.textContent = `Lote: Subiendo Foto ${photoId} de ${filesToUpload.length}`;
+      }
+
+      // Reset loading progress for this file
+      if (photoUploadLoading) photoUploadLoading.style.display = 'block';
+      if (photoProgressBar) photoProgressBar.style.width = '0%';
+      [photoStepCompress, photoStepUpload, photoStepFinalize].forEach(step => {
+        if (step) step.className = 'audio-up-step';
+      });
+
+      try {
+        // Step 1: Compress
+        if (photoStepCompress) photoStepCompress.classList.add('active');
+        if (photoProgressBar) photoProgressBar.style.width = '10%';
+        
+        const compressedBlob = await compressImage(file, 1200, 1200, 0.8);
+        
+        if (photoStepCompress) {
+          photoStepCompress.classList.remove('active');
+          photoStepCompress.classList.add('completed');
+        }
+        if (photoProgressBar) photoProgressBar.style.width = '30%';
+
+        // Step 2: Upload
+        if (photoStepUpload) photoStepUpload.classList.add('active');
+        
+        const formData = new FormData();
+        formData.append('image', compressedBlob, file.name || `photo_${photoId}.jpg`);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', `/api/admin/upload-image?event=${encodeURIComponent(eventId)}`);
+
+        xhr.upload.addEventListener('progress', (e) => {
+          if (e.lengthComputable) {
+            const uploadPercent = (e.loaded / e.total) * 100;
+            const progressPercent = 30 + (uploadPercent * 0.6);
+            if (photoProgressBar) photoProgressBar.style.width = `${progressPercent}%`;
+          }
+        });
+
+        const uploadPromise = new Promise((resolve, reject) => {
+          xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              try {
+                const res = JSON.parse(xhr.responseText);
+                if (res.success && res.url) {
+                  resolve(res.url);
+                } else {
+                  reject(new Error(res.error || 'Error al subir la imagen.'));
+                }
+              } catch (err) {
+                reject(new Error('Respuesta inválida del servidor.'));
+              }
+            } else {
+              reject(new Error(`Error del servidor: ${xhr.status}`));
+            }
+          };
+          xhr.onerror = () => reject(new Error('Error de red.'));
+        });
+
+        xhr.send(formData);
+        const imageUrl = await uploadPromise;
+
+        if (photoStepUpload) {
+          photoStepUpload.classList.remove('active');
+          photoStepUpload.classList.add('completed');
+        }
+        if (photoProgressBar) photoProgressBar.style.width = '90%';
+
+        // Step 3: Finalize
+        if (photoStepFinalize) photoStepFinalize.classList.add('active');
+        
+        const targetInput = document.getElementById(`inv-photo-${photoId}`);
+        if (targetInput) {
+          targetInput.value = imageUrl;
+          targetInput.dispatchEvent(new Event('input'));
+        }
+
+        if (photoStepFinalize) {
+          photoStepFinalize.classList.remove('active');
+          photoStepFinalize.classList.add('completed');
+        }
+        if (photoProgressBar) photoProgressBar.style.width = '100%';
+
+        // Wait brief delay before moving to the next photo
+        await new Promise(resolve => setTimeout(resolve, 800));
+
+      } catch (err) {
+        console.error(`[Bulk Upload] Error uploading photo ${photoId}:`, err);
+        showToast('error', `Error en Foto ${photoId}`, err.message || 'No se pudo subir la imagen.');
+        
+        if (photoStepFinalize) {
+          photoStepFinalize.classList.add('error');
+        }
+        
+        // Wait a bit so they can see the error, then close the modal
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        closePhotoUploadModal();
+        return;
+      }
+    }
+
+    showToast('success', '¡Éxito!', `Se subieron y asignaron las ${filesToUpload.length} fotos correctamente.`);
+    setTimeout(() => {
+      closePhotoUploadModal();
+    }, 1000);
+  }
+
+
   // Client-side image compression
   function compressImage(file, maxWidth, maxHeight, quality) {
     return new Promise((resolve, reject) => {

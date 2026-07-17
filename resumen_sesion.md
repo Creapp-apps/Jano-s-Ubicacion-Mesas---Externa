@@ -208,6 +208,32 @@ En esta sesión se transformó el sistema de bienvenida administrativa de **Fies
      * **Link de Spotify:** Advierte de manera comprensible que solo reproducirá una vista previa de 30 segundos en bucle repetitivo si el invitado permanece leyendo la tarjeta.
      * **Canción Completa (MP3):** Sugiere explícitamente subir un archivo `.mp3` para lograr que el tema suene completo de inicio a fin y sin pausas.
 
+5. **Optimización responsiva y espacial de la previsualización de la invitación**:
+   - **Disco de Música Flotante:** Achicamos el tamaño del vinilo giratorio en móviles a **32px** (y su icono interno a 14px) para lograr un estilo ultra minimalista que no interfiera con el contenido.
+   - **Ubicación de Selectores ("Sobre" y "Tarjeta"):** Desplazamos la barra de botones selectores de vistas fuera de la pantalla del simulador del celular en `admin.html`, ubicándola justo arriba de la maqueta del teléfono. Esto garantiza que el área del iframe simule al 100% una pantalla real de celular sin elementos flotantes superpuestos ajenos a la invitación.
+   - **Escalado del Viewport (Iframe Mockup):** Configuramos las dimensiones del iframe nativamente en **360px** de ancho y **700px** de alto (un viewport móvil estándar), y luego aplicamos un escalado de reducción CSS (`transform: scale(0.661)`) para que quepa exactamente dentro del mockup de 250px del administrador. Esto fuerza al navegador a renderizar la invitación en una escala responsiva móvil real, haciendo que la barra de navegación inferior, los textos y los botones de la tarjeta se acomoden perfectamente a la pantalla ("calco" idéntico a un smartphone real).
+
 ### 📌 Estado de Retorno tras el Descanso
-* **Estado:** Totalmente corregido y testeado. El panel de administración aísla perfectamente la personalización de invitaciones, los slides del modal de onboarding se despliegan con calidad visual premium, y los inputs de Google Maps y Música poseen sus respectivas burbujas de ayuda interactiva.
+* **Estado:** Totalmente corregido y testeado. El panel de administración aísla perfectamente la personalización de invitaciones, los slides del modal de onboarding se despliegan con calidad visual premium, los inputs de Google Maps y Música poseen sus burbujas de ayuda interactiva, los selectores de vista previa están colocados por fuera del simulador de celular, el reproductor flotante en móviles tiene un formato circular de 32px y el iframe se renderiza de forma escalada para emular con fidelidad absoluta una pantalla móvil real de 360px.
 * **Próximas Tareas:** Revisar el flujo de usuario inicial en pantallas de diferentes resoluciones tras el primer ingreso de un evento.
+
+---
+
+## 🌌 Sesión - Carrusel de Fotos Administrativo y Drag-and-Drop
+En esta sesión implementamos funcionalidades avanzadas de interactividad en el módulo de personalización de fotos del carrusel de invitación.
+
+### 🛠️ Logros e Implementaciones
+1. **Drag-and-Drop Directo por Foto**:
+   - Cada una de las 5 filas de fotos individuales (`.individual-photo-row`) fue convertida en una zona de soltar activa (`drop zone`).
+   - Se implementaron listeners interactivos para dar un feedback visual de lujo (brillo en los bordes dorados, fondo traslúcido y sombra de relieve) durante la acción de arrastre (`dragover`), con transiciones fluidas de $300\text{ ms}$.
+   - Al soltar la imagen en una fila específica, se dispara el modal de progreso correspondiente y se asigna la foto procesada directamente a esa casilla.
+   - Añadimos la indicación didáctica a la derecha de la etiqueta de cada slot: `"Arrastra AQUÍ para aplicar la foto al carrusel"`.
+
+2. **Carga en Lote (Bulk Upload) de 5 Fotos**:
+   - Se diseñó e integró un contenedor dash-border dorado elegante (`#bulk-photo-dropzone`) que permite arrastrar o seleccionar hasta 5 fotos en lote.
+   - El procesador de carga en lote filtra archivos que no sean de tipo imagen, limita la subida a un máximo de 5 ítems simultáneos y realiza la subida de forma secuencial interactiva.
+   - Durante la subida secuencial, el modal del cargador actualiza dinámicamente el título indicando el progreso actual (ej. `"Lote: Subiendo Foto 2 de 5"`), comprimiendo y subiendo cada foto, y asignándola a los slots correspondientes (`inv-photo-1` a `inv-photo-5`) de forma consecutiva con disparadores de actualización en tiempo real para refrescar la vista previa 3D.
+
+3. **Verificación**:
+   - Ejecutamos con éxito las pruebas automáticas (`npm test`), constatando que no se presentaron regresiones en el guardado de configuración ni en el servidor.
+
