@@ -17,7 +17,20 @@ async function sendWelcomeEmail(clientEmail, clientName, eventId, password) {
     return { success: false, error: 'No client email provided' };
   }
 
-  const baseUrl = process.env.APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://mifiestapp.com');
+  // Compute baseUrl prioritizing APP_URL env.
+  // If we are on a production deployment in Vercel, force our custom domain (mifiestapp.com.ar).
+  // Otherwise, use VERCEL_URL if it's a Vercel preview/dev environment, defaulting to mifiestapp.com.ar.
+  let baseUrl = process.env.APP_URL;
+  if (!baseUrl) {
+    if (process.env.VERCEL_ENV === 'production') {
+      baseUrl = 'https://mifiestapp.com.ar';
+    } else if (process.env.VERCEL_URL) {
+      baseUrl = `https://${process.env.VERCEL_URL}`;
+    } else {
+      baseUrl = 'https://mifiestapp.com.ar';
+    }
+  }
+
   const subject = `¡Tu servicio de MiFiestAPP para "${clientName}" está listo! 🚀`;
 
   // HTML template matching MiFiestAPP premium aesthetic
