@@ -237,3 +237,30 @@ En esta sesión implementamos funcionalidades avanzadas de interactividad en el 
 3. **Verificación**:
    - Ejecutamos con éxito las pruebas automáticas (`npm test`), constatando que no se presentaron regresiones en el guardado de configuración ni en el servidor.
 
+---
+
+## 🌌 Sesión - Enriquecimiento de Hipervínculos e Integración de Previsualización Premium para WhatsApp (Open Graph)
+En esta sesión implementamos la resolución y el soporte técnico para enriquecer visual y semánticamente los enlaces de invitación compartidos a través de WhatsApp u otras redes sociales.
+
+### 🛠️ Logros e Implementaciones
+1. **Intercepción de `/invitacion.html`**:
+   - El sistema generaba y exportaba links con la extensión `.html` (ej. `/invitacion.html?event=...&n=...`). Debido a que el middleware `express.static` estaba registrado primero, la solicitud de los invitados era servida como un archivo HTML estático puro, ignorando la inyección dinámica de cabeceras.
+   - Modificamos el orden en `server.js` y definimos un manejador de ruta unificado que captura tanto `/invitacion` como `/invitacion.html` antes de que intervenga el middleware estático.
+
+2. **Personalización de Open Graph de Altísimo Nivel**:
+   - **Título Personalizado (`og:title` / `<title>`)**:
+     * Si la URL incluye el parámetro de nombre `n` del invitado (ej. `n=Sebastian Maza`), se genera un título cálido y dedicado: `¡Sebastian Maza, estás invitado/a! 💌`.
+     * Si se accede sin nombre, se muestra un título genérico premium: `¡Tenés una invitación especial! ✉️`.
+   - **Descripción Contextual Inteligente (`og:description`)**:
+     * Se extraen dinámicamente la fecha del evento (`invitation_event_date`) y la dirección física (`invitation_party_address`).
+     * La fecha se formatea en un español fluido y legible (ej. `25 de Octubre de 2026`).
+     * Se compone una descripción rica y descriptiva: `Casamiento Laura & Diego 💍 (25 de Octubre de 2026) en Jano's Palermo | Hacé clic para abrir tu tarjeta interactiva, ver ubicación, sugerir música y confirmar asistencia.`.
+   - **Imagen de Portada Dinámica y Absoluta (`og:image`)**:
+     * Para que WhatsApp renderice la miniatura correctamente, es obligatorio que la URL de la imagen sea absoluta. Construimos de manera dinámica la URL absoluta resolviendo el dominio y protocolo del servidor actual (`req.get('host')`).
+     * Se establece un flujo de resolución en cascada: Prioriza la imagen de portada de la tarjeta (`invitation_cover_url`), luego la primera foto del carrusel de galería (`invitation_photo_1`), luego el fondo de la invitación (`invitation_bg_url`), y finalmente usa la imagen de portada de marca premium de FiestAPP (`/assets/fiestapp_preview.png`) como fallback absoluto.
+
+3. **Garantía y Verificación de Flujo**:
+   - Creamos un script de prueba de integración de rutas (`scratch/test_og.js`) que inicializa el servidor express en un puerto dinámico y valida la correcta inyección de las etiquetas `<title>`, `og:title`, `og:description`, `og:image` y `og:site_name` en la respuesta HTTP ante la consulta de un invitado simulado.
+   - La prueba se ejecutó exitosamente en la terminal y las pruebas automáticas generales (`npm test`) continúan en un estado $100\%$ verde.
+
+

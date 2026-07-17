@@ -133,6 +133,118 @@ app.get('/:eventId', async (req, res, next) => {
   next();
 });
 
+// Helper to format date beautifully in Spanish (e.g. YYYY-MM-DD to "DD de Mes de YYYY")
+function formatDateToSpanish(dateStr) {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    const year = parts[0];
+    const monthIndex = parseInt(parts[1], 10) - 1;
+    const day = parseInt(parts[2], 10);
+    const months = [
+      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    ];
+    if (monthIndex >= 0 && monthIndex < 12) {
+      return `${day} de ${months[monthIndex]} de ${year}`;
+    }
+  }
+  return dateStr;
+}
+
+// Serve dynamic invitation with premium rich metadata (Open Graph / WhatsApp)
+app.get(['/invitacion', '/invitacion.html'], async (req, res) => {
+  const eventId = req.query.event || 'default';
+  let eventTitle = '';
+  let config = {};
+  
+  try {
+    const events = await db.getEvents();
+    const event = events.find(e => e.id === eventId);
+    if (event && event.serviceInvitation === false) {
+      return res.redirect(`/event.html?event=${encodeURIComponent(eventId)}`);
+    }
+    config = await db.getConfigValues(eventId);
+    eventTitle = config['event_title'] || '';
+  } catch (err) {
+    console.error('Error checking service availability or config:', err);
+  }
+
+  try {
+    const filePath = path.join(__dirname, 'public', 'invitacion.html');
+    let html = await fs.promises.readFile(filePath, 'utf8');
+
+    // Guest name from query param 'n'
+    const guestName = (req.query.n || '').trim();
+    
+    // Custom Titles and Descriptions for premium previews
+    let displayTitle = '';
+    let ogTitle = '';
+    let ogDescription = '';
+    
+    const datePart = config['invitation_event_date'] ? formatDateToSpanish(config['invitation_event_date']) : '';
+    const addressPart = config['invitation_party_address'] || '';
+    const dateAndLoc = `${datePart ? ` (${datePart})` : ''}${addressPart ? ` en ${addressPart}` : ''}`;
+
+    if (guestName) {
+      displayTitle = `¡${guestName}, estás invitado/a! 💌`;
+      ogTitle = `¡${guestName}, estás invitado/a! 💌`;
+      ogDescription = `${eventTitle || 'Nuestra Fiesta'} 🥂${dateAndLoc} | Hacé clic para abrir tu tarjeta interactiva, ver ubicación, sugerir música y confirmar asistencia.`;
+    } else {
+      displayTitle = eventTitle ? `Invitación Interactiva | ${eventTitle}` : 'Invitación Interactiva';
+      ogTitle = `¡Tenés una invitación especial! ✉️`;
+      ogDescription = `${eventTitle || 'Te invitamos a nuestra fiesta'} 🥂${dateAndLoc} | Hacé clic para abrir tu invitación, ver detalles y confirmar tu asistencia.`;
+    }
+
+    // Dynamic replacement of <title>
+    html = html.replace(/<title>.*?<\/title>/, `<title>${displayTitle}</title>`);
+    
+    // Construct dynamic image URL (absolute URL required by crawlers like WhatsApp)
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'http';
+    const host = req.get('host');
+    const baseUrl = `${protocol}://${host}`;
+    
+    const configuredImage = config['invitation_cover_url'] || config['invitation_photo_1'] || config['invitation_bg_url'] || '';
+    let ogImageUrl = '';
+    
+    if (configuredImage) {
+      if (configuredImage.startsWith('http://') || configuredImage.startsWith('https://')) {
+        ogImageUrl = configuredImage;
+      } else {
+        const cleanImagePath = configuredImage.startsWith('/') ? configuredImage : `/${configuredImage}`;
+        ogImageUrl = `${baseUrl}${cleanImagePath}`;
+      }
+    } else {
+      ogImageUrl = `${baseUrl}/assets/fiestapp_preview.png`;
+    }
+
+    // Inject Open Graph tags for premium WhatsApp previews
+    const ogMeta = `
+  <!-- Open Graph / WhatsApp / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="${baseUrl}${req.originalUrl}" />
+  <meta property="og:title" content="${ogTitle}" />
+  <meta property="og:description" content="${ogDescription}" />
+  <meta property="og:image" content="${ogImageUrl}" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:site_name" content="MiFiestAPP" />
+
+  <!-- Twitter Meta Tags -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="${ogTitle}" />
+  <meta name="twitter:description" content="${ogDescription}" />
+  <meta name="twitter:image" content="${ogImageUrl}" />`;
+
+    html = html.replace('</head>', `${ogMeta}\n</head>`);
+    
+    res.send(html);
+  } catch (err) {
+    console.error('Error serving dynamic invitation page:', err);
+    res.sendFile(path.join(__dirname, 'public', 'invitacion.html'));
+  }
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Authentication middleware
@@ -1608,41 +1720,6 @@ app.get('/mesas', async (req, res) => {
     console.error('Error checking service availability:', err);
   }
   res.sendFile(path.join(__dirname, 'public', 'mesas.html'));
-});
-
-app.get('/invitacion', async (req, res) => {
-  const eventId = req.query.event || 'default';
-  let eventTitle = '';
-  try {
-    const events = await db.getEvents();
-    const event = events.find(e => e.id === eventId);
-    if (event && event.serviceInvitation === false) {
-      return res.redirect(`/event.html?event=${encodeURIComponent(eventId)}`);
-    }
-    const config = await db.getConfigValues(eventId);
-    eventTitle = config['event_title'] || '';
-  } catch (err) {
-    console.error('Error checking service availability or config:', err);
-  }
-
-  try {
-    const filePath = path.join(__dirname, 'public', 'invitacion.html');
-    let html = await fs.promises.readFile(filePath, 'utf8');
-    const displayTitle = eventTitle ? `Invitación Interactiva | ${eventTitle}` : 'Invitación Interactiva';
-    html = html.replace(/<title>.*?<\/title>/, `<title>${displayTitle}</title>`);
-    
-    // Inject Open Graph tags for rich previews
-    const ogMeta = `
-  <meta property="og:title" content="${displayTitle}" />
-  <meta property="og:description" content="Te invitamos a compartir este momento especial con nosotros." />
-  <meta property="og:type" content="website" />`;
-    html = html.replace('</head>', `${ogMeta}\n</head>`);
-    
-    res.send(html);
-  } catch (err) {
-    console.error('Error serving dynamic invitation page:', err);
-    res.sendFile(path.join(__dirname, 'public', 'invitacion.html'));
-  }
 });
 
 app.get('/', (req, res) => {
