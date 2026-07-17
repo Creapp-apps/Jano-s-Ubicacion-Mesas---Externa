@@ -1602,64 +1602,122 @@ document.addEventListener('DOMContentLoaded', () => {
     );
   };
 
-  // Onboarding Welcome Banner logic
-  const welcomeBanner = document.getElementById('welcome-banner');
-  const btnDismissBanner = document.getElementById('btn-dismiss-banner');
+  // Onboarding Welcome Floating Modal logic
+  const onboardingContainer = document.getElementById('onboarding-modal-container');
+  const btnCloseOnboarding = document.getElementById('btn-close-onboarding');
+  const btnOnboardingPrev = document.getElementById('btn-onboarding-prev');
+  const btnOnboardingNext = document.getElementById('btn-onboarding-next');
   const btnToggleGuide = document.getElementById('btn-toggle-guide');
-  const bannerCards = document.querySelectorAll('.banner-card');
-  const bannerDetails = document.getElementById('banner-interactive-details');
-  const detailsSteps = document.querySelectorAll('.details-step');
+  const onboardingSlides = document.querySelectorAll('.onboarding-slide');
+  const onboardingIndicators = document.querySelectorAll('.onboarding-indicators .indicator');
 
-  if (welcomeBanner) {
-    // Show banner if not dismissed before
-    if (!localStorage.getItem(`onboarding_dismissed_${eventId}`)) {
-      welcomeBanner.style.display = 'block';
+  let currentSlideIndex = 0;
+  const totalSlides = onboardingSlides.length;
+
+  function showSlide(index) {
+    if (index < 0 || index >= totalSlides) return;
+    currentSlideIndex = index;
+
+    // Show/Hide slides
+    onboardingSlides.forEach((slide, i) => {
+      if (i === currentSlideIndex) {
+        slide.classList.add('active');
+      } else {
+        slide.classList.remove('active');
+      }
+    });
+
+    // Update indicators
+    onboardingIndicators.forEach((ind, i) => {
+      if (i === currentSlideIndex) {
+        ind.classList.add('active');
+      } else {
+        ind.classList.remove('active');
+      }
+    });
+
+    // Navigation button text/visibility
+    if (currentSlideIndex === 0) {
+      btnOnboardingPrev.style.visibility = 'hidden';
+    } else {
+      btnOnboardingPrev.style.visibility = 'visible';
     }
 
-    // Dismiss button handler
-    if (btnDismissBanner) {
-      btnDismissBanner.addEventListener('click', () => {
-        welcomeBanner.style.display = 'none';
-        localStorage.setItem(`onboarding_dismissed_${eventId}`, 'true');
+    if (currentSlideIndex === totalSlides - 1) {
+      btnOnboardingNext.textContent = 'Comenzar';
+    } else {
+      btnOnboardingNext.textContent = 'Siguiente';
+    }
+  }
+
+  function openOnboarding() {
+    showSlide(0);
+    if (onboardingContainer) {
+      onboardingContainer.style.display = 'flex';
+      // Force reflow
+      onboardingContainer.offsetHeight;
+      onboardingContainer.classList.add('active');
+    }
+  }
+
+  function closeOnboarding() {
+    if (onboardingContainer) {
+      onboardingContainer.classList.remove('active');
+      setTimeout(() => {
+        onboardingContainer.style.display = 'none';
+      }, 400);
+    }
+  }
+
+  function dismissOnboardingPermanently() {
+    closeOnboarding();
+    localStorage.setItem(`onboarding_dismissed_${eventId}`, 'true');
+  }
+
+  if (onboardingContainer) {
+    // Show modal if not dismissed before
+    if (!localStorage.getItem(`onboarding_dismissed_${eventId}`)) {
+      setTimeout(() => {
+        openOnboarding();
+      }, 500); // smooth delay after load
+    }
+
+    // Dismiss handlers
+    if (btnCloseOnboarding) {
+      btnCloseOnboarding.addEventListener('click', dismissOnboardingPermanently);
+    }
+
+    // Prev / Next button handlers
+    if (btnOnboardingPrev) {
+      btnOnboardingPrev.addEventListener('click', () => {
+        showSlide(currentSlideIndex - 1);
       });
     }
 
-    // Toggle Help button in header
+    if (btnOnboardingNext) {
+      btnOnboardingNext.addEventListener('click', () => {
+        if (currentSlideIndex === totalSlides - 1) {
+          dismissOnboardingPermanently();
+        } else {
+          showSlide(currentSlideIndex + 1);
+        }
+      });
+    }
+
+    // Indicators click
+    onboardingIndicators.forEach((ind, i) => {
+      ind.addEventListener('click', () => {
+        showSlide(i);
+      });
+    });
+
+    // Header Help button trigger
     if (btnToggleGuide) {
       btnToggleGuide.addEventListener('click', (e) => {
         e.preventDefault();
-        const isCurrentlyVisible = welcomeBanner.style.display === 'block';
-        welcomeBanner.style.display = isCurrentlyVisible ? 'none' : 'block';
-        if (!isCurrentlyVisible) {
-          welcomeBanner.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
+        openOnboarding();
       });
     }
-
-    // Card interactive navigation
-    bannerCards.forEach(card => {
-      card.addEventListener('click', () => {
-        const step = card.getAttribute('data-step');
-        
-        // Toggle active card styling
-        bannerCards.forEach(c => c.classList.remove('active-step'));
-        card.classList.add('active-step');
-
-        // Show details container
-        if (bannerDetails) {
-          bannerDetails.style.display = 'block';
-        }
-
-        // Switch to the selected step's detail view
-        detailsSteps.forEach(detail => {
-          detail.style.display = 'none';
-        });
-        const selectedDetail = document.getElementById(`details-content-step-${step}`);
-        if (selectedDetail) {
-          selectedDetail.style.display = 'block';
-        }
-      });
-    });
   }
 
   // --- Phase 3: Invitation & RSVP Management Logic ---

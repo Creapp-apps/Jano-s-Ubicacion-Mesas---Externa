@@ -51,158 +51,6 @@
       </button>
     </div>
 
-    <!-- Interactive Welcome Banner -->
-    <div class="panel welcome-banner" id="welcome-banner" style="margin-top: 10px; margin-bottom: 20px; position: relative; overflow: hidden; padding: 25px; border: 1px solid rgba(212, 175, 55, 0.2); background: linear-gradient(135deg, rgba(20, 20, 20, 0.9) 0%, rgba(10, 10, 10, 0.95) 100%); display: none;">
-      <!-- Close Button -->
-      <button type="button" id="btn-dismiss-banner" style="position: absolute; top: 15px; right: 15px; background: none; border: none; cursor: pointer; color: var(--text-muted); opacity: 0.6; transition: all 0.3s; z-index: 10;" title="Ocultar guía">
-        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-        </svg>
-      </button>
-
-      <!-- Banner Header -->
-      <div class="banner-header" style="margin-bottom: 25px;">
-        <h2 style="font-family: 'Cinzel', serif; font-size: 1.5rem; margin: 0 0 8px 0; background: var(--gold-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-          Descubre la Experiencia MiFiestAPP
-        </h2>
-        <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0; line-height: 1.5;">
-          Tu evento cuenta con herramientas interactivas diseñadas para cautivar a tus invitados. Haz clic en cada módulo para ver cómo funciona el servicio.
-        </p>
-      </div>
-
-      <!-- Interactive Grid of Cards -->
-      <div class="banner-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
-        
-        <!-- CARD 1: LOCALIZADOR QR -->
-        <div class="banner-card" data-step="1" style="background: rgba(255,255,255,0.02); border: 1px solid var(--card-border); border-radius: 15px; padding: 20px; cursor: pointer; transition: all 0.3s ease; position: relative;">
-          <div class="card-icon-anim" style="height: 50px; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; color: var(--gold-primary);">
-            <svg class="anim-svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="6" stroke-dasharray="4 2" class="table-circle" />
-              <circle cx="12" cy="3" r="1.5" class="chair chair-1" />
-              <circle cx="12" cy="21" r="1.5" class="chair chair-2" />
-              <circle cx="3" cy="12" r="1.5" class="chair chair-3" />
-              <circle cx="21" cy="12" r="1.5" class="chair chair-4" />
-              <path d="M3 3h2v2H3zm16 0h2v2h-2zM3 19h2v2H3z" />
-            </svg>
-          </div>
-          <h3 style="font-family: 'Cinzel', serif; font-size: 0.95rem; color: var(--text-main); text-align: center; margin: 0 0 8px 0;">Localizador de Mesas</h3>
-          <p style="font-size: 0.75rem; color: var(--text-muted); text-align: center; margin: 0; line-height: 1.4;">Tus invitados escanean el QR en la recepción para saber su mesa al instante.</p>
-        </div>
-
-        <!-- CARD 2: INVITACIÓN DIGITAL -->
-        <div class="banner-card" data-step="2" style="background: rgba(255,255,255,0.02); border: 1px solid var(--card-border); border-radius: 15px; padding: 20px; cursor: pointer; transition: all 0.3s ease; position: relative;">
-          <div class="card-icon-anim" style="height: 50px; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; color: var(--gold-primary);">
-            <svg class="anim-svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-              <path d="M22 6l-10 7L2 6" class="envelope-flap" />
-              <path d="M12 12l8-5M12 12L4 7" />
-              <circle cx="12" cy="12" r="1" fill="currentColor" class="sparkle" />
-            </svg>
-          </div>
-          <h3 style="font-family: 'Cinzel', serif; font-size: 0.95rem; color: var(--text-main); text-align: center; margin: 0 0 8px 0;">Invitación & RSVPs</h3>
-          <p style="font-size: 0.75rem; color: var(--text-muted); text-align: center; margin: 0; line-height: 1.4;">Confirmación de asistencia, mapa, datos de regalo y sugerencias musicales.</p>
-        </div>
-
-        <!-- CARD 3: MURO DE FOTOS -->
-        <div class="banner-card" data-step="3" style="background: rgba(255,255,255,0.02); border: 1px solid var(--card-border); border-radius: 15px; padding: 20px; cursor: pointer; transition: all 0.3s ease; position: relative;">
-          <div class="card-icon-anim" style="height: 50px; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; color: var(--gold-primary);">
-            <svg class="anim-svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-              <circle cx="12" cy="13" r="4" class="camera-lens" />
-              <path d="M12 9v8" stroke-dasharray="2" class="photo-upload-arrow" />
-            </svg>
-          </div>
-          <h3 style="font-family: 'Cinzel', serif; font-size: 0.95rem; color: var(--text-main); text-align: center; margin: 0 0 8px 0;">Muro de Fotos</h3>
-          <p style="font-size: 0.75rem; color: var(--text-muted); text-align: center; margin: 0; line-height: 1.4;">Fotos capturadas en vivo que se proyectan tras tu moderación en el salón.</p>
-        </div>
-
-        <!-- CARD 4: JUEGO DE TRIVIA -->
-        <div class="banner-card" data-step="4" style="background: rgba(255,255,255,0.02); border: 1px solid var(--card-border); border-radius: 15px; padding: 20px; cursor: pointer; transition: all 0.3s ease; position: relative;">
-          <div class="card-icon-anim" style="height: 50px; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; color: var(--gold-primary);">
-            <svg class="anim-svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10" />
-              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" class="question-mark" />
-              <line x1="12" y1="17" x2="12.01" y2="17" stroke-width="3" />
-            </svg>
-          </div>
-          <h3 style="font-family: 'Cinzel', serif; font-size: 0.95rem; color: var(--text-main); text-align: center; margin: 0 0 8px 0;">Juego de Trivia</h3>
-          <p style="font-size: 0.75rem; color: var(--text-muted); text-align: center; margin: 0; line-height: 1.4;">Un divertido juego interactivo en vivo con preguntas del homenajeado.</p>
-        </div>
-
-      </div>
-
-      <!-- Interactive Display Area -->
-      <div id="banner-interactive-details" style="display: none; margin-top: 25px; padding: 20px; border-radius: 15px; border: 1px solid rgba(212,175,55,0.1); background: rgba(0,0,0,0.5); position: relative; overflow: hidden; animation: slideDown 0.4s ease-out;">
-        <div id="details-content-step-1" class="details-step" style="display: none;">
-          <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
-            <div style="flex: 1; min-width: 250px;">
-              <h4 style="font-family: 'Cinzel', serif; font-size: 1.1rem; color: var(--gold-light); margin: 0 0 10px 0;">¿Cómo funciona el Localizador de Mesas?</h4>
-              <ol style="color: var(--text-muted); font-size: 0.8rem; line-height: 1.6; padding-left: 20px; margin: 0 0 15px 0;">
-                <li style="margin-bottom: 6px;"><strong>Carga la lista:</strong> Sube tus invitados usando el botón "+ Agregar" o "Cargar Excel" en la pestaña actual.</li>
-                <li style="margin-bottom: 6px;"><strong>Imprime el QR:</strong> Descarga el cartel de recepción desde la tarjeta de la izquierda.</li>
-                <li style="margin-bottom: 6px;"><strong>Escanear & Buscar:</strong> Al ingresar al salón, los invitados escanean el QR con su celular y buscan su nombre para saber su mesa al instante.</li>
-              </ol>
-            </div>
-            <div style="flex: none; width: 140px; text-align: center; padding: 10px; border: 1px dashed rgba(212,175,55,0.3); border-radius: 10px; background: rgba(0,0,0,0.3);">
-              <div style="font-size: 0.7rem; color: var(--gold-primary); text-transform: uppercase; margin-bottom: 5px; font-weight: 600;">Paso Clave</div>
-              <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0; line-height: 1.3;">Sube tu archivo Excel para automatizar la ubicación.</p>
-            </div>
-          </div>
-        </div>
-        
-        <div id="details-content-step-2" class="details-step" style="display: none;">
-          <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
-            <div style="flex: 1; min-width: 250px;">
-              <h4 style="font-family: 'Cinzel', serif; font-size: 1.1rem; color: var(--gold-light); margin: 0 0 10px 0;">Gestión de Invitación Digital & RSVPs</h4>
-              <ol style="color: var(--text-muted); font-size: 0.8rem; line-height: 1.6; padding-left: 20px; margin: 0 0 15px 0;">
-                <li style="margin-bottom: 6px;"><strong>Personaliza el diseño:</strong> Configura fecha, dirección, código de vestimenta y datos de transferencia en la pestaña "Invitación & RSVPs".</li>
-                <li style="margin-bottom: 6px;"><strong>Envía los links:</strong> Copia el enlace exclusivo de cada invitado desde la lista de abajo y compártelo por WhatsApp.</li>
-                <li style="margin-bottom: 6px;"><strong>Monitorea RSVPs:</strong> Cuando los invitados confirmen asistencia o sugieran música, lo verás reflejado al instante en este panel.</li>
-              </ol>
-            </div>
-            <div style="flex: none; width: 140px; text-align: center; padding: 10px; border: 1px dashed rgba(212,175,55,0.3); border-radius: 10px; background: rgba(0,0,0,0.3);">
-              <div style="font-size: 0.7rem; color: var(--gold-primary); text-transform: uppercase; margin-bottom: 5px; font-weight: 600;">Dato Pro</div>
-              <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0; line-height: 1.3;">El listado de sugerencias de música se exporta junto con el Excel.</p>
-            </div>
-          </div>
-        </div>
-        
-        <div id="details-content-step-3" class="details-step" style="display: none;">
-          <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
-            <div style="flex: 1; min-width: 250px;">
-              <h4 style="font-family: 'Cinzel', serif; font-size: 1.1rem; color: var(--gold-light); margin: 0 0 10px 0;">¿Cómo funciona el Muro de Fotos interactivo?</h4>
-              <ol style="color: var(--text-muted); font-size: 0.8rem; line-height: 1.6; padding-left: 20px; margin: 0 0 15px 0;">
-                <li style="margin-bottom: 6px;"><strong>Sube en vivo:</strong> En la recepción o mesas habrá un QR específico para la Galería de Fotos.</li>
-                <li style="margin-bottom: 6px;"><strong>Modera y aprueba:</strong> Ve a la pestaña "Moderación de Fotos". Las imágenes que tomen tus invitados aparecerán allí como "Pendientes".</li>
-                <li style="margin-bottom: 6px;"><strong>Proyecta en Pantalla:</strong> Presiona "Proyectar Fotos" para abrir el visor del salón en una pantalla gigante. Al aprobar fotos en este panel, aparecerán automáticamente en la pantalla en tiempo real.</li>
-              </ol>
-            </div>
-            <div style="flex: none; width: 140px; text-align: center; padding: 10px; border: 1px dashed rgba(212,175,55,0.3); border-radius: 10px; background: rgba(0,0,0,0.3);">
-              <div style="font-size: 0.7rem; color: var(--gold-primary); text-transform: uppercase; margin-bottom: 5px; font-weight: 600;">Seguridad</div>
-              <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0; line-height: 1.3;">Ninguna foto se proyectará sin que antes la hayas aprobado.</p>
-            </div>
-          </div>
-        </div>
-        
-        <div id="details-content-step-4" class="details-step" style="display: none;">
-          <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
-            <div style="flex: 1; min-width: 250px;">
-              <h4 style="font-family: 'Cinzel', serif; font-size: 1.1rem; color: var(--gold-light); margin: 0 0 10px 0;">Trivia Interactiva en Vivo</h4>
-              <ol style="color: var(--text-muted); font-size: 0.8rem; line-height: 1.6; padding-left: 20px; margin: 0 0 15px 0;">
-                <li style="margin-bottom: 6px;"><strong>Configura las preguntas:</strong> Crea o edita preguntas divertidas sobre la homenajeada en la pestaña "Juego de Trivia".</li>
-                <li style="margin-bottom: 6px;"><strong>Controla el flujo:</strong> Desde este panel puedes iniciar la partida, avanzar las preguntas y mostrar el podio en tiempo real.</li>
-                <li style="margin-bottom: 6px;"><strong>Participación masiva:</strong> Los invitados juegan desde su celular a la par que los puntajes y ganadores se actualizan en la pantalla del salón.</li>
-              </ol>
-            </div>
-            <div style="flex: none; width: 140px; text-align: center; padding: 10px; border: 1px dashed rgba(212,175,55,0.3); border-radius: 10px; background: rgba(0,0,0,0.3);">
-              <div style="font-size: 0.7rem; color: var(--gold-primary); text-transform: uppercase; margin-bottom: 5px; font-weight: 600;">Divertidísimo</div>
-              <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0; line-height: 1.3;">Actívalo durante la cena para amenizar los tiempos muertos.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- TABLES & GUESTS TAB -->
     <div id="tab-mesas" class="tab-content active">
       <div class="admin-grid">
@@ -1190,74 +1038,762 @@
   </div>
 
   <style>
-    /* Animated SVGs on Hover */
-    .banner-card {
-      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), border-color 0.3s, background-color 0.3s, box-shadow 0.3s !important;
-    }
-    .banner-card:hover {
-      transform: translateY(-5px);
-      border-color: rgba(212, 175, 55, 0.6) !important;
-      background-color: rgba(212, 175, 55, 0.05) !important;
-      box-shadow: 0 10px 25px rgba(212, 175, 55, 0.1);
-    }
-    .banner-card.active-step {
-      border-color: var(--gold-primary) !important;
-      background-color: rgba(212, 175, 55, 0.08) !important;
-      box-shadow: inset 0 0 10px rgba(212, 175, 55, 0.1);
+    /* Onboarding Floating Modal Backdrop */
+    .onboarding-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(8, 8, 10, 0.75);
+      backdrop-filter: blur(12px) saturate(180%);
+      -webkit-backdrop-filter: blur(12px) saturate(180%);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.4s ease, visibility 0.4s ease;
     }
 
-    /* Animations for icons */
-    .banner-card:hover .table-circle {
-      animation: rotateTable 4s linear infinite;
-      transform-origin: center;
+    .onboarding-backdrop.active {
+      opacity: 1;
+      visibility: visible;
     }
-    @keyframes rotateTable {
+
+    /* Modal Content Box */
+    .onboarding-modal {
+      max-width: 620px;
+      width: 90%;
+      background: linear-gradient(135deg, rgba(22, 22, 26, 0.98) 0%, rgba(12, 12, 15, 0.99) 100%);
+      border: 1px solid rgba(212, 175, 55, 0.25);
+      border-radius: 28px;
+      padding: 40px 35px;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7), 
+                  inset 0 1px 0 rgba(255, 255, 255, 0.05),
+                  0 0 40px rgba(212, 175, 55, 0.05);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      transform: scale(0.92) translateY(20px);
+      transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .onboarding-backdrop.active .onboarding-modal {
+      transform: scale(1) translateY(0);
+    }
+
+    /* Close/Skip upper button */
+    .onboarding-close-btn {
+      position: absolute;
+      top: 25px;
+      right: 25px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      opacity: 0.6;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      padding: 5px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .onboarding-close-btn:hover {
+      opacity: 1;
+      color: var(--gold-primary);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    /* Slide Styles */
+    .onboarding-slide {
+      display: none;
+      animation: slideFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .onboarding-slide.active {
+      display: flex;
+    }
+
+    @keyframes slideFadeIn {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Slide Visual SVGs & glows */
+    .slide-visual {
+      height: 160px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 25px;
+    }
+    .onboarding-svg-glowing {
+      filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.4));
+      overflow: visible !important;
+    }
+
+    /* Badges */
+    .onboarding-badge {
+      background: linear-gradient(135deg, #4a90e2, #2ecc71);
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 30px;
+      font-weight: 700;
+      font-size: 10px;
+      color: #ffffff;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      box-shadow: 0 0 15px rgba(74, 144, 226, 0.25);
+    }
+
+    /* Typography */
+    .onboarding-title {
+      font-family: 'Cinzel', serif;
+      font-size: 1.6rem;
+      margin: 0 0 10px 0;
+      background: var(--gold-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+    .onboarding-desc {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin: 0;
+      line-height: 1.6;
+      max-width: 500px;
+    }
+
+    /* Bullets for slides */
+    .onboarding-bullets {
+      list-style: none;
+      padding: 0;
+      margin: 20px 0 0 0;
+      text-align: left;
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .onboarding-bullets li {
+      font-size: 0.85rem;
+      line-height: 1.5;
+      color: var(--text-muted);
+      position: relative;
+      padding-left: 24px;
+    }
+    .onboarding-bullets li::before {
+      content: "✦";
+      position: absolute;
+      left: 0;
+      top: 0;
+      color: var(--gold-primary);
+      font-size: 1rem;
+    }
+    .onboarding-bullets strong {
+      color: var(--text-main);
+    }
+
+    /* Onboarding Footer Area */
+    .onboarding-footer {
+      margin-top: 25px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+    }
+
+    .onboarding-footer button {
+      min-width: 110px;
+      padding: 10px 20px;
+      border-radius: 30px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    /* Dots Indicators */
+    .onboarding-indicators {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin: 0 35px;
+    }
+    .onboarding-indicators .indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.15);
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .onboarding-indicators .indicator.active {
+      background: var(--gold-primary);
+      transform: scale(1.3);
+      box-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+    }
+
+    /* High Fidelity Animations */
+    .welcome-pulse-circle {
+      transform-origin: center;
+      animation: rotateCircle 25s linear infinite;
+    }
+    @keyframes rotateCircle {
       from { transform: rotate(0deg); }
       to { transform: rotate(360deg); }
     }
 
-    .banner-card:hover .envelope-flap {
-      transform: translateY(-2px) scaleY(-1);
+    .welcome-sparkle-1 { animation: welcomeSparkle 2s infinite ease-in-out; }
+    .welcome-sparkle-2 { animation: welcomeSparkle 2s infinite ease-in-out 0.6s; }
+    .welcome-sparkle-3 { animation: welcomeSparkle 2s infinite ease-in-out 1.2s; }
+    @keyframes welcomeSparkle {
+      0%, 100% { opacity: 0.3; transform: scale(0.8); }
+      50% { opacity: 1; transform: scale(1.2) rotate(15deg); filter: drop-shadow(0 0 5px rgba(212, 175, 55, 0.8)); }
+    }
+
+    /* Table Spin and Chair Pulse */
+    .table-circle-spin {
+      animation: tableSpin 12s linear infinite;
+    }
+    @keyframes tableSpin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .pulsating-chair {
+      animation: chairPulse 2s ease-in-out infinite alternate;
+    }
+    .chair-1 { animation-delay: 0s; }
+    .chair-2 { animation-delay: 0.5s; }
+    .chair-3 { animation-delay: 1s; }
+    .chair-4 { animation-delay: 1.5s; }
+    @keyframes chairPulse {
+      0% { transform: scale(0.9); opacity: 0.7; }
+      100% { transform: scale(1.3); opacity: 1; fill: var(--gold-primary); filter: drop-shadow(0 0 3px var(--gold-primary)); }
+    }
+
+    /* Scanner beam */
+    .scanner-beam {
+      animation: scanMotion 2.5s ease-in-out infinite;
+    }
+    @keyframes scanMotion {
+      0%, 100% { transform: translateY(-7px); opacity: 0.2; }
+      50% { transform: translateY(7px); opacity: 1; }
+    }
+
+    /* Envelope Flap Animation */
+    .envelope-flap-anim {
       transform-origin: top;
-      transition: transform 0.4s ease;
+      animation: flapMove 2.5s ease-in-out infinite alternate;
     }
-    .banner-card:hover .sparkle {
-      animation: sparkleFly 1.5s ease-in-out infinite;
-    }
-    @keyframes sparkleFly {
-      0% { transform: translateY(0) scale(1); opacity: 1; }
-      50% { transform: translateY(-10px) translateX(5px) scale(1.5); opacity: 0.8; }
-      100% { transform: translateY(-20px) translateX(10px) scale(0); opacity: 0; }
+    @keyframes flapMove {
+      0% { transform: scaleY(1); }
+      100% { transform: scaleY(-0.9) translateY(-1px); fill: rgba(212, 175, 55, 0.2); }
     }
 
-    .banner-card:hover .photo-upload-arrow {
-      animation: uploadArrow 1.2s ease-in-out infinite;
-    }
-    @keyframes uploadArrow {
-      0% { transform: translateY(5px); opacity: 0; }
-      50% { opacity: 1; }
-      100% { transform: translateY(-5px); opacity: 0; }
+    .flying-sparkle-1 { animation: floatSparkle 3s infinite ease-in-out; }
+    .flying-sparkle-2 { animation: floatSparkle 3s infinite ease-in-out 1.5s; }
+    @keyframes floatSparkle {
+      0%, 100% { transform: translate(0, 0) scale(0.8); opacity: 0.4; }
+      50% { transform: translate(4px, -6px) scale(1.2); opacity: 1; }
     }
 
-    .banner-card:hover .question-mark {
-      animation: bounceQuestion 1.2s ease-in-out infinite alternate;
+    /* Photo Wall Slide animations */
+    .photo-main-float {
+      animation: photoFloatEffect 3s ease-in-out infinite alternate;
+      transform-origin: center;
     }
-    @keyframes bounceQuestion {
-      0% { transform: translateY(0); }
-      100% { transform: translateY(-3px); }
+    @keyframes photoFloatEffect {
+      0% { transform: translate(32px, 28px) rotate(0deg); }
+      100% { transform: translate(32px, 22px) rotate(2deg); }
+    }
+    .upload-arrow-bounce {
+      animation: arrowBounce 1.5s ease-in-out infinite;
+      transform-origin: center;
+    }
+    @keyframes arrowBounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
     }
 
-    @keyframes slideDown {
-      from { opacity: 0; transform: translateY(-10px); }
-      to { opacity: 1; transform: translateY(0); }
+    /* Invitation Slide Badge float animations */
+    .float-invite-badge-1 {
+      animation: badgeFloat1 3s ease-in-out infinite alternate;
+      transform-origin: center;
     }
-    
-    @media (max-width: 768px) {
-      .banner-grid {
-        grid-template-columns: 1fr !important;
-      }
+    .float-invite-badge-2 {
+      animation: badgeFloat2 3s ease-in-out infinite alternate 0.8s;
+      transform-origin: center;
+    }
+    .float-invite-badge-3 {
+      animation: badgeFloat3 3s ease-in-out infinite alternate 1.6s;
+      transform-origin: center;
+    }
+    @keyframes badgeFloat1 {
+      0% { transform: translate(68px, 22px); }
+      100% { transform: translate(68px, 16px); }
+    }
+    @keyframes badgeFloat2 {
+      0% { transform: translate(70px, 47px); }
+      100% { transform: translate(70px, 41px); }
+    }
+    @keyframes badgeFloat3 {
+      0% { transform: translate(66px, 70px); }
+      100% { transform: translate(66px, 64px); }
+    }
+
+    /* Trivia Slide Badge float animations */
+    .float-trivia-badge-1 {
+      animation: triviaFloat1 3s ease-in-out infinite alternate;
+      transform-origin: center;
+    }
+    .float-trivia-badge-2 {
+      animation: triviaFloat2 3s ease-in-out infinite alternate 0.8s;
+      transform-origin: center;
+    }
+    .float-trivia-badge-3 {
+      animation: triviaFloat3 3s ease-in-out infinite alternate 1.6s;
+      transform-origin: center;
+    }
+    @keyframes triviaFloat1 {
+      0% { transform: translate(68px, 20px); }
+      100% { transform: translate(68px, 14px); }
+    }
+    @keyframes triviaFloat2 {
+      0% { transform: translate(72px, 45px); }
+      100% { transform: translate(72px, 39px); }
+    }
+    @keyframes triviaFloat3 {
+      0% { transform: translate(66px, 70px); }
+      100% { transform: translate(66px, 64px); }
+    }
+    .timer-ring {
+      animation: timerRotate 6s linear infinite;
+      transform-origin: 38px 27px;
+    }
+    @keyframes timerRotate {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    /* Ticket main float */
+    .ticket-main-float {
+      animation: ticketFloatEffect 3.5s ease-in-out infinite alternate;
+      transform-origin: center;
+    }
+    @keyframes ticketFloatEffect {
+      0% { transform: translateY(0) rotate(0deg); }
+      100% { transform: translateY(-6px) rotate(-1.5deg); }
+    }
+
+    /* Success Slide Badge float animations */
+    .float-end-badge-1 {
+      animation: endFloat1 3s ease-in-out infinite alternate;
+      transform-origin: center;
+    }
+    .float-end-badge-2 {
+      animation: endFloat2 3s ease-in-out infinite alternate 0.8s;
+      transform-origin: center;
+    }
+    .float-end-badge-3 {
+      animation: endFloat3 3s ease-in-out infinite alternate 1.6s;
+      transform-origin: center;
+    }
+    @keyframes endFloat1 {
+      0% { transform: translate(68px, 22px); }
+      100% { transform: translate(68px, 16px); }
+    }
+    @keyframes endFloat2 {
+      0% { transform: translate(70px, 47px); }
+      100% { transform: translate(70px, 41px); }
+    }
+    @keyframes endFloat3 {
+      0% { transform: translate(66px, 70px); }
+      100% { transform: translate(66px, 64px); }
+    }
+
+    /* QR Scanner Animations */
+    .qr-scanner-line {
+      animation: qrScanEffect 2.2s ease-in-out infinite;
+    }
+    @keyframes qrScanEffect {
+      0%, 100% { transform: translateY(0); opacity: 0.3; }
+      50% { transform: translateY(36px); opacity: 1; filter: drop-shadow(0 0 4px #2ecc71); }
+    }
+    .qr-scanner-glow {
+      animation: qrGlowEffect 2.2s ease-in-out infinite;
+      transform-origin: center;
+    }
+    @keyframes qrGlowEffect {
+      0%, 100% { opacity: 0; }
+      50% { opacity: 0.12; filter: blur(3px); }
     }
   </style>
+
+  <!-- Floating Onboarding Modal -->
+  <div id="onboarding-modal-container" class="onboarding-backdrop">
+    <div class="onboarding-modal">
+      <!-- Close Button -->
+      <button type="button" id="btn-close-onboarding" class="onboarding-close-btn" title="Omitir introducción">
+        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+
+      <!-- Global SVG Defs for gradients -->
+      <svg width="0" height="0" style="position: absolute; width: 0; height: 0; overflow: hidden;">
+        <defs>
+          <linearGradient id="gold-grad-svg" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#f3e7c4" />
+            <stop offset="50%" stop-color="#d4af37" />
+            <stop offset="100%" stop-color="#aa7c11" />
+          </linearGradient>
+        </defs>
+      </svg>
+
+      <!-- Slides Container -->
+      <div class="onboarding-slides-wrapper">
+        <!-- Slide 0: Welcome -->
+        <div class="onboarding-slide active" data-index="0">
+          <div class="slide-visual">
+            <svg class="onboarding-svg-glowing" width="150" height="150" viewBox="0 0 100 100" fill="none">
+              <circle cx="50" cy="50" r="45" stroke="url(#gold-grad-svg)" stroke-width="2" stroke-dasharray="6 4" class="welcome-pulse-circle" />
+              <path d="M50 30 C38 30 30 38 30 50 C30 62 38 70 50 70 C62 70 70 62 70 50 C70 38 62 30 50 30 Z" stroke="url(#gold-grad-svg)" stroke-width="3" />
+              <path d="M50 15 L53 23 L61 26 L53 29 L50 37 L47 29 L39 26 L47 23 Z" fill="url(#gold-grad-svg)" class="welcome-sparkle-1" />
+              <path d="M22 68 L24 73 L29 75 L24 77 L22 82 L20 77 L15 75 L20 73 Z" fill="url(#gold-grad-svg)" class="welcome-sparkle-2" />
+              <path d="M78 68 L80 73 L85 75 L80 77 L78 82 L76 77 L71 75 L76 73 Z" fill="url(#gold-grad-svg)" class="welcome-sparkle-3" />
+              <path d="M43 45 L50 55 L57 45" stroke="#d4af37" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M40 58 C45 61 55 61 60 58" stroke="#d4af37" stroke-width="3" stroke-linecap="round"/>
+              <defs>
+                <linearGradient id="gold-grad-svg" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#f3e7c4" />
+                  <stop offset="50%" stop-color="#d4af37" />
+                  <stop offset="100%" stop-color="#aa7c11" />
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+          <div class="onboarding-badge">Novedad</div>
+          <h2 class="onboarding-title">¡Te damos la bienvenida a MiFiestAPP!</h2>
+          <p class="onboarding-desc">Estamos listos para hacer de tu evento algo extraordinario. En este recorrido interactivo aprenderás cómo configurar cada servicio para asombrar a tus invitados.</p>
+        </div>
+
+        <!-- Slide 1: Localizador de Mesas -->
+        <div class="onboarding-slide" data-index="1">
+          <div class="slide-visual">
+            <svg class="onboarding-svg-glowing" width="150" height="150" viewBox="0 0 100 100" fill="none">
+              <!-- Phone body -->
+              <rect x="25" y="10" width="50" height="80" rx="8" stroke="url(#gold-grad-svg)" stroke-width="2.5" />
+              <line x1="45" y1="15" x2="55" y2="15" stroke="url(#gold-grad-svg)" stroke-width="2" stroke-linecap="round" />
+              <circle cx="50" cy="82" r="3" fill="url(#gold-grad-svg)" />
+              
+              <!-- Screen boundary -->
+              <rect x="29" y="20" width="42" height="54" rx="2" stroke="rgba(255, 255, 255, 0.1)" stroke-width="1" />
+              
+              <!-- QR Code inside screen -->
+              <g transform="translate(37, 28)">
+                <!-- QR Corner Finder Patterns -->
+                <!-- Top Left -->
+                <path d="M0 0 h8 v8 h-8 z M1 1 h6 v6 h-6 z M3 3 h2 v2 h-2 z" fill="url(#gold-grad-svg)" fill-rule="evenodd" />
+                <!-- Top Right -->
+                <path d="M18 0 h8 v8 h-8 z M19 1 h6 v6 h-6 z M21 3 h2 v2 h-2 z" fill="url(#gold-grad-svg)" fill-rule="evenodd" />
+                <!-- Bottom Left -->
+                <path d="M0 18 h8 v8 h-8 z M1 19 h6 v6 h-6 z M3 21 h2 v2 h-2 z" fill="url(#gold-grad-svg)" fill-rule="evenodd" />
+                
+                <!-- Timing patterns & Data blocks (solid, high contrast) -->
+                <path d="
+                  M10 0 h2 v2 h-2 z M14 0 h4 v2 h-4 z
+                  M8 2 h2 v2 h-2 z M12 2 h2 v2 h-2 z M16 2 h2 v2 h-2 z
+                  M10 4 h4 v2 h-4 z M16 4 h2 v4 h-2 z M14 6 h2 v2 h-2 z
+                  M8 8 h4 v2 h-4 z M14 8 h4 v2 h-4 z M20 8 h6 v2 h-6 z
+                  M0 10 h4 v2 h-4 z M6 10 h4 v2 h-4 z M12 10 h2 v4 h-2 z M16 10 h4 v2 h-4 z M22 10 h4 v2 h-4 z
+                  M2 12 h2 v2 h-2 z M6 12 h2 v4 h-2 z M10 12 h2 v2 h-2 z M14 12 h2 v2 h-2 z M18 12 h4 v2 h-4 z
+                  M0 14 h6 v2 h-6 z M8 14 h4 v2 h-4 z M14 14 h2 v2 h-2 z M20 14 h2 v4 h-2 z M24 14 h2 v2 h-2 z
+                  M10 16 h4 v2 h-4 z M16 16 h2 v2 h-2 z M22 16 h2 v2 h-2 z
+                  M8 18 h2 v4 h-2 z M12 18 h4 v2 h-4 z M16 18 h2 v2 h-2 z
+                  M10 20 h2 v2 h-2 z M14 20 h4 v2 h-4 z M20 20 h6 v2 h-6 z
+                  M8 22 h4 v2 h-4 z M14 22 h2 v4 h-2 z M18 22 h2 v2 h-2 z M22 22 h4 v2 h-6 z
+                  M10 24 h4 v2 h-4 z M16 24 h4 v2 h-4 z M22 24 h2 v2 h-2 z
+                " fill="rgba(255, 255, 255, 0.85)" />
+              </g>
+              
+              <!-- Scanning Target Box Corners -->
+              <path d="M33 24 L33 22 L35 22" stroke="#2ecc71" stroke-width="1.5" stroke-linecap="round" />
+              <path d="M67 24 L67 22 L65 22" stroke="#2ecc71" stroke-width="1.5" stroke-linecap="round" />
+              <path d="M33 60 L33 62 L35 62" stroke="#2ecc71" stroke-width="1.5" stroke-linecap="round" />
+              <path d="M67 60 L67 62 L65 62" stroke="#2ecc71" stroke-width="1.5" stroke-linecap="round" />
+
+              <!-- Scanner Green Line -->
+              <line x1="31" y1="24" x2="69" y2="24" stroke="#2ecc71" stroke-width="2" class="qr-scanner-line" />
+              
+              <!-- Glowing pulse behind QR -->
+              <rect x="35" y="26" width="30" height="30" fill="#2ecc71" opacity="0" class="qr-scanner-glow" />
+            </svg>
+          </div>
+          <h2 class="onboarding-title">1. Localizador de Mesas QR</h2>
+          <p class="onboarding-desc">Tus invitados escanean el código QR en la entrada del salón para conocer su mesa al instante, sin filas ni demoras.</p>
+          <ul class="onboarding-bullets">
+            <li><strong>Carga Inicial Simplificada:</strong> Sube tu lista de invitados desde una plantilla Excel pre-formateada en segundos.</li>
+            <li><strong>Cartel de Recepción Listo:</strong> Descarga e imprime el póster QR listo para colocar en la recepción.</li>
+            <li><strong>Buscador Inteligente:</strong> Desarrollado con búsqueda fonética y normalización de tildes para evitar inconvenientes en el acceso.</li>
+          </ul>
+        </div>
+
+        <!-- Slide 2: Invitación Digital & RSVPs -->
+        <div class="onboarding-slide" data-index="2">
+          <div class="slide-visual">
+            <svg class="onboarding-svg-glowing" width="150" height="150" viewBox="0 0 100 100" fill="none">
+              <!-- Phone body -->
+              <rect x="15" y="10" width="46" height="80" rx="8" stroke="url(#gold-grad-svg)" stroke-width="2.5" fill="rgba(255,255,255,0.04)" />
+              <rect x="33" y="10" width="10" height="4" rx="2" fill="url(#gold-grad-svg)" />
+              
+              <!-- Monogram Heart -->
+              <path d="M38 23 C36 21, 33 21, 31 23 C29 25, 29 28, 31 30 L38 37 L45 30 C47 28, 47 25, 45 23 C43 21, 40 21, 38 23 Z" stroke="url(#gold-grad-svg)" stroke-width="1.2" fill="rgba(212,175,55,0.1)" />
+              <line x1="23" y1="41" x2="53" y2="41" stroke="rgba(212,175,55,0.2)" stroke-width="1" />
+              
+              <!-- Checklist item 1 (Attendance check) -->
+              <circle cx="27" cy="49" r="3" fill="#2ecc71" opacity="0.2" />
+              <path d="M25.5 49 L26.5 50 L28.5 48" stroke="#2ecc71" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" />
+              <rect x="33" y="47" width="18" height="3" rx="1.5" fill="rgba(255,255,255,0.3)" />
+
+              <!-- Checklist item 2 (Dietary selection) -->
+              <circle cx="27" cy="59" r="3" fill="url(#gold-grad-svg)" opacity="0.2" />
+              <path d="M25.5 59 L26.5 60 L28.5 58" stroke="url(#gold-grad-svg)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" />
+              <rect x="33" y="57" width="15" height="3" rx="1.5" fill="rgba(255,255,255,0.3)" />
+
+              <!-- Checklist item 3 (Song suggestion) -->
+              <circle cx="27" cy="69" r="3" fill="#2ecc71" opacity="0.2" />
+              <path d="M25.5 69 L26.5 70 L28.5 68" stroke="#2ecc71" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" />
+              <rect x="33" y="67" width="12" height="3" rx="1.5" fill="rgba(255,255,255,0.3)" />
+
+              <!-- Floating Calendar badge -->
+              <g transform="translate(68, 22)" class="float-invite-badge-1">
+                <rect x="0" y="0" width="18" height="18" rx="3" fill="rgba(20,20,20,0.7)" stroke="url(#gold-grad-svg)" stroke-width="1.5" />
+                <rect x="0" y="0" width="18" height="5" fill="url(#gold-grad-svg)" rx="2" />
+                <line x1="4" y1="2" x2="4" y2="4" stroke="#ffffff" stroke-width="1" stroke-linecap="round" />
+                <line x1="14" y1="2" x2="14" y2="4" stroke="#ffffff" stroke-width="1" stroke-linecap="round" />
+                <!-- Small heart representing event date -->
+                <path d="M9 10 C8.5 9, 7.5 9, 7 9.5 C6.5 10, 6.5 11, 7 11.5 L9 13.5 L11 11.5 C11.5 11, 11.5 10, 11 9.5 C10.5 9, 9.5 9, 9 10 Z" fill="#d4af37" />
+              </g>
+
+              <!-- Floating Gift Chest badge (Cofre digital) -->
+              <g transform="translate(70, 47)" class="float-invite-badge-2">
+                <rect x="0" y="0" width="18" height="18" rx="3" fill="rgba(20,20,20,0.7)" stroke="url(#gold-grad-svg)" stroke-width="1.5" />
+                <!-- Chest vector path -->
+                <path d="M4 6 h10 v8 h-10 z" stroke="url(#gold-grad-svg)" stroke-width="1.2" fill="none" />
+                <path d="M4 9 c2 0, 8 0, 10 0" stroke="url(#gold-grad-svg)" stroke-width="1" />
+                <circle cx="9" cy="9.5" r="0.8" fill="#d4af37" />
+              </g>
+
+              <!-- Floating Music note badge -->
+              <g transform="translate(66, 70)" class="float-invite-badge-3">
+                <rect x="0" y="0" width="18" height="18" rx="3" fill="rgba(20,20,20,0.7)" stroke="url(#gold-grad-svg)" stroke-width="1.5" />
+                <!-- Music Note -->
+                <path d="M8 12 A 1.5 1.5 0 0 1 6.5 10.5 A 1.5 1.5 0 0 1 8 9 L 8 5 L 12 4.2 L 12 8.2 L 8 9.2" stroke="#2ecc71" stroke-width="1.2" fill="none" stroke-linejoin="round" stroke-linecap="round" />
+              </g>
+            </svg>
+          </div>
+          <h2 class="onboarding-title">2. Invitación & Confirmaciones</h2>
+          <p class="onboarding-desc">Envía invitaciones interactivas personalizadas a tus invitados para centralizar la información clave.</p>
+          <ul class="onboarding-bullets">
+            <li><strong>Diseño Personalizable:</strong> Configura fecha, dirección con mapa interactivo y código de vestimenta.</li>
+            <li><strong>Gestión de Respuestas (RSVP):</strong> Registra asistencia, intolerancias alimenticias y sugerencias de canciones en tiempo real.</li>
+            <li><strong>Cofre Digital & Regalos:</strong> Incluye datos de transferencia bancaria de forma sobria y elegante.</li>
+          </ul>
+        </div>
+
+        <!-- Slide 3: Muro de Fotos -->
+        <div class="onboarding-slide" data-index="3">
+          <div class="slide-visual">
+            <svg class="onboarding-svg-glowing" width="150" height="150" viewBox="0 0 100 100" fill="none">
+              <!-- Background photo frame 1 (tilted left) -->
+              <g transform="translate(15, 15) rotate(-10)">
+                <rect x="0" y="0" width="30" height="38" rx="2" fill="rgba(255,255,255,0.06)" stroke="url(#gold-grad-svg)" stroke-width="1.5" />
+                <rect x="3" y="3" width="24" height="24" fill="rgba(0,0,0,0.4)" />
+                <circle cx="15" cy="12" r="4" fill="rgba(212,175,55,0.2)" />
+              </g>
+
+              <!-- Background photo frame 2 (tilted right) -->
+              <g transform="translate(55, 10) rotate(12)">
+                <rect x="0" y="0" width="30" height="38" rx="2" fill="rgba(255,255,255,0.06)" stroke="url(#gold-grad-svg)" stroke-width="1.5" />
+                <rect x="3" y="3" width="24" height="24" fill="rgba(0,0,0,0.4)" />
+                <path d="M6 22 L12 14 L18 20 L24 16 L27 22 Z" fill="rgba(212,175,55,0.25)" />
+              </g>
+
+              <!-- Main floating foreground polaroid photo (center, glowing) -->
+              <g transform="translate(32, 28)" class="photo-main-float">
+                <!-- Glow behind it -->
+                <rect x="-2" y="-2" width="38" height="48" rx="3" fill="#d4af37" opacity="0.1" filter="blur(6px)" />
+                <!-- Frame -->
+                <rect x="0" y="0" width="34" height="44" rx="2.5" fill="rgba(255,255,255,0.12)" stroke="url(#gold-grad-svg)" stroke-width="2" />
+                <!-- Image placeholder -->
+                <rect x="3" y="3" width="28" height="28" fill="rgba(20,20,20,0.6)" />
+                <!-- Vector portrait outline inside -->
+                <circle cx="17" cy="14" r="5" stroke="url(#gold-grad-svg)" stroke-width="1.5" fill="none" />
+                <path d="M9 25 C9 20, 25 20, 25 25" stroke="url(#gold-grad-svg)" stroke-width="1.5" fill="none" stroke-linecap="round" />
+                <!-- Upload symbol popping in -->
+                <g class="upload-arrow-bounce">
+                  <path d="M17 12 v10 M14 15 l3-3 3 3" stroke="#2ecc71" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                </g>
+              </g>
+
+              <!-- Glowing sparkles around the main photo -->
+              <path d="M30 45 L32 49 L36 50 L32 51 L30 55 L28 51 L24 50 L28 49 Z" fill="#d4af37" class="welcome-sparkle-1" />
+              <path d="M72 35 L73 38 L76 39 L73 40 L72 43 L71 40 L68 39 L71 38 Z" fill="#2ecc71" class="welcome-sparkle-2" />
+            </svg>
+          </div>
+          <h2 class="onboarding-title">3. Muro de Fotos Interactivo</h2>
+          <p class="onboarding-desc">Captura cada risa y baile. Los invitados suben fotos desde sus celulares y se proyectan en las pantallas gigantes del salón.</p>
+          <ul class="onboarding-bullets">
+            <li><strong>Moderación al 100%:</strong> Control total sobre el contenido. Ninguna foto se proyectará en vivo sin tu aprobación en el panel.</li>
+            <li><strong>Galería Simple:</strong> Los invitados escanean el QR exclusivo de la mesa y suben fotos sin descargar ninguna aplicación.</li>
+            <li><strong>Proyección en Salón:</strong> Abre la vista del salón y ponla en pantalla completa en el proyector del salón para ver el muro actualizarse en tiempo real.</li>
+          </ul>
+        </div>
+
+        <!-- Slide 4: Trivia en Vivo -->
+        <div class="onboarding-slide" data-index="4">
+          <div class="slide-visual">
+            <svg class="onboarding-svg-glowing" width="150" height="150" viewBox="0 0 100 100" fill="none">
+              <!-- Phone body representing trivia screen -->
+              <rect x="15" y="10" width="46" height="80" rx="8" stroke="url(#gold-grad-svg)" stroke-width="2.5" fill="rgba(255,255,255,0.04)" />
+              <rect x="33" y="10" width="10" height="4" rx="2" fill="url(#gold-grad-svg)" />
+              
+              <!-- Timer Ring -->
+              <circle cx="38" cy="27" r="7" stroke="url(#gold-grad-svg)" stroke-width="1.2" stroke-dasharray="24 8" class="timer-ring" />
+              <text x="38" y="29.5" fill="#d4af37" font-size="7" font-family="sans-serif" text-anchor="middle" font-weight="bold">10</text>
+              
+              <!-- Question Bubble -->
+              <rect x="23" y="39" width="30" height="12" rx="3" fill="rgba(255,255,255,0.08)" stroke="rgba(212,175,55,0.2)" stroke-width="1" />
+              <rect x="27" y="42" width="22" height="2" rx="1" fill="rgba(255,255,255,0.5)" />
+              <rect x="30" y="46" width="16" height="2" rx="1" fill="rgba(255,255,255,0.5)" />
+              
+              <!-- Option A (Correct/Green) -->
+              <rect x="23" y="56" width="30" height="8" rx="2" stroke="#2ecc71" stroke-width="1.2" fill="rgba(46,204,113,0.08)" />
+              <circle cx="27" cy="60" r="1.5" fill="#2ecc71" />
+              <rect x="31" y="58.5" width="18" height="2" rx="1" fill="rgba(255,255,255,0.4)" />
+              
+              <!-- Option B (Neutral) -->
+              <rect x="23" y="67" width="30" height="8" rx="2" stroke="rgba(212,175,55,0.3)" stroke-width="1" fill="none" />
+              <circle cx="27" cy="71" r="1.5" fill="rgba(212,175,55,0.3)" />
+              <rect x="31" y="69.5" width="14" height="2" rx="1" fill="rgba(255,255,255,0.3)" />
+
+              <!-- Floating Trophy badge -->
+              <g transform="translate(68, 20)" class="float-trivia-badge-1">
+                <rect x="0" y="0" width="18" height="18" rx="3" fill="rgba(20,20,20,0.7)" stroke="url(#gold-grad-svg)" stroke-width="1.5" />
+                <path d="M5 5 h8 v4 c0 2.2-1.8 4-4 4s-4-1.8-4-4 z" stroke="url(#gold-grad-svg)" stroke-width="1.2" fill="none" />
+                <path d="M9 13 v3 M6 16 h6" stroke="url(#gold-grad-svg)" stroke-width="1" />
+                <path d="M5 6 H3 M13 6 H15" stroke="url(#gold-grad-svg)" stroke-width="1" />
+              </g>
+
+              <!-- Floating Star score badge -->
+              <g transform="translate(72, 45)" class="float-trivia-badge-2">
+                <rect x="0" y="0" width="18" height="18" rx="3" fill="rgba(20,20,20,0.7)" stroke="url(#gold-grad-svg)" stroke-width="1.5" />
+                <path d="M9 3 L10.5 6.5 L14.5 6.5 L11.5 8.5 L12.5 12 L9 10 L5.5 12 L6.5 8.5 L3.5 6.5 L7.5 6.5 Z" fill="#2ecc71" />
+              </g>
+
+              <!-- Floating Question Mark badge -->
+              <g transform="translate(66, 70)" class="float-trivia-badge-3">
+                <rect x="0" y="0" width="18" height="18" rx="3" fill="rgba(20,20,20,0.7)" stroke="url(#gold-grad-svg)" stroke-width="1.5" />
+                <path d="M7 6.5 a 1.5 1.5 0 0 1 2.8 1 c0 1-1.3 1.5-1.3 1.5 v1" stroke="url(#gold-grad-svg)" stroke-width="1.2" stroke-linecap="round" fill="none" />
+                <circle cx="8.5" cy="11.5" r="0.8" fill="url(#gold-grad-svg)" />
+              </g>
+            </svg>
+          </div>
+          <h2 class="onboarding-title">4. Juego de Trivia en Vivo</h2>
+          <p class="onboarding-desc">Un juego interactivo multijugador en tiempo real para divertir a tus invitados durante los momentos tranquilos de la fiesta.</p>
+          <ul class="onboarding-bullets">
+            <li><strong>Preguntas Personalizadas:</strong> Configura preguntas divertidas sobre la historia del homenajeado o la pareja.</li>
+            <li><strong>Lanzamiento Controlado:</strong> Avanza las preguntas y revela los resultados a tu ritmo desde la cabina o el panel.</li>
+            <li><strong>Competencia Sana:</strong> Proyecta el podio con los puntajes y ganadores en la pantalla gigante del salón al finalizar el juego.</li>
+          </ul>
+        </div>
+
+        <!-- Slide 5: ¡Todo Listo! -->
+        <div class="onboarding-slide" data-index="5">
+          <div class="slide-visual">
+            <svg class="onboarding-svg-glowing" width="150" height="150" viewBox="0 0 100 100" fill="none">
+              <!-- Golden VIP Party ticket/pass -->
+              <g class="ticket-main-float">
+                <!-- Ticket vector path with inward notch cuts -->
+                <path d="M18 20 h15 a5 5 0 0 0 10 0 h15 a4 4 0 0 1 4 4 v21 a5 5 0 0 0 0 10 v17 a4 4 0 0 1 -4 4 h-15 a5 5 0 0 0 -10 0 h-15 a4 4 0 0 1 -4 -4 v-17 a5 5 0 0 0 0 -10 v-21 a4 4 0 0 1 4 -4 Z" stroke="url(#gold-grad-svg)" stroke-width="2.5" fill="rgba(255,255,255,0.04)" />
+                <!-- Dashed ticket inner boundary line -->
+                <rect x="18" y="24" width="40" height="52" rx="3" stroke="rgba(212,175,55,0.25)" stroke-width="1" stroke-dasharray="3 3" />
+                
+                <!-- Large gold star in center -->
+                <path d="M38 38 L41 44 L47 44 L42 48 L44 54 L38 51 L32 54 L34 48 L29 44 L35 44 Z" fill="url(#gold-grad-svg)" />
+                <circle cx="38" cy="46" r="12" stroke="rgba(212,175,55,0.15)" stroke-width="1" stroke-dasharray="4 2" />
+                
+                <!-- Simulated pass barcode/details at bottom -->
+                <rect x="26" y="65" width="2" height="6" fill="url(#gold-grad-svg)" />
+                <rect x="30" y="65" width="4" height="6" fill="url(#gold-grad-svg)" />
+                <rect x="36" y="65" width="1" height="6" fill="url(#gold-grad-svg)" />
+                <rect x="39" y="65" width="3" height="6" fill="url(#gold-grad-svg)" />
+                <rect x="44" y="65" width="2" height="6" fill="url(#gold-grad-svg)" />
+                <rect x="48" y="65" width="4" height="6" fill="url(#gold-grad-svg)" />
+              </g>
+
+              <!-- Floating Trophy badge -->
+              <g transform="translate(68, 22)" class="float-end-badge-1">
+                <rect x="0" y="0" width="18" height="18" rx="3" fill="rgba(20,20,20,0.7)" stroke="url(#gold-grad-svg)" stroke-width="1.5" />
+                <path d="M5 5 h8 v4 c0 2.2-1.8 4-4 4s-4-1.8-4-4 z" stroke="url(#gold-grad-svg)" stroke-width="1.2" fill="none" />
+                <path d="M9 13 v3 M6 16 h6" stroke="url(#gold-grad-svg)" stroke-width="1" />
+                <path d="M5 6 H3 M13 6 H15" stroke="url(#gold-grad-svg)" stroke-width="1" />
+              </g>
+
+              <!-- Floating Celebration clinking glasses badge -->
+              <g transform="translate(70, 47)" class="float-end-badge-2">
+                <rect x="0" y="0" width="18" height="18" rx="3" fill="rgba(20,20,20,0.7)" stroke="url(#gold-grad-svg)" stroke-width="1.5" />
+                <path d="M6 13 L8 8 L5 4 H10 L7 8 L9 13 Z" stroke="url(#gold-grad-svg)" stroke-width="1" fill="none" />
+                <path d="M12 13 L10 8 L13 4 H8 L11 8 L9 13 Z" stroke="#2ecc71" stroke-width="1" fill="none" />
+                <circle cx="9" cy="5" r="0.8" fill="#d4af37" />
+              </g>
+
+              <!-- Floating Success checkmark badge -->
+              <g transform="translate(66, 70)" class="float-end-badge-3">
+                <rect x="0" y="0" width="18" height="18" rx="3" fill="rgba(20,20,20,0.7)" stroke="url(#gold-grad-svg)" stroke-width="1.5" />
+                <circle cx="9" cy="9" r="4.5" fill="#2ecc71" opacity="0.2" />
+                <path d="M6.8 9 L8.2 10.4 L11.2 7.4" stroke="#2ecc71" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+              </g>
+
+              <!-- Sparkle effects -->
+              <path d="M26 15 L27 18 L30 19 L27 20 L26 23 L25 20 L22 19 L25 18 Z" fill="#d4af37" class="welcome-sparkle-1" />
+              <path d="M58 85 L59 88 L62 89 L59 90 L58 93 L57 90 L54 89 L57 88 Z" fill="#2ecc71" class="welcome-sparkle-2" />
+            </svg>
+          </div>
+          <h2 class="onboarding-title">¡Todo listo para tu gran noche!</h2>
+          <p class="onboarding-desc">Ya tienes el control de la fiesta de tus sueños. Puedes comenzar a cargar invitados, personalizar tu invitación y preparar las preguntas para la trivia.</p>
+          <p class="onboarding-desc" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 15px;">Recuerda que si necesitas repasar esta guía en el futuro, puedes acceder presionando el botón <strong>Ayuda</strong> en la parte superior del panel.</p>
+        </div>
+      </div>
+
+      <!-- Footer navigation -->
+      <div class="onboarding-footer">
+        <button type="button" id="btn-onboarding-prev" class="btn btn-secondary" style="visibility: hidden;">Anterior</button>
+        <div class="onboarding-indicators">
+          <span class="indicator active" data-slide="0"></span>
+          <span class="indicator" data-slide="1"></span>
+          <span class="indicator" data-slide="2"></span>
+          <span class="indicator" data-slide="3"></span>
+          <span class="indicator" data-slide="4"></span>
+          <span class="indicator" data-slide="5"></span>
+        </div>
+        <button type="button" id="btn-onboarding-next" class="btn btn-primary">Siguiente</button>
+      </div>
+    </div>
+  </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
   <script src="/js/alerts.js"></script>
