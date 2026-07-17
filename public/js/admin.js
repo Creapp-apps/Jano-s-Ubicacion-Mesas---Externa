@@ -1602,18 +1602,63 @@ document.addEventListener('DOMContentLoaded', () => {
     );
   };
 
-  // Onboarding Modal logic
-  const onboardingModal = document.getElementById('onboarding-modal');
-  const btnCloseOnboarding = document.getElementById('btn-close-onboarding');
+  // Onboarding Welcome Banner logic
+  const welcomeBanner = document.getElementById('welcome-banner');
+  const btnDismissBanner = document.getElementById('btn-dismiss-banner');
+  const btnToggleGuide = document.getElementById('btn-toggle-guide');
+  const bannerCards = document.querySelectorAll('.banner-card');
+  const bannerDetails = document.getElementById('banner-interactive-details');
+  const detailsSteps = document.querySelectorAll('.details-step');
 
-  if (onboardingModal && btnCloseOnboarding) {
+  if (welcomeBanner) {
+    // Show banner if not dismissed before
     if (!localStorage.getItem(`onboarding_dismissed_${eventId}`)) {
-      onboardingModal.classList.add('active');
+      welcomeBanner.style.display = 'block';
     }
-    
-    btnCloseOnboarding.addEventListener('click', () => {
-      onboardingModal.classList.remove('active');
-      localStorage.setItem(`onboarding_dismissed_${eventId}`, 'true');
+
+    // Dismiss button handler
+    if (btnDismissBanner) {
+      btnDismissBanner.addEventListener('click', () => {
+        welcomeBanner.style.display = 'none';
+        localStorage.setItem(`onboarding_dismissed_${eventId}`, 'true');
+      });
+    }
+
+    // Toggle Help button in header
+    if (btnToggleGuide) {
+      btnToggleGuide.addEventListener('click', (e) => {
+        e.preventDefault();
+        const isCurrentlyVisible = welcomeBanner.style.display === 'block';
+        welcomeBanner.style.display = isCurrentlyVisible ? 'none' : 'block';
+        if (!isCurrentlyVisible) {
+          welcomeBanner.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    }
+
+    // Card interactive navigation
+    bannerCards.forEach(card => {
+      card.addEventListener('click', () => {
+        const step = card.getAttribute('data-step');
+        
+        // Toggle active card styling
+        bannerCards.forEach(c => c.classList.remove('active-step'));
+        card.classList.add('active-step');
+
+        // Show details container
+        if (bannerDetails) {
+          bannerDetails.style.display = 'block';
+        }
+
+        // Switch to the selected step's detail view
+        detailsSteps.forEach(detail => {
+          detail.style.display = 'none';
+        });
+        const selectedDetail = document.getElementById(`details-content-step-${step}`);
+        if (selectedDetail) {
+          selectedDetail.style.display = 'block';
+        }
+      });
     });
   }
 

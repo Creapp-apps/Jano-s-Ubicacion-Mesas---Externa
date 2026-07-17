@@ -19,6 +19,10 @@
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--gold-primary); display: block;"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
         </a>
         <h1>Panel de Control</h1>
+        <button id="btn-toggle-guide" class="btn-header-action" style="padding: 6px 12px; font-size: 0.75rem; border-radius: 12px; margin-left: 15px; border-color: rgba(212,175,55,0.4); color: var(--gold-primary); display: flex; align-items: center; gap: 5px; cursor: pointer; background: transparent; transition: all 0.3s;" title="Ver guía interactiva">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17" stroke-width="2"/></svg>
+          Ayuda
+        </button>
       </div>
       <div style="display: flex; gap: 15px; align-items: center;">
         <a href="/" target="_blank" class="btn-header-action" id="btn-view-guest-view">Ver Vista Invitados &rarr;</a>
@@ -45,6 +49,158 @@
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 5px;"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
         Juego de Trivia
       </button>
+    </div>
+
+    <!-- Interactive Welcome Banner -->
+    <div class="panel welcome-banner" id="welcome-banner" style="margin-top: 10px; margin-bottom: 20px; position: relative; overflow: hidden; padding: 25px; border: 1px solid rgba(212, 175, 55, 0.2); background: linear-gradient(135deg, rgba(20, 20, 20, 0.9) 0%, rgba(10, 10, 10, 0.95) 100%); display: none;">
+      <!-- Close Button -->
+      <button type="button" id="btn-dismiss-banner" style="position: absolute; top: 15px; right: 15px; background: none; border: none; cursor: pointer; color: var(--text-muted); opacity: 0.6; transition: all 0.3s; z-index: 10;" title="Ocultar guía">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+
+      <!-- Banner Header -->
+      <div class="banner-header" style="margin-bottom: 25px;">
+        <h2 style="font-family: 'Cinzel', serif; font-size: 1.5rem; margin: 0 0 8px 0; background: var(--gold-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+          Descubre la Experiencia MiFiestAPP
+        </h2>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0; line-height: 1.5;">
+          Tu evento cuenta con herramientas interactivas diseñadas para cautivar a tus invitados. Haz clic en cada módulo para ver cómo funciona el servicio.
+        </p>
+      </div>
+
+      <!-- Interactive Grid of Cards -->
+      <div class="banner-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+        
+        <!-- CARD 1: LOCALIZADOR QR -->
+        <div class="banner-card" data-step="1" style="background: rgba(255,255,255,0.02); border: 1px solid var(--card-border); border-radius: 15px; padding: 20px; cursor: pointer; transition: all 0.3s ease; position: relative;">
+          <div class="card-icon-anim" style="height: 50px; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; color: var(--gold-primary);">
+            <svg class="anim-svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="6" stroke-dasharray="4 2" class="table-circle" />
+              <circle cx="12" cy="3" r="1.5" class="chair chair-1" />
+              <circle cx="12" cy="21" r="1.5" class="chair chair-2" />
+              <circle cx="3" cy="12" r="1.5" class="chair chair-3" />
+              <circle cx="21" cy="12" r="1.5" class="chair chair-4" />
+              <path d="M3 3h2v2H3zm16 0h2v2h-2zM3 19h2v2H3z" />
+            </svg>
+          </div>
+          <h3 style="font-family: 'Cinzel', serif; font-size: 0.95rem; color: var(--text-main); text-align: center; margin: 0 0 8px 0;">Localizador de Mesas</h3>
+          <p style="font-size: 0.75rem; color: var(--text-muted); text-align: center; margin: 0; line-height: 1.4;">Tus invitados escanean el QR en la recepción para saber su mesa al instante.</p>
+        </div>
+
+        <!-- CARD 2: INVITACIÓN DIGITAL -->
+        <div class="banner-card" data-step="2" style="background: rgba(255,255,255,0.02); border: 1px solid var(--card-border); border-radius: 15px; padding: 20px; cursor: pointer; transition: all 0.3s ease; position: relative;">
+          <div class="card-icon-anim" style="height: 50px; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; color: var(--gold-primary);">
+            <svg class="anim-svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+              <path d="M22 6l-10 7L2 6" class="envelope-flap" />
+              <path d="M12 12l8-5M12 12L4 7" />
+              <circle cx="12" cy="12" r="1" fill="currentColor" class="sparkle" />
+            </svg>
+          </div>
+          <h3 style="font-family: 'Cinzel', serif; font-size: 0.95rem; color: var(--text-main); text-align: center; margin: 0 0 8px 0;">Invitación & RSVPs</h3>
+          <p style="font-size: 0.75rem; color: var(--text-muted); text-align: center; margin: 0; line-height: 1.4;">Confirmación de asistencia, mapa, datos de regalo y sugerencias musicales.</p>
+        </div>
+
+        <!-- CARD 3: MURO DE FOTOS -->
+        <div class="banner-card" data-step="3" style="background: rgba(255,255,255,0.02); border: 1px solid var(--card-border); border-radius: 15px; padding: 20px; cursor: pointer; transition: all 0.3s ease; position: relative;">
+          <div class="card-icon-anim" style="height: 50px; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; color: var(--gold-primary);">
+            <svg class="anim-svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+              <circle cx="12" cy="13" r="4" class="camera-lens" />
+              <path d="M12 9v8" stroke-dasharray="2" class="photo-upload-arrow" />
+            </svg>
+          </div>
+          <h3 style="font-family: 'Cinzel', serif; font-size: 0.95rem; color: var(--text-main); text-align: center; margin: 0 0 8px 0;">Muro de Fotos</h3>
+          <p style="font-size: 0.75rem; color: var(--text-muted); text-align: center; margin: 0; line-height: 1.4;">Fotos capturadas en vivo que se proyectan tras tu moderación en el salón.</p>
+        </div>
+
+        <!-- CARD 4: JUEGO DE TRIVIA -->
+        <div class="banner-card" data-step="4" style="background: rgba(255,255,255,0.02); border: 1px solid var(--card-border); border-radius: 15px; padding: 20px; cursor: pointer; transition: all 0.3s ease; position: relative;">
+          <div class="card-icon-anim" style="height: 50px; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; color: var(--gold-primary);">
+            <svg class="anim-svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" class="question-mark" />
+              <line x1="12" y1="17" x2="12.01" y2="17" stroke-width="3" />
+            </svg>
+          </div>
+          <h3 style="font-family: 'Cinzel', serif; font-size: 0.95rem; color: var(--text-main); text-align: center; margin: 0 0 8px 0;">Juego de Trivia</h3>
+          <p style="font-size: 0.75rem; color: var(--text-muted); text-align: center; margin: 0; line-height: 1.4;">Un divertido juego interactivo en vivo con preguntas del homenajeado.</p>
+        </div>
+
+      </div>
+
+      <!-- Interactive Display Area -->
+      <div id="banner-interactive-details" style="display: none; margin-top: 25px; padding: 20px; border-radius: 15px; border: 1px solid rgba(212,175,55,0.1); background: rgba(0,0,0,0.5); position: relative; overflow: hidden; animation: slideDown 0.4s ease-out;">
+        <div id="details-content-step-1" class="details-step" style="display: none;">
+          <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 250px;">
+              <h4 style="font-family: 'Cinzel', serif; font-size: 1.1rem; color: var(--gold-light); margin: 0 0 10px 0;">¿Cómo funciona el Localizador de Mesas?</h4>
+              <ol style="color: var(--text-muted); font-size: 0.8rem; line-height: 1.6; padding-left: 20px; margin: 0 0 15px 0;">
+                <li style="margin-bottom: 6px;"><strong>Carga la lista:</strong> Sube tus invitados usando el botón "+ Agregar" o "Cargar Excel" en la pestaña actual.</li>
+                <li style="margin-bottom: 6px;"><strong>Imprime el QR:</strong> Descarga el cartel de recepción desde la tarjeta de la izquierda.</li>
+                <li style="margin-bottom: 6px;"><strong>Escanear & Buscar:</strong> Al ingresar al salón, los invitados escanean el QR con su celular y buscan su nombre para saber su mesa al instante.</li>
+              </ol>
+            </div>
+            <div style="flex: none; width: 140px; text-align: center; padding: 10px; border: 1px dashed rgba(212,175,55,0.3); border-radius: 10px; background: rgba(0,0,0,0.3);">
+              <div style="font-size: 0.7rem; color: var(--gold-primary); text-transform: uppercase; margin-bottom: 5px; font-weight: 600;">Paso Clave</div>
+              <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0; line-height: 1.3;">Sube tu archivo Excel para automatizar la ubicación.</p>
+            </div>
+          </div>
+        </div>
+        
+        <div id="details-content-step-2" class="details-step" style="display: none;">
+          <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 250px;">
+              <h4 style="font-family: 'Cinzel', serif; font-size: 1.1rem; color: var(--gold-light); margin: 0 0 10px 0;">Gestión de Invitación Digital & RSVPs</h4>
+              <ol style="color: var(--text-muted); font-size: 0.8rem; line-height: 1.6; padding-left: 20px; margin: 0 0 15px 0;">
+                <li style="margin-bottom: 6px;"><strong>Personaliza el diseño:</strong> Configura fecha, dirección, código de vestimenta y datos de transferencia en la pestaña "Invitación & RSVPs".</li>
+                <li style="margin-bottom: 6px;"><strong>Envía los links:</strong> Copia el enlace exclusivo de cada invitado desde la lista de abajo y compártelo por WhatsApp.</li>
+                <li style="margin-bottom: 6px;"><strong>Monitorea RSVPs:</strong> Cuando los invitados confirmen asistencia o sugieran música, lo verás reflejado al instante en este panel.</li>
+              </ol>
+            </div>
+            <div style="flex: none; width: 140px; text-align: center; padding: 10px; border: 1px dashed rgba(212,175,55,0.3); border-radius: 10px; background: rgba(0,0,0,0.3);">
+              <div style="font-size: 0.7rem; color: var(--gold-primary); text-transform: uppercase; margin-bottom: 5px; font-weight: 600;">Dato Pro</div>
+              <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0; line-height: 1.3;">El listado de sugerencias de música se exporta junto con el Excel.</p>
+            </div>
+          </div>
+        </div>
+        
+        <div id="details-content-step-3" class="details-step" style="display: none;">
+          <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 250px;">
+              <h4 style="font-family: 'Cinzel', serif; font-size: 1.1rem; color: var(--gold-light); margin: 0 0 10px 0;">¿Cómo funciona el Muro de Fotos interactivo?</h4>
+              <ol style="color: var(--text-muted); font-size: 0.8rem; line-height: 1.6; padding-left: 20px; margin: 0 0 15px 0;">
+                <li style="margin-bottom: 6px;"><strong>Sube en vivo:</strong> En la recepción o mesas habrá un QR específico para la Galería de Fotos.</li>
+                <li style="margin-bottom: 6px;"><strong>Modera y aprueba:</strong> Ve a la pestaña "Moderación de Fotos". Las imágenes que tomen tus invitados aparecerán allí como "Pendientes".</li>
+                <li style="margin-bottom: 6px;"><strong>Proyecta en Pantalla:</strong> Presiona "Proyectar Fotos" para abrir el visor del salón en una pantalla gigante. Al aprobar fotos en este panel, aparecerán automáticamente en la pantalla en tiempo real.</li>
+              </ol>
+            </div>
+            <div style="flex: none; width: 140px; text-align: center; padding: 10px; border: 1px dashed rgba(212,175,55,0.3); border-radius: 10px; background: rgba(0,0,0,0.3);">
+              <div style="font-size: 0.7rem; color: var(--gold-primary); text-transform: uppercase; margin-bottom: 5px; font-weight: 600;">Seguridad</div>
+              <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0; line-height: 1.3;">Ninguna foto se proyectará sin que antes la hayas aprobado.</p>
+            </div>
+          </div>
+        </div>
+        
+        <div id="details-content-step-4" class="details-step" style="display: none;">
+          <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 250px;">
+              <h4 style="font-family: 'Cinzel', serif; font-size: 1.1rem; color: var(--gold-light); margin: 0 0 10px 0;">Trivia Interactiva en Vivo</h4>
+              <ol style="color: var(--text-muted); font-size: 0.8rem; line-height: 1.6; padding-left: 20px; margin: 0 0 15px 0;">
+                <li style="margin-bottom: 6px;"><strong>Configura las preguntas:</strong> Crea o edita preguntas divertidas sobre la homenajeada en la pestaña "Juego de Trivia".</li>
+                <li style="margin-bottom: 6px;"><strong>Controla el flujo:</strong> Desde este panel puedes iniciar la partida, avanzar las preguntas y mostrar el podio en tiempo real.</li>
+                <li style="margin-bottom: 6px;"><strong>Participación masiva:</strong> Los invitados juegan desde su celular a la par que los puntajes y ganadores se actualizan en la pantalla del salón.</li>
+              </ol>
+            </div>
+            <div style="flex: none; width: 140px; text-align: center; padding: 10px; border: 1px dashed rgba(212,175,55,0.3); border-radius: 10px; background: rgba(0,0,0,0.3);">
+              <div style="font-size: 0.7rem; color: var(--gold-primary); text-transform: uppercase; margin-bottom: 5px; font-weight: 600;">Divertidísimo</div>
+              <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0; line-height: 1.3;">Actívalo durante la cena para amenizar los tiempos muertos.</p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- TABLES & GUESTS TAB -->
@@ -1033,61 +1189,72 @@
     </div>
   </div>
 
-  <!-- Onboarding Modal -->
-  <div class="modal-backdrop" id="onboarding-modal">
-    <div class="modal-content panel onboarding-panel" style="max-width: 900px; width: 95%; border: 1px solid var(--card-border); padding: 30px;">
-      <h2 style="color: var(--gold-primary); text-align: center; font-family: 'Cinzel', serif; font-size: 1.8rem; margin-bottom: 5px;">¡Bienvenido al Combo Digital!</h2>
-      <p style="color: var(--text-muted); text-align: center; font-family: 'Montserrat', sans-serif; font-size: 0.9rem; margin-bottom: 30px;">
-        Aquí tienes una guía rápida de cómo funciona el servicio para tus invitados y cómo puedes administrarlo.
-      </p>
-      
-      <div class="onboarding-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px; text-align: left;">
-        <!-- Left: Guest explanation -->
-        <div style="border-right: 1px solid var(--card-border); padding-right: 30px;">
-          <h3 style="color: var(--gold-light); font-family: 'Cinzel', serif; font-size: 1.2rem; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
-            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-            Para tus Invitados
-          </h3>
-          <ul style="color: var(--text-muted); font-family: 'Montserrat', sans-serif; font-size: 0.85rem; line-height: 1.7; padding-left: 20px; margin: 0;">
-            <li style="margin-bottom: 12px;"><strong>Escanear QR:</strong> Los invitados escanean el código QR en la recepción para acceder al portal.</li>
-            <li style="margin-bottom: 12px;"><strong>Buscar su Mesa:</strong> Ingresan su nombre en el buscador para saber instantáneamente qué mesa tienen asignada.</li>
-            <li style="margin-bottom: 12px;"><strong>Subir Fotos y Mensajes:</strong> Pueden subir fotos tomadas en el momento directamente a la pantalla gigante del salón.</li>
-            <li style="margin-bottom: 12px;"><strong>Ver Invitación:</strong> Tienen a mano toda la información, itinerarios y mapas del evento.</li>
-          </ul>
-        </div>
-        
-        <!-- Right: Admin explanation -->
-        <div>
-          <h3 style="color: var(--gold-light); font-family: 'Cinzel', serif; font-size: 1.2rem; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
-            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1-2 2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-            Administración del Servicio
-          </h3>
-          <ul style="color: var(--text-muted); font-family: 'Montserrat', sans-serif; font-size: 0.85rem; line-height: 1.7; padding-left: 20px; margin: 0;">
-            <li style="margin-bottom: 12px;"><strong>Cargar Lista (Excel):</strong> Sube la lista de invitados usando nuestra plantilla Excel para que puedan encontrarse de forma automática.</li>
-            <li style="margin-bottom: 12px;"><strong>Moderar Fotos:</strong> Revisa y aprueba o rechaza las fotos que suben los invitados antes de proyectarse.</li>
-            <li style="margin-bottom: 12px;"><strong>Personalizar Nombre:</strong> Escribe y edita el nombre del evento que verán los invitados al ingresar.</li>
-            <li style="margin-bottom: 12px;"><strong>Imprimir QR:</strong> Genera y descarga el cartel con el código QR listo para colocar en la recepción.</li>
-          </ul>
-        </div>
-      </div>
-      
-      <div style="display: flex; justify-content: center; gap: 15px;">
-        <button type="button" class="btn btn-primary" id="btn-close-onboarding" style="padding: 12px 40px; border-radius: 20px; font-size: 0.9rem;">Entendido, Comenzar</button>
-      </div>
-    </div>
-  </div>
-
   <style>
+    /* Animated SVGs on Hover */
+    .banner-card {
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), border-color 0.3s, background-color 0.3s, box-shadow 0.3s !important;
+    }
+    .banner-card:hover {
+      transform: translateY(-5px);
+      border-color: rgba(212, 175, 55, 0.6) !important;
+      background-color: rgba(212, 175, 55, 0.05) !important;
+      box-shadow: 0 10px 25px rgba(212, 175, 55, 0.1);
+    }
+    .banner-card.active-step {
+      border-color: var(--gold-primary) !important;
+      background-color: rgba(212, 175, 55, 0.08) !important;
+      box-shadow: inset 0 0 10px rgba(212, 175, 55, 0.1);
+    }
+
+    /* Animations for icons */
+    .banner-card:hover .table-circle {
+      animation: rotateTable 4s linear infinite;
+      transform-origin: center;
+    }
+    @keyframes rotateTable {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .banner-card:hover .envelope-flap {
+      transform: translateY(-2px) scaleY(-1);
+      transform-origin: top;
+      transition: transform 0.4s ease;
+    }
+    .banner-card:hover .sparkle {
+      animation: sparkleFly 1.5s ease-in-out infinite;
+    }
+    @keyframes sparkleFly {
+      0% { transform: translateY(0) scale(1); opacity: 1; }
+      50% { transform: translateY(-10px) translateX(5px) scale(1.5); opacity: 0.8; }
+      100% { transform: translateY(-20px) translateX(10px) scale(0); opacity: 0; }
+    }
+
+    .banner-card:hover .photo-upload-arrow {
+      animation: uploadArrow 1.2s ease-in-out infinite;
+    }
+    @keyframes uploadArrow {
+      0% { transform: translateY(5px); opacity: 0; }
+      50% { opacity: 1; }
+      100% { transform: translateY(-5px); opacity: 0; }
+    }
+
+    .banner-card:hover .question-mark {
+      animation: bounceQuestion 1.2s ease-in-out infinite alternate;
+    }
+    @keyframes bounceQuestion {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(-3px); }
+    }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
     @media (max-width: 768px) {
-      .onboarding-grid {
+      .banner-grid {
         grid-template-columns: 1fr !important;
-        gap: 20px !important;
-      }
-      .onboarding-grid > div:first-child {
-        border-right: none !important;
-        border-bottom: 1px solid var(--card-border);
-        padding-right: 0 !important;
-        padding-bottom: 20px !important;
       }
     }
   </style>
