@@ -171,3 +171,43 @@ En esta sesión se optimizó la sección de **Gestión de Invitados** del panel 
 - **Estado**: La plataforma se encuentra totalmente estable, robusta y con la lista de invitados sincronizada.
 - **Próximos Pasos**: Monitorear el volumen de confirmaciones y proceder con la distribución de enlaces QR y visualización de mesas por parte de los invitados.
 
+---
+
+## 🌌 Sesión - Rediseño del Onboarding Administrativo y Corrección de Anidamiento de Pestañas
+
+En esta sesión se transformó el sistema de bienvenida administrativa de **FiestaAPP** en un **Modal de Onboarding Didáctico** interactivo de 6 slides y se resolvió un fallo crítico de anidamiento HTML que afectaba la personalización de la invitación.
+
+### 🛠️ Logros e Implementaciones
+1. **Onboarding didáctico con visuales SVG personalizados**:
+   - Diseñamos animaciones SVG personalizadas para cada una de las funcionalidades clave del panel para reemplazar las ilustraciones genéricas:
+     * **Localizador de Mesas (QR):** Escáner interactivo con haz de láser verde animado cruzando un código QR mockup.
+     * **Invitaciones y Confirmaciones:** Teléfono inteligente mostrando un checklist interactivo de confirmación, calendario flotante y notas musicales flotando.
+     * **Muro de Fotos:** Un collage 3D de fotos polaroid flotantes y estrellas resplandecientes sobre un fondo de cristal templado.
+     * **Trivia Show:** Un marcador de tiempo radial giratorio interactivo rodeado por un trofeo tridimensional, estrellas de puntaje y burbujas de preguntas flotando.
+     * **Slide Final (Despedida):** Un ticket / pase de fiesta VIP con bordes dorados, estrellas brillantes y detalles de acceso rápido, flanqueado por tres insignias flotantes e interactivas (Copa de Éxito, Brindis de Celebración y Check de Éxito en color verde esmeralda).
+   - **Corrección de Desbordamientos (Overflow):** Se configuraron los SVGs con `overflow: visible !important` y márgenes seguros para evitar cortes en las estrellas y elementos que vuelan fuera de los límites.
+   - **Inyección de Gradientes Globales:** Para evitar la pérdida de color al ocultar diapositivas (`display: none`), se inyectó una definición global e invisible de gradientes lineales dorados al principio del modal.
+
+2. **Solución al Bug de Pestañas e Invitación Rota (Nesting Bug)**:
+   - Identificamos que la etiqueta de apertura `<div id="tab-mesas" class="tab-content active">` había sido borrada accidentalmente en `admin.html`.
+   - Esto provocaba que el div de cierre de mesas en la línea 154 cerrara la clase principal `.admin-container` antes de tiempo, dejando la pestaña de **Personalizar Invitación** fuera del flujo de diseño principal, lo que rompía el renderizado de estilos en esa pestaña.
+   - Al restaurar la etiqueta de apertura del tab de mesas, el anidamiento volvió a la normalidad, resolviendo la superposición del buscador de mesas e invitados y aislando correctamente las vistas.
+
+3. **Highlight interactivo de ayuda en "Enlace de Google Maps del salón"**:
+   - Implementamos un badge circular dorado con el signo de pregunta `?` al lado del label del input.
+   - Al posicionar el cursor sobre este badge, se despliega un tooltip elegante con fondo traslúcido glassmorphic (`backdrop-filter`), bordes dorados y una lista ordenada con el paso a paso detallado de forma didáctica:
+     1. Ingresar a **Google Maps**
+     2. Buscar tu salón o ubicación
+     3. Click en **"Compartir"**
+     4. Pegá acá el enlace generado
+   - Añadimos la hoja de estilos en la cabecera del panel para soportar transiciones suaves de opacidad, transformaciones de escala y un puntero de ayuda personalizado (`cursor: help`).
+
+4. **Highlight interactivo de ayuda en "Música de fondo por defecto (MP3 o Spotify)"**:
+   - Agregamos un segundo badge de pregunta `?` al lado del label del reproductor de música.
+   - Al pasar el cursor, despliega un tooltip informativo detallando las diferencias entre opciones:
+     * **Link de Spotify:** Advierte de manera comprensible que solo reproducirá una vista previa de 30 segundos en bucle repetitivo si el invitado permanece leyendo la tarjeta.
+     * **Canción Completa (MP3):** Sugiere explícitamente subir un archivo `.mp3` para lograr que el tema suene completo de inicio a fin y sin pausas.
+
+### 📌 Estado de Retorno tras el Descanso
+* **Estado:** Totalmente corregido y testeado. El panel de administración aísla perfectamente la personalización de invitaciones, los slides del modal de onboarding se despliegan con calidad visual premium, y los inputs de Google Maps y Música poseen sus respectivas burbujas de ayuda interactiva.
+* **Próximas Tareas:** Revisar el flujo de usuario inicial en pantallas de diferentes resoluciones tras el primer ingreso de un evento.

@@ -299,7 +299,25 @@
               </div>
 
               <div style="margin-bottom: 15px; text-align: left;">
-                <label style="display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Música de Fondo por Defecto (MP3 o Spotify)</label>
+                <label style="display: flex; align-items: center; gap: 6px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">
+                  Música de Fondo por Defecto (MP3 o Spotify)
+                  <span class="info-help-tooltip">
+                    ?
+                    <span class="tooltip-text">
+                      <strong style="color: var(--gold-primary); display: block; margin-bottom: 6px; font-family: 'Montserrat', sans-serif;">¿Cómo funciona la música?</strong>
+                      <span class="tooltip-step-list">
+                        <span class="tooltip-step-item">
+                          <span class="tooltip-step-badge" style="background: rgba(30, 215, 96, 0.1); border-color: rgba(30, 215, 96, 0.4); color: #1db954;">✓</span>
+                          <span><strong>Link de Spotify:</strong> Solo reproduce una vista previa de <strong>30 segundos</strong> de forma repetida (bucle).</span>
+                        </span>
+                        <span class="tooltip-step-item">
+                          <span class="tooltip-step-badge">✓</span>
+                          <span><strong>Canción Completa:</strong> Sube un archivo <strong>.mp3</strong> para reproducir la canción entera sin interrupción.</span>
+                        </span>
+                      </span>
+                    </span>
+                  </span>
+                </label>
                 <div style="display: flex; gap: 10px; align-items: center;">
                   <input type="url" id="inv-music-input" class="form-control-admin" placeholder="Ej. Link de Spotify o archivo .mp3" style="flex: 1; padding: 12px 18px; border-radius: 20px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif;">
                   <label for="inv-audio-upload" class="btn btn-primary" style="padding: 12px 18px; border-radius: 20px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; white-space: nowrap; margin: 0; font-family: 'Montserrat', sans-serif; font-size: 0.75rem; height: 44px; box-sizing: border-box;">
@@ -317,7 +335,33 @@
               </div>
 
               <div style="margin-bottom: 15px; text-align: left;">
-                <label style="display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Enlace de Google Maps del Salón</label>
+                <label style="display: flex; align-items: center; gap: 6px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">
+                  Enlace de Google Maps del Salón
+                  <span class="info-help-tooltip">
+                    ?
+                    <span class="tooltip-text">
+                      <strong style="color: var(--gold-primary); display: block; margin-bottom: 6px; font-family: 'Montserrat', sans-serif;">¿Cómo obtener el enlace?</strong>
+                      <span class="tooltip-step-list">
+                        <span class="tooltip-step-item">
+                          <span class="tooltip-step-badge">1</span>
+                          <span>Ingresar a <strong>Google Maps</strong></span>
+                        </span>
+                        <span class="tooltip-step-item">
+                          <span class="tooltip-step-badge">2</span>
+                          <span>Buscar tu salón o ubicación</span>
+                        </span>
+                        <span class="tooltip-step-item">
+                          <span class="tooltip-step-badge">3</span>
+                          <span>Click en <strong>"Compartir"</strong></span>
+                        </span>
+                        <span class="tooltip-step-item">
+                          <span class="tooltip-step-badge">4</span>
+                          <span>Pegá acá el enlace generado</span>
+                        </span>
+                      </span>
+                    </span>
+                  </span>
+                </label>
                 <input type="url" id="inv-maps-input" class="form-control-admin" placeholder="Ej. https://maps.google.com/..." style="width: 100%; padding: 12px 18px; border-radius: 20px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif;">
               </div>
 
@@ -1439,6 +1483,115 @@
     @keyframes qrGlowEffect {
       0%, 100% { opacity: 0; }
       50% { opacity: 0.12; filter: blur(3px); }
+    }
+
+    /* Help Tooltip System */
+    .info-help-tooltip {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: rgba(212, 175, 55, 0.12);
+      border: 1px solid rgba(212, 175, 55, 0.4);
+      color: var(--gold-primary);
+      font-size: 0.65rem;
+      cursor: help;
+      font-weight: bold;
+      font-family: 'Montserrat', sans-serif;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      user-select: none;
+      vertical-align: middle;
+    }
+
+    .info-help-tooltip:hover {
+      background: var(--gold-gradient);
+      color: #0b0b0c;
+      border-color: rgba(255, 255, 255, 0.1);
+      box-shadow: 0 0 10px rgba(212, 175, 55, 0.4);
+    }
+
+    .info-help-tooltip .tooltip-text {
+      visibility: hidden;
+      opacity: 0;
+      width: 280px;
+      background: linear-gradient(135deg, rgba(22, 22, 26, 0.98) 0%, rgba(12, 12, 15, 0.99) 100%);
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      color: #f5f5f7;
+      text-align: left;
+      border-radius: 16px;
+      padding: 16px;
+      position: absolute;
+      z-index: 1000;
+      bottom: 130%;
+      left: 50%;
+      transform: translateX(-50%) translateY(10px);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6), 
+                  inset 0 1px 0 rgba(255, 255, 255, 0.05),
+                  0 0 20px rgba(212, 175, 55, 0.05);
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.8rem;
+      line-height: 1.6;
+      text-transform: none;
+      letter-spacing: normal;
+      font-weight: 500;
+      backdrop-filter: blur(12px) saturate(180%);
+      -webkit-backdrop-filter: blur(12px) saturate(180%);
+      transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                  transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                  visibility 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      pointer-events: none;
+    }
+
+    /* Small Arrow indicator for the tooltip */
+    .info-help-tooltip .tooltip-text::after {
+      content: "";
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      margin-left: -6px;
+      border-width: 6px;
+      border-style: solid;
+      border-color: rgba(12, 12, 15, 0.99) transparent transparent transparent;
+    }
+
+    .info-help-tooltip:hover .tooltip-text {
+      visibility: visible;
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+      pointer-events: auto;
+    }
+
+    /* Steps list inside tooltip */
+    .tooltip-step-list {
+      margin: 8px 0 0 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .tooltip-step-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .tooltip-step-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: rgba(212, 175, 55, 0.15);
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      color: var(--gold-primary);
+      font-size: 0.65rem;
+      font-weight: bold;
+      flex-shrink: 0;
     }
   </style>
 
