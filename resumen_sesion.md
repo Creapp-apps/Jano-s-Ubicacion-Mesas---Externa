@@ -263,4 +263,34 @@ En esta sesión implementamos la resolución y el soporte técnico para enriquec
    - Creamos un script de prueba de integración de rutas (`scratch/test_og.js`) que inicializa el servidor express en un puerto dinámico y valida la correcta inyección de las etiquetas `<title>`, `og:title`, `og:description`, `og:image` y `og:site_name` en la respuesta HTTP ante la consulta de un invitado simulado.
    - La prueba se ejecutó exitosamente en la terminal y las pruebas automáticas generales (`npm test`) continúan en un estado $100\%$ verde.
 
+4. **Ocultamiento del Botón "Ver Vista Invitados"**:
+   - Ocultamos el enlace `<a id="btn-view-guest-view">` en la barra superior derecha de `admin.html` mediante un estilo inline `style="display: none;"`. Esto evita redirecciones confusas para el usuario hacia la página de inicio principal (`mifiestapp.com.ar`) manteniendo intacta la lógica JS asociada sin errores de referencias nulas.
 
+5. **Escalado Responsivo de la Proyección en Pantallas Grandes**:
+   - Identificamos que en pantallas de alta resolución (como televisores de salón y proyectores en eventos), la tarjeta de instrucciones del QR y la dedicatoria se visualizaban demasiado pequeñas debido a dimensiones en píxeles fijos.
+   - Eliminamos los estilos CSS inline en `proyeccion.html` para los elementos SVG principales (`.logo-box svg` y `.logo-large svg`) y trasladamos todas sus dimensiones a `proyeccion.css`.
+   - Implementamos reglas `@media (min-width: 1200px)` y `@media (min-width: 1800px)` en `proyeccion.css` que escalan proporcionalmente las fuentes, padding, tamaño del código QR, logotipos y la tarjeta de dedicatoria. Esto optimiza enormemente la legibilidad a larga distancia en pantallas de TV (ej. en el living) o pantallas de proyección de salón.
+
+
+
+---
+
+## 🌌 Sesión - Blockers de Carga de Botones Administrativos (Button Loaders)
+En esta sesión implementamos blockers de carga visual y de comportamiento en todos los botones de acción del panel de administración de FiestAPP para mejorar la experiencia de usuario y prevenir dobles envíos accidentales.
+
+### 🛠️ Logros e Implementaciones
+1. **Helper Global de Carga (`setButtonLoading`)**:
+   - Diseñamos y agregamos un spinner CSS rotatorio premium `.spinner-loader` en `public/css/admin.css` utilizando la paleta de colores de FiestAPP y adaptándose de forma natural al tamaño y color del texto del botón.
+   - Definimos la función `setButtonLoading(btn, isLoading, textOverride)` en `public/js/admin.js` que deshabilita el cursor y eventos del botón, reduce la opacidad, inserta o remueve la animación de carga, y recupera de manera perfecta el estado textual original del botón tras completarse la solicitud.
+
+2. **Integración Uniforme en Formularios de Guardado y Acciones**:
+   - **Configuración de Título y Evento:** Refactorizamos `btnSaveTitle` para deshabilitarse e indicar `"Guardando..."` con el loader dinámico al guardar el título del evento.
+   - **Personalización de Fotos:** Aplicamos el mismo comportamiento para `btnSavePhotosTitle`.
+   - **Guardar Invitado:** Integrada la funcionalidad de spinner en `btnSaveGuest` dentro de `saveGuestForm()`, bloqueando el re-envío durante la persistencia de datos (creación y edición).
+   - **Limpiar Base de Datos:** Agregamos el spinner de carga `"Limpiando..."` al botón `btnClearDbInvitados` una vez confirmada la limpieza de la base de datos de invitados.
+   - **Limpiar Galería de Fotos:** Implementamos el spinner en `btnClearPhotos` durante la petición al endpoint `/api/admin/photos/clear`.
+   - **Configuración Completa de Invitación:** Refactorizamos `saveInvitationConfig()` para que todos los botones de guardado con la clase `.btn-save-invitation-config` se deshabiliten de forma coordinada durante la petición asíncrona, recuperando su estado al finalizar.
+   - **Control de Trivia y Preguntas:** Añadimos feedback de carga tanto al guardar el cuestionario de Trivia (`btnSaveTriviaQuestions`) como a las acciones del panel de control de la Trivia (`btnTriviaInit`, `btnTriviaStart`, `btnTriviaReveal`, `btnTriviaLeaderboard`, `btnTriviaNext`).
+
+3. **Verificación y Pruebas**:
+   - Se corrieron las pruebas del servidor (`npm test`) corroborando que todo funciona al $100\%$ sin regresiones.

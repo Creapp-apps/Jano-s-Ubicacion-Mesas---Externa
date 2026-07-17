@@ -78,6 +78,27 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }, 400);
       }, duration);
+  }
+
+  function setButtonLoading(button, isLoading, textOverride) {
+    if (!button) return;
+    if (isLoading) {
+      button.disabled = true;
+      if (!button.dataset.originalHtml) {
+        button.dataset.originalHtml = button.innerHTML;
+      }
+      const text = textOverride || 'Cargando...';
+      button.innerHTML = `<span class="spinner-loader"></span> ${text}`;
+      button.style.pointerEvents = 'none';
+      button.style.opacity = '0.7';
+    } else {
+      button.disabled = false;
+      if (button.dataset.originalHtml !== undefined) {
+        button.innerHTML = button.dataset.originalHtml;
+        button.removeAttribute('data-original-html');
+      }
+      button.style.pointerEvents = '';
+      button.style.opacity = '';
     }
   }
 
@@ -110,6 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const modalLastName = document.getElementById('modal-last-name');
   const modalTable = document.getElementById('modal-table');
   const btnCloseModal = document.getElementById('btn-close-modal');
+  const btnSaveGuest = document.getElementById('btn-save-guest');
 
   const toggleTableDropdownBtn = document.getElementById('btn-toggle-table-dropdown');
 
@@ -745,6 +767,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       showToast('loading', '', 'Guardando cambios...');
+      setButtonLoading(btnSavePhotosTitle, true, 'Guardando...');
 
       fetch(`/api/config?event=${encodeURIComponent(eventId)}`, {
         method: 'POST',
@@ -753,6 +776,7 @@ document.addEventListener('DOMContentLoaded', () => {
       })
         .then(res => res.json())
         .then(data => {
+          setButtonLoading(btnSavePhotosTitle, false);
           if (data.success) {
             showToast('success', '¡Éxito!', 'Título del evento guardado correctamente.', 3000);
             if (printEventTitle) printEventTitle.textContent = eventTitle;
@@ -763,6 +787,7 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         })
         .catch(err => {
+          setButtonLoading(btnSavePhotosTitle, false);
           console.error(err);
           showToast('error', 'Error', 'Error de red al guardar la configuración.', 4000);
         });
@@ -801,11 +826,13 @@ document.addEventListener('DOMContentLoaded', () => {
         'Limpiar Galería de Fotos',
         '¿Está seguro de que desea eliminar todas las fotos de la galería? Esta acción no se puede deshacer y vaciará el mural.',
         () => {
+          setButtonLoading(btnClearPhotos, true, 'Limpiando...');
           fetch(`/api/admin/photos/clear?event=${encodeURIComponent(eventId)}`, {
             method: 'POST'
           })
             .then(res => res.json())
             .then(data => {
+              setButtonLoading(btnClearPhotos, false);
               if (data.success) {
                 showToast('Galería de fotos limpiada correctamente.', 'success');
                 loadPhotos();
@@ -814,6 +841,7 @@ document.addEventListener('DOMContentLoaded', () => {
               }
             })
             .catch(err => {
+              setButtonLoading(btnClearPhotos, false);
               console.error('Error clearing photos:', err);
               showToast('Error de conexión con el servidor.', 'error');
             });
@@ -856,6 +884,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     showToast('loading', '', 'Guardando cambios...');
+    setButtonLoading(btnSaveTitle, true, 'Guardando...');
 
     fetch(`/api/config?event=${encodeURIComponent(eventId)}`, {
       method: 'POST',
@@ -864,6 +893,7 @@ document.addEventListener('DOMContentLoaded', () => {
     })
       .then(res => res.json())
       .then(data => {
+        setButtonLoading(btnSaveTitle, false);
         if (data.success) {
           showToast('success', '¡Éxito!', 'Título del evento guardado correctamente.', 3000);
           printEventTitle.textContent = eventTitle;
@@ -872,6 +902,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       })
       .catch(err => {
+        setButtonLoading(btnSaveTitle, false);
         console.error(err);
         showToast('error', 'Error', 'Error de red al guardar la configuración.', 4000);
       });
@@ -1495,7 +1526,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
 
-  // Add/Edit guest save operation
   function saveGuestForm() {
     const idx = guestIndexInput.value;
     const guestData = {
@@ -1508,6 +1538,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const url = isEdit ? `/api/guests/${idx}?event=${encodeURIComponent(eventId)}` : `/api/guests?event=${encodeURIComponent(eventId)}`;
     const method = isEdit ? 'PUT' : 'POST';
 
+    setButtonLoading(btnSaveGuest, true, 'Guardando...');
+
     fetch(url, {
       method,
       headers: { 'Content-Type': 'application/json' },
@@ -1515,6 +1547,7 @@ document.addEventListener('DOMContentLoaded', () => {
     })
       .then(res => res.json())
       .then(data => {
+        setButtonLoading(btnSaveGuest, false);
         if (data.success) {
           guestModal.classList.remove('active');
           hideCustomDropdown();
@@ -1559,6 +1592,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       })
       .catch(err => {
+        setButtonLoading(btnSaveGuest, false);
         console.error(err);
         showToast('Error de red al intentar guardar.', 'error');
       });
@@ -1722,8 +1756,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- Phase 3: Invitation & RSVP Management Logic ---
   
-  function saveInvitationConfig() {
+  function saveInvitationConfig(e) {
     showToast('loading', '', 'Guardando cambios en tu invitación...');
+
+    const saveBtns = document.querySelectorAll('.btn-save-invitation-config');
+    saveBtns.forEach(btn => setButtonLoading(btn, true, 'Guardando...'));
 
     const payload = {
       eventTitle: invTitleInput ? invTitleInput.value.trim() : '',
@@ -1775,6 +1812,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     if (!payload.eventTitle) {
+      saveBtns.forEach(btn => setButtonLoading(btn, false));
       showToast('error', '¡Atención!', 'El título del evento es obligatorio.', 4000);
       return;
     }
@@ -1786,6 +1824,7 @@ document.addEventListener('DOMContentLoaded', () => {
     })
     .then(res => res.json())
     .then(data => {
+      saveBtns.forEach(btn => setButtonLoading(btn, false));
       if (data.success) {
         showToast('success', '¡Éxito!', 'Configuración de la invitación guardada correctamente!', 3000);
         
@@ -1800,6 +1839,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     })
     .catch(err => {
+      saveBtns.forEach(btn => setButtonLoading(btn, false));
       console.error(err);
       showToast('error', 'Error', 'Error de red al intentar guardar.', 4000);
     });
@@ -3072,9 +3112,11 @@ document.addEventListener('DOMContentLoaded', () => {
         'Limpiar Base de Datos',
         '¿Está seguro de que desea limpiar toda la base de datos de invitados? Esta acción no se puede deshacer.',
         () => {
+          setButtonLoading(btnClearDbInvitados, true, 'Limpiando...');
           fetch(`/api/clear?event=${encodeURIComponent(eventId)}`, { method: 'POST' })
             .then(res => res.json())
             .then(data => {
+              setButtonLoading(btnClearDbInvitados, false);
               if (data.success) {
                 showToast('success', '¡Éxito!', 'Base de datos de invitados limpiada correctamente.', 3000);
                 loadStats();
@@ -3084,6 +3126,7 @@ document.addEventListener('DOMContentLoaded', () => {
               }
             })
             .catch(err => {
+              setButtonLoading(btnClearDbInvitados, false);
               console.error('Error clearing database:', err);
               showToast('error', 'Error', 'Error de conexión con el servidor.', 4000);
             });
@@ -3538,6 +3581,8 @@ document.addEventListener('DOMContentLoaded', () => {
         correctIndex: q.correctIndex
       })).filter(q => q.question !== '');
 
+      setButtonLoading(btnSaveTriviaQuestions, true, 'Guardando...');
+
       try {
         const response = await fetch(`/api/config?event=${encodeURIComponent(eventId)}`, {
           method: 'POST',
@@ -3568,12 +3613,15 @@ document.addEventListener('DOMContentLoaded', () => {
       } catch (err) {
         console.error('Error saving trivia config:', err);
         showToast('Error al conectar con el servidor', 'error');
+      } finally {
+        setButtonLoading(btnSaveTriviaQuestions, false);
       }
     });
   }
 
   // Console control actions
-  async function triggerTriviaAction(actionName) {
+  async function triggerTriviaAction(actionName, clickedBtn) {
+    if (clickedBtn) setButtonLoading(clickedBtn, true);
     try {
       const res = await fetch(`/api/trivia/control?event=${encodeURIComponent(eventId)}`, {
         method: 'POST',
@@ -3591,6 +3639,8 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (err) {
       console.error(`Error sending trivia action ${actionName}:`, err);
       showToast('Error de comunicación con el servidor', 'error');
+    } finally {
+      if (clickedBtn) setButtonLoading(clickedBtn, false);
     }
   }
 
@@ -3696,11 +3746,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnTriviaLeaderboard = document.getElementById('btn-admin-trivia-leaderboard');
   const btnTriviaNext = document.getElementById('btn-admin-trivia-next');
 
-  if (btnTriviaInit) btnTriviaInit.addEventListener('click', () => triggerTriviaAction('init'));
-  if (btnTriviaStart) btnTriviaStart.addEventListener('click', () => triggerTriviaAction('start'));
-  if (btnTriviaReveal) btnTriviaReveal.addEventListener('click', () => triggerTriviaAction('reveal'));
-  if (btnTriviaLeaderboard) btnTriviaLeaderboard.addEventListener('click', () => triggerTriviaAction('leaderboard'));
-  if (btnTriviaNext) btnTriviaNext.addEventListener('click', () => triggerTriviaAction('next'));
+  if (btnTriviaInit) btnTriviaInit.addEventListener('click', (e) => triggerTriviaAction('init', e.currentTarget));
+  if (btnTriviaStart) btnTriviaStart.addEventListener('click', (e) => triggerTriviaAction('start', e.currentTarget));
+  if (btnTriviaReveal) btnTriviaReveal.addEventListener('click', (e) => triggerTriviaAction('reveal', e.currentTarget));
+  if (btnTriviaLeaderboard) btnTriviaLeaderboard.addEventListener('click', (e) => triggerTriviaAction('leaderboard', e.currentTarget));
+  if (btnTriviaNext) btnTriviaNext.addEventListener('click', (e) => triggerTriviaAction('next', e.currentTarget));
 
   const btnTriviaProjector = document.getElementById('btn-admin-trivia-projector');
   if (btnTriviaProjector) {
