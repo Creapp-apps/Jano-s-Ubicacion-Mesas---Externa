@@ -40,6 +40,12 @@ async function runTests() {
     const lbData = await lbRes.json();
     assert.ok(Array.isArray(lbData.leaderboard));
 
+    // 4. Test GET /api/trivia/search-guests
+    const searchRes = await fetch(`${baseUrl}/api/trivia/search-guests?event=default&q=Test`);
+    assert.strictEqual(searchRes.status, 200);
+    const searchData = await searchRes.json();
+    assert.ok(Array.isArray(searchData));
+
     console.log('Trivia server endpoints verified successfully!');
   } finally {
     server.close();

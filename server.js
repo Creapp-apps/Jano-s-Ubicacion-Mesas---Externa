@@ -1821,6 +1821,54 @@ app.get('/api/trivia/stream', (req, res) => {
   });
 });
 
+app.get('/api/trivia/search-guests', async (req, res) => {
+  const { event, q } = req.query;
+  const eventId = event || 'default';
+  const query = q ? q.trim() : '';
+
+  if (!query) {
+    return res.json([]);
+  }
+
+  try {
+    const guests = await db.getGuests(eventId);
+    const rsvps = await db.getRsvps(eventId);
+
+    const confirmedGuestsList = guests.filter(g => {
+      const fullName = `${g.firstName} ${g.lastName}`;
+      const isConfirmed = rsvps.some(r => r.attending === true && (
+        normalizeString(r.name) === normalizeString(fullName) || 
+        normalizeString(r.name).includes(normalizeString(g.firstName))
+      ));
+      return isConfirmed;
+    });
+
+    const otherConfirmedRsvps = rsvps.filter(r => r.attending === true && !confirmedGuestsList.some(g => {
+      const fullName = `${g.firstName} ${g.lastName}`;
+      return normalizeString(r.name) === normalizeString(fullName);
+    }));
+
+    const allConfirmedNames = [
+      ...confirmedGuestsList.map(g => `${g.firstName} ${g.lastName}`),
+      ...otherConfirmedRsvps.map(r => r.name)
+    ];
+
+    const queryClean = normalizeString(query);
+    const queryWords = queryClean.split(/\s+/).filter(Boolean);
+
+    const results = allConfirmedNames.filter(name => {
+      const cleanName = normalizeString(name);
+      return queryWords.every(word => cleanName.includes(word));
+    });
+
+    const uniqueResults = Array.from(new Set(results));
+    res.json(uniqueResults.slice(0, 10));
+  } catch (error) {
+    console.error('Error in trivia search guests:', error);
+    res.status(500).json({ error: 'Error al buscar invitados confirmados' });
+  }
+});
+
 app.post('/api/trivia/join', async (req, res) => {
   const { eventId, nickname } = req.body;
   const normalizedNick = normalizeString(nickname);
