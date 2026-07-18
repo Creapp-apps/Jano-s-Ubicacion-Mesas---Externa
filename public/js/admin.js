@@ -78,6 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }, 400);
       }, duration);
+    }
   }
 
   function setButtonLoading(button, isLoading, textOverride) {

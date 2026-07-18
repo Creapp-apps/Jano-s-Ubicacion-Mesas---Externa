@@ -344,6 +344,14 @@
         switchCard('card-lobby');
         hasAnswered = false;
         enableGamepad(true);
+        const welcomeEl = document.getElementById('lobby-welcome');
+        if (welcomeEl) {
+          if (state.currentQuestionIndex > 0) {
+            welcomeEl.textContent = `¡Excelente! Preparate para la Pregunta ${state.currentQuestionIndex + 1}...`;
+          } else {
+            welcomeEl.textContent = `Hola ${nickname}, preparate para jugar en breve...`;
+          }
+        }
       }
       
       else if (state.status === 'QUESTION_ACTIVE') {

@@ -1885,7 +1885,7 @@ app.post('/api/trivia/control', requireAuth, async (req, res) => {
   const eventId = req.query.event || req.body.eventId || 'default';
   const { action } = req.body;
 
-  if (action === 'initialize') {
+  if (action === 'initialize' || action === 'init') {
     try {
       const qStr = await db.getConfigValue(eventId, 'trivia_questions', '[]');
       const questions = JSON.parse(qStr);

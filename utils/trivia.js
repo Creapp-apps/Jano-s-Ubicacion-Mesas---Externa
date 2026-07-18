@@ -4,9 +4,15 @@ class TriviaCoordinator {
   }
 
   initializeSession(eventId, questions) {
+    const normalizedQuestions = (questions || []).map(q => ({
+      questionText: q.questionText || q.question || '',
+      options: q.options || [],
+      correctOptionIndex: q.correctOptionIndex !== undefined ? q.correctOptionIndex : (q.correctIndex !== undefined ? q.correctIndex : 0),
+      timeLimit: q.timeLimit || 20
+    }));
     this.sessions[eventId] = {
       status: 'LOBBY', // 'LOBBY', 'QUESTION_ACTIVE', 'REVEAL_ANSWER', 'LEADERBOARD', 'PODIUM'
-      questions: questions || [],
+      questions: normalizedQuestions,
       currentQuestionIndex: 0,
       players: {}, // nickname: { score: 0, lastCorrect: false, lastPoints: 0 }
       responses: {}, // questionIndex: { nickname: { optionIndex, timeTakenMs, points } }
@@ -17,7 +23,7 @@ class TriviaCoordinator {
 
   getSessionState(eventId) {
     const session = this.sessions[eventId];
-    if (!session) return { status: 'INACTIVE', players: [], questionsCount: 0 };
+    if (!session) return { status: 'INACTIVE', players: [], questionsCount: 0, totalQuestions: 0 };
     return {
       status: session.status,
       currentQuestionIndex: session.currentQuestionIndex,
@@ -26,11 +32,23 @@ class TriviaCoordinator {
         score: session.players[nick].score
       })),
       questionsCount: session.questions.length,
+      totalQuestions: session.questions.length,
       currentQuestion: (session.status === 'QUESTION_ACTIVE' || session.status === 'REVEAL_ANSWER') ? {
         questionText: session.questions[session.currentQuestionIndex].questionText,
         options: session.questions[session.currentQuestionIndex].options,
         timeLimit: session.questions[session.currentQuestionIndex].timeLimit,
-        correctOptionIndex: session.status === 'REVEAL_ANSWER' ? session.questions[session.currentQuestionIndex].correctOptionIndex : undefined
+        remainingTime: session.stateExpiresAt ? Math.max(0, Math.round((session.stateExpiresAt - Date.now()) / 1000)) : session.questions[session.currentQuestionIndex].timeLimit,
+        correctOptionIndex: session.status === 'REVEAL_ANSWER' ? session.questions[session.currentQuestionIndex].correctOptionIndex : undefined,
+        optionStats: (() => {
+          const stats = [0, 0, 0, 0];
+          const responses = session.responses[session.currentQuestionIndex] || {};
+          Object.values(responses).forEach(r => {
+            if (r.optionIndex !== undefined && r.optionIndex >= 0 && r.optionIndex < 4) {
+              stats[r.optionIndex]++;
+            }
+          });
+          return stats;
+        })()
       } : null
     };
   }
