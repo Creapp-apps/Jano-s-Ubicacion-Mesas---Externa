@@ -941,6 +941,32 @@
             </div>
           </div>
 
+          <!-- Auto Mode Toggle -->
+          <div style="background: rgba(212, 175, 55, 0.05); padding: 12px 15px; border-radius: 12px; border: 1px solid rgba(212, 175, 55, 0.2); margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; flex-direction: column;">
+              <span style="font-weight: 600; color: var(--gold-light); font-size: 0.85rem;">Modo Automático (Timer)</span>
+              <span style="color: var(--text-muted); font-size: 0.7rem;">Las fases avanzan solas con el tiempo</span>
+            </div>
+            <label style="position: relative; display: inline-block; width: 48px; height: 24px; cursor: pointer; margin: 0;">
+              <input type="checkbox" id="check-admin-trivia-auto" style="display: none;">
+              <span id="slider-admin-trivia-auto" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(255,255,255,0.15); border-radius: 24px; transition: 0.3s; border: 1px solid rgba(212, 175, 55, 0.4); display: flex; align-items: center; padding: 2px;">
+                <span style="width: 18px; height: 18px; background-color: var(--text-muted); border-radius: 50%; transition: 0.3s; display: block; transform: translateX(0);"></span>
+              </span>
+            </label>
+          </div>
+
+          <!-- Timer Duration Modifier -->
+          <div id="container-admin-trivia-timer-duration" class="trivia-timer-modifier" style="background: rgba(212, 175, 55, 0.03); border-radius: 12px; border: 1px solid transparent;">
+            <div style="display: flex; flex-direction: column;">
+              <span style="font-weight: 600; color: var(--gold-light); font-size: 0.85rem;">Duración del Timer</span>
+              <span style="color: var(--text-muted); font-size: 0.7rem;">Segundos para responder</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <input type="number" id="input-admin-trivia-duration" min="5" max="120" value="20" style="width: 60px; background: rgba(0, 0, 0, 0.6); border: 1px solid var(--gold-primary); color: white; border-radius: 6px; padding: 4px 8px; text-align: center; font-size: 0.85rem; font-weight: bold; outline: none;">
+              <span style="color: var(--gold-primary); font-size: 0.85rem; font-weight: 500;">seg</span>
+            </div>
+          </div>
+
           <!-- Controls Grid -->
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 25px;">
             <button type="button" class="btn btn-danger" id="btn-admin-trivia-init" style="grid-column: span 2; font-size: 0.85rem;">Inicializar / Reiniciar Juego</button>
@@ -1106,6 +1132,35 @@
   </div>
 
   <style>
+    /* Trivia Timer Modifier Animation */
+    .trivia-timer-modifier {
+      max-height: 0;
+      opacity: 0;
+      transform: translateY(-10px) scale(0.98);
+      overflow: hidden;
+      padding: 0 15px !important;
+      margin-bottom: 0 !important;
+      border-color: transparent !important;
+      display: flex !important;
+      align-items: center;
+      justify-content: space-between;
+      transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                  opacity 0.3s ease,
+                  transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                  padding 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                  margin 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                  border-color 0.3s ease;
+    }
+
+    .trivia-timer-modifier.visible {
+      max-height: 80px;
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      padding: 12px 15px !important;
+      margin-bottom: 20px !important;
+      border-color: rgba(212, 175, 55, 0.15) !important;
+    }
+
     /* Onboarding Floating Modal Backdrop */
     .onboarding-backdrop {
       position: fixed;

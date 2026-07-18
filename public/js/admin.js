@@ -3675,6 +3675,40 @@ document.addEventListener('DOMContentLoaded', () => {
   window.stopTriviaPolling = stopTriviaPolling;
 
   function renderAdminTriviaState(state) {
+    // Update autoMode slider UI
+    const checkAuto = document.getElementById('check-admin-trivia-auto');
+    const sliderAuto = document.getElementById('slider-admin-trivia-auto');
+    const durationContainer = document.getElementById('container-admin-trivia-timer-duration');
+    const inputDuration = document.getElementById('input-admin-trivia-duration');
+
+    if (checkAuto) {
+      checkAuto.checked = state.autoMode;
+      if (sliderAuto) {
+        const circle = sliderAuto.querySelector('span');
+        if (state.autoMode) {
+          sliderAuto.style.backgroundColor = 'var(--gold-primary)';
+          sliderAuto.style.borderColor = 'var(--gold-primary)';
+          circle.style.backgroundColor = '#0b0b0c';
+          circle.style.transform = 'translateX(24px)';
+        } else {
+          sliderAuto.style.backgroundColor = 'rgba(255,255,255,0.15)';
+          sliderAuto.style.borderColor = 'rgba(212, 175, 55, 0.4)';
+          circle.style.backgroundColor = 'var(--text-muted)';
+          circle.style.transform = 'translateX(0)';
+        }
+      }
+      if (durationContainer) {
+        if (state.autoMode) {
+          durationContainer.classList.add('visible');
+        } else {
+          durationContainer.classList.remove('visible');
+        }
+      }
+      if (inputDuration && state.customDuration && !inputDuration.matches(':focus')) {
+        inputDuration.value = state.customDuration;
+      }
+    }
+
     const badge = document.getElementById('admin-trivia-status-badge');
     if (badge) {
       badge.textContent = state.status;
@@ -3748,10 +3782,122 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnTriviaNext = document.getElementById('btn-admin-trivia-next');
 
   if (btnTriviaInit) btnTriviaInit.addEventListener('click', (e) => triggerTriviaAction('init', e.currentTarget));
-  if (btnTriviaStart) btnTriviaStart.addEventListener('click', (e) => triggerTriviaAction('start', e.currentTarget));
+  if (btnTriviaStart) btnTriviaStart.addEventListener('click', (e) => {
+    const checkAuto = document.getElementById('check-admin-trivia-auto');
+    const inputDuration = document.getElementById('input-admin-trivia-duration');
+    const autoMode = checkAuto ? checkAuto.checked : false;
+    const duration = inputDuration ? parseInt(inputDuration.value) : null;
+    const clickedBtn = e.currentTarget;
+    if (clickedBtn) setButtonLoading(clickedBtn, true);
+    fetch(`/api/trivia/control?event=${encodeURIComponent(eventId)}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ action: 'start', autoMode, duration })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (!data.success) {
+        showToast(data.error || 'Error al lanzar la pregunta', 'error');
+      } else {
+        showToast(`Pregunta lanzada con éxito${autoMode ? ' (Modo Automático)' : ''}`, 'success');
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      showToast('Error de comunicación', 'error');
+    })
+    .finally(() => {
+      if (clickedBtn) setButtonLoading(clickedBtn, false);
+    });
+  });
   if (btnTriviaReveal) btnTriviaReveal.addEventListener('click', (e) => triggerTriviaAction('reveal', e.currentTarget));
   if (btnTriviaLeaderboard) btnTriviaLeaderboard.addEventListener('click', (e) => triggerTriviaAction('leaderboard', e.currentTarget));
   if (btnTriviaNext) btnTriviaNext.addEventListener('click', (e) => triggerTriviaAction('next', e.currentTarget));
+
+  const checkAuto = document.getElementById('check-admin-trivia-auto');
+  if (checkAuto) {
+    checkAuto.addEventListener('change', () => {
+      const autoMode = checkAuto.checked;
+      const durationContainer = document.getElementById('container-admin-trivia-timer-duration');
+      if (durationContainer) {
+        if (autoMode) {
+          durationContainer.classList.add('visible');
+        } else {
+          durationContainer.classList.remove('visible');
+        }
+      }
+
+      fetch(`/api/trivia/control?event=${encodeURIComponent(eventId)}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ action: 'toggle_auto' })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (!data.success) {
+          showToast(data.error || 'Error al cambiar modo automático', 'error');
+          checkAuto.checked = !autoMode;
+          if (durationContainer) {
+            if (!autoMode) {
+              durationContainer.classList.add('visible');
+            } else {
+              durationContainer.classList.remove('visible');
+            }
+          }
+        } else {
+          showToast(data.autoMode ? 'Modo Automático activado' : 'Modo Automático desactivado', 'success');
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        showToast('Error de comunicación', 'error');
+        checkAuto.checked = !autoMode;
+        if (durationContainer) {
+          if (!autoMode) {
+            durationContainer.classList.add('visible');
+          } else {
+            durationContainer.classList.remove('visible');
+          }
+        }
+      });
+    });
+  }
+
+  const inputDuration = document.getElementById('input-admin-trivia-duration');
+  if (inputDuration) {
+    let durationTimer = null;
+    inputDuration.addEventListener('input', () => {
+      clearTimeout(durationTimer);
+      durationTimer = setTimeout(() => {
+        const val = parseInt(inputDuration.value);
+        if (isNaN(val) || val < 5) return;
+        
+        fetch(`/api/trivia/control?event=${encodeURIComponent(eventId)}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ action: 'set_duration', duration: val })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (!data.success) {
+            showToast(data.error || 'Error al actualizar duración', 'error');
+          } else {
+            showToast('Duración de timer actualizada', 'success');
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          showToast('Error de comunicación', 'error');
+        });
+      }, 500);
+    });
+  }
 
   const btnTriviaProjector = document.getElementById('btn-admin-trivia-projector');
   if (btnTriviaProjector) {

@@ -1943,15 +1943,54 @@ app.post('/api/trivia/control', requireAuth, async (req, res) => {
       res.status(500).json({ error: 'Error al inicializar la trivia' });
     }
   } else if (action === 'start') {
-    triviaCoordinator.startQuestion(eventId);
+    const autoMode = req.body.autoMode === true;
+    const duration = req.body.duration ? parseInt(req.body.duration) : null;
+    if (duration !== null) {
+      triviaCoordinator.setCustomDuration(eventId, duration);
+    }
+    triviaCoordinator.startQuestion(eventId, autoMode);
     res.json({ success: true });
+  } else if (action === 'toggle_auto') {
+    const autoMode = triviaCoordinator.toggleAutoMode(eventId);
+    res.json({ success: true, autoMode });
+  } else if (action === 'set_duration') {
+    const duration = req.body.duration ? parseInt(req.body.duration) : null;
+    triviaCoordinator.setCustomDuration(eventId, duration);
+    res.json({ success: true, customDuration: duration });
   } else if (action === 'reveal') {
+    // Manual action disables autoMode
+    const session = triviaCoordinator.sessions[eventId];
+    if (session) {
+      session.autoMode = false;
+      if (session.timerId) {
+        clearTimeout(session.timerId);
+        session.timerId = null;
+      }
+    }
     triviaCoordinator.revealAnswer(eventId);
     res.json({ success: true });
   } else if (action === 'leaderboard') {
+    // Manual action disables autoMode
+    const session = triviaCoordinator.sessions[eventId];
+    if (session) {
+      session.autoMode = false;
+      if (session.timerId) {
+        clearTimeout(session.timerId);
+        session.timerId = null;
+      }
+    }
     triviaCoordinator.showLeaderboard(eventId);
     res.json({ success: true });
   } else if (action === 'next') {
+    // Manual action disables autoMode
+    const session = triviaCoordinator.sessions[eventId];
+    if (session) {
+      session.autoMode = false;
+      if (session.timerId) {
+        clearTimeout(session.timerId);
+        session.timerId = null;
+      }
+    }
     triviaCoordinator.nextQuestion(eventId);
     res.json({ success: true });
   } else {
