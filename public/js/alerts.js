@@ -267,7 +267,7 @@ window.alert = function(message) {
 };
 
 window.confirm = function(message) {
-  console.warn('[MiFiestAPP ALERTS] Native confirm overridden. Please use await customConfirm instead.');
+  console.warn('[miFiestAPP ALERTS] Native confirm overridden. Please use await customConfirm instead.');
   window.customAlert('Confirmar acción', message);
   return false;
 };

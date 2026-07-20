@@ -54,11 +54,27 @@ document.addEventListener('DOMContentLoaded', () => {
   const generateDynamicQR = () => {
     const qrCodeContainer = document.getElementById('projector-qr-container');
     if (qrCodeContainer) {
-      const siteOrigin = window.location.origin;
+      let siteOrigin = window.location.origin;
       const qrBaseUrl = 'https://api.qrserver.com/v1/create-qr-code/';
-      const targetUrl = `${siteOrigin}/fotos?event=${encodeURIComponent(eventId)}`;
-      const qrUrl = `${qrBaseUrl}?size=250x250&data=${encodeURIComponent(targetUrl)}&color=0b0b0c&bgcolor=ffffff`;
-      qrCodeContainer.innerHTML = `<img src="${qrUrl}" alt="QR de Envío en Vivo" style="display: block;">`;
+      
+      const renderQR = (origin) => {
+        const targetUrl = `${origin}/fotos?event=${encodeURIComponent(eventId)}`;
+        const qrUrl = `${qrBaseUrl}?size=250x250&data=${encodeURIComponent(targetUrl)}&color=0b0b0c&bgcolor=ffffff`;
+        qrCodeContainer.innerHTML = `<img src="${qrUrl}" alt="QR de Envío en Vivo" style="display: block;">`;
+      };
+      
+      renderQR(siteOrigin);
+      
+      // Resolve local IP address dynamically to allow local Wi-Fi testing
+      fetch('/api/debug/network-ip')
+        .then(res => res.json())
+        .then(data => {
+          if (data.localIp && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+            siteOrigin = `http://${data.localIp}:${window.location.port}`;
+            renderQR(siteOrigin);
+          }
+        })
+        .catch(err => console.error('Could not resolve local network IP:', err));
     }
   };
 

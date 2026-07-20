@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="/assets/coronamain.png">
   <title>Panel de Administración | Jano's Eventos</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,11 +15,13 @@
   <!-- Screen Content -->
   <div class="admin-container">
     <header>
-      <div class="logo-group">
-        <a href="#" id="btn-back-to-portal" class="btn-back" title="Volver al Portal">
+      <div class="logo-group" style="align-items: center; gap: 12px;">
+        <a href="#" id="btn-back-to-portal" class="btn-back" title="Volver al Portal" style="margin-right: 4px;">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--gold-primary); display: block;"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
         </a>
-        <h1>Panel de Control</h1>
+        <img src="/assets/textomain.png" alt="miFiestAPP" style="height: 26px; width: auto; object-fit: contain; filter: drop-shadow(0 2px 5px rgba(212,175,55,0.2));">
+        <span style="color: rgba(255,255,255,0.15); font-size: 1rem; font-weight: 300;">|</span>
+        <h1 style="margin: 0; font-size: 1.1rem; letter-spacing: 0.5px; font-weight: 600;">Panel de Control</h1>
         <button id="btn-toggle-guide" class="btn-header-action" style="padding: 6px 12px; font-size: 0.75rem; border-radius: 12px; margin-left: 15px; border-color: rgba(212,175,55,0.4); color: var(--gold-primary); display: flex; align-items: center; gap: 5px; cursor: pointer; background: transparent; transition: all 0.3s;" title="Ver guía interactiva">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17" stroke-width="2"/></svg>
           Ayuda
@@ -49,7 +52,12 @@
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 5px;"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
         Juego de Trivia
       </button>
+      <button class="nav-tab" id="tab-btn-capitanes">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 5px;"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+        Capitanes de Mesa
+      </button>
     </div>
+
 
     <!-- TABLES & GUESTS TAB -->
     <div id="tab-mesas" class="tab-content active">
@@ -516,7 +524,6 @@
               <button type="button" class="btn btn-primary btn-save-invitation-config" style="width: 100%; padding: 14px; border-radius: 20px; font-weight: bold;">Guardar Configuración</button>
             </div>
           </div>
-        </div>
 
         <!-- Subtab Content 2.5: Fotos (Carrusel) -->
         <div id="subtab-fotos-inv" class="subtab-content-wrapper">
@@ -895,11 +902,12 @@
             Personalizá las preguntas de la trivia. Los novios o agasajados podrán jugar con sus invitados.
           </p>
 
-          <div style="margin-bottom: 20px; text-align: left;">
+          <!-- Estado de la Trivia (Ocultado para simplicidad, siempre habilitada) -->
+          <div style="display: none;">
             <label style="display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Estado de la Trivia</label>
             <select id="trivia-enabled-toggle" class="form-control-admin" style="width: 100%; padding: 12px 18px; border-radius: 20px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif;">
               <option value="false">Deshabilitada</option>
-              <option value="true">Habilitada</option>
+              <option value="true" selected>Habilitada</option>
             </select>
           </div>
 
@@ -941,22 +949,13 @@
             </div>
           </div>
 
-          <!-- Auto Mode Toggle -->
-          <div style="background: rgba(212, 175, 55, 0.05); padding: 12px 15px; border-radius: 12px; border: 1px solid rgba(212, 175, 55, 0.2); margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
-            <div style="display: flex; flex-direction: column;">
-              <span style="font-weight: 600; color: var(--gold-light); font-size: 0.85rem;">Modo Automático (Timer)</span>
-              <span style="color: var(--text-muted); font-size: 0.7rem;">Las fases avanzan solas con el tiempo</span>
-            </div>
-            <label style="position: relative; display: inline-block; width: 48px; height: 24px; cursor: pointer; margin: 0;">
-              <input type="checkbox" id="check-admin-trivia-auto" style="display: none;">
-              <span id="slider-admin-trivia-auto" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(255,255,255,0.15); border-radius: 24px; transition: 0.3s; border: 1px solid rgba(212, 175, 55, 0.4); display: flex; align-items: center; padding: 2px;">
-                <span style="width: 18px; height: 18px; background-color: var(--text-muted); border-radius: 50%; transition: 0.3s; display: block; transform: translateX(0);"></span>
-              </span>
-            </label>
+          <!-- Auto Mode Toggle (Oculto, forzado a verdadero) -->
+          <div style="display: none;">
+            <input type="checkbox" id="check-admin-trivia-auto" checked>
           </div>
 
-          <!-- Timer Duration Modifier -->
-          <div id="container-admin-trivia-timer-duration" class="trivia-timer-modifier" style="background: rgba(212, 175, 55, 0.03); border-radius: 12px; border: 1px solid transparent;">
+          <!-- Timer Duration Modifier (Siempre visible) -->
+          <div id="container-admin-trivia-timer-duration" class="trivia-timer-modifier visible" style="background: rgba(212, 175, 55, 0.03); border-radius: 12px; border: 1px solid transparent; display: flex !important; margin-bottom: 20px !important;">
             <div style="display: flex; flex-direction: column;">
               <span style="font-weight: 600; color: var(--gold-light); font-size: 0.85rem;">Duración del Timer</span>
               <span style="color: var(--text-muted); font-size: 0.7rem;">Segundos para responder</span>
@@ -967,13 +966,34 @@
             </div>
           </div>
 
-          <!-- Controls Grid -->
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 25px;">
-            <button type="button" class="btn btn-danger" id="btn-admin-trivia-init" style="grid-column: span 2; font-size: 0.85rem;">Inicializar / Reiniciar Juego</button>
-            <button type="button" class="btn btn-primary" id="btn-admin-trivia-start" style="font-size: 0.85rem;">Lanzar Pregunta</button>
-            <button type="button" class="btn btn-primary" id="btn-admin-trivia-reveal" style="font-size: 0.85rem;">Revelar Respuesta</button>
-            <button type="button" class="btn btn-header-action" id="btn-admin-trivia-leaderboard" style="font-size: 0.85rem;">Mostrar Posiciones</button>
-            <button type="button" class="btn btn-header-action" id="btn-admin-trivia-next" style="font-size: 0.85rem;">Siguiente Pregunta</button>
+          <!-- Controls Grid Simplified -->
+          <div class="trivia-controls-grid" style="display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 25px;">
+            <div id="btn-admin-trivia-play-wrapper" style="position: relative; width: 100%;">
+              <button type="button" class="btn btn-primary" id="btn-admin-trivia-play" style="width: 100%; font-size: 1.1rem; padding: 15px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; border-radius: 30px; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3); transition: all 0.3s ease;">
+                Iniciar Juego ▶️
+              </button>
+              <div id="trivia-play-tooltip" style="display: none; position: absolute; bottom: 110%; left: 50%; transform: translateX(-50%); background: rgba(220, 53, 69, 0.95); color: #fff; padding: 10px 16px; font-size: 0.8rem; font-weight: 600; border-radius: 10px; white-space: nowrap; box-shadow: 0 8px 24px rgba(220, 53, 69, 0.4); z-index: 1000; pointer-events: none; transition: opacity 0.2s ease, transform 0.2s ease; opacity: 0; border: 1px solid rgba(255, 255, 255, 0.2); backdrop-filter: blur(5px);">
+                Debes guardar tus preguntas antes de poder iniciar el juego ⚠️
+                <div style="position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border-width: 6px; border-style: solid; border-color: rgba(220, 53, 69, 0.95) transparent transparent transparent;"></div>
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <button type="button" class="btn btn-secondary" id="btn-admin-trivia-stop" style="font-size: 0.9rem; padding: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; border-radius: 20px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid rgba(255, 255, 255, 0.15); background: rgba(255, 255, 255, 0.05); color: #fff; transition: all 0.3s ease;">
+                Detener Juego ⏸️
+              </button>
+              <button type="button" class="btn btn-danger" id="btn-admin-trivia-reset" style="font-size: 0.9rem; padding: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; border-radius: 20px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid rgba(220, 53, 69, 0.5); background: rgba(220, 53, 69, 0.1); color: #ff6b6b; transition: all 0.3s ease;">
+                Reiniciar Juego 🔄
+              </button>
+            </div>
+          </div>
+
+          <!-- Hidden manual controls for testing/compatibility -->
+          <div style="display: none;">
+            <button type="button" class="btn btn-danger" id="btn-admin-trivia-init">Inicializar / Reiniciar Juego</button>
+            <button type="button" class="btn btn-primary" id="btn-admin-trivia-start">Lanzar Pregunta</button>
+            <button type="button" class="btn btn-primary" id="btn-admin-trivia-reveal">Revelar Respuesta</button>
+            <button type="button" class="btn btn-header-action" id="btn-admin-trivia-leaderboard">Mostrar Posiciones</button>
+            <button type="button" class="btn btn-header-action" id="btn-admin-trivia-next">Siguiente Pregunta</button>
           </div>
 
           <!-- Active Players list -->
@@ -993,6 +1013,155 @@
                 </tr>
               </tbody>
             </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CAPITANES DE MESA TAB -->
+    <div id="tab-capitanes" class="tab-content">
+      <div class="admin-grid">
+        <!-- Left Column: Configuración y Misiones -->
+        <div class="panel">
+          <h2>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+            Configuración de Capitanes
+          </h2>
+          <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; margin-bottom: 20px;">
+            Definí las misiones/quests para las mesas. Elegí si son las mismas para todas las mesas o personalizadas.
+          </p>
+
+          <div style="margin-bottom: 20px;">
+            <label style="display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Metodología de Misiones</label>
+            <select id="capitanes-mode-select" class="form-control-admin" style="width: 100%; padding: 12px 18px; border-radius: 20px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif;">
+              <option value="general">General (Mismas misiones para todas las mesas)</option>
+              <option value="custom">Personalizado (Misiones asignadas a mesas específicas)</option>
+            </select>
+          </div>
+
+          <div style="margin-bottom: 20px;">
+            <label style="display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Tiempo Límite (minutos)</label>
+            <input type="number" id="capitanes-time-limit" min="1" max="120" value="10" class="form-control-admin" style="width: 100%; padding: 12px 18px; border-radius: 20px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif;">
+          </div>
+
+          <div id="capitanes-quests-editor">
+            <!-- Modo General: Lista Lineal -->
+            <div id="capitanes-quests-general-container">
+              <h3 style="font-size: 0.95rem; font-family: 'Cinzel', serif; color: var(--gold-light); margin-bottom: 12px;">Misiones Configuradas</h3>
+              <div id="capitanes-quests-list" style="display: flex; flex-direction: column; gap: 15px; max-height: 450px; overflow-y: auto; margin-bottom: 20px; padding-right: 5px;">
+                <!-- Quests will be injected here -->
+              </div>
+              <button type="button" class="btn btn-header-action" id="btn-add-capitanes-quest" style="width: 100%; margin-bottom: 15px;">+ Agregar Nueva Misión</button>
+            </div>
+
+            <!-- Modo Personalizado: Split Workspace -->
+            <div id="capitanes-quests-custom-container" style="display: none; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 15px;">
+              <div class="capitanes-split-workspace" style="display: grid; grid-template-columns: 200px 1fr; gap: 20px; min-height: 420px;">
+                <!-- Sidebar para seleccionar Mesa / General -->
+                <div class="capitanes-split-sidebar" style="border-right: 1px solid rgba(255,255,255,0.08); padding-right: 15px;">
+                  <button type="button" class="btn btn-header-action" id="btn-custom-select-global" style="width: 100%; margin-bottom: 15px; text-align: left; font-size: 0.75rem; display: flex; align-items: center; gap: 8px; justify-content: flex-start; padding: 10px 12px; border-radius: 12px;">
+                    <span>📢</span> Misiones Generales
+                  </button>
+                  <div style="font-size: 0.7rem; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">Seleccionar Mesa:</div>
+                  <div id="capitanes-custom-tables-nav" style="display: flex; flex-direction: column; gap: 8px; max-height: 320px; overflow-y: auto; padding-right: 2px;">
+                    <!-- Mesas se inyectarán dinámicamente -->
+                  </div>
+                </div>
+
+                <!-- Cuerpo de Configuración para el elemento activo -->
+                <div class="capitanes-split-body" id="capitanes-custom-workspace-body" style="min-height: 350px;">
+                  <!-- Área de trabajo de la mesa/global -->
+                </div>
+              </div>
+            </div>
+
+            <button type="button" class="btn btn-primary" id="btn-save-capitanes-config" style="width: 100%; margin-top: 15px;">Guardar Configuración</button>
+          </div>
+        </div>
+
+        <!-- Panel de Impresión de QRs para Capitanes -->
+        <div class="panel" style="margin-top: 20px;">
+          <h2>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            Códigos QR de Capitanes
+          </h2>
+          <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; margin-bottom: 20px;">
+            Generá e imprimí los códigos QR de acceso para que los capitanes puedan participar del juego.
+          </p>
+
+          <div style="display: flex; flex-direction: column; gap: 15px;">
+            <div>
+              <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Opción 1: Cartel QR General</div>
+              <p style="color: var(--text-muted); font-size: 0.8rem; line-height: 1.4; margin-bottom: 10px;">
+                Un único código QR general. Al escanearlo, el capitán elegirá su número de mesa en el celular.
+              </p>
+              <button type="button" class="btn btn-header-action" id="btn-print-capitanes-general-qr" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                Imprimir Cartel General
+              </button>
+            </div>
+
+            <div style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 15px;">
+              <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Opción 2: Tarjetas QR por Mesa</div>
+              <p style="color: var(--text-muted); font-size: 0.8rem; line-height: 1.4; margin-bottom: 12px;">
+                Genera tarjetas individuales con el QR específico para cada mesa. Al escanearlas, ingresan directamente a su mesa asignada sin ingresar datos.
+              </p>
+              
+              <!-- Mesas Listas para Jugar section -->
+              <div id="capitanes-ready-tables-section" style="margin-bottom: 15px; display: none;">
+                <div style="font-size: 0.75rem; font-weight: 600; color: var(--gold-light); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">Mesas Listas para Jugar:</div>
+                <div id="capitanes-ready-tables-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 180px; overflow-y: auto; background: rgba(0,0,0,0.15); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 10px; margin-bottom: 12px;">
+                  <!-- Dynamic content -->
+                </div>
+              </div>
+
+              <button type="button" class="btn btn-primary" id="btn-print-capitanes-tables-qr" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="stroke: #0b0b0c;"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                Imprimir QRs de todas las Mesas
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Control en Vivo y Moderación -->
+        <div class="panel">
+          <h2>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Control en Vivo y Moderación
+          </h2>
+
+          <!-- Proyectar button -->
+          <button type="button" class="btn btn-primary" id="btn-admin-capitanes-projector" style="width: 100%; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.9rem; padding: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; border-radius: 20px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="stroke: #0b0b0c;"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            Proyectar en pantalla
+          </button>
+
+          <!-- Timer / Countdown display -->
+          <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--card-border); border-radius: 20px; padding: 20px; text-align: center; margin-bottom: 25px;">
+            <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 5px; font-weight: 600;">Estado de la Actividad</div>
+            <div id="capitanes-admin-status-badge" class="badge badge-pending" style="display: inline-block; font-size: 0.8rem; padding: 6px 12px; border-radius: 12px; margin-bottom: 15px;">LOBBY</div>
+            
+            <div id="capitanes-admin-timer-display" style="font-size: 3rem; font-family: 'Cinzel', serif; font-weight: bold; color: white; text-shadow: 0 0 20px var(--gold-primary-alpha);">10:00</div>
+          </div>
+
+          <!-- Action buttons -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 30px;">
+            <button type="button" class="btn btn-primary" id="btn-capitanes-admin-start" style="font-size: 0.9rem; padding: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; border-radius: 20px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+              Iniciar Juego ▶️
+            </button>
+            <button type="button" class="btn btn-header-action" id="btn-capitanes-admin-pause" style="font-size: 0.9rem; padding: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; border-radius: 20px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+              Pausar Juego ⏸️
+            </button>
+            <button type="button" class="btn btn-danger" id="btn-capitanes-admin-reset" style="grid-column: span 2; font-size: 0.9rem; padding: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; border-radius: 20px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid rgba(220, 53, 69, 0.5); background: rgba(220, 53, 69, 0.1); color: #ff6b6b; transition: all 0.3s ease;">
+              Reiniciar Juego 🔄
+            </button>
+          </div>
+
+          <!-- Validation Panel -->
+          <h3 style="font-size: 0.95rem; font-family: 'Cinzel', serif; color: var(--gold-light); margin-bottom: 12px;">Validación de Misiones (<span id="capitanes-validation-count">0</span>)</h3>
+          <div id="capitanes-submissions-list" style="display: flex; flex-direction: column; gap: 15px; max-height: 350px; overflow-y: auto; padding-right: 5px;">
+            <!-- Pending submissions injected here -->
+            <p style="text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 20px 0;">No hay misiones pendientes de aprobación.</p>
           </div>
         </div>
       </div>
@@ -1073,6 +1242,11 @@
         Jano's Eventos &copy; Todos los derechos reservados
       </div>
     </div>
+  </div>
+
+  <!-- Printable Area for multiple Capitanes table QRs (Hidden on screen) -->
+  <div id="print-area-capitanes-tables">
+    <div class="print-capitanes-grid" id="print-capitanes-grid-container"></div>
   </div>
 
   <!-- Modal for Photo Upload (Drag & Drop) -->
@@ -1718,7 +1892,7 @@
             </svg>
           </div>
           <div class="onboarding-badge">Novedad</div>
-          <h2 class="onboarding-title">¡Te damos la bienvenida a MiFiestAPP!</h2>
+          <h2 class="onboarding-title">¡Te damos la bienvenida a miFiestAPP!</h2>
           <p class="onboarding-desc">Estamos listos para hacer de tu evento algo extraordinario. En este recorrido interactivo aprenderás cómo configurar cada servicio para asombrar a tus invitados.</p>
         </div>
 

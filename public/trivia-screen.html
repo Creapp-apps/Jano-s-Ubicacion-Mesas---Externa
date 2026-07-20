@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gran Trivia en Vivo | MiFiestAPP</title>
+  <link rel="icon" type="image/png" href="/assets/coronamain.png">
+  <title>Gran Trivia en Vivo | miFiestAPP</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -179,6 +180,41 @@
       display: flex;
     }
 
+    /* COUNTDOWN VIEW STYLING */
+    #view-countdown {
+      justify-content: center;
+      align-items: center;
+      gap: 1rem;
+      min-height: 500px;
+    }
+    
+    .countdown-title {
+      font-size: 2.5rem;
+      font-weight: 800;
+      letter-spacing: 4px;
+      background: var(--gold-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 2px 15px rgba(212, 175, 55, 0.25);
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+    }
+
+    #countdown-big-number {
+      font-size: 11rem;
+      font-weight: 900;
+      color: var(--gold);
+      text-shadow: 0 0 50px rgba(212, 175, 55, 0.6);
+      animation: numberPulse 1s infinite ease-in-out;
+      line-height: 1;
+      margin-bottom: 2rem;
+    }
+
+    @keyframes numberPulse {
+      0%, 100% { transform: scale(1); opacity: 0.95; }
+      50% { transform: scale(1.18); opacity: 1; text-shadow: 0 0 80px rgba(212, 175, 55, 0.9); }
+    }
+
     /* 1. LOBBY SPLIT LAYOUT */
     .lobby-split-layout {
       display: flex;
@@ -277,17 +313,26 @@
       border-radius: 24px;
       padding: 2.5rem;
       text-align: center;
-      box-shadow: var(--gold-glow), inset 0 0 20px rgba(212, 175, 55, 0.05);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.6), 0 0 25px rgba(212, 175, 55, 0.25), inset 0 0 20px rgba(212, 175, 55, 0.05);
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 2rem;
       animation: cardPulse 3s infinite ease-in-out;
+      transition: border-color 0.5s ease, box-shadow 0.5s ease, transform 0.5s ease;
     }
 
     @keyframes cardPulse {
-      0%, 100% { box-shadow: 0 10px 40px rgba(0,0,0,0.5), 0 0 20px rgba(212, 175, 55, 0.15); }
-      50% { box-shadow: 0 10px 40px rgba(0,0,0,0.5), 0 0 35px rgba(212, 175, 55, 0.35); }
+      0%, 100% { 
+        box-shadow: 0 10px 40px rgba(0,0,0,0.6), 0 0 20px rgba(212, 175, 55, 0.25), inset 0 0 20px rgba(212, 175, 55, 0.05); 
+        border-color: rgba(212, 175, 55, 0.8);
+        transform: scale(1);
+      }
+      50% { 
+        box-shadow: 0 10px 50px rgba(0,0,0,0.7), 0 0 50px rgba(212, 175, 55, 0.75), inset 0 0 35px rgba(212, 175, 55, 0.15); 
+        border-color: rgba(255, 215, 0, 1);
+        transform: scale(1.02);
+      }
     }
 
     .lobby-qr-title {
@@ -393,6 +438,22 @@
       transform: translate(-50%, -50%);
       font-size: 1.8rem;
       font-weight: 800;
+    }
+
+    .timer-container.warning-state {
+      animation: screenTimerPulse 1s infinite alternate;
+    }
+    .timer-container.warning-state .timer-progress {
+      stroke: #ff3333;
+      filter: drop-shadow(0 0 8px rgba(255, 51, 51, 0.8));
+    }
+    .timer-container.warning-state .timer-text {
+      color: #ff3333;
+      text-shadow: 0 0 10px rgba(255, 51, 51, 0.5);
+    }
+    @keyframes screenTimerPulse {
+      0% { transform: scale(1); }
+      100% { transform: scale(1.18); }
     }
 
     .question-title {
@@ -602,16 +663,7 @@
 
     /* Screen Footer */
     footer {
-      font-size: 0.95rem;
-      color: var(--text-muted);
-      display: flex;
-      justify-content: space-between;
-      width: 100%;
-      border-top: 1px solid var(--panel-border);
-      padding-top: 1.5rem;
-      position: relative;
-      z-index: 10;
-      font-weight: 500;
+      display: none;
     }
 
     /* Responsive adjustments for narrow/smaller screens */
@@ -905,6 +957,13 @@
   <!-- Widescreen content switcher -->
   <main>
 
+    <!-- 0. COUNTDOWN VIEW -->
+    <div id="view-countdown" class="view-panel">
+      <h2 class="countdown-title">El juego comienza en</h2>
+      <div id="countdown-big-number">10</div>
+      <p style="font-size: 1.4rem; color: #fff; opacity: 0.8; letter-spacing: 1px;">¡Mirá tu celular y preparate!</p>
+    </div>
+
     <!-- 1. LOBBY VIEW -->
     <div id="view-lobby" class="view-panel active">
       <div class="lobby-split-layout">
@@ -995,10 +1054,9 @@
     const urlParams = new URLSearchParams(window.location.search);
     const eventId = urlParams.get('event') || 'default';
     
-    // Connect to SSE stream
-    const eventSource = new EventSource(`/api/trivia/stream?event=${eventId}&role=screen`);
+    let eventSource = null;
     let countdownInterval = null;
-    let localTimerSec = 0;
+    let clockOffset = 0;
 
     // Elegant gold particle background animation
     function initGoldBg() {
@@ -1097,22 +1155,38 @@
 
     // Generate QR codes dynamically
     function generateQR() {
-      const siteOrigin = window.location.origin;
-      const targetUrl = `${siteOrigin}/trivia-client.html?event=${encodeURIComponent(eventId)}`;
+      let siteOrigin = window.location.origin;
       
-      // Header QR Code
-      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(targetUrl)}&color=0b0b0c&bgcolor=ffffff`;
-      const headerQrEl = document.getElementById('projector-qr-container');
-      if (headerQrEl) {
-        headerQrEl.innerHTML = `<img src="${qrUrl}" alt="QR">`;
-      }
+      const renderQR = (origin) => {
+        const targetUrl = `${origin}/trivia-client.html?event=${encodeURIComponent(eventId)}`;
+        
+        // Header QR Code
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(targetUrl)}&color=0b0b0c&bgcolor=ffffff`;
+        const headerQrEl = document.getElementById('projector-qr-container');
+        if (headerQrEl) {
+          headerQrEl.innerHTML = `<img src="${qrUrl}" alt="QR">`;
+        }
+        
+        // Lobby Giant QR Code
+        const largeQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=350x350&data=${encodeURIComponent(targetUrl)}&color=0b0b0c&bgcolor=ffffff`;
+        const lobbyQrEl = document.getElementById('lobby-large-qr-container');
+        if (lobbyQrEl) {
+          lobbyQrEl.innerHTML = `<img src="${largeQrUrl}" alt="QR">`;
+        }
+      };
       
-      // Lobby Giant QR Code
-      const largeQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=350x350&data=${encodeURIComponent(targetUrl)}&color=0b0b0c&bgcolor=ffffff`;
-      const lobbyQrEl = document.getElementById('lobby-large-qr-container');
-      if (lobbyQrEl) {
-        lobbyQrEl.innerHTML = `<img src="${largeQrUrl}" alt="QR">`;
-      }
+      renderQR(siteOrigin);
+      
+      // Resolve local IP address dynamically to allow local Wi-Fi testing
+      fetch('/api/debug/network-ip')
+        .then(res => res.json())
+        .then(data => {
+          if (data.localIp && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+            siteOrigin = `http://${data.localIp}:${window.location.port}`;
+            renderQR(siteOrigin);
+          }
+        })
+        .catch(err => console.error('Could not resolve local network IP:', err));
     }
     generateQR();
 
@@ -1125,20 +1199,137 @@
         }
       });
 
-    eventSource.onopen = () => {
-      document.getElementById('game-status-bar').textContent = 'Conectado al servidor de trivia';
-    };
+    let lastSseMessageTime = Date.now();
+    let pollingInterval = null;
+    let lastCountdownSecond = null;
 
-    eventSource.onerror = () => {
-      document.getElementById('game-status-bar').textContent = 'Reconectando con el servidor...';
-    };
+    function playBeepSound(frequency = 880, type = 'sine', duration = 0.15) {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
 
-    eventSource.onmessage = (e) => {
-      const msg = JSON.parse(e.data);
-      if (msg.type === 'INITIAL_STATE' || msg.type === 'STATE_UPDATE') {
-        renderState(msg.data);
+        oscillator.type = type;
+        oscillator.frequency.value = frequency;
+        
+        gainNode.gain.setValueAtTime(0.12, audioCtx.currentTime); // volume 12%
+        gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + duration);
+      } catch (err) {
+        // Safe fail if blocked
       }
-    };
+    }
+
+    function setupSSE() {
+      if (eventSource) eventSource.close();
+      
+      lastSseMessageTime = Date.now();
+      eventSource = new EventSource(`/api/trivia/stream?event=${eventId}&role=screen`);
+      
+      eventSource.onopen = () => {
+        document.getElementById('game-status-bar').textContent = 'Conectado al servidor de trivia';
+      };
+
+      eventSource.onerror = () => {
+        document.getElementById('game-status-bar').textContent = 'Reconectando con el servidor...';
+      };
+
+      eventSource.onmessage = (e) => {
+        lastSseMessageTime = Date.now();
+        const msg = JSON.parse(e.data);
+        if (msg.type === 'INITIAL_STATE' || msg.type === 'STATE_UPDATE') {
+          renderState(msg.data);
+        }
+      };
+
+      if (!pollingInterval) {
+        pollingInterval = setInterval(() => {
+          const silenceDuration = Date.now() - lastSseMessageTime;
+          if (silenceDuration > 5000) {
+            console.log('Screen SSE silent for 5s. Running fallback state poll.');
+            syncStateWithPoll();
+          }
+        }, 3000);
+      }
+    }
+
+    function syncStateWithPoll() {
+      if (window.isPolling) return;
+      window.isPolling = true;
+
+      fetch(`/api/trivia/state?event=${eventId}`)
+        .then(res => res.json())
+        .then(data => {
+          window.isPolling = false;
+          if (data.success && data.state) {
+            lastSseMessageTime = Date.now();
+            renderState(data.state);
+          }
+        })
+        .catch(err => {
+          window.isPolling = false;
+          console.error('Error syncing screen state via poll:', err);
+        });
+    }
+
+    setupSSE();
+
+    function startScreenTimer(stateExpiresAt, serverTime, remainingTime, paused, totalLimit) {
+      if (countdownInterval) clearInterval(countdownInterval);
+
+      if (serverTime) {
+        clockOffset = serverTime - Date.now();
+      }
+
+      const progressCircle = document.getElementById('timer-progress');
+      if (!progressCircle) return;
+      
+      const radius = progressCircle.r.baseVal.value;
+      const circumference = 2 * Math.PI * radius;
+      progressCircle.style.strokeDasharray = circumference;
+
+      const timerContainer = document.querySelector('.timer-container');
+
+      const updateTimerVisual = () => {
+        let secondsLeft = remainingTime;
+        if (stateExpiresAt && !paused) {
+          const targetTime = stateExpiresAt;
+          const currentCompensatedTime = Date.now() + clockOffset;
+          const msLeft = targetTime - currentCompensatedTime;
+          secondsLeft = Math.max(0, Math.round(msLeft / 1000));
+        }
+
+        const timerSecEl = document.getElementById('timer-sec');
+        if (timerSecEl) {
+          timerSecEl.textContent = secondsLeft;
+        }
+
+        const offset = circumference - (secondsLeft / totalLimit) * circumference;
+        progressCircle.style.strokeDashoffset = offset;
+
+        if (timerContainer) {
+          if (secondsLeft <= 10 && secondsLeft > 0) {
+            timerContainer.classList.add('warning-state');
+          } else {
+            timerContainer.classList.remove('warning-state');
+          }
+        }
+
+        if (secondsLeft <= 0) {
+          if (countdownInterval) clearInterval(countdownInterval);
+        }
+      };
+
+      updateTimerVisual();
+      if (paused) return;
+
+      countdownInterval = setInterval(updateTimerVisual, 250);
+    }
 
     function switchView(viewId) {
       document.querySelectorAll('.view-panel').forEach(panel => {
@@ -1150,13 +1341,18 @@
     function renderState(state) {
       if (countdownInterval) clearInterval(countdownInterval);
       
+      const timerContainer = document.querySelector('.timer-container');
+      if (timerContainer) {
+        timerContainer.classList.remove('warning-state');
+      }
+      
       const statusText = `Estado: ${state.status} | Pregunta ${state.currentQuestionIndex + 1}/${state.questionsCount}`;
       document.getElementById('game-status-bar').textContent = statusText;
 
       // Handle small header QR code visibility dynamically
       const headerQr = document.querySelector('.qr-banner');
       if (headerQr) {
-        if (state.status === 'LOBBY') {
+        if (state.status === 'LOBBY' || state.status === 'COUNTDOWN') {
           headerQr.style.opacity = '0';
           headerQr.style.pointerEvents = 'none';
         } else {
@@ -1183,9 +1379,32 @@
         state.players.forEach(p => {
           const pill = document.createElement('div');
           pill.className = 'player-pill';
-          pill.textContent = p.nickname;
+          pill.textContent = p.nickname.trim().split(' ')[0];
           playersList.appendChild(pill);
         });
+      }
+      
+      else if (state.status === 'COUNTDOWN') {
+        switchView('view-countdown');
+        
+        const updateCountdownVisual = () => {
+          const expiresAt = state.stateExpiresAt || (Date.now() + 10000);
+          const remaining = Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000));
+          document.getElementById('countdown-big-number').textContent = remaining;
+          
+          if (remaining !== lastCountdownSecond && remaining > 0) {
+            lastCountdownSecond = remaining;
+            const freq = remaining <= 3 ? 1000 : 800;
+            playBeepSound(freq, 'sine', 0.25);
+          }
+          
+          if (remaining <= 0) {
+            if (countdownInterval) clearInterval(countdownInterval);
+          }
+        };
+        
+        updateCountdownVisual();
+        countdownInterval = setInterval(updateCountdownVisual, 250);
       }
       
       else if (state.status === 'QUESTION_ACTIVE') {
@@ -1205,30 +1424,8 @@
           optGrid.appendChild(card);
         });
 
-        // Setup local timer countdown
-        localTimerSec = state.currentQuestion.remainingTime !== undefined ? state.currentQuestion.remainingTime : state.currentQuestion.timeLimit;
-        const totalLimit = state.currentQuestion.timeLimit;
-        
-        const progressCircle = document.getElementById('timer-progress');
-        const radius = progressCircle.r.baseVal.value;
-        const circumference = 2 * Math.PI * radius;
-        progressCircle.style.strokeDasharray = circumference;
-        
-        const updateTimerVisual = () => {
-          document.getElementById('timer-sec').textContent = localTimerSec;
-          const offset = circumference - (localTimerSec / totalLimit) * circumference;
-          progressCircle.style.strokeDashoffset = offset;
-        };
- 
-        updateTimerVisual();
-        countdownInterval = setInterval(() => {
-          if (localTimerSec > 0) {
-            localTimerSec--;
-            updateTimerVisual();
-          } else {
-            clearInterval(countdownInterval);
-          }
-        }, 1000);
+        // Setup local timer countdown using absolute timestamp
+        startScreenTimer(state.stateExpiresAt, state.serverTime, state.currentQuestion.remainingTime, state.paused, state.currentQuestion.timeLimit);
       }
       
       else if (state.status === 'REVEAL_ANSWER') {
@@ -1290,10 +1487,11 @@
             topPlayers.forEach((p, idx) => {
               const item = document.createElement('div');
               item.className = `leaderboard-item rank-${idx + 1}`;
+              const displayName = p.nickname.trim().split(' ')[0];
               item.innerHTML = `
                 <div class="leaderboard-rank">
                   <div class="rank-number">${idx + 1}</div>
-                  <span>${p.nickname}</span>
+                  <span>${displayName}</span>
                 </div>
                 <div>${p.score} pts</div>
               `;
@@ -1343,8 +1541,9 @@
           podiumSetup.forEach(setup => {
             const block = document.createElement('div');
             block.className = `podium-block ${setup.class}`;
+            const displayName = setup.player.nickname.trim().split(' ')[0];
             block.innerHTML = `
-              <div class="podium-name">${setup.player.nickname}</div>
+              <div class="podium-name">${displayName}</div>
               <div class="podium-score">${setup.player.score} pts</div>
               <div class="podium-pillar">${setup.pos}</div>
             `;

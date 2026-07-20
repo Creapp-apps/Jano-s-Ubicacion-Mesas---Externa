@@ -1,0 +1,1425 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="/assets/coronamain.png">
+  <title>Capitán de Mesa | miFiestAPP</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Montserrat:wght@400;500;600;700;800&family=Cinzel:wght@500;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #070708;
+      --panel-bg: rgba(18, 16, 15, 0.75);
+      --panel-border: rgba(212, 175, 55, 0.25);
+      --text-main: #ffffff;
+      --text-muted: #c8c8cd;
+      --gold-primary: #d4af37;
+      --gold-gradient: linear-gradient(135deg, #f3e5ab 0%, #d4af37 50%, #aa7c11 100%);
+      --gold-glow: 0 0 25px rgba(212, 175, 55, 0.25);
+      --success: #2ec4b6;
+      --error: #e74c3c;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: 'Outfit', 'Montserrat', sans-serif;
+      background: radial-gradient(circle at center, #1b1510 0%, #030303 100%);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1rem;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    .bg-glows {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .bg-glow-1 {
+      position: absolute;
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, rgba(212, 175, 55, 0.08) 0%, transparent 70%);
+      top: -50px;
+      left: -50px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 440px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      z-index: 10;
+      position: relative;
+    }
+
+    header {
+      width: 100%;
+      text-align: center;
+      margin-bottom: 1.5rem;
+      position: relative;
+    }
+
+    .logo-text {
+      font-family: 'Cinzel', serif;
+      font-size: 1rem;
+      letter-spacing: 4px;
+      background: var(--gold-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.2rem;
+      font-weight: 800;
+    }
+
+    .event-title {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      font-weight: 500;
+    }
+
+    /* Glassmorphic Panel Card */
+    .card {
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 28px;
+      padding: 2rem 1.5rem;
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+      text-align: center;
+      display: none;
+      flex-direction: column;
+      gap: 1.5rem;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 1rem;
+    }
+
+    .card::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 10%;
+      right: 10%;
+      height: 2px;
+      background: var(--gold-gradient);
+    }
+
+    .card.active {
+      display: flex;
+      animation: cardSlideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* Breathing/Pulsing Glow Animation for Lobby Modal */
+    .card.lobby-card {
+      border: 1px solid rgba(212, 175, 55, 0.4);
+      box-shadow: 0 0 25px rgba(212, 175, 55, 0.15), 0 20px 50px rgba(0,0,0,0.6);
+      animation: breatheGlow 4s infinite ease-in-out, cardSlideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes breatheGlow {
+      0%, 100% {
+        box-shadow: 0 0 15px rgba(212, 175, 55, 0.1), 0 20px 50px rgba(0,0,0,0.6);
+        border-color: rgba(212, 175, 55, 0.25);
+      }
+      50% {
+        box-shadow: 0 0 35px rgba(212, 175, 55, 0.35), 0 20px 50px rgba(0,0,0,0.6);
+        border-color: rgba(212, 175, 55, 0.65);
+      }
+    }
+
+    @keyframes cardSlideUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .gold-text {
+      background: var(--gold-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-family: inherit;
+    }
+
+    /* Table Selector Form */
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      text-align: left;
+    }
+
+    .form-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--gold-primary);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .select-control, .input-control {
+      background: rgba(0,0,0,0.4);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 1rem 1.2rem;
+      color: #fff;
+      font-family: inherit;
+      font-size: 1rem;
+      outline: none;
+      transition: all 0.3s;
+      width: 100%;
+    }
+
+    .select-control:focus, .input-control:focus {
+      border-color: var(--gold-primary);
+      box-shadow: 0 0 15px rgba(212, 175, 55, 0.2);
+    }
+
+    .btn {
+      background: var(--gold-gradient);
+      color: #000;
+      border: none;
+      border-radius: 16px;
+      padding: 1rem;
+      font-size: 0.95rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(212, 175, 55, 0.5);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn-secondary {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #fff;
+      box-shadow: none;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255,255,255,0.1);
+      border-color: rgba(255,255,255,0.2);
+      box-shadow: none;
+    }
+
+    /* Lobby status icon animation */
+    .lobby-animation {
+      position: relative;
+      width: 80px;
+      height: 80px;
+      margin: 1.5rem auto;
+    }
+
+    .pulse-ring {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: rgba(212, 175, 55, 0.08);
+      border: 1px solid var(--gold-primary);
+      animation: ripple 2s infinite ease-out;
+    }
+
+    .pulse-ring-2 {
+      animation-delay: 0.7s;
+    }
+
+    .pulse-core {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 40px;
+      height: 40px;
+      background: var(--gold-gradient);
+      border-radius: 50%;
+      box-shadow: 0 0 20px var(--gold-primary);
+    }
+
+    @keyframes ripple {
+      0% {
+        transform: scale(0.6);
+        opacity: 1;
+      }
+      100% {
+        transform: scale(1.6);
+        opacity: 0;
+      }
+    }
+
+    @keyframes crownPulse {
+      0%, 100% {
+        transform: scale(1);
+        filter: drop-shadow(0 0 2px rgba(212,175,55,0.4));
+      }
+      50% {
+        transform: scale(1.15) rotate(5deg);
+        filter: drop-shadow(0 0 8px rgba(212,175,55,0.8));
+      }
+    }
+
+    /* Playing screen styles */
+    .playing-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(0,0,0,0.3);
+      padding: 0.8rem 1.2rem;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.05);
+      margin-bottom: 1rem;
+    }
+
+    .table-info {
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+
+    .game-timer {
+      font-family: 'Cinzel', serif;
+      font-weight: 700;
+      color: var(--gold-primary);
+      text-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+      font-size: 1.1rem;
+    }
+
+    .progress-bar-container {
+      width: 100%;
+      height: 6px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--gold-gradient);
+      width: 0%;
+      transition: width 0.5s cubic-bezier(0.1, 0.8, 0.2, 1);
+    }
+
+    .progress-text {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-align: left;
+      margin-bottom: 0.3rem;
+    }
+
+    /* Quests List */
+    .quests-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      text-align: left;
+    }
+
+    .quest-item {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 20px;
+      padding: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      transition: all 0.3s;
+    }
+
+    .quest-item.completed {
+      border-color: rgba(46, 196, 182, 0.25);
+      background: rgba(46, 196, 182, 0.03);
+    }
+
+    .quest-item.submitted {
+      border-color: rgba(212, 175, 55, 0.25);
+      background: rgba(212, 175, 55, 0.03);
+    }
+
+    .quest-details {
+      flex: 1;
+    }
+
+    .quest-text {
+      font-size: 0.95rem;
+      font-weight: 500;
+      line-height: 1.4;
+      margin-bottom: 0.3rem;
+    }
+
+    .quest-points {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--gold-primary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .quest-status-badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      padding: 2px 8px;
+      border-radius: 8px;
+      font-weight: 700;
+      margin-left: 8px;
+    }
+
+    .status-badge-pending {
+      background: rgba(212, 175, 55, 0.15);
+      color: var(--gold-primary);
+      border: 1px solid rgba(212, 175, 55, 0.3);
+    }
+
+    .status-badge-approved {
+      background: rgba(46, 196, 182, 0.15);
+      color: var(--success);
+      border: 1px solid rgba(46, 196, 182, 0.3);
+    }
+
+    .quest-action {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-camera {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.05);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .btn-camera:hover {
+      background: var(--gold-gradient);
+      border-color: transparent;
+      color: #000;
+    }
+
+    .quest-check {
+      font-size: 1.4rem;
+      color: var(--success);
+    }
+
+    /* Dramatic Countdown Overlay */
+    .countdown-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #000;
+      z-index: 99999;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+    }
+
+    .countdown-overlay.active {
+      display: flex;
+    }
+
+    .countdown-title {
+      font-family: 'Cinzel', serif;
+      font-size: 1rem;
+      letter-spacing: 4px;
+      color: var(--gold-primary);
+      text-transform: uppercase;
+      margin-bottom: 2rem;
+      animation: float 2s infinite ease-in-out;
+    }
+
+    .countdown-number {
+      font-family: 'Cinzel', serif;
+      font-size: 8rem;
+      font-weight: 900;
+      line-height: 1;
+      background: var(--gold-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: scalePulse 1s infinite cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    @keyframes scalePulse {
+      0% { transform: scale(0.6); opacity: 0; filter: blur(10px); }
+      30% { transform: scale(1.1); opacity: 1; filter: blur(0); }
+      100% { transform: scale(0.9); opacity: 0.8; }
+    }
+
+    /* Loading/Uploading Modal */
+    .loading-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0,0,0,0.85);
+      z-index: 9999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(8px);
+    }
+
+    .loading-modal.active {
+      display: flex;
+    }
+
+    .spinner-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 3px solid rgba(212, 175, 55, 0.1);
+      border-radius: 50%;
+      border-top-color: var(--gold-primary);
+      animation: spin 1s infinite linear;
+    }
+
+    @keyframes spin {
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Toast system */
+    .toast-container {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 100000;
+      width: 90%;
+      max-width: 380px;
+    }
+
+    .toast {
+      background: rgba(18, 18, 20, 0.95);
+      border: 1px solid var(--panel-border);
+      border-left: 4px solid var(--gold-primary);
+      border-radius: 12px;
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: #fff;
+      font-size: 0.85rem;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      animation: slideUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    .toast.toast-error {
+      border-left-color: var(--error);
+    }
+
+    .toast.toast-success {
+      border-left-color: var(--success);
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(50px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-glows">
+    <div class="bg-glow-1"></div>
+  </div>
+
+  <div class="container">
+    <header>
+      <div class="logo-text">Capitanes de Mesa</div>
+      <div class="event-title" id="display-event-title">Mi Fiesta</div>
+    </header>
+
+    <!-- Hidden native file input for camera upload -->
+    <input type="file" id="camera-file-input" accept="image/*" style="display: none;">
+
+    <!-- SCREEN 1: Join / Mesa Selector -->
+    <div class="card" id="screen-join">
+      <h1>Elegir tu <span class="gold-text">Mesa</span></h1>
+      <p class="subtitle">Ingresá el número de tu mesa para coordinar las misiones con tus compañeros de mesa.</p>
+      
+      <div class="form-group" id="form-group-select-mesa" style="display: none; text-align: left;">
+        <label class="form-label">Elegí tu Mesa</label>
+        <select id="select-mesa-number" class="input-control" style="background: rgba(0,0,0,0.4); color: white; border: 1px solid var(--gold-light); font-family: 'Montserrat', sans-serif;">
+          <option value="">Cargando mesas...</option>
+        </select>
+      </div>
+      <div class="form-group" id="form-group-input-mesa" style="text-align: left;">
+        <label class="form-label">Número de Mesa</label>
+        <input type="text" id="input-mesa-number" class="input-control" placeholder="Ej: Mesa 1">
+      </div>
+
+      <button type="button" class="btn" id="btn-submit-join">
+        Ingresar al Juego
+      </button>
+    </div>
+
+    <!-- SCREEN 1B: Identity / Guest Selection -->
+    <div class="card" id="screen-identity">
+      <h1>¿Quién <span class="gold-text">sos</span>?</h1>
+      <p class="subtitle">Seleccioná tu nombre para descubrir si fuiste asignado como Capitán de Mesa.</p>
+      
+      <div class="form-group" id="form-group-select-identity" style="text-align: left;">
+        <label class="form-label">Elegí tu Nombre</label>
+        <select id="select-identity-name" class="input-control" style="background: rgba(0,0,0,0.4); color: white; border: 1px solid var(--gold-light); font-family: 'Montserrat', sans-serif;">
+          <option value="">Cargando invitados...</option>
+        </select>
+      </div>
+
+      <div class="form-group" id="form-group-custom-name" style="display: none; text-align: left;">
+        <label class="form-label">Escribe tu Nombre</label>
+        <input type="text" id="input-custom-name" class="input-control" placeholder="Ej: Juan Pérez">
+      </div>
+
+      <button type="button" class="btn" id="btn-submit-identity">
+        Confirmar Identidad
+      </button>
+
+      <div style="margin-top: 15px; text-align: center;">
+        <button type="button" class="btn btn-secondary" id="btn-back-to-join" style="padding: 8px 15px; font-size: 0.75rem; border-radius: 10px; width: auto; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1);">
+          ← Elegir otra mesa
+        </button>
+      </div>
+
+    <!-- SCREEN 2: Lobby (Waiting to Start) -->
+    <div class="card lobby-card" id="screen-lobby">
+      <h1>Sala de <span class="gold-text">Espera</span></h1>
+      <p class="subtitle" style="color: var(--gold-primary); font-weight: 600; letter-spacing: 1px;">LOBBY ACTIVADO</p>
+      
+      <div class="table-info" style="margin-top: 10px; font-size: 1.2rem; display: block; width: 100%; text-align: center;">Mesa <span id="lobby-mesa-number" class="gold-text">-</span></div>
+      <div id="lobby-table-guests-display" style="font-size: 0.85rem; color: var(--text-muted); margin-top: 5px; font-style: italic; display: block; width: 100%; text-align: center;"></div>
+      <div id="lobby-captain-status" style="margin-top: 10px; margin-bottom: 15px; font-size: 0.9rem; transition: all 0.3s ease;"></div>
+
+      <div class="lobby-animation">
+        <div class="pulse-ring"></div>
+        <div class="pulse-ring pulse-ring-2"></div>
+        <div class="pulse-core"></div>
+      </div>
+
+      <p class="subtitle">Preparate con tus compañeros de mesa. La competencia de Capitanes comenzará en cualquier momento...</p>
+    </div>
+
+    <!-- SCREEN 3: Playing Mode -->
+    <div class="card" id="screen-playing">
+      <div class="playing-header">
+        <div class="table-info">Mesa <span id="display-mesa-number" class="gold-text">-</span></div>
+        <div class="game-timer" id="display-timer">10:00</div>
+      </div>
+      <div id="playing-table-guests-display" style="font-size: 0.8rem; color: var(--text-muted); margin-top: -5px; margin-bottom: 12px; font-style: italic; text-align: left;"></div>
+      <div id="role-status-banner" style="margin-bottom: 15px; border-radius: 15px; padding: 12px; font-size: 0.8rem; text-align: left; transition: all 0.3s ease;"></div>
+
+      <div class="progress-text">Progreso de Mesa: <span id="display-progress-ratio" class="gold-text">0/0</span></div>
+      <div class="progress-bar-container">
+        <div class="progress-bar-fill" id="display-progress-fill"></div>
+      </div>
+
+      <h2 style="font-size: 1.1rem; text-align: left; margin-bottom: 0.8rem; font-weight: 600; color: #fff;">Tus Misiones:</h2>
+      <div class="quests-list" id="display-quests-list">
+        <!-- Dynamic items -->
+      </div>
+    </div>
+
+    <!-- SCREEN 4: Paused Mode -->
+    <div class="card lobby-card" id="screen-paused">
+      <h1>Juego en <span class="gold-text">Pausa</span></h1>
+      
+      <div class="lobby-animation">
+        <div class="pulse-ring" style="border-color: rgba(255,255,255,0.2);"></div>
+        <div class="pulse-core" style="background: rgba(255,255,255,0.2); box-shadow: none;"></div>
+      </div>
+
+      <p class="subtitle">El organizador ha pausado la partida. ¡Aprovechá para descansar y planear tu próxima jugada!</p>
+    </div>
+
+    <!-- SCREEN 5: Finished Mode -->
+    <div class="card" id="screen-finished">
+      <h1>¡Tiempo <span class="gold-text">Cumplido</span>!</h1>
+      <p class="subtitle" style="font-size: 1.1rem; font-weight: 600; color: var(--success);">LA ACTIVIDAD HA FINALIZADO</p>
+      
+      <div style="background: rgba(212, 175, 55, 0.05); border: 1px solid var(--panel-border); border-radius: 20px; padding: 1.5rem; margin: 1rem 0;">
+        <h2 style="font-size: 1.3rem; margin-bottom: 0.5rem;" class="gold-text">¡Buen Trabajo!</h2>
+        <p class="subtitle">Mirá la pantalla gigante del salón para conocer el podio final y qué mesa se consagra Campeona.</p>
+      </div>
+
+      <button type="button" class="btn btn-secondary" onclick="window.location.reload();">
+        Volver a cargar
+      </button>
+    </div>
+  </div>
+
+  <!-- Countdown overlay for dramatic transition -->
+  <div class="countdown-overlay" id="countdown-overlay">
+    <div class="countdown-title">EL JUEGO COMIENZA EN</div>
+    <div class="countdown-number" id="countdown-num">10</div>
+  </div>
+
+  <!-- Loading Modal for Uploading Photo -->
+  <div class="loading-modal" id="loading-modal">
+    <div class="spinner-container">
+      <div class="spinner"></div>
+      <p style="color: #fff; font-size: 0.95rem; font-weight: 600; letter-spacing: 0.5px;">Subiendo evidencia al DJ...</p>
+    </div>
+  </div>
+
+  <!-- Toast notifications -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script>
+    // Extract query parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const eventId = urlParams.get('event') || 'default';
+    let mesaNumber = urlParams.get('mesa') || localStorage.getItem(`capitanes_mesa_${eventId}`) || '';
+
+    // Elements
+    const screenJoin = document.getElementById('screen-join');
+    const screenIdentity = document.getElementById('screen-identity');
+    const screenLobby = document.getElementById('screen-lobby');
+    const screenPlaying = document.getElementById('screen-playing');
+    const screenPaused = document.getElementById('screen-paused');
+    const screenFinished = document.getElementById('screen-finished');
+
+    const inputMesa = document.getElementById('input-mesa-number');
+    const btnJoin = document.getElementById('btn-submit-join');
+
+    const displayMesa = document.getElementById('display-mesa-number');
+    const displayTimer = document.getElementById('display-timer');
+    const displayProgressRatio = document.getElementById('display-progress-ratio');
+    const displayProgressFill = document.getElementById('display-progress-fill');
+    const displayQuestsList = document.getElementById('display-quests-list');
+
+    const cameraInput = document.getElementById('camera-file-input');
+    const loadingModal = document.getElementById('loading-modal');
+
+    const countdownOverlay = document.getElementById('countdown-overlay');
+    const countdownNum = document.getElementById('countdown-num');
+
+    // State Variables
+    let currentStatus = 'JOIN'; // JOIN, LOBBY, PLAYING, PAUSED, FINISHED
+    let guestUsername = localStorage.getItem(`capitanes_username_${eventId}`) || '';
+    let activeQuestIdToUpload = null;
+    let timerExpiresAt = null;
+
+    function checkIsCaptain(state) {
+      if (!state || !state.captains) return false;
+      const cleanKey = s => s.toString().trim().toLowerCase().replace(/^mesa\s+/i, '');
+      const userMesaClean = cleanKey(mesaNumber);
+      
+      for (const [tName, capName] of Object.entries(state.captains)) {
+        if (cleanKey(tName) === userMesaClean && capName === guestUsername) {
+          return true;
+        }
+      }
+      return false;
+    }
+    let timerInterval = null;
+    let eventSource = null;
+    let pollInterval = null;
+    let lastSseTime = Date.now();
+    let currentGameState = null;
+
+    // Toast utility
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.textContent = message;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.5s';
+        setTimeout(() => toast.remove(), 500);
+      }, 3500);
+    }
+
+    // Play countdown beep via Web Audio API
+    function playBeep(isFinal = false) {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(isFinal ? 880 : 440, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.15);
+      } catch (e) {
+        console.warn("Audio block/unsupported", e);
+      }
+    }
+
+    // Load configuration & initial titles
+    fetch(`/api/config?event=${encodeURIComponent(eventId)}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.eventTitle) {
+          document.getElementById('display-event-title').textContent = data.eventTitle;
+        }
+      })
+      .catch(() => {});
+
+    // Load and show guests assigned to this table
+    function loadAndDisplayTableGuests() {
+      const displayLobbyMesa = document.getElementById('lobby-mesa-number');
+      const lobbyGuestsDisp = document.getElementById('lobby-table-guests-display');
+      const playingGuestsDisp = document.getElementById('playing-table-guests-display');
+
+      if (displayLobbyMesa) displayLobbyMesa.textContent = mesaNumber;
+
+      fetch(`/api/public/tables?event=${encodeURIComponent(eventId)}`)
+        .then(res => res.json())
+        .then(tables => {
+          const match = tables.find(t => t.name === mesaNumber || t.name.toLowerCase() === `mesa ${mesaNumber}` || `mesa ${t.name.toLowerCase()}` === mesaNumber.toLowerCase());
+          if (match && match.guests && match.guests.length > 0) {
+            const listStr = `Integrantes: ${match.guests.join(', ')}`;
+            if (lobbyGuestsDisp) lobbyGuestsDisp.textContent = listStr;
+            if (playingGuestsDisp) playingGuestsDisp.textContent = listStr;
+          } else {
+            if (lobbyGuestsDisp) lobbyGuestsDisp.textContent = '';
+            if (playingGuestsDisp) playingGuestsDisp.textContent = '';
+          }
+        })
+        .catch(() => {});
+    }
+
+    // Load tables for the dropdown
+    let availableTables = [];
+    fetch(`/api/public/tables?event=${encodeURIComponent(eventId)}`)
+      .then(res => res.json())
+      .then(tables => {
+        availableTables = tables;
+        if (tables && tables.length > 0) {
+          const selectMesa = document.getElementById('select-mesa-number');
+          const groupSelect = document.getElementById('form-group-select-mesa');
+          const groupInput = document.getElementById('form-group-input-mesa');
+          
+          if (selectMesa && groupSelect && groupInput) {
+            selectMesa.innerHTML = '<option value="">Selecciona tu mesa...</option>';
+            tables.forEach(t => {
+              const opt = document.createElement('option');
+              opt.value = t.name;
+              const guestsStr = t.guests && t.guests.length > 0 ? ` (${t.guests.join(', ')})` : '';
+              opt.textContent = `${t.name}${guestsStr}`;
+              selectMesa.appendChild(opt);
+            });
+            groupSelect.style.display = 'block';
+            groupInput.style.display = 'none';
+          }
+        }
+      })
+      .catch(err => console.error('Error fetching tables:', err));
+
+    // Screen switching
+    function showScreen(screenId) {
+      document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+      const activeCard = document.getElementById(screenId);
+      if (activeCard) activeCard.classList.add('active');
+    }
+
+    // Initialize Game state
+    function init() {
+      if (!mesaNumber) {
+        currentStatus = 'JOIN';
+        showScreen('screen-join');
+      } else if (!guestUsername) {
+        currentStatus = 'IDENTITY';
+        showScreen('screen-identity');
+        loadTableGuestsForIdentity();
+      } else {
+        localStorage.setItem(`capitanes_mesa_${eventId}`, mesaNumber);
+        displayMesa.textContent = mesaNumber;
+        loadAndDisplayTableGuests();
+        startRealtimeSync();
+      }
+    }
+
+    // Load table guests for identity selection dropdown
+    function loadTableGuestsForIdentity() {
+      const selectIdentity = document.getElementById('select-identity-name');
+      const customNameGroup = document.getElementById('form-group-custom-name');
+      if (!selectIdentity) return;
+
+      selectIdentity.innerHTML = '<option value="">Cargando invitados...</option>';
+      
+      fetch(`/api/public/tables?event=${encodeURIComponent(eventId)}`)
+        .then(res => res.json())
+        .then(tables => {
+          const match = tables.find(t => t.name === mesaNumber || t.name.toLowerCase() === `mesa ${mesaNumber}` || `mesa ${t.name.toLowerCase()}` === mesaNumber.toLowerCase());
+          selectIdentity.innerHTML = '';
+          
+          if (match && match.guests && match.guests.length > 0) {
+            const defaultOpt = document.createElement('option');
+            defaultOpt.value = '';
+            defaultOpt.textContent = 'Selecciona tu nombre...';
+            selectIdentity.appendChild(defaultOpt);
+
+            match.guests.forEach(g => {
+              const opt = document.createElement('option');
+              opt.value = g;
+              opt.textContent = g;
+              selectIdentity.appendChild(opt);
+            });
+
+            const customOpt = document.createElement('option');
+            customOpt.value = 'CUSTOM';
+            customOpt.textContent = '✍️ Mi nombre no está en la lista';
+            selectIdentity.appendChild(customOpt);
+          } else {
+            selectIdentity.innerHTML = '<option value="CUSTOM">Escribir nombre personalizado</option>';
+            if (customNameGroup) customNameGroup.style.display = 'block';
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          selectIdentity.innerHTML = '<option value="CUSTOM">Escribir nombre personalizado</option>';
+          if (customNameGroup) customNameGroup.style.display = 'block';
+        });
+
+      selectIdentity.addEventListener('change', () => {
+        if (selectIdentity.value === 'CUSTOM') {
+          if (customNameGroup) customNameGroup.style.display = 'block';
+        } else {
+          if (customNameGroup) customNameGroup.style.display = 'none';
+        }
+      });
+    }
+
+    // Handle Join Form Submission
+    btnJoin.addEventListener('click', () => {
+      const selectMesa = document.getElementById('select-mesa-number');
+      const groupSelect = document.getElementById('form-group-select-mesa');
+      let inputVal = '';
+
+      if (groupSelect && groupSelect.style.display !== 'none') {
+        inputVal = selectMesa.value.trim();
+      } else {
+        inputVal = inputMesa.value.trim();
+      }
+
+      if (!inputVal) {
+        showToast('Por favor, seleccioná tu mesa.', 'error');
+        return;
+      }
+      mesaNumber = inputVal;
+      init();
+    });
+
+    // Handle Identity / Guest Form Submission
+    const btnSubmitIdentity = document.getElementById('btn-submit-identity');
+    if (btnSubmitIdentity) {
+      btnSubmitIdentity.addEventListener('click', () => {
+        const selectIdentity = document.getElementById('select-identity-name');
+        const inputCustom = document.getElementById('input-custom-name');
+        let chosenName = '';
+
+        if (selectIdentity && selectIdentity.value && selectIdentity.value !== 'CUSTOM') {
+          chosenName = selectIdentity.value;
+        } else if (inputCustom) {
+          chosenName = inputCustom.value.trim();
+        }
+
+        if (!chosenName) {
+          showToast('Por favor, selecciona o ingresa tu nombre.', 'error');
+          return;
+        }
+
+        guestUsername = chosenName;
+        localStorage.setItem(`capitanes_username_${eventId}`, guestUsername);
+        showToast(`¡Hola ${guestUsername}!`, 'success');
+        
+        localStorage.setItem(`capitanes_mesa_${eventId}`, mesaNumber);
+        displayMesa.textContent = mesaNumber;
+        loadAndDisplayTableGuests();
+        startRealtimeSync();
+      });
+    }
+
+    // Handle back button on identity selection
+    const btnBackToJoin = document.getElementById('btn-back-to-join');
+    if (btnBackToJoin) {
+      btnBackToJoin.addEventListener('click', () => {
+        mesaNumber = '';
+        localStorage.removeItem(`capitanes_mesa_${eventId}`);
+        currentStatus = 'JOIN';
+        showScreen('screen-join');
+      });
+    }
+
+    // Real-time SSE / Polling Stream connection
+    function startRealtimeSync() {
+      stopRealtimeSync();
+      lastSseTime = Date.now();
+
+      eventSource = new EventSource(`/api/capitanes/stream?event=${encodeURIComponent(eventId)}`);
+      
+      eventSource.onmessage = (e) => {
+        lastSseTime = Date.now();
+        try {
+          const msg = JSON.parse(e.data);
+          if (msg.type === 'INITIAL_STATE' || msg.type === 'STATE_UPDATE') {
+            handleGameStateUpdate(msg.data);
+          }
+        } catch (err) {
+          console.error("SSE parse error", err);
+        }
+      };
+
+      eventSource.onerror = () => {
+        console.warn("SSE connection closed. Falling back to active poll.");
+      };
+
+      // Fallback polling interval
+      pollInterval = setInterval(() => {
+        const quiet = Date.now() - lastSseTime;
+        if (quiet > 5000) {
+          syncStateWithFetch();
+        }
+      }, 3000);
+    }
+
+    function stopRealtimeSync() {
+      if (eventSource) {
+        eventSource.close();
+        eventSource = null;
+      }
+      if (pollInterval) {
+        clearInterval(pollInterval);
+        pollInterval = null;
+      }
+    }
+
+    function syncStateWithFetch() {
+      fetch(`/api/capitanes/state?event=${encodeURIComponent(eventId)}`)
+        .then(res => res.json())
+        .then(state => {
+          lastSseTime = Date.now();
+          handleGameStateUpdate(state);
+        })
+        .catch(err => {
+          console.error("Polling error", err);
+        });
+    }
+
+    // Handles the core game state loop
+    function handleGameStateUpdate(state) {
+      if (!state) return;
+      
+      const previousStatus = currentGameState ? currentGameState.status : null;
+      currentGameState = state;
+
+      // Handle dramatic countdown trigger on transition LOBBY -> PLAYING
+      if (previousStatus === 'LOBBY' && state.status === 'PLAYING') {
+        triggerCountdownTransition(() => {
+          applyGameStateUpdate(state);
+        });
+      } else {
+        applyGameStateUpdate(state);
+      }
+    }
+
+    function applyGameStateUpdate(state) {
+      timerExpiresAt = state.stateExpiresAt;
+      updateTimerDisplay();
+
+      if (state.status === 'PLAYING') {
+        if (!timerInterval) {
+          timerInterval = setInterval(updateTimerDisplay, 1000);
+        }
+        showScreen('screen-playing');
+
+        // Render Role Banner
+        const roleBanner = document.getElementById('role-status-banner');
+        if (roleBanner) {
+          const isCaptain = checkIsCaptain(state);
+          const cleanKey = s => s.toString().trim().toLowerCase().replace(/^mesa\s+/i, '');
+          const currentCaptain = Object.entries(state.captains || {}).find(([tName]) => cleanKey(tName) === cleanKey(mesaNumber))?.[1];
+
+          if (isCaptain) {
+            roleBanner.style.background = 'rgba(212, 175, 55, 0.1)';
+            roleBanner.style.border = '1px solid rgba(212, 175, 55, 0.3)';
+            roleBanner.innerHTML = `
+              <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--gold-light); margin-bottom: 4px;">
+                <span style="font-size: 1.1rem; display: inline-block; animation: crownPulse 1.5s infinite ease-in-out;">👑</span>
+                <span>ROL: CAPITÁN DE MESA</span>
+              </div>
+              <div style="color: var(--text-muted); font-size: 0.75rem; line-height: 1.3;">
+                Tenés el control de la cámara para subir las evidencias. ¡Guiá a tu tripulación a la victoria!
+              </div>
+            `;
+          } else if (currentCaptain) {
+            roleBanner.style.background = 'rgba(255, 255, 255, 0.03)';
+            roleBanner.style.border = '1px solid rgba(255, 255, 255, 0.08)';
+            roleBanner.innerHTML = `
+              <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; color: #fff; margin-bottom: 4px;">
+                <span style="font-size: 1rem;">👥</span>
+                <span>ROL: TRIPULACIÓN</span>
+              </div>
+              <div style="color: var(--text-muted); font-size: 0.75rem; line-height: 1.3;">
+                El Capitán de tu mesa es <strong style="color: var(--gold-light);">${currentCaptain}</strong>.
+                Ayudalo a buscar los objetivos, él es el único autorizado a tomar las fotos.
+              </div>
+            `;
+          } else {
+            roleBanner.style.background = 'rgba(255, 255, 255, 0.02)';
+            roleBanner.style.border = '1px dashed rgba(255, 255, 255, 0.1)';
+            roleBanner.innerHTML = `
+              <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--text-muted); margin-bottom: 4px;">
+                <span style="font-size: 1rem;">⏳</span>
+                <span>ROL: TRIPULACIÓN (Sin Capitán)</span>
+              </div>
+              <div style="color: var(--text-muted); font-size: 0.75rem; line-height: 1.3;">
+                Esperando que el organizador asigne un Capitán para habilitar la cámara en esta mesa.
+              </div>
+            `;
+          }
+        }
+
+        renderQuests(state);
+      } else {
+        if (timerInterval) {
+          clearInterval(timerInterval);
+          timerInterval = null;
+        }
+
+        if (state.status === 'LOBBY') {
+          showScreen('screen-lobby');
+
+          const lobbyCapStatus = document.getElementById('lobby-captain-status');
+          if (lobbyCapStatus) {
+            const isCaptain = checkIsCaptain(state);
+            const cleanKey = s => s.toString().trim().toLowerCase().replace(/^mesa\s+/i, '');
+            const currentCaptain = Object.entries(state.captains || {}).find(([tName]) => cleanKey(tName) === cleanKey(mesaNumber))?.[1];
+
+            if (isCaptain) {
+              lobbyCapStatus.innerHTML = `
+                <div style="background: rgba(212,175,55,0.08); border: 1px solid rgba(212,175,55,0.3); border-radius: 12px; padding: 10px; color: var(--gold-light); font-weight: 600;">
+                  👑 ¡Sos el Capitán de tu mesa!
+                </div>
+              `;
+            } else if (currentCaptain) {
+              lobbyCapStatus.innerHTML = `
+                <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 10px; color: var(--text-muted);">
+                  El Capitán de tu mesa es <strong style="color: var(--gold-light);">${currentCaptain}</strong> 👑
+                </div>
+              `;
+            } else {
+              lobbyCapStatus.innerHTML = `
+                <div style="background: rgba(255,255,255,0.01); border: 1px dashed rgba(255,255,255,0.1); border-radius: 12px; padding: 10px; color: var(--text-muted); font-style: italic;">
+                  Esperando asignación de Capitán por el organizador...
+                </div>
+              `;
+            }
+          }
+        } else if (state.status === 'PAUSED') {
+          showScreen('screen-paused');
+        } else if (state.status === 'FINISHED') {
+          showScreen('screen-finished');
+        }
+      }
+    }
+
+    // 10 Seconds Client Countdown Transition
+    function triggerCountdownTransition(callback) {
+      countdownOverlay.classList.add('active');
+      let count = 10;
+      countdownNum.textContent = count;
+      playBeep(false);
+
+      const interval = setInterval(() => {
+        count--;
+        if (count > 0) {
+          countdownNum.textContent = count;
+          // Scale animation re-trigger
+          countdownNum.style.animation = 'none';
+          void countdownNum.offsetWidth; // trigger reflow
+          countdownNum.style.animation = 'scalePulse 1s infinite cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+          playBeep(false);
+        } else {
+          clearInterval(interval);
+          playBeep(true);
+          countdownOverlay.classList.remove('active');
+          callback();
+        }
+      }, 1000);
+    }
+
+    // Timer countdown
+    function updateTimerDisplay() {
+      if (!timerExpiresAt) {
+        displayTimer.textContent = '10:00';
+        return;
+      }
+      const diff = Math.max(0, Math.round((new Date(timerExpiresAt).getTime() - Date.now()) / 1000));
+      const mins = Math.floor(diff / 60);
+      const secs = diff % 60;
+      displayTimer.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    function isMesaMatch(qMesa, userMesa) {
+      if (!qMesa || !userMesa) return false;
+      const clean = s => s.toString().trim().toLowerCase().replace(/^mesa\s+/i, '');
+      return clean(qMesa) === clean(userMesa);
+    }
+
+    // Render Quests list
+    function renderQuests(state) {
+      displayQuestsList.innerHTML = '';
+      
+      // Filter quests based on gameMode.
+      // In custom mode, if the quest has a specific mesa number that doesn't match ours, skip it!
+      const myQuests = state.quests.filter(q => {
+        if (state.gameMode === 'custom') {
+          return q.mesa === 'Todas' || isMesaMatch(q.mesa, mesaNumber);
+        }
+        return true;
+      });
+
+      if (myQuests.length === 0) {
+        displayQuestsList.innerHTML = `<p style="text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 20px 0;">No hay misiones asignadas para tu mesa.</p>`;
+        displayProgressRatio.textContent = '0/0';
+        displayProgressFill.style.width = '0%';
+        return;
+      }
+
+      let completedCount = 0;
+      let progressMap = {};
+      if (state.progress) {
+        const matchingKey = Object.keys(state.progress).find(key => isMesaMatch(key, mesaNumber));
+        if (matchingKey) {
+          progressMap = state.progress[matchingKey];
+        }
+      }
+
+      myQuests.forEach(quest => {
+        const progress = progressMap[quest.id] || { status: 'PENDING' };
+        
+        const item = document.createElement('div');
+        item.className = 'quest-item';
+        
+        if (progress.status === 'APPROVED') {
+          item.classList.add('completed');
+          completedCount++;
+        } else if (progress.status === 'SUBMITTED') {
+          item.classList.add('submitted');
+        }
+
+        const details = document.createElement('div');
+        details.className = 'quest-details';
+
+        const text = document.createElement('div');
+        text.className = 'quest-text';
+        text.textContent = quest.text;
+        if (quest.invitado && quest.invitado !== 'Todos') {
+          const assignee = document.createElement('div');
+          assignee.style.fontSize = '0.75rem';
+          assignee.style.color = 'var(--gold-primary)';
+          assignee.style.marginTop = '4px';
+          assignee.style.fontWeight = '500';
+          assignee.textContent = `Asignado a: ${quest.invitado}`;
+          text.appendChild(assignee);
+        }
+
+        const points = document.createElement('div');
+        points.className = 'quest-points';
+        points.textContent = `${quest.points} Puntos`;
+
+        if (progress.status === 'SUBMITTED') {
+          const badge = document.createElement('span');
+          badge.className = 'quest-status-badge status-badge-pending';
+          badge.textContent = 'Pendiente DJ';
+          points.appendChild(badge);
+        } else if (progress.status === 'APPROVED') {
+          const badge = document.createElement('span');
+          badge.className = 'quest-status-badge status-badge-approved';
+          badge.textContent = 'Completada';
+          points.appendChild(badge);
+        } else if (progress.status === 'PENDING' && progress.timestamp) {
+          // Means it was rejected!
+          const badge = document.createElement('span');
+          badge.className = 'quest-status-badge';
+          badge.style.background = 'rgba(231, 76, 60, 0.15)';
+          badge.style.color = 'var(--error)';
+          badge.style.border = '1px solid rgba(231, 76, 60, 0.3)';
+          badge.textContent = 'Rechazada';
+          points.appendChild(badge);
+        }
+
+        details.appendChild(text);
+        details.appendChild(points);
+
+        const action = document.createElement('div');
+        action.className = 'quest-action';
+
+        if (progress.status === 'APPROVED') {
+          action.innerHTML = `<span class="quest-check">✓</span>`;
+        } else if (progress.status === 'SUBMITTED') {
+          // Rotating loader icon
+          action.innerHTML = `
+            <div class="spinner" style="width: 24px; height: 24px; border-width: 2px;"></div>
+          `;
+        } else {
+          const isCaptain = checkIsCaptain(state);
+          if (isCaptain) {
+            // Camera upload trigger
+            const btnCam = document.createElement('button');
+            btnCam.type = 'button';
+            btnCam.className = 'btn-camera';
+            btnCam.innerHTML = '📷';
+            btnCam.addEventListener('click', () => {
+              activeQuestIdToUpload = quest.id;
+              cameraInput.click();
+            });
+            action.appendChild(btnCam);
+          } else {
+            // Spectator mode indicator
+            const specIndicator = document.createElement('span');
+            specIndicator.style.fontSize = '1.1rem';
+            specIndicator.style.opacity = '0.4';
+            specIndicator.style.cursor = 'help';
+            specIndicator.innerHTML = '🔒';
+            specIndicator.title = 'Solo el Capitán de Mesa puede subir fotos';
+            action.appendChild(specIndicator);
+          }
+        }
+
+        item.appendChild(details);
+        item.appendChild(action);
+        displayQuestsList.appendChild(item);
+      });
+
+      // Update progress bar
+      const ratio = `${completedCount}/${myQuests.length}`;
+      displayProgressRatio.textContent = ratio;
+      const pct = (completedCount / myQuests.length) * 100;
+      displayProgressFill.style.width = `${pct}%`;
+    }
+
+    // Handle Camera file upload
+    cameraInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file || !activeQuestIdToUpload) return;
+
+      loadingModal.classList.add('active');
+      
+      const formData = new FormData();
+      formData.append('photo', file);
+
+      // Post photo file
+      fetch(`/api/capitanes/upload?event=${encodeURIComponent(eventId)}`, {
+        method: 'POST',
+        body: formData
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.photoUrl) {
+          // Submit verification link to game progress
+          return fetch(`/api/capitanes/submit?event=${encodeURIComponent(eventId)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              mesa: mesaNumber,
+              questId: activeQuestIdToUpload,
+              photoUrl: data.photoUrl,
+              guestName: guestUsername
+            })
+          });
+        } else {
+          throw new Error(data.error || 'Error al subir la foto.');
+        }
+      })
+      .then(res => res.json())
+      .then(result => {
+        if (result.success) {
+          showToast('Misión enviada. Esperando aprobación del DJ/Animador...', 'success');
+          // Instantly sync
+          syncStateWithFetch();
+        } else {
+          showToast(result.error || 'Error al enviar la misión.', 'error');
+        }
+      })
+      .catch(err => {
+        console.error("Camera upload flow error", err);
+        showToast(err.message || 'Error de red al subir la evidencia.', 'error');
+      })
+      .finally(() => {
+        loadingModal.classList.remove('active');
+        activeQuestIdToUpload = null;
+        cameraInput.value = ''; // clear input
+      });
+    });
+
+    // Run init
+    init();
+  </script>
+</body>
+</html>

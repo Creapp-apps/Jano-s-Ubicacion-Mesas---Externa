@@ -10,6 +10,7 @@ const db = require('./utils/db');
 const { sendWelcomeEmail } = require('./utils/email');
 const { exec } = require('child_process');
 const { triviaCoordinator } = require('./utils/trivia');
+const { capitanesCoordinator } = require('./utils/capitanes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -24,7 +25,7 @@ if (UPLOADS_DIR !== '/tmp' && !fs.existsSync(UPLOADS_DIR)) {
   try {
     fs.mkdirSync(UPLOADS_DIR, { recursive: true });
   } catch (err) {
-    console.warn('[MIFIESTAPP SERVER] Local UPLOADS_DIR creation ignored/failed (read-only filesystem):', err.message);
+    console.warn('[miFiestAPP Server] Local UPLOADS_DIR creation ignored/failed (read-only filesystem):', err.message);
   }
 }
 
@@ -228,7 +229,7 @@ app.get(['/invitacion', '/invitacion.html'], async (req, res) => {
   <meta property="og:image" content="${ogImageUrl}" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
-  <meta property="og:site_name" content="MiFiestAPP" />
+  <meta property="og:site_name" content="miFiestAPP" />
 
   <!-- Twitter Meta Tags -->
   <meta name="twitter:card" content="summary_large_image" />
@@ -312,22 +313,26 @@ app.get('/api/stats', requireAuth, async (req, res) => {
       return confirmedNames.has(fullName);
     });
 
-    if (confirmedGuests.length === 0) {
-      return res.json({ guestCount: 0, tableCount: 0, tables: [] });
-    }
-    
-    // Count unique tables and build tables list
+    // Count unique tables from all guests, and track confirmed counts
     const tablesMap = {};
-    confirmedGuests.forEach(g => {
+    guests.forEach(g => {
       if (g.table) {
-        tablesMap[g.table] = (tablesMap[g.table] || 0) + 1;
+        const tableName = g.table.trim();
+        if (tableName && tableName.toLowerCase() !== 'sin mesa') {
+          if (!tablesMap[tableName]) {
+            tablesMap[tableName] = { name: tableName, count: 0, totalCount: 0 };
+          }
+          tablesMap[tableName].totalCount += 1;
+          
+          const fullName = `${g.firstName} ${g.lastName}`.trim().toLowerCase();
+          if (confirmedNames.has(fullName)) {
+            tablesMap[tableName].count += 1;
+          }
+        }
       }
     });
     
-    const tables = Object.keys(tablesMap).map(name => ({
-      name,
-      count: tablesMap[name]
-    })).sort((a, b) => {
+    const tables = Object.values(tablesMap).sort((a, b) => {
       // Numerical sort if possible, otherwise alphabetical
       const numA = parseInt(a.name.replace(/\D/g, ''), 10);
       const numB = parseInt(b.name.replace(/\D/g, ''), 10);
@@ -360,6 +365,22 @@ app.post('/api/clear', requireAuth, async (req, res) => {
   }
 });
 
+// API: Get network IP for local Wi-Fi testing (Public)
+app.get('/api/debug/network-ip', (req, res) => {
+  const os = require('os');
+  const networkInterfaces = os.networkInterfaces();
+  let localIp = 'localhost';
+  for (const name of Object.keys(networkInterfaces)) {
+    for (const net of networkInterfaces[name]) {
+      if (net.family === 'IPv4' && !net.internal) {
+        localIp = net.address;
+        break;
+      }
+    }
+  }
+  res.json({ localIp });
+});
+
 // API: Get config (Public)
 app.get('/api/config', async (req, res) => {
   try {
@@ -390,6 +411,7 @@ app.get('/api/config', async (req, res) => {
     let servicePhotos = true;
     let serviceInvitation = true;
     let serviceTrivia = true;
+    let serviceCapitanes = true;
 
     if (event) {
       clientName = event.clientName;
@@ -397,6 +419,7 @@ app.get('/api/config', async (req, res) => {
       servicePhotos = event.servicePhotos !== false;
       serviceInvitation = event.serviceInvitation !== false;
       serviceTrivia = event.serviceTrivia !== false;
+      serviceCapitanes = event.serviceCapitanes !== false;
     }
 
     const triviaQuestions = config['trivia_questions'] || '[]';
@@ -430,6 +453,7 @@ app.get('/api/config', async (req, res) => {
       servicePhotos,
       serviceInvitation,
       serviceTrivia,
+      serviceCapitanes,
       triviaQuestions,
       invitationEventDate,
       invitationMusicUrl,
@@ -510,6 +534,54 @@ app.get('/api/config', async (req, res) => {
       },
       maxUploadSize: process.env.VERCEL ? 4 * 1024 * 1024 : 15 * 1024 * 1024
     });
+  }
+});
+
+// API: Get public tables and guest names (Public)
+app.get('/api/public/tables', async (req, res) => {
+  try {
+    const eventId = req.query.event || 'default';
+    const guests = await db.getGuests(eventId);
+    const rsvps = await db.getRsvps(eventId);
+
+    const confirmedNames = new Set(
+      rsvps
+        .filter(r => r.attending === true)
+        .map(r => r.name.trim().toLowerCase())
+    );
+
+    const confirmedGuests = guests.filter(g => {
+      const fullName = `${g.firstName} ${g.lastName}`.trim().toLowerCase();
+      return confirmedNames.has(fullName);
+    });
+
+    const tablesMap = {};
+    confirmedGuests.forEach(g => {
+      if (g.table) {
+        const tableName = g.table.trim();
+        if (!tablesMap[tableName]) {
+          tablesMap[tableName] = [];
+        }
+        tablesMap[tableName].push(`${g.firstName} ${g.lastName}`.trim());
+      }
+    });
+
+    const tables = Object.keys(tablesMap).map(name => ({
+      name,
+      guests: tablesMap[name]
+    })).sort((a, b) => {
+      const numA = parseInt(a.name.replace(/\D/g, ''), 10);
+      const numB = parseInt(b.name.replace(/\D/g, ''), 10);
+      if (!isNaN(numA) && !isNaN(numB)) {
+        return numA - numB;
+      }
+      return a.name.localeCompare(b.name);
+    });
+
+    res.json(tables);
+  } catch (error) {
+    console.error('Error fetching public tables:', error);
+    res.status(500).json({ error: 'Error al obtener las mesas' });
   }
 });
 
@@ -1439,7 +1511,7 @@ app.post('/api/audio/upload', requireAuth, upload.single('audio'), async (req, r
       if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
       if (compressedPath && fs.existsSync(compressedPath)) fs.unlinkSync(compressedPath);
     } catch (err) {
-      console.warn('[MiFiestAPP Server] Error unlinking temp files:', err.message);
+      console.warn('[miFiestAPP Server] Error unlinking temp files:', err.message);
     }
 
     res.json({ success: true, url: publicUrl });
@@ -1796,7 +1868,7 @@ function normalizeString(str) {
     .replace(/[^a-z0-9\s]/g, "");
 }
 
-app.get('/api/trivia/stream', (req, res) => {
+app.get('/api/trivia/stream', async (req, res) => {
   const eventId = req.query.event || 'default';
   const role = req.query.role || 'player';
   const nickname = req.query.nickname || '';
@@ -1807,12 +1879,24 @@ app.get('/api/trivia/stream', (req, res) => {
   res.flushHeaders();
 
   if (!triviaCoordinator.sessions[eventId]) {
-    triviaCoordinator.initializeSession(eventId, []);
+    try {
+      const qStr = await db.getConfigValue(eventId, 'trivia_questions', '[]');
+      const questions = JSON.parse(qStr);
+      triviaCoordinator.initializeSession(eventId, questions);
+    } catch (err) {
+      console.error('[Trivia Stream Init Error]', err);
+      triviaCoordinator.initializeSession(eventId, []);
+    }
   }
 
   const session = triviaCoordinator.sessions[eventId];
   const clientObj = { res, role, nickname };
   session.clients.push(clientObj);
+
+  if (role === 'player' && nickname) {
+    // Transparently auto-rejoin player on stream connection/reconnection
+    triviaCoordinator.addPlayer(eventId, nickname);
+  }
 
   res.write(`data: ${JSON.stringify({ type: 'INITIAL_STATE', data: triviaCoordinator.getSessionState(eventId) })}\n\n`);
 
@@ -1923,6 +2007,22 @@ app.post('/api/trivia/respond', (req, res) => {
   res.json({ success });
 });
 
+app.get('/api/trivia/state', async (req, res) => {
+  const eventId = req.query.event || 'default';
+  if (!triviaCoordinator.sessions[eventId]) {
+    try {
+      const qStr = await db.getConfigValue(eventId, 'trivia_questions', '[]');
+      const questions = JSON.parse(qStr);
+      triviaCoordinator.initializeSession(eventId, questions);
+    } catch (err) {
+      console.error('[Trivia State Init Error]', err);
+      triviaCoordinator.initializeSession(eventId, []);
+    }
+  }
+  const state = triviaCoordinator.getSessionState(eventId);
+  res.json({ success: true, state });
+});
+
 app.get('/api/trivia/leaderboard', (req, res) => {
   const eventId = req.query.event || 'default';
   const leaderboard = triviaCoordinator.getLeaderboard(eventId);
@@ -1933,68 +2033,283 @@ app.post('/api/trivia/control', requireAuth, async (req, res) => {
   const eventId = req.query.event || req.body.eventId || 'default';
   const { action } = req.body;
 
-  if (action === 'initialize' || action === 'init') {
-    try {
+  try {
+    if (action === 'initialize' || action === 'init') {
       const qStr = await db.getConfigValue(eventId, 'trivia_questions', '[]');
       const questions = JSON.parse(qStr);
       triviaCoordinator.initializeSession(eventId, questions);
-      res.json({ success: true, state: triviaCoordinator.getSessionState(eventId) });
-    } catch (err) {
-      res.status(500).json({ error: 'Error al inicializar la trivia' });
+      return res.json({ success: true, state: triviaCoordinator.getSessionState(eventId) });
     }
-  } else if (action === 'start') {
-    const autoMode = req.body.autoMode === true;
-    const duration = req.body.duration ? parseInt(req.body.duration) : null;
-    if (duration !== null) {
+
+    if (!triviaCoordinator.sessions[eventId]) {
+      const qStr = await db.getConfigValue(eventId, 'trivia_questions', '[]');
+      const questions = JSON.parse(qStr);
+      triviaCoordinator.initializeSession(eventId, questions);
+    }
+
+    const session = triviaCoordinator.sessions[eventId];
+
+    if (action === 'start') {
+      const duration = req.body.duration ? parseInt(req.body.duration) : null;
+      if (duration !== null) {
+        triviaCoordinator.setCustomDuration(eventId, duration);
+      }
+      
+      if (session) {
+        if (session.status === 'PODIUM') {
+          return res.status(400).json({ error: 'La trivia ya ha finalizado. Usa "Reiniciar Juego" para volver a jugar.' });
+        }
+        
+        if (session.paused) {
+          session.paused = false;
+          triviaCoordinator.startQuestion(eventId, true);
+          return res.json({ success: true });
+        }
+        
+        if (session.status === 'REVEAL_ANSWER') {
+          session.autoMode = true;
+          triviaCoordinator.showLeaderboard(eventId);
+          return res.json({ success: true });
+        }
+        
+        if (session.status === 'LEADERBOARD') {
+          session.autoMode = true;
+          triviaCoordinator.nextQuestion(eventId);
+          return res.json({ success: true });
+        }
+      }
+
+      if (session && session.status === 'LOBBY' && session.currentQuestionIndex === 0) {
+        triviaCoordinator.startCountdown(eventId);
+      } else {
+        triviaCoordinator.startQuestion(eventId, true);
+      }
+      res.json({ success: true });
+    } else if (action === 'stop') {
+      triviaCoordinator.stopTrivia(eventId);
+      res.json({ success: true });
+    } else if (action === 'toggle_auto') {
+      const autoMode = triviaCoordinator.toggleAutoMode(eventId);
+      res.json({ success: true, autoMode });
+    } else if (action === 'set_duration') {
+      const duration = req.body.duration ? parseInt(req.body.duration) : null;
       triviaCoordinator.setCustomDuration(eventId, duration);
-    }
-    triviaCoordinator.startQuestion(eventId, autoMode);
-    res.json({ success: true });
-  } else if (action === 'toggle_auto') {
-    const autoMode = triviaCoordinator.toggleAutoMode(eventId);
-    res.json({ success: true, autoMode });
-  } else if (action === 'set_duration') {
-    const duration = req.body.duration ? parseInt(req.body.duration) : null;
-    triviaCoordinator.setCustomDuration(eventId, duration);
-    res.json({ success: true, customDuration: duration });
-  } else if (action === 'reveal') {
-    // Manual action disables autoMode
-    const session = triviaCoordinator.sessions[eventId];
-    if (session) {
-      session.autoMode = false;
-      if (session.timerId) {
-        clearTimeout(session.timerId);
-        session.timerId = null;
+      res.json({ success: true, customDuration: duration });
+    } else if (action === 'reveal') {
+      // Manual action disables autoMode
+      if (session) {
+        session.autoMode = false;
+        if (session.timerId) {
+          clearTimeout(session.timerId);
+          session.timerId = null;
+        }
       }
-    }
-    triviaCoordinator.revealAnswer(eventId);
-    res.json({ success: true });
-  } else if (action === 'leaderboard') {
-    // Manual action disables autoMode
-    const session = triviaCoordinator.sessions[eventId];
-    if (session) {
-      session.autoMode = false;
-      if (session.timerId) {
-        clearTimeout(session.timerId);
-        session.timerId = null;
+      triviaCoordinator.revealAnswer(eventId);
+      res.json({ success: true });
+    } else if (action === 'leaderboard') {
+      // Manual action disables autoMode
+      if (session) {
+        session.autoMode = false;
+        if (session.timerId) {
+          clearTimeout(session.timerId);
+          session.timerId = null;
+        }
       }
-    }
-    triviaCoordinator.showLeaderboard(eventId);
-    res.json({ success: true });
-  } else if (action === 'next') {
-    // Manual action disables autoMode
-    const session = triviaCoordinator.sessions[eventId];
-    if (session) {
-      session.autoMode = false;
-      if (session.timerId) {
-        clearTimeout(session.timerId);
-        session.timerId = null;
+      triviaCoordinator.showLeaderboard(eventId);
+      res.json({ success: true });
+    } else if (action === 'next') {
+      // Manual action disables autoMode
+      if (session) {
+        session.autoMode = false;
+        if (session.timerId) {
+          clearTimeout(session.timerId);
+          session.timerId = null;
+        }
       }
+      triviaCoordinator.nextQuestion(eventId);
+      res.json({ success: true });
+    } else {
+      res.status(400).json({ error: 'Acción no válida' });
     }
-    triviaCoordinator.nextQuestion(eventId);
+  } catch (err) {
+    console.error('[Trivia Control Error]', err);
+    res.status(500).json({ error: err.message || 'Error al procesar la acción de control de trivia' });
+  }
+});
+
+
+// ==========================================
+// Capitanes de Mesa (Table Captains) Routes
+// ==========================================
+
+// Get Capitanes de Mesa Current State
+app.get('/api/capitanes/state', async (req, res) => {
+  const eventId = req.query.event || 'default';
+  try {
+    const state = await capitanesCoordinator.getOrInitializeSession(eventId);
+    res.json(capitanesCoordinator.getSessionState(eventId));
+  } catch (err) {
+    console.error('[Capitanes State Route Error]', err);
+    res.status(500).json({ error: 'Error al obtener el estado del juego.' });
+  }
+});
+
+// SSE Stream for real-time updates
+app.get('/api/capitanes/stream', async (req, res) => {
+  const eventId = req.query.event || 'default';
+  
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+
+  try {
+    const session = await capitanesCoordinator.getOrInitializeSession(eventId);
+    capitanesCoordinator.addClient(eventId, res);
+    
+    // Send initial state immediately
+    const initialState = JSON.stringify({
+      type: 'INITIAL_STATE',
+      data: capitanesCoordinator.getSessionState(eventId)
+    });
+    res.write(`data: ${initialState}\n\n`);
+  } catch (err) {
+    console.error('[Capitanes Stream Route Error]', err);
+  }
+
+  req.on('close', () => {
+    capitanesCoordinator.removeClient(eventId, res);
+  });
+});
+
+// Update Capitanes Configuration
+app.post('/api/capitanes/config', requireAuth, async (req, res) => {
+  const eventId = req.query.event || req.body.event || 'default';
+  const { gameMode, timeLimit, quests } = req.body;
+  try {
+    await db.saveCapitanesConfig(eventId, { gameMode, timeLimit, quests });
+    await capitanesCoordinator.reloadConfig(eventId);
     res.json({ success: true });
-  } else {
-    res.status(400).json({ error: 'Acción no válida' });
+  } catch (err) {
+    console.error('[Capitanes Config Route Error]', err);
+    res.status(500).json({ error: 'Error al guardar la configuración.' });
+  }
+});
+
+// Assign a guest as Captain to a table
+app.post('/api/capitanes/assign-captain', requireAuth, async (req, res) => {
+  const eventId = req.query.event || req.body.event || 'default';
+  const { table, guestName } = req.body;
+  if (!table) {
+    return res.status(400).json({ error: 'La mesa es requerida.' });
+  }
+  try {
+    const config = await db.getCapitanesConfig(eventId);
+    if (!config.captains) {
+      config.captains = {};
+    }
+    if (guestName) {
+      config.captains[table] = guestName;
+    } else {
+      delete config.captains[table];
+    }
+    await db.saveCapitanesConfig(eventId, config);
+    await capitanesCoordinator.reloadConfig(eventId);
+    res.json({ success: true, captains: config.captains });
+  } catch (err) {
+    console.error('[Capitanes Assign Captain Route Error]', err);
+    res.status(500).json({ error: 'Error al asignar el capitán de mesa.' });
+  }
+});
+
+// Submit a Quest Verification (Guest Client)
+app.post('/api/capitanes/submit', async (req, res) => {
+  const eventId = req.query.event || req.body.event || 'default';
+  const { mesa, questId, photoUrl, guestName } = req.body;
+  if (!mesa || !questId) {
+    return res.status(400).json({ error: 'Mesa y Quest ID son requeridos.' });
+  }
+  try {
+    const session = await capitanesCoordinator.getOrInitializeSession(eventId);
+    const cleanKey = s => s.toString().trim().toLowerCase().replace(/^mesa\s+/i, '');
+    const mesaClean = cleanKey(mesa);
+    const assignedCaptain = Object.entries(session.captains || {}).find(([tName]) => cleanKey(tName) === mesaClean)?.[1];
+
+    if (!assignedCaptain) {
+      return res.status(403).json({ error: 'Aún no se ha asignado un Capitán de Mesa para esta mesa.' });
+    }
+    if (assignedCaptain !== guestName) {
+      return res.status(403).json({ error: `Solo el Capitán asignado (${assignedCaptain}) puede subir evidencias.` });
+    }
+
+    await capitanesCoordinator.submitQuest(eventId, mesa, questId, photoUrl);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('[Capitanes Submit Route Error]', err);
+    res.status(500).json({ error: 'Error al enviar la misión.' });
+  }
+});
+
+// Game Admin Control API
+app.post('/api/capitanes/control', requireAuth, async (req, res) => {
+  const eventId = req.query.event || req.body.event || 'default';
+  const { action, mesa, questId } = req.body;
+
+  try {
+    const session = await capitanesCoordinator.getOrInitializeSession(eventId);
+
+    if (action === 'start') {
+      capitanesCoordinator.startGame(eventId);
+    } else if (action === 'pause') {
+      capitanesCoordinator.pauseGame(eventId);
+    } else if (action === 'resume') {
+      capitanesCoordinator.resumeGame(eventId);
+    } else if (action === 'reset') {
+      await capitanesCoordinator.resetGame(eventId);
+    } else if (action === 'approve') {
+      if (!mesa || !questId) {
+        return res.status(400).json({ error: 'Mesa y Quest ID son requeridos para aprobar.' });
+      }
+      await capitanesCoordinator.approveQuest(eventId, mesa, questId);
+    } else if (action === 'reject') {
+      if (!mesa || !questId) {
+        return res.status(400).json({ error: 'Mesa y Quest ID son requeridos para rechazar.' });
+      }
+      await capitanesCoordinator.rejectQuest(eventId, mesa, questId);
+    } else {
+      return res.status(400).json({ error: 'Acción inválida.' });
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('[Capitanes Control Route Error]', err);
+    res.status(500).json({ error: 'Error al procesar el control de capitanes.' });
+  }
+});
+
+// Upload proof photo
+app.post('/api/capitanes/upload', upload.single('photo'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No se subió ninguna foto.' });
+  }
+  const eventId = req.query.event || 'default';
+  
+  try {
+    const fileBuffer = fs.readFileSync(req.file.path);
+    const photoUrl = await db.uploadPhotoFile(eventId, req.file.originalname, fileBuffer, req.file.mimetype);
+    
+    // Remove the temp file
+    if (fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    
+    res.json({ success: true, photoUrl });
+  } catch (error) {
+    console.error('Error uploading Capitanes photo:', error);
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    res.status(500).json({ error: 'Error al subir la foto.' });
   }
 });
 
@@ -2051,13 +2366,13 @@ function startServer(port) {
       }
     }
     console.log(`\n=============================================================`);
-    console.log(`[MiFiestAPP] Server running on http://localhost:${port}`);
-    console.log(`[MiFiestAPP] Local WiFi testing URL: http://${localIp}:${port}`);
+    console.log(`[miFiestAPP] Server running on http://localhost:${port}`);
+    console.log(`[miFiestAPP] Local WiFi testing URL: http://${localIp}:${port}`);
     console.log(`=============================================================\n`);
   })
   .on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
-      console.warn(`[MiFiestAPP] Port ${port} is in use, trying next port http://localhost:${port + 1}...`);
+      console.warn(`[miFiestAPP] Port ${port} is in use, trying next port http://localhost:${port + 1}...`);
       startServer(port + 1);
     } else {
       console.error(err);

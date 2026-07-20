@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MiFiestAPP | El Combo Digital Premium para tu Evento</title>
+  <link rel="icon" type="image/png" href="/assets/coronamain.png">
+  <title>miFiestAPP | El Combo Digital Premium para tu Evento</title>
   <meta name="description" content="Llevá tu fiesta al siguiente nivel. Buscador de mesas QR, fotos en pantalla gigante en vivo e invitaciones digitales premium.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,51 +22,219 @@
 
   <!-- Header / Navigation -->
   <nav class="navbar">
-    <a href="/" class="logo-text">
-      <svg class="logo-icon" viewBox="0 0 24 24">
-        <path d="M2 22h20V10l-4-4-4 4-4-4-4 4-4-4v12zm10-7.5c1.38 0 2.5 1.12 2.5 2.5s-1.12 2.5-2.5 2.5-2.5-1.12-2.5-2.5 1.12-2.5 2.5-2.5z"/>
-      </svg>
-      MiFiest<span class="text-gold">APP</span>
+    <a href="/" class="logo-text" style="display: flex; align-items: center;">
+      <img src="/assets/textomain.png" alt="miFiestAPP" style="height: 34px; width: auto; object-fit: contain;">
     </a>
-    <ul class="nav-links">
-      <li><a href="#funciones">Funciones</a></li>
-      <li><a href="#simulador">Simulador</a></li>
-      <li><a href="#admin">Administración</a></li>
-      <li><a href="#precios">Planes</a></li>
-      <li><a href="#faq">Preguntas</a></li>
+    <ul class="nav-links-capsule">
+      <div class="nav-lamp-indicator"></div>
+      <li><a href="#funciones" class="nav-item-link active">Funciones</a></li>
+      <li><a href="#simulador" class="nav-item-link">Simulador</a></li>
+      <li><a href="#admin" class="nav-item-link">Admin</a></li>
+      <li><a href="#precios" class="nav-item-link">Planes</a></li>
+      <li><a href="#faq" class="nav-item-link">FAQ</a></li>
     </ul>
     <div class="nav-buttons-container">
-      <button class="nav-brand-btn" id="open-client-login-btn">
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-          <path d="M2 22h20V10l-4-4-4 4-4-4-4 4-4-4v12zm10-7.5c1.38 0 2.5 1.12 2.5 2.5s-1.12 2.5-2.5 2.5-2.5-1.12-2.5-2.5 1.12-2.5 2.5-2.5z"/>
-        </svg>
-        <span>MiFiestAPP</span>
+      <button class="nav-brand-btn" id="open-client-login-btn" style="display: flex; align-items: center; gap: 6px;">
+        <img src="/assets/coronamain.png" alt="miFiestAPP" style="height: 16px; width: auto; object-fit: contain;">
+        <span>miFiestAPP</span>
       </button>
-      <a href="https://wa.me/5491136125026?text=Hola!%20Me%20interesa%20adquirir%20el%20servicio%20de%20MiFiestAPP%20para%20mi%20evento." target="_blank" class="nav-cta">
+      <a href="https://wa.me/5491136125026?text=Hola!%20Me%20interesa%20adquirir%20el%20servicio%20de%20miFiestAPP%20para%20mi%20evento." target="_blank" class="nav-cta">
         <span>Contratar</span>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M5 12h14M12 5l7 7-7 7"/>
-        </svg>
       </a>
     </div>
     <button class="nav-toggle">☰</button>
   </nav>
 
   <!-- Hero Section -->
-  <header class="hero">
-    <div class="hero-tag">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-      </svg>
-      La Experiencia Digital Definitiva
+  <header class="hero-section">
+    <div class="hero-container">
+      <!-- Columna Izquierda: Mensaje Comercial -->
+      <div class="hero-content">
+        <h1 class="hero-title blur-fade delay-100">
+          Tu Evento Merece una<br class="hidden-mobile">
+          <span class="text-gold">Experiencia Digital Única</span>
+        </h1>
+        <p class="hero-desc blur-fade delay-200">
+          Buscador de mesas QR interactivo, proyección de fotos en tiempo real y trivias en vivo en el salón. Llevá tu fiesta al siguiente nivel con el combo tecnológico más exclusivo del mercado.
+        </p>
+        <div class="hero-btns blur-fade delay-300">
+          <a href="#simulador" class="btn-primary">Probar Simulador</a>
+          <a href="https://wa.me/5491136125026?text=Hola!%20Me%20interesa%20adquirir%20el%20servicio%20de%20miFiestAPP%20para%20mi%20evento." target="_blank" class="btn-secondary">Cotizar Servicio</a>
+        </div>
+      </div>
+
+      <!-- Columna Derecha: Dashboard Interactivo en 3D -->
+      <div class="hero-dashboard-container">
+        <div class="hero-dashboard-card">
+          
+          <!-- Encabezado del Panel -->
+          <div class="dashboard-card-header">
+            <div>
+              <div class="live-pulse-container">
+                <span class="pulse-dot"></span>
+                <span class="live-text">MONITOREO EN VIVO</span>
+              </div>
+              <div class="dashboard-title">Panel de Control</div>
+              <div class="dashboard-event">Boda de Sofía & Tomás</div>
+            </div>
+            <div class="dashboard-badge-icon">
+              <img src="/assets/coronamain.png" alt="miFiestAPP" style="height: 18px; width: auto;">
+            </div>
+          </div>
+
+          <!-- Servicios y Funciones Reales Monitoreados -->
+          <div class="dashboard-features-tracker">
+            
+            <!-- Item 1: Ubicación de Mesas QR -->
+            <div class="tracker-item">
+              <div class="tracker-item-left">
+                <div class="tracker-icon qr-icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                  </svg>
+                </div>
+                <div>
+                  <div class="tracker-name">Buscador de Mesas QR</div>
+                  <div class="tracker-status">Invitados ubicados en salón</div>
+                </div>
+              </div>
+              <div class="tracker-item-right">
+                <span class="tracker-value">180 <span class="tracker-unit">Ubicados</span></span>
+              </div>
+            </div>
+
+            <!-- Item 2: Proyección de Fotos -->
+            <div class="tracker-item">
+              <div class="tracker-item-left">
+                <div class="tracker-icon photo-icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                    <polyline points="21 15 16 10 5 21"></polyline>
+                  </svg>
+                </div>
+                <div>
+                  <div class="tracker-name">Fotos en Pantalla Gigante</div>
+                  <div class="tracker-status">Moderación en vivo activa</div>
+                </div>
+              </div>
+              <div class="tracker-item-right">
+                <span class="tracker-value">142 <span class="tracker-unit">Enviadas</span></span>
+              </div>
+            </div>
+
+            <!-- Item 3: Trivia Show -->
+            <div class="tracker-item">
+              <div class="tracker-item-left">
+                <div class="tracker-icon trivia-icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                  </svg>
+                </div>
+                <div>
+                  <div class="tracker-name">Trivia en Vivo</div>
+                  <div class="tracker-status">Líder: Tomás M. (9.800 pts)</div>
+                </div>
+              </div>
+              <div class="tracker-item-right">
+                <span class="tracker-value">87 <span class="tracker-unit">Jugando</span></span>
+              </div>
+            </div>
+
+            <!-- Item 4: Canciones Sugeridas -->
+            <div class="tracker-item">
+              <div class="tracker-item-left">
+                <div class="tracker-icon music-icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M9 18V5l12-2v13"></path>
+                    <circle cx="6" cy="18" r="3"></circle>
+                    <circle cx="18" cy="16" r="3"></circle>
+                  </svg>
+                </div>
+                <div>
+                  <div class="tracker-name">Música Sugerida</div>
+                  <div class="tracker-status">Lista sincronizada con DJ</div>
+                </div>
+              </div>
+              <div class="tracker-item-right">
+                <span class="tracker-value">54 <span class="tracker-unit">Temas</span></span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Métricas del Panel en Tiempo Real -->
+          <div class="dashboard-stats-row">
+            <div class="stat-col">
+              <span class="stat-label">Invitaciones Web</span>
+              <span class="stat-value">250</span>
+              <span class="stat-desc">Confirmaciones: 88% OK</span>
+            </div>
+            <div class="stat-col align-right">
+              <span class="stat-label">Capitanes de Mesa</span>
+              <span class="stat-value">4</span>
+              <span class="stat-desc">Zonas Activas: 100% OK</span>
+            </div>
+          </div>
+          
+        </div>
+
+        <!-- Elementos Decorativos Flotantes de Fondo -->
+        <div class="floating-shape shape-gold-glow"></div>
+        <div class="floating-shape shape-gold-dust-1"></div>
+        <div class="floating-shape shape-gold-dust-2"></div>
+      </div>
+
     </div>
-    <h1 class="hero-title">Llevá tu fiesta al<br><span class="text-gold">Siguiente Nivel</span></h1>
-    <p class="hero-desc">
-      Buscador interactivo de mesas, fotos proyectadas en pantalla gigante en tiempo real e invitaciones digitales de lujo. Todo integrado en una sola plataforma premium para que tus invitados disfruten al máximo.
-    </p>
-    <div class="hero-btns">
-      <a href="#simulador" class="btn-primary">Probar Simulador</a>
-      <a href="https://wa.me/5491136125026?text=Hola!%20Me%20interesa%20adquirir%20el%20servicio%20de%20MiFiestAPP%20para%20mi%20evento." target="_blank" class="btn-secondary">Cotizar Servicio</a>
+
+    <!-- Indicadores de Confianza / Partners -->
+    <div class="hero-trust-indicators">
+      <span class="trust-label">Diseñado para eventos de alta gama en salones de prestigio y soporte de:</span>
+      <div class="logo-marquee-container">
+        <div class="logo-marquee-track">
+          <!-- Set 1 (Original) -->
+          <div class="trust-logos">
+            <div class="trust-logo">
+              <span class="logo-bullet"></span> Jano's Eventos
+            </div>
+            <div class="trust-logo">
+              <span class="logo-bullet"></span> Smart Screen Pro
+            </div>
+            <div class="trust-logo">
+              <span class="logo-bullet"></span> QR Quick-Entry
+            </div>
+            <div class="trust-logo">
+              <span class="logo-bullet"></span> Live Slideshow
+            </div>
+            <div class="trust-logo">
+              <span class="logo-bullet"></span> Trivia Play
+            </div>
+          </div>
+          <!-- Set 2 (Duplicado para loop infinito) -->
+          <div class="trust-logos" aria-hidden="true">
+            <div class="trust-logo">
+              <span class="logo-bullet"></span> Jano's Eventos
+            </div>
+            <div class="trust-logo">
+              <span class="logo-bullet"></span> Smart Screen Pro
+            </div>
+            <div class="trust-logo">
+              <span class="logo-bullet"></span> QR Quick-Entry
+            </div>
+            <div class="trust-logo">
+              <span class="logo-bullet"></span> Live Slideshow
+            </div>
+            <div class="trust-logo">
+              <span class="logo-bullet"></span> Trivia Play
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -123,7 +292,7 @@
   <section id="simulador">
     <div class="sec-header">
       <span class="sec-tag">Demo Interactiva</span>
-      <h2 class="sec-title">Viví la Experiencia MiFiestAPP</h2>
+      <h2 class="sec-title">Viví la Experiencia miFiestAPP</h2>
       <p class="sec-desc">
         Interactúa con el teléfono inteligente y mira cómo cambian y funcionan nuestras aplicaciones en tiempo real.
       </p>
@@ -297,7 +466,7 @@
             Panel de control privado
           </li>
         </ul>
-        <a href="https://wa.me/5491136125026?text=Hola!%20Me%20interesa%20contratar%20el%20Plan%20Basico%20de%20MiFiestAPP." target="_blank" class="btn-secondary" style="margin-top: auto;">Contratar Plan</a>
+        <a href="https://wa.me/5491136125026?text=Hola!%20Me%20interesa%20contratar%20el%20Plan%20Basico%20de%20miFiestAPP." target="_blank" class="btn-secondary" style="margin-top: auto;">Contratar Plan</a>
       </div>
 
       <!-- Plan 2 (Combo) -->
@@ -332,7 +501,7 @@
             Moderación de fotos móvil
           </li>
         </ul>
-        <a href="https://wa.me/5491136125026?text=Hola!%20Me%20interesa%20contratar%20el%20Plan%20Full%20Combo%20de%20MiFiestAPP." class="btn-primary" style="margin-top: auto;">Contratar Plan</a>
+        <a href="https://wa.me/5491136125026?text=Hola!%20Me%20interesa%20contratar%20el%20Plan%20Full%20Combo%20de%20miFiestAPP." class="btn-primary" style="margin-top: auto;">Contratar Plan</a>
       </div>
 
       <!-- Plan 3 -->
@@ -366,7 +535,7 @@
             Moderación de fotos móvil
           </li>
         </ul>
-        <a href="https://wa.me/5491136125026?text=Hola!%20Me%20interesa%20contratar%20el%20Plan%20Social%20Plus%20de%20MiFiestAPP." target="_blank" class="btn-secondary" style="margin-top: auto;">Contratar Plan</a>
+        <a href="https://wa.me/5491136125026?text=Hola!%20Me%20interesa%20contratar%20el%20Plan%20Social%20Plus%20de%20miFiestAPP." target="_blank" class="btn-secondary" style="margin-top: auto;">Contratar Plan</a>
       </div>
     </div>
   </section>
@@ -444,21 +613,21 @@
   <footer class="footer-cta">
     <h2 class="footer-cta-title">Hacé que tu Fiesta sea <span class="text-gold">Inolvidable</span></h2>
     <p class="footer-cta-desc">
-      Contactanos hoy mismo por WhatsApp y reservá la licencia interactiva de MiFiestAPP para tu gran noche.
+      Contactanos hoy mismo por WhatsApp y reservá la licencia interactiva de miFiestAPP para tu gran noche.
     </p>
-    <a href="https://wa.me/5491136125026?text=Hola!%20Me%20interesa%20adquirir%20el%20servicio%20de%20MiFiestAPP%20para%20mi%20evento." target="_blank" class="btn-primary" style="display: inline-flex; align-items: center; gap: 10px;">
+    <a href="https://wa.me/5491136125026?text=Hola!%20Me%20interesa%20adquirir%20el%20servicio%20de%20miFiestAPP%20para%20mi%20evento." target="_blank" class="btn-primary" style="display: inline-flex; align-items: center; gap: 10px;">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="vertical-align: middle;">
         <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.504-5.724-1.465L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.37 9.863-9.755.002-2.61-1.01-5.063-2.85-6.907C16.645 2.1 14.2 1.085 11.999 1.085c-5.444 0-9.87 4.372-9.873 9.76-.001 1.768.473 3.493 1.371 5.04l-.997 3.645 3.753-.984c1.513.882 3.09 1.332 4.704 1.332zM17.487 14.39c-.3-.15-1.782-.88-2.062-.98-.28-.1-.484-.15-.688.15-.204.3-.79.98-.97 1.18-.18.2-.36.22-.66.07-2.012-.99-3.238-1.8-4.521-4.004-.34-.58.34-.54.97-1.8.1-.2.05-.37-.02-.52-.07-.15-.688-1.66-.943-2.27-.247-.597-.5-.515-.688-.525l-.59-.01c-.2 0-.528.075-.805.375-.278.3-1.06 1.035-1.06 2.525s1.08 2.93 1.23 3.13c.15.2 2.128 3.25 5.156 4.56.72.31 1.28.5 1.72.64.724.23 1.38.2 1.9.12.58-.087 1.782-.73 2.032-1.397.25-.667.25-1.24.177-1.398-.073-.15-.278-.23-.578-.38z"/>
       </svg>
       <span>Contactar a Ventas</span>
     </a>
     <div class="footer-bottom">
-      &copy; 2026 <a href="/">MiFiestAPP</a>. Todos los derechos reservados.
+      &copy; 2026 <a href="/">miFiestAPP</a>. Todos los derechos reservados.
     </div>
   </footer>
 
   <!-- Floating WhatsApp Action -->
-  <a href="https://wa.me/5491136125026?text=Hola!%20Me%20interesa%20adquirir%20el%20servicio%20de%20MiFiestAPP%20para%20mi%20evento." target="_blank" class="whatsapp-float" aria-label="Contacto WhatsApp">
+  <a href="https://wa.me/5491136125026?text=Hola!%20Me%20interesa%20adquirir%20el%20servicio%20de%20miFiestAPP%20para%20mi%20evento." target="_blank" class="whatsapp-float" aria-label="Contacto WhatsApp">
     <svg viewBox="0 0 24 24">
       <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.504-5.724-1.465L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.37 9.863-9.755.002-2.61-1.01-5.063-2.85-6.907C16.645 2.1 14.2 1.085 11.999 1.085c-5.444 0-9.87 4.372-9.873 9.76-.001 1.768.473 3.493 1.371 5.04l-.997 3.645 3.753-.984c1.513.882 3.09 1.332 4.704 1.332zM17.487 14.39c-.3-.15-1.782-.88-2.062-.98-.28-.1-.484-.15-.688.15-.204.3-.79.98-.97 1.18-.18.2-.36.22-.66.07-2.012-.99-3.238-1.8-4.521-4.004-.34-.58.34-.54.97-1.8.1-.2.05-.37-.02-.52-.07-.15-.688-1.66-.943-2.27-.247-.597-.5-.515-.688-.525l-.59-.01c-.2 0-.528.075-.805.375-.278.3-1.06 1.035-1.06 2.525s1.08 2.93 1.23 3.13c.15.2 2.128 3.25 5.156 4.56.72.31 1.28.5 1.72.64.724.23 1.38.2 1.9.12.58-.087 1.782-.73 2.032-1.397.25-.667.25-1.24.177-1.398-.073-.15-.278-.23-.578-.38z"/>
     </svg>
@@ -469,11 +638,9 @@
     <div class="login-modal-card">
       <button class="login-modal-close" id="close-client-login-btn">&times;</button>
       
-      <svg viewBox="0 0 24 24" class="login-modal-icon">
-        <path d="M2 22h20V10l-4-4-4 4-4-4-4 4-4-4v12zm10-7.5c1.38 0 2.5 1.12 2.5 2.5s-1.12 2.5-2.5 2.5-2.5-1.12-2.5-2.5 1.12-2.5 2.5-2.5z"/>
-      </svg>
+      <img src="/assets/coronamain.png" alt="miFiestAPP" style="height: 80px; width: auto; margin: 0 auto 15px auto; display: block; filter: drop-shadow(0 4px 15px rgba(212,175,55,0.2));">
       
-      <h3 class="login-modal-title">Acceso MiFiestAPP</h3>
+      <h3 class="login-modal-title">Acceso miFiestAPP</h3>
       <p class="login-modal-desc">Ingresá el email con el que registraste tu fiesta y la contraseña creada para acceder al panel.</p>
       
       <form id="modal-login-form">

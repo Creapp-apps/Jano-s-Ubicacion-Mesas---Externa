@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="/assets/coronamain.png">
   <title>Invitación Interactiva</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -30,7 +31,9 @@
         <!-- Inside Card (slides out) -->
         <div class="envelope-inner-card" id="envelope-inner-card">
           <div class="envelope-inner-card-content">
-            <span class="envelope-inner-logo">⚜</span>
+            <span class="envelope-inner-logo" style="display: flex; justify-content: center; align-items: center; margin-bottom: 8px; min-height: 40px;">
+              <img src="/assets/coronamain.png" alt="miFiestAPP" style="height: 38px; width: auto; object-fit: contain; filter: drop-shadow(0 2px 5px rgba(212,175,55,0.4));">
+            </span>
             <h3 class="envelope-inner-title">Te Esperamos</h3>
           </div>
         </div>
@@ -481,8 +484,9 @@
     </div>
     
     <!-- Rights Footer -->
-    <footer>
-      &copy; 2026 FiestAPP - Diversion en tu evento. Todos los derechos reservados.
+    <footer style="display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 25px 0; background: transparent; border-top: 1px solid rgba(255,255,255,0.03); margin-top: 30px;">
+      <img src="/assets/textomain.png" alt="miFiestAPP" style="height: 18px; width: auto; opacity: 0.5; filter: grayscale(1) brightness(0.8);">
+      <div style="font-size: 0.7rem; color: var(--text-muted); letter-spacing: 0.5px;">&copy; 2026 miFiestAPP - Todos los derechos reservados.</div>
     </footer>
   </div>
 
@@ -490,7 +494,10 @@
   <div id="space-zoom-overlay" style="display: none;">
     <canvas id="space-zoom-canvas"></canvas>
     <div id="space-zoom-loader">
-      <div class="planet-spinner"></div>
+      <div style="position: relative; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;">
+        <img src="/assets/coronamain.png" alt="miFiestAPP" style="width: 32px; height: auto; position: absolute; z-index: 5; filter: drop-shadow(0 0 8px rgba(0,0,0,0.8));">
+        <div class="planet-spinner" style="margin: 0; width: 60px; height: 60px;"></div>
+      </div>
     </div>
     <div id="space-zoom-status">Dirigiendote a la mejor fiesta de tu vida...</div>
   </div>

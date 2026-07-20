@@ -336,3 +336,98 @@ En esta sesión, finalizamos e integramos de manera completa y robusta el ciclo 
 * **Integración del Flujo de Fin a Fin:** Desde la configuración de las preguntas en la administración, su inicialización, votación por SSE en los gamepads, renderizado del gráfico de respuestas en el proyector, tablero de posiciones intermedio y podio final.
 * **Tests Automatizados:** Pasando completamente limpios y verdes.
 
+---
+
+## 🌌 Sesión - Distribución de Códigos QR para Capitanes de Mesa
+En esta sesión se desarrolló e integró la funcionalidad de impresión y distribución de códigos QR para los **Capitanes de Mesa**, permitiendo que cada mesa cuente con su acceso directo y específico a las misiones del evento.
+
+### 🛠️ Logros e Implementaciones
+1. **Acciones de Impresión en Panel de Administración**:
+   - Agregamos el panel **"Códigos QR de Capitanes"** dentro de la pestaña de Capitanes en `private/admin.html` con dos botones premium:
+     * **Opción 1: Cartel QR General:** Un código QR general de invitación para que el capitán acceda y configure o elija su mesa en el cliente de forma manual.
+     * **Opción 2: Tarjetas QR por Mesa:** Genera una cuadrícula dinámica con tarjetas individuales e identificadas para cada mesa activa del evento.
+   - Insertamos el contenedor oculto `#print-area-capitanes-tables` con la cuadrícula de tarjetas `#print-capitanes-grid-container` en el HTML administrativo.
+
+2. **Estilizado de Grilla de Impresión de Tarjetas**:
+   - Diseñamos la grilla interactiva y las reglas de paginación para impresión (`@media print`) en `public/css/admin.css`.
+   - Se crearon tarjetas individuales con bordes de lujo dorados (`.print-capitanes-card`) conteniendo el título del evento, el número de mesa destacado, el código QR respectivo de 300x300px y las instrucciones de escaneo, optimizadas para no desbordar en múltiples páginas gracias a `page-break-inside: avoid;`.
+
+3. **Interactividad de Impresión y Limpieza Post-Impresión**:
+   - Modificamos `preparePrintPoster` en `public/js/admin.js` para dar soporte al servicio `'capitanes'`, construyendo la URL correspondiente.
+   - Vinculamos los listeners en `admin.js`:
+     * `btnPrintCapitanesGeneralQr` agrega la clase de impresión `.print-mode-single` al body, actualiza el poster e inicia la impresión del cartel general.
+     * `btnPrintCapitanesTablesQr` valida que existan mesas cargadas en `allTables`. Si existen, vacía el contenedor, genera las URLs individuales (`/capitanes-client.html?event=eventId&mesa=X`), dibuja dinámicamente las tarjetas con sus respectivos QRs de la API, activa la clase de impresión múltiple `.print-mode-multi-tables` y abre el diálogo de impresión nativo de manera instantánea.
+     * Añadimos un listener para el evento de ventana `afterprint` que elimina preventivamente todas las clases de impresión del body, restaurando la interfaz administrativa de forma limpia y transparente al finalizar o cancelar.
+
+4. **Recepción Automática de Mesa en el Cliente**:
+   - Validamos que `public/capitanes-client.html` recupere automáticamente el número de mesa del parámetro `mesa` de la URL (`urlParams`). Si está presente, el gamepad salta de forma instantánea el formulario de unión, guarda la mesa en `localStorage` y conecta de forma directa al flujo de juego por Server-Sent Events (SSE).
+
+### 📌 Estado de Retorno y Checkpoint
+* **Estado General:** Totalmente completado, integrado y probado.
+* **Flujo QR de Capitanes:** Funcional tanto para cartelería general como para tarjetas individuales automatizadas de mesa.
+* **Pruebas Automatizadas:** Todo el backend y tests de integración se encuentran al $100\%$ en verde y listos para producción.
+
+---
+
+## 🌌 Sesión - Sincronización Funcional de Capitanes con Mesas y Gestión de Invitados
+En esta sesión se completó la integración y sincronización de datos en tiempo real entre el **Administrador de Mesas** (Gestión de Invitados) y el servicio de **Capitanes de Mesa**, permitiendo que el flujo de asignación de misiones y la unión de capitanes dependa de la información real del evento en lugar de entradas manuales.
+
+### 🛠️ Logros e Implementaciones
+1. **Creación de Endpoint Público de Mesas**:
+   - Diseñamos e implementamos el endpoint `/api/public/tables` en `server.js` que consulta la base de datos de invitados y confirmaciones de asistencia (RSVP) para agrupar los nombres de los invitados confirmados (`attending = true`) en sus respectivas mesas asignadas.
+   - Ordena los resultados de manera natural/numérica para garantizar una navegación fluida (ej: Mesa 1, Mesa 2, ..., Mesa 10).
+
+2. **Menú Dropdown de Selección en el Cliente**:
+   - Refactorizamos la pantalla de unión de `public/capitanes-client.html` reemplazando el campo numérico por defecto por un menú desplegable `<select>` estilizado con la estética dorada de la plataforma.
+   - Al cargar el cliente, consulta `/api/public/tables` para popular dinámicamente las opciones del selector, mostrando los nombres de los invitados asignados al lado de cada mesa (ej: `Mesa 1 (Sebastian Maza, Juan Pérez)`).
+   - Se mantuvo un fallback automático a campo de texto clásico en caso de no haber mesas aún cargadas o si el endpoint responde vacío.
+
+3. **Visualización de Integrantes de Mesa en el Gamepad**:
+   - Agregamos la visualización dinámica de compañeros de mesa en las pantallas de Lobby (`screen-lobby`) y Juego (`screen-playing`) en el cliente.
+   - Permite que el capitán/participante visualice exactamente con quiénes está compartiendo equipo y coordinando el avance de misiones en tiempo real.
+
+4. **Sincronización en la Configuración de Misiones**:
+   - Modificamos la función `switchTab` de la administración para llamar a `loadStats()` y `loadGuests()` al ingresar a la pestaña de Capitanes, garantizando la frescura de los datos.
+   - Refactorizamos `renderConfigQuests` en `public/js/admin.js` para que, en caso de modo de juego `'custom'`, reemplace el input de texto libre para asignar mesas por un selector dropdown que se nutre directamente de `allTables`, asegurando consistencia y previniendo errores de tipeo manual.
+
+5. **Resolución de Errores de Referencia de Estado**:
+   - Corregimos el acceso a las propiedades del objeto de estado de Capitanes de Mesa en `admin.js` (`loadCapitanesConfig` y `renderAdminCapitanesState`), sustituyendo las referencias incorrectas a un objeto anidado inexistente (`state.config.quests` y `state.config.gameMode`) por sus correspondientes propiedades de primer nivel (`state.quests` y `state.gameMode`), previniendo errores javascript fatales durante el renderizado en tiempo real.
+
+### 📌 Estado de Retorno anterior
+* **Estado General:** Sincronización e integración de mesas y capitanes de mesa completada al $100\%$.
+* **Formularios e Interfaces:** Optimizados con componentes visuales personalizados, listado de integrantes en vivo y dropdowns dinámicos.
+* **Pruebas de Integración:** Todo el conjunto de pruebas (`tests/capitanes-api.test.js` incluyendo validación del nuevo endpoint de mesas públicas) se ejecuta exitosamente y en verde.
+
+---
+
+## 🌌 Sesión - Enfoque de Seguridad: Identidad del Invitado, Bifurcación de Roles de Capitán y Validación en Servidor
+
+En esta sesión implementamos la lógica de verificación de identidad de invitados, la bifurcación de permisos de interfaz de usuario según rol, y los controles de seguridad del lado del servidor para garantizar que solo el Capitán de Mesa autorizado de cada mesa pueda subir evidencias de misiones.
+
+### 🛠️ Logros e Implementaciones
+1. **Verificación de Identidad del Invitado (`screen-identity`)**:
+   - Agregamos una nueva pantalla intermedia de identidad de invitados en `public/capitanes-client.html`. 
+   - Tras ingresar a una mesa, el invitado debe elegir su nombre de un menú desplegable de invitados confirmados cargados en su mesa o ingresar un nombre personalizado si no está en la lista original.
+   - Agregamos un botón de retorno ("Elegir otra mesa") que redirige a la pantalla anterior para resolver problemas si el invitado escanea el código QR de otra mesa por error, previniendo bloqueos del flujo de juego.
+
+2. **Bifurcación de Roles en la Interfaz (Capitán vs. Tripulación)**:
+   - **Capitanes**: Visualizan un banner superior premium con un icono de corona dorada pulsante (`👑 ROL: CAPITÁN DE MESA`), instrucciones dedicadas, y tienen habilitado el botón de cámara (`📷`) para capturar y enviar fotos para validar las misiones de su mesa.
+   - **Tripulación (Acompañantes)**: Visualizan un banner informativo indicando el rol (`👥 ROL: TRIPULACIÓN`), quién es el capitán asignado en su mesa y cómo apoyarlo. El botón de cámara de fotos se bloquea preventivamente por un icono de candado (`🔒`) con tooltips informativos.
+   - **Espera de Asignación**: Si la mesa no tiene un capitán asignado por el organizador, todos los invitados visualizan un banner de advertencia esperando que el DJ/Animador asigne a su capitán para poder comenzar el juego.
+
+3. **Validación de Seguridad en el Servidor (Server-Side Enforcement)**:
+   - Extendimos el payload enviado en la ruta `/api/capitanes/submit` desde el cliente para incluir `guestName` (el nombre guardado localmente tras pasar el flujo de identidad).
+   - En `server.js`, la API valida que la mesa especificada cuente con un capitán asignado en la sesión de juego activa y que el `guestName` coincida exactamente con este capitán.
+   - Intentos de subir fotos desde clientes no autorizados o desde mesas sin capitán asignado son rechazados de inmediato por el backend con un código **`403 Forbidden`** y un mensaje descriptivo en JSON.
+
+4. **Robustez de Peticiones del Panel Administrativo (`admin.js`)**:
+   - Identificamos un problema donde el servidor del desarrollador en ejecución (`npm start`) se había iniciado antes de guardar los nuevos cambios de las rutas en `server.js`, lo que provocaba respuestas `404 Not Found` en la llamada a `/api/capitanes/assign-captain`.
+   - Modificamos las llamadas `fetch` de Capitanes en `public/js/admin.js` (`assign-captain`, `config` y `control`) para validar `response.ok` antes de parsear JSON. Esto evita fallos de parseo de sintaxis (`SyntaxError: Unexpected token '<'`) en la consola del navegador ante errores HTTP y provee una advertencia en toast notificando al organizador que debe reiniciar el servidor backend para aplicar los cambios.
+
+5. **Pruebas de Integración y Regresión**:
+   - Actualizamos `tests/capitanes-api.test.js` para añadir aserciones de seguridad: intenta subir misiones sin capitán (recibe 403), con capitán equivocado (recibe 403) y con el capitán correcto (recibe 200).
+   - Corrimos la suite de pruebas completa de la aplicación, obteniendo un resultado limpio ($100\%$ verde en API, Coordinator, DB y Suggest-Song).
+
+### 📌 Diagnóstico para Continuación (Checkpoint de Reinicio)
+* **Reinicio del Servidor**: El servidor local ha sido apagado (`^C` en la terminal) para permitir la carga fresca del backend. Al retomar, simplemente levanta la aplicación con `npm run dev` para que las rutas de seguridad y asignación estén registradas en caliente.
+* **Estado Actual**: Código completamente consistente, robusto, testeado y listo para pruebas de juego en vivo de punta a punta.

@@ -31,9 +31,9 @@ async function sendWelcomeEmail(clientEmail, clientName, eventId, password) {
     }
   }
 
-  const subject = `¡Tu servicio de MiFiestAPP para "${clientName}" está listo! 🚀`;
+  const subject = `¡Tu servicio de miFiestAPP para "${clientName}" está listo! 🚀`;
 
-  // HTML template matching MiFiestAPP premium aesthetic
+  // HTML template matching miFiestAPP premium aesthetic
   const html = `
     <!DOCTYPE html>
     <html lang="es">
@@ -55,7 +55,7 @@ async function sendWelcomeEmail(clientEmail, clientName, eventId, password) {
                     Servicio Premium Activado
                   </div>
                   <h1 style="color: #ffffff; font-size: 28px; margin: 0; font-weight: 800; letter-spacing: -0.5px;">
-                    MiFiest<span style="color: #d4af37;">APP</span>
+                    miFiest<span style="color: #d4af37;">APP</span>
                   </h1>
                   <p style="font-size: 14px; color: #a59cb5; margin: 8px 0 0 0; font-weight: 400; letter-spacing: 0.5px;">Gestión Exclusiva de Mesas y Eventos en Vivo</p>
                 </td>
@@ -136,7 +136,7 @@ async function sendWelcomeEmail(clientEmail, clientName, eventId, password) {
                 <td align="center" style="background: #0e0e10; padding: 30px; border-top: 1px solid rgba(255, 255, 255, 0.04); font-size: 12px; color: #5c5567; line-height: 1.6;">
                   <p style="margin: 0 0 8px 0;">Este es un mensaje automático de bienvenida de tu plataforma contratada.</p>
                   <p style="margin: 0 0 15px 0;">Si tienes alguna duda o necesitas soporte técnico, por favor ponte en contacto con nosotros.</p>
-                  <p style="margin: 0; color: #888096; font-weight: 600;">&copy; 2026 MiFiestAPP. Todos los derechos reservados.</p>
+                  <p style="margin: 0; color: #888096; font-weight: 600;">&copy; 2026 miFiestAPP. Todos los derechos reservados.</p>
                 </td>
               </tr>
               

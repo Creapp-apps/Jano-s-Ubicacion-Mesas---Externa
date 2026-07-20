@@ -193,10 +193,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const tabBtnFotos = document.getElementById('tab-btn-fotos');
   const tabBtnInvitacion = document.getElementById('tab-btn-invitacion');
   const tabBtnTrivia = document.getElementById('tab-btn-trivia');
+  const tabBtnCapitanes = document.getElementById('tab-btn-capitanes');
   const tabMesas = document.getElementById('tab-mesas');
   const tabFotos = document.getElementById('tab-fotos');
   const tabInvitacion = document.getElementById('tab-invitacion');
   const tabTrivia = document.getElementById('tab-trivia');
+  const tabCapitanes = document.getElementById('tab-capitanes');
 
   // Photo grid elements
   const pendingPhotosGrid = document.getElementById('pending-photos-grid');
@@ -208,6 +210,21 @@ document.addEventListener('DOMContentLoaded', () => {
   let triviaIntervalId = null;
   let triviaQuestionsData = [];
   let triviaEventSource = null;
+  let lastTriviaSseTime = Date.now();
+  let adminTriviaPollInterval = null;
+
+  // Capitanes de Mesa polling state
+  let capitanesConfigData = {
+    gameMode: 'general',
+    timeLimit: 10,
+    quests: []
+  };
+  let capitanesEventSource = null;
+  let lastCapitanesSseTime = Date.now();
+  let adminCapitanesPollInterval = null;
+  let capitanesLocalTimerInterval = null;
+  let capitanesStateExpiresAt = null;
+  let activeCustomSelection = 'global'; // 'global' or table name (string)
 
   function switchTab(tabId) {
     if (tabId === 'mesas') {
@@ -215,12 +232,15 @@ document.addEventListener('DOMContentLoaded', () => {
       if (tabBtnFotos) tabBtnFotos.classList.remove('active');
       if (tabBtnInvitacion) tabBtnInvitacion.classList.remove('active');
       if (tabBtnTrivia) tabBtnTrivia.classList.remove('active');
+      if (tabBtnCapitanes) tabBtnCapitanes.classList.remove('active');
       if (tabMesas) tabMesas.classList.add('active');
       if (tabFotos) tabFotos.classList.remove('active');
       if (tabInvitacion) tabInvitacion.classList.remove('active');
       if (tabTrivia) tabTrivia.classList.remove('active');
+      if (tabCapitanes) tabCapitanes.classList.remove('active');
       stopPhotoPolling();
       stopTriviaPolling();
+      stopCapitanesPolling();
       loadStats();
       loadRsvps();
       loadGuests();
@@ -229,24 +249,30 @@ document.addEventListener('DOMContentLoaded', () => {
       if (tabBtnFotos) tabBtnFotos.classList.add('active');
       if (tabBtnInvitacion) tabBtnInvitacion.classList.remove('active');
       if (tabBtnTrivia) tabBtnTrivia.classList.remove('active');
+      if (tabBtnCapitanes) tabBtnCapitanes.classList.remove('active');
       if (tabMesas) tabMesas.classList.remove('active');
       if (tabFotos) tabFotos.classList.add('active');
       if (tabInvitacion) tabInvitacion.classList.remove('active');
       if (tabTrivia) tabTrivia.classList.remove('active');
+      if (tabCapitanes) tabCapitanes.classList.remove('active');
       loadPhotos();
       startPhotoPolling();
       stopTriviaPolling();
+      stopCapitanesPolling();
     } else if (tabId === 'invitacion') {
       if (tabBtnMesas) tabBtnMesas.classList.remove('active');
       if (tabBtnFotos) tabBtnFotos.classList.remove('active');
       if (tabBtnInvitacion) tabBtnInvitacion.classList.add('active');
       if (tabBtnTrivia) tabBtnTrivia.classList.remove('active');
+      if (tabBtnCapitanes) tabBtnCapitanes.classList.remove('active');
       if (tabMesas) tabMesas.classList.remove('active');
       if (tabFotos) tabFotos.classList.remove('active');
       if (tabInvitacion) tabInvitacion.classList.add('active');
       if (tabTrivia) tabTrivia.classList.remove('active');
+      if (tabCapitanes) tabCapitanes.classList.remove('active');
       stopPhotoPolling();
       stopTriviaPolling();
+      stopCapitanesPolling();
       loadStats();
       loadRsvps();
       loadGuests();
@@ -255,13 +281,33 @@ document.addEventListener('DOMContentLoaded', () => {
       if (tabBtnFotos) tabBtnFotos.classList.remove('active');
       if (tabBtnInvitacion) tabBtnInvitacion.classList.remove('active');
       if (tabBtnTrivia) tabBtnTrivia.classList.add('active');
+      if (tabBtnCapitanes) tabBtnCapitanes.classList.remove('active');
       if (tabMesas) tabMesas.classList.remove('active');
       if (tabFotos) tabFotos.classList.remove('active');
       if (tabInvitacion) tabInvitacion.classList.remove('active');
       if (tabTrivia) tabTrivia.classList.add('active');
+      if (tabCapitanes) tabCapitanes.classList.remove('active');
       stopPhotoPolling();
+      stopCapitanesPolling();
       loadTriviaConfig();
       startTriviaPolling();
+    } else if (tabId === 'capitanes') {
+      if (tabBtnMesas) tabBtnMesas.classList.remove('active');
+      if (tabBtnFotos) tabBtnFotos.classList.remove('active');
+      if (tabBtnInvitacion) tabBtnInvitacion.classList.remove('active');
+      if (tabBtnTrivia) tabBtnTrivia.classList.remove('active');
+      if (tabBtnCapitanes) tabBtnCapitanes.classList.add('active');
+      if (tabMesas) tabMesas.classList.remove('active');
+      if (tabFotos) tabFotos.classList.remove('active');
+      if (tabInvitacion) tabInvitacion.classList.remove('active');
+      if (tabTrivia) tabTrivia.classList.remove('active');
+      if (tabCapitanes) tabCapitanes.classList.add('active');
+      stopPhotoPolling();
+      stopTriviaPolling();
+      loadCapitanesConfig();
+      startCapitanesPolling();
+      loadStats();
+      loadGuests();
     }
   }
 
@@ -477,8 +523,21 @@ document.addEventListener('DOMContentLoaded', () => {
   let uniqueTableNamesList = [];
 
   // Set up QR codes pointing to Guest view
-  const siteOrigin = window.location.origin;
+  let siteOrigin = window.location.origin;
   const qrBaseUrl = 'https://api.qrserver.com/v1/create-qr-code/';
+
+  // Resolve local IP address dynamically to allow local Wi-Fi testing
+  fetch('/api/debug/network-ip')
+    .then(res => res.json())
+    .then(data => {
+      if (data.localIp && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+        siteOrigin = `http://${data.localIp}:${window.location.port}`;
+        if (typeof updateQR === 'function') {
+          updateQR();
+        }
+      }
+    })
+    .catch(err => console.error('Could not resolve local network IP:', err));
 
   const qrInstructionsText = document.getElementById('qr-instructions-text');
   const btnPrintPhotosQr = document.getElementById('btn-print-photos-qr');
@@ -680,6 +739,8 @@ document.addEventListener('DOMContentLoaded', () => {
     switchTab('invitacion');
   } else if (activeService === 'trivia') {
     switchTab('trivia');
+  } else if (activeService === 'capitanes') {
+    switchTab('capitanes');
   } else {
     switchTab('mesas');
   }
@@ -1102,10 +1163,12 @@ document.addEventListener('DOMContentLoaded', () => {
           const isPhotos = (activeService === 'photos');
           const isInvitation = (activeService === 'invitacion' || activeService === 'invitation');
           const isTrivia = (activeService === 'trivia');
+          const isCapitanes = (activeService === 'capitanes');
           let serviceName = 'Control de Mesas';
           if (isPhotos) serviceName = 'Control de Fotos';
           if (isInvitation) serviceName = 'Invitación & RSVPs';
           if (isTrivia) serviceName = 'Control de Trivia';
+          if (isCapitanes) serviceName = 'Capitanes de Mesa';
           
           if (headerTitle) {
             headerTitle.textContent = `${serviceName} • ${data.clientName}`;
@@ -1114,6 +1177,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (isPhotos) pageTitle = 'Moderación de Fotos';
           if (isInvitation) pageTitle = 'Invitación & RSVPs';
           if (isTrivia) pageTitle = 'Control de Trivia';
+          if (isCapitanes) pageTitle = 'Capitanes de Mesa';
           document.title = `${pageTitle} | ${data.clientName}`;
         }
       })
@@ -1130,6 +1194,11 @@ document.addEventListener('DOMContentLoaded', () => {
         allTables = data.tables || [];
         renderTablesList(allTables);
         updateTablesDatalist();
+
+        // Re-render capitanes quests to sync tables data
+        if (tabCapitanes && tabCapitanes.classList.contains('active')) {
+          renderConfigQuests();
+        }
       })
       .catch(err => {
         console.error('Error loading stats:', err);
@@ -1157,6 +1226,11 @@ document.addEventListener('DOMContentLoaded', () => {
         renderGuestsTable();
         renderModalGuestList();
         renderInvitadosTable();
+
+        // Re-render capitanes quests to sync guest data
+        if (tabCapitanes && tabCapitanes.classList.contains('active')) {
+          renderConfigQuests();
+        }
       })
       .catch(err => {
         console.error('Error fetching guests:', err);
@@ -2023,10 +2097,12 @@ document.addEventListener('DOMContentLoaded', () => {
   function preparePrintPoster(serviceType) {
     const isPhotos = (serviceType === 'photos');
     const isInvitation = (serviceType === 'invitation');
+    const isCapitanes = (serviceType === 'capitanes');
     
     let targetPath = '/mesas';
     if (isPhotos) targetPath = '/fotos';
     if (isInvitation) targetPath = '/invitacion.html';
+    if (isCapitanes) targetPath = '/capitanes-client.html';
     
     const targetUrl = `${siteOrigin}${targetPath}?event=${encodeURIComponent(eventId)}`;
     const printQrUrl = `${qrBaseUrl}?size=500x500&data=${encodeURIComponent(targetUrl)}&color=000000&bgcolor=ffffff`;
@@ -2040,17 +2116,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const printInstructions = document.querySelector('.print-instructions');
 
     if (printTitle) {
-      printTitle.textContent = isPhotos ? 'Muro de Fotos' : (isInvitation ? 'Invitación Interactiva' : 'Ubicación de Mesas');
+      printTitle.textContent = isPhotos ? 'Muro de Fotos' : (isInvitation ? 'Invitación Interactiva' : (isCapitanes ? 'Capitanes de Mesa' : 'Ubicación de Mesas'));
     }
     if (printSubtitle) {
-      printSubtitle.textContent = isPhotos ? 'Comparte tus Momentos' : (isInvitation ? 'Accede a la Invitación' : 'Encuentra tu Mesa');
+      printSubtitle.textContent = isPhotos ? 'Comparte tus Momentos' : (isInvitation ? 'Accede a la Invitación' : (isCapitanes ? 'Competencia de Mesas' : 'Encuentra tu Mesa'));
     }
     if (printInstructions) {
       printInstructions.innerHTML = isPhotos 
         ? 'Escanéa este código con la cámara de tu celular<br>para subir fotos y mensajes al muro.'
         : (isInvitation 
            ? 'Escanéa este código con la cámara de tu celular<br>para abrir la invitación interactiva y confirmar asistencia.'
-           : 'Escanéa este código con la cámara de tu celular<br>para consultar tu mesa asignada.');
+           : (isCapitanes 
+              ? 'Escanéa este código con la cámara de tu celular<br>para ingresar a la competencia de Capitanes.'
+              : 'Escanéa este código con la cámara de tu celular<br>para consultar tu mesa asignada.'));
     }
   }
 
@@ -2995,7 +3073,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Initialize custom dropdowns
-  ['inv-theme-font', 'inv-theme-color', 'inv-bg-effect', 'inv-wax-seal', 'trivia-enabled-toggle'].forEach(id => {
+  ['inv-theme-font', 'inv-theme-color', 'inv-bg-effect', 'inv-wax-seal', 'trivia-enabled-toggle', 'capitanes-mode-select'].forEach(id => {
     initCustomDropdown(id);
   });
 
@@ -3647,9 +3725,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function startTriviaPolling() {
     if (triviaEventSource) triviaEventSource.close();
+    
+    lastTriviaSseTime = Date.now();
     triviaEventSource = new EventSource(`/api/trivia/stream?event=${encodeURIComponent(eventId)}&role=admin`);
     
     triviaEventSource.onmessage = (e) => {
+      lastTriviaSseTime = Date.now();
       try {
         const msg = JSON.parse(e.data);
         if (msg.type === 'INITIAL_STATE' || msg.type === 'STATE_UPDATE') {
@@ -3661,15 +3742,48 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     triviaEventSource.onerror = (e) => {
-      console.warn('SSE Error/Disconnect, re-establishing...');
+      console.warn('SSE Error/Disconnect, waiting for fallback polling...');
     };
+
+    if (!adminTriviaPollInterval) {
+      adminTriviaPollInterval = setInterval(() => {
+        const silenceDuration = Date.now() - lastTriviaSseTime;
+        if (silenceDuration > 5000) {
+          console.log('Admin SSE silent for 5s. Running fallback state poll.');
+          syncAdminTriviaStateWithPoll();
+        }
+      }, 3000);
+    }
   }
   window.startTriviaPolling = startTriviaPolling;
+
+  function syncAdminTriviaStateWithPoll() {
+    if (window.isAdminPolling) return;
+    window.isAdminPolling = true;
+
+    fetch(`/api/trivia/state?event=${encodeURIComponent(eventId)}`)
+      .then(res => res.json())
+      .then(data => {
+        window.isAdminPolling = false;
+        if (data.success && data.state) {
+          lastTriviaSseTime = Date.now();
+          renderAdminTriviaState(data.state);
+        }
+      })
+      .catch(err => {
+        window.isAdminPolling = false;
+        console.error('Error syncing admin state via poll:', err);
+      });
+  }
 
   function stopTriviaPolling() {
     if (triviaEventSource) {
       triviaEventSource.close();
       triviaEventSource = null;
+    }
+    if (adminTriviaPollInterval) {
+      clearInterval(adminTriviaPollInterval);
+      adminTriviaPollInterval = null;
     }
   }
   window.stopTriviaPolling = stopTriviaPolling;
@@ -3698,11 +3812,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
       if (durationContainer) {
-        if (state.autoMode) {
-          durationContainer.classList.add('visible');
-        } else {
-          durationContainer.classList.remove('visible');
-        }
+        // En el modo simplificado, el timer siempre está visible
+        durationContainer.classList.add('visible');
       }
       if (inputDuration && state.customDuration && !inputDuration.matches(':focus')) {
         inputDuration.value = state.customDuration;
@@ -3714,6 +3825,9 @@ document.addEventListener('DOMContentLoaded', () => {
       badge.textContent = state.status;
       if (state.status === 'LOBBY') {
         badge.style.background = '#4da6ff';
+        badge.style.color = '#fff';
+      } else if (state.status === 'COUNTDOWN') {
+        badge.style.background = '#e74c3c';
         badge.style.color = '#fff';
       } else if (state.status === 'QUESTION_ACTIVE') {
         badge.style.background = '#2ec7c9';
@@ -3737,12 +3851,120 @@ document.addEventListener('DOMContentLoaded', () => {
     if (qIndexEl) {
       if (state.status === 'LOBBY') {
         qIndexEl.textContent = 'Esperando jugadores (Lobby)';
+      } else if (state.status === 'COUNTDOWN') {
+        qIndexEl.textContent = 'Cuenta regresiva inicial...';
       } else if (state.status === 'PODIUM') {
         qIndexEl.textContent = 'Juego Terminado (Podio)';
       } else {
         const total = state.totalQuestions || 0;
         const current = (state.currentQuestionIndex !== undefined) ? (state.currentQuestionIndex + 1) : '-';
         qIndexEl.textContent = `Pregunta ${current} de ${total}`;
+      }
+    }
+
+    // Actualizar el estado visual de los tres botones de juego
+    const btnPlay = document.getElementById('btn-admin-trivia-play');
+    const btnStop = document.getElementById('btn-admin-trivia-stop');
+    const btnReset = document.getElementById('btn-admin-trivia-reset');
+
+    if (btnPlay && btnStop && btnReset) {
+      // Defaults
+      btnPlay.disabled = false;
+      btnPlay.style.opacity = '1';
+      btnPlay.style.pointerEvents = 'auto';
+      btnPlay.style.background = 'var(--gold-primary)';
+      btnPlay.style.borderColor = 'var(--gold-primary)';
+      btnPlay.style.color = '#000';
+      btnPlay.style.boxShadow = '0 4px 15px rgba(212, 175, 55, 0.3)';
+      btnPlay.innerHTML = 'Iniciar Juego ▶️';
+
+      btnStop.disabled = false;
+      btnStop.style.opacity = '1';
+      btnStop.style.pointerEvents = 'auto';
+
+      btnReset.disabled = false;
+      btnReset.style.opacity = '1';
+      btnReset.style.pointerEvents = 'auto';
+
+      if (state.status === 'LOBBY' || state.status === 'INACTIVE' || state.status === 'Inactivo') {
+        btnStop.disabled = true;
+        btnStop.style.opacity = '0.4';
+        btnStop.style.pointerEvents = 'none';
+      } else if (state.status === 'COUNTDOWN') {
+        btnPlay.disabled = true;
+        btnPlay.style.opacity = '0.4';
+        btnPlay.style.pointerEvents = 'none';
+        btnPlay.style.boxShadow = 'none';
+        btnPlay.innerHTML = 'Iniciando... ⏳';
+        
+        btnStop.disabled = true;
+        btnStop.style.opacity = '0.4';
+        btnStop.style.pointerEvents = 'none';
+      } else if (state.paused) {
+        btnPlay.innerHTML = 'Reanudar Juego ▶️';
+        btnStop.disabled = true;
+        btnStop.style.opacity = '0.4';
+        btnStop.style.pointerEvents = 'none';
+      } else if (state.status === 'QUESTION_ACTIVE') {
+        btnPlay.disabled = true;
+        btnPlay.style.opacity = '0.4';
+        btnPlay.style.pointerEvents = 'none';
+        btnPlay.style.boxShadow = 'none';
+      } else if (state.status === 'REVEAL_ANSWER' || state.status === 'LEADERBOARD') {
+        if (!state.autoMode) {
+          btnPlay.innerHTML = 'Continuar Juego ▶️';
+          btnStop.disabled = true;
+          btnStop.style.opacity = '0.4';
+          btnStop.style.pointerEvents = 'none';
+        } else {
+          btnPlay.disabled = true;
+          btnPlay.style.opacity = '0.4';
+          btnPlay.style.pointerEvents = 'none';
+          btnPlay.style.boxShadow = 'none';
+        }
+      } else if (state.status === 'PODIUM') {
+        btnPlay.disabled = true;
+        btnPlay.style.opacity = '0.4';
+        btnPlay.style.pointerEvents = 'none';
+        btnPlay.style.boxShadow = 'none';
+        
+        btnStop.disabled = true;
+        btnStop.style.opacity = '0.4';
+        btnStop.style.pointerEvents = 'none';
+      }
+
+      // Tooltip handling and disabled override for 0 questions
+      const tooltip = document.getElementById('trivia-play-tooltip');
+      const totalQuestions = state.totalQuestions || 0;
+
+      if (totalQuestions === 0) {
+        btnPlay.disabled = true;
+        btnPlay.style.opacity = '0.4';
+        btnPlay.style.pointerEvents = 'none';
+        btnPlay.style.boxShadow = 'none';
+        btnPlay.style.cursor = 'not-allowed';
+
+        const wrapper = document.getElementById('btn-admin-trivia-play-wrapper');
+        if (wrapper && tooltip) {
+          wrapper.onmouseenter = () => {
+            tooltip.style.display = 'block';
+            setTimeout(() => { tooltip.style.opacity = '1'; }, 10);
+          };
+          wrapper.onmouseleave = () => {
+            tooltip.style.opacity = '0';
+            setTimeout(() => { tooltip.style.display = 'none'; }, 200);
+          };
+        }
+      } else {
+        const wrapper = document.getElementById('btn-admin-trivia-play-wrapper');
+        if (wrapper) {
+          wrapper.onmouseenter = null;
+          wrapper.onmouseleave = null;
+        }
+        if (tooltip) {
+          tooltip.style.opacity = '0';
+          tooltip.style.display = 'none';
+        }
       }
     }
 
@@ -3781,27 +4003,24 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnTriviaLeaderboard = document.getElementById('btn-admin-trivia-leaderboard');
   const btnTriviaNext = document.getElementById('btn-admin-trivia-next');
 
+  // Keep hidden manual controls functional for fallback/testing
   if (btnTriviaInit) btnTriviaInit.addEventListener('click', (e) => triggerTriviaAction('init', e.currentTarget));
   if (btnTriviaStart) btnTriviaStart.addEventListener('click', (e) => {
-    const checkAuto = document.getElementById('check-admin-trivia-auto');
     const inputDuration = document.getElementById('input-admin-trivia-duration');
-    const autoMode = checkAuto ? checkAuto.checked : false;
     const duration = inputDuration ? parseInt(inputDuration.value) : null;
     const clickedBtn = e.currentTarget;
     if (clickedBtn) setButtonLoading(clickedBtn, true);
     fetch(`/api/trivia/control?event=${encodeURIComponent(eventId)}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ action: 'start', autoMode, duration })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'start', autoMode: true, duration })
     })
     .then(res => res.json())
     .then(data => {
       if (!data.success) {
         showToast(data.error || 'Error al lanzar la pregunta', 'error');
       } else {
-        showToast(`Pregunta lanzada con éxito${autoMode ? ' (Modo Automático)' : ''}`, 'success');
+        showToast('Pregunta lanzada con éxito (Modo Automático)', 'success');
       }
     })
     .catch(err => {
@@ -3816,54 +4035,93 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnTriviaLeaderboard) btnTriviaLeaderboard.addEventListener('click', (e) => triggerTriviaAction('leaderboard', e.currentTarget));
   if (btnTriviaNext) btnTriviaNext.addEventListener('click', (e) => triggerTriviaAction('next', e.currentTarget));
 
-  const checkAuto = document.getElementById('check-admin-trivia-auto');
-  if (checkAuto) {
-    checkAuto.addEventListener('change', () => {
-      const autoMode = checkAuto.checked;
-      const durationContainer = document.getElementById('container-admin-trivia-timer-duration');
-      if (durationContainer) {
-        if (autoMode) {
-          durationContainer.classList.add('visible');
-        } else {
-          durationContainer.classList.remove('visible');
-        }
-      }
+  // Bind the static three control buttons
+  const btnTriviaPlay = document.getElementById('btn-admin-trivia-play');
+  if (btnTriviaPlay) {
+    btnTriviaPlay.addEventListener('click', (e) => {
+      const clickedBtn = e.currentTarget;
+      const inputDuration = document.getElementById('input-admin-trivia-duration');
+      const duration = inputDuration ? parseInt(inputDuration.value) : 20;
 
+      if (clickedBtn) setButtonLoading(clickedBtn, true, 'Iniciando...');
       fetch(`/api/trivia/control?event=${encodeURIComponent(eventId)}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ action: 'toggle_auto' })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'start', duration })
       })
       .then(res => res.json())
       .then(data => {
         if (!data.success) {
-          showToast(data.error || 'Error al cambiar modo automático', 'error');
-          checkAuto.checked = !autoMode;
-          if (durationContainer) {
-            if (!autoMode) {
-              durationContainer.classList.add('visible');
-            } else {
-              durationContainer.classList.remove('visible');
-            }
-          }
+          showToast(data.error || 'Error al iniciar la trivia', 'error');
         } else {
-          showToast(data.autoMode ? 'Modo Automático activado' : 'Modo Automático desactivado', 'success');
+          showToast('¡Juego iniciado/continuado con éxito!', 'success');
         }
       })
       .catch(err => {
         console.error(err);
         showToast('Error de comunicación', 'error');
-        checkAuto.checked = !autoMode;
-        if (durationContainer) {
-          if (!autoMode) {
-            durationContainer.classList.add('visible');
-          } else {
-            durationContainer.classList.remove('visible');
-          }
-        }
+      })
+      .finally(() => {
+        if (clickedBtn) setButtonLoading(clickedBtn, false);
       });
+    });
+  }
+
+  const btnTriviaStop = document.getElementById('btn-admin-trivia-stop');
+  if (btnTriviaStop) {
+    btnTriviaStop.addEventListener('click', (e) => {
+      const clickedBtn = e.currentTarget;
+      if (clickedBtn) setButtonLoading(clickedBtn, true, 'Deteniendo...');
+      fetch(`/api/trivia/control?event=${encodeURIComponent(eventId)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'stop' })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (!data.success) {
+          showToast(data.error || 'Error al detener la trivia', 'error');
+        } else {
+          showToast('¡Juego detenido con éxito!', 'success');
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        showToast('Error de comunicación', 'error');
+      })
+      .finally(() => {
+        if (clickedBtn) setButtonLoading(clickedBtn, false);
+      });
+    });
+  }
+
+  const btnTriviaReset = document.getElementById('btn-admin-trivia-reset');
+  if (btnTriviaReset) {
+    btnTriviaReset.addEventListener('click', (e) => {
+      if (confirm('¿Estás seguro de que deseas reiniciar la trivia? Se perderán todos los puntajes actuales.')) {
+        const clickedBtn = e.currentTarget;
+        if (clickedBtn) setButtonLoading(clickedBtn, true, 'Reiniciando...');
+        fetch(`/api/trivia/control?event=${encodeURIComponent(eventId)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'init' })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (!data.success) {
+            showToast(data.error || 'Error al reiniciar la trivia', 'error');
+          } else {
+            showToast('Trivia reiniciada correctamente', 'success');
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          showToast('Error de comunicación', 'error');
+        })
+        .finally(() => {
+          if (clickedBtn) setButtonLoading(clickedBtn, false);
+        });
+      }
     });
   }
 
@@ -3878,9 +4136,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         fetch(`/api/trivia/control?event=${encodeURIComponent(eventId)}`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'set_duration', duration: val })
         })
         .then(res => res.json())
@@ -4699,5 +4955,1410 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
   }
+
+  // ==========================================
+  // Capitanes de Mesa Admin Integration
+  // ==========================================
+  // tabBtnCapitanes and tabCapitanes are already declared at the top of DOMContentLoaded
+  const modeSelect = document.getElementById('capitanes-mode-select');
+  const timeLimitInput = document.getElementById('capitanes-time-limit');
+  const questsListContainer = document.getElementById('capitanes-quests-list');
+  const btnAddQuest = document.getElementById('btn-add-capitanes-quest');
+  const btnSaveConfig = document.getElementById('btn-save-capitanes-config');
+  const statusBadge = document.getElementById('capitanes-admin-status-badge');
+  const timerDisplay = document.getElementById('capitanes-admin-timer-display');
+  const btnStart = document.getElementById('btn-capitanes-admin-start');
+  const btnPause = document.getElementById('btn-capitanes-admin-pause');
+  const btnReset = document.getElementById('btn-capitanes-admin-reset');
+  const submissionsList = document.getElementById('capitanes-submissions-list');
+  const validationCountSpan = document.getElementById('capitanes-validation-count');
+  const btnCapitanesProjector = document.getElementById('btn-admin-capitanes-projector');
+  const btnPrintCapitanesGeneralQr = document.getElementById('btn-print-capitanes-general-qr');
+  const btnPrintCapitanesTablesQr = document.getElementById('btn-print-capitanes-tables-qr');
+  const btnCustomSelectGlobal = document.getElementById('btn-custom-select-global');
+
+  // Capitanes state variables are declared at the top of DOMContentLoaded to prevent TDZ issues
+
+  // Add click event listeners to tabs to solve the original developer's missing click events!
+  if (tabBtnMesas) tabBtnMesas.addEventListener('click', () => switchTab('mesas'));
+  if (tabBtnFotos) tabBtnFotos.addEventListener('click', () => switchTab('fotos'));
+  if (tabBtnTrivia) tabBtnTrivia.addEventListener('click', () => switchTab('trivia'));
+  if (tabBtnCapitanes) tabBtnCapitanes.addEventListener('click', () => switchTab('capitanes'));
+
+  // Handle mode select change (custom vs general)
+  if (modeSelect) {
+    modeSelect.addEventListener('change', () => {
+      capitanesConfigData.gameMode = modeSelect.value;
+      renderConfigQuests();
+    });
+  }
+
+  // Handle global custom select button
+  if (btnCustomSelectGlobal) {
+    btnCustomSelectGlobal.addEventListener('click', () => {
+      activeCustomSelection = 'global';
+      renderConfigQuests();
+    });
+  }
+
+  // Add new quest button
+  if (btnAddQuest) {
+    btnAddQuest.addEventListener('click', () => {
+      capitanesConfigData.quests.push({
+        id: 'q_' + Math.random().toString(36).substr(2, 9),
+        text: '',
+        points: 100,
+        mesa: 'Todas'
+      });
+      renderConfigQuests();
+    });
+  }
+
+  // Render the current list of quests in the editor panel
+  function createQuestRow(quest, index, isGuestQuest) {
+    const item = document.createElement('div');
+    item.className = 'form-group-inline';
+    item.style.display = 'flex';
+    item.style.flexDirection = 'column';
+    item.style.gap = '10px';
+    item.style.background = 'rgba(255,255,255,0.02)';
+    item.style.border = '1px solid var(--card-border)';
+    item.style.borderRadius = '15px';
+    item.style.padding = '15px';
+    item.style.marginBottom = '10px';
+    item.style.transition = 'all 0.3s ease';
+
+    // First Row: Mission Text & Action
+    const row1 = document.createElement('div');
+    row1.style.display = 'flex';
+    row1.style.gap = '10px';
+    row1.style.width = '100%';
+
+    const textInput = document.createElement('input');
+    textInput.type = 'text';
+    textInput.className = 'form-control-admin';
+    textInput.placeholder = 'Ej. Sacarse una foto con el DJ';
+    textInput.value = quest.text || '';
+    textInput.style.flex = '1';
+    textInput.style.padding = '10px 15px';
+    textInput.style.borderRadius = '12px';
+    textInput.style.border = '1px solid var(--card-border)';
+    textInput.style.background = 'rgba(0,0,0,0.3)';
+    textInput.style.color = 'white';
+    textInput.style.outline = 'none';
+    textInput.style.fontFamily = 'Montserrat, sans-serif';
+    textInput.style.fontSize = '0.85rem';
+    textInput.style.transition = 'all 0.2s ease';
+    
+    textInput.addEventListener('focus', () => {
+      textInput.style.borderColor = 'rgba(212, 175, 55, 0.5)';
+      textInput.style.boxShadow = '0 0 10px rgba(212, 175, 55, 0.15)';
+      textInput.style.background = 'rgba(0,0,0,0.4)';
+    });
+    textInput.addEventListener('blur', () => {
+      textInput.style.borderColor = 'var(--card-border)';
+      textInput.style.boxShadow = 'none';
+      textInput.style.background = 'rgba(0,0,0,0.3)';
+    });
+    textInput.addEventListener('input', () => {
+      quest.text = textInput.value;
+    });
+
+    const btnDelete = document.createElement('button');
+    btnDelete.type = 'button';
+    btnDelete.className = 'btn';
+    btnDelete.style.padding = '0';
+    btnDelete.style.borderRadius = '12px';
+    btnDelete.style.cursor = 'pointer';
+    btnDelete.style.width = '38px';
+    btnDelete.style.height = '38px';
+    btnDelete.style.display = 'flex';
+    btnDelete.style.alignItems = 'center';
+    btnDelete.style.justifyContent = 'center';
+    btnDelete.style.flex = 'none';
+    btnDelete.style.background = 'rgba(239, 68, 68, 0.1)';
+    btnDelete.style.border = '1px solid rgba(239, 68, 68, 0.25)';
+    btnDelete.style.color = '#ef4444';
+    btnDelete.style.transition = 'all 0.2s ease';
+    btnDelete.innerHTML = `
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+    `;
+    
+    btnDelete.addEventListener('mouseenter', () => {
+      btnDelete.style.background = '#ef4444';
+      btnDelete.style.color = '#white';
+      btnDelete.style.transform = 'scale(1.05)';
+    });
+    btnDelete.addEventListener('mouseleave', () => {
+      btnDelete.style.background = 'rgba(239, 68, 68, 0.1)';
+      btnDelete.style.color = '#ef4444';
+      btnDelete.style.transform = 'scale(1)';
+    });
+    btnDelete.addEventListener('click', () => {
+      capitanesConfigData.quests.splice(index, 1);
+      renderConfigQuests();
+    });
+
+    row1.appendChild(textInput);
+    row1.appendChild(btnDelete);
+
+    // Second Row: Points & Target Tag
+    const row2 = document.createElement('div');
+    row2.style.display = 'flex';
+    row2.style.justifyContent = 'space-between';
+    row2.style.alignItems = 'center';
+    row2.style.width = '100%';
+    row2.style.gap = '10px';
+
+    const label = document.createElement('div');
+    label.style.fontSize = '0.7rem';
+    label.style.fontWeight = '600';
+    label.style.display = 'inline-flex';
+    label.style.alignItems = 'center';
+    label.style.gap = '6px';
+    label.style.padding = '4px 10px';
+    label.style.borderRadius = '20px';
+    label.style.letterSpacing = '0.5px';
+
+    if (isGuestQuest) {
+      label.style.background = 'rgba(212, 175, 55, 0.1)';
+      label.style.border = '1px solid rgba(212, 175, 55, 0.25)';
+      label.style.color = 'var(--gold-primary)';
+      label.innerHTML = `👤 <span style="opacity: 0.85;">Integrante:</span> ${quest.invitado}`;
+    } else if (capitanesConfigData.gameMode === 'custom' && quest.mesa !== 'Todas') {
+      label.style.background = 'rgba(212, 175, 55, 0.05)';
+      label.style.border = '1px solid rgba(212, 175, 55, 0.15)';
+      label.style.color = 'var(--gold-light)';
+      label.innerHTML = `📌 Mesa ${quest.mesa}`;
+    } else {
+      label.style.background = 'rgba(255, 255, 255, 0.03)';
+      label.style.border = '1px solid rgba(255, 255, 255, 0.06)';
+      label.style.color = 'var(--text-muted)';
+      label.innerHTML = `📢 Todas las mesas`;
+    }
+
+    const pointsWrapper = document.createElement('div');
+    pointsWrapper.style.display = 'flex';
+    pointsWrapper.style.alignItems = 'center';
+    pointsWrapper.style.gap = '6px';
+
+    const pointsLabel = document.createElement('span');
+    pointsLabel.textContent = 'Pts:';
+    pointsLabel.style.fontSize = '0.7rem';
+    pointsLabel.style.color = 'var(--text-muted)';
+    pointsLabel.style.fontWeight = '600';
+
+    const pointsInput = document.createElement('input');
+    pointsInput.type = 'number';
+    pointsInput.className = 'form-control-admin';
+    pointsInput.placeholder = 'Puntos';
+    pointsInput.value = quest.points || 100;
+    pointsInput.min = '10';
+    pointsInput.style.width = '70px';
+    pointsInput.style.padding = '6px 10px';
+    pointsInput.style.borderRadius = '10px';
+    pointsInput.style.border = '1px solid var(--card-border)';
+    pointsInput.style.background = 'rgba(0,0,0,0.3)';
+    pointsInput.style.color = 'white';
+    pointsInput.style.outline = 'none';
+    pointsInput.style.fontFamily = 'Montserrat, sans-serif';
+    pointsInput.style.fontSize = '0.8rem';
+    pointsInput.style.textAlign = 'center';
+    pointsInput.style.transition = 'all 0.2s ease';
+    
+    pointsInput.addEventListener('focus', () => {
+      pointsInput.style.borderColor = 'rgba(212, 175, 55, 0.5)';
+      pointsInput.style.boxShadow = '0 0 10px rgba(212, 175, 55, 0.15)';
+      pointsInput.style.background = 'rgba(0,0,0,0.4)';
+    });
+    pointsInput.addEventListener('blur', () => {
+      pointsInput.style.borderColor = 'var(--card-border)';
+      pointsInput.style.boxShadow = 'none';
+      pointsInput.style.background = 'rgba(0,0,0,0.3)';
+    });
+    pointsInput.addEventListener('input', () => {
+      quest.points = parseInt(pointsInput.value) || 100;
+    });
+
+    pointsWrapper.appendChild(pointsLabel);
+    pointsWrapper.appendChild(pointsInput);
+
+    row2.appendChild(label);
+    row2.appendChild(pointsWrapper);
+
+    item.appendChild(row1);
+    item.appendChild(row2);
+    return item;
+  }
+
+  // Helper to style workspace sidebar buttons
+  function styleNavButton(btn, isActive) {
+    if (isActive) {
+      btn.style.background = 'var(--gold-primary)';
+      btn.style.border = '1px solid var(--gold-primary)';
+      btn.style.color = '#0b0b0c';
+      btn.style.fontWeight = '700';
+    } else {
+      btn.style.background = 'rgba(255, 255, 255, 0.02)';
+      btn.style.border = '1px solid rgba(255,255,255,0.08)';
+      btn.style.color = 'var(--text-muted)';
+      btn.style.fontWeight = '500';
+    }
+  }
+
+  // Render the current list of quests in the editor panel
+  function renderConfigQuests() {
+    if (!questsListContainer) return;
+
+    // Update the list of tables ready to play
+    updateReadyTablesList();
+
+    const generalContainer = document.getElementById('capitanes-quests-general-container');
+    const customContainer = document.getElementById('capitanes-quests-custom-container');
+
+    if (capitanesConfigData.gameMode === 'general') {
+      // Show general editor, hide custom editor
+      if (generalContainer) generalContainer.style.display = 'block';
+      if (customContainer) customContainer.style.display = 'none';
+
+      questsListContainer.innerHTML = '';
+      if (capitanesConfigData.quests.length === 0) {
+        questsListContainer.innerHTML = `<p style="text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 15px 0;">No hay misiones configuradas.</p>`;
+      } else {
+        capitanesConfigData.quests.forEach((quest, index) => {
+          const item = createQuestRow(quest, index, false);
+          questsListContainer.appendChild(item);
+        });
+      }
+    } else {
+      // Show custom editor, hide general editor
+      if (generalContainer) generalContainer.style.display = 'none';
+      if (customContainer) customContainer.style.display = 'block';
+
+      // 1. Render Sidebar Table Buttons
+      const btnCustomSelectGlobal = document.getElementById('btn-custom-select-global');
+      if (btnCustomSelectGlobal) {
+        styleNavButton(btnCustomSelectGlobal, activeCustomSelection === 'global');
+        btnCustomSelectGlobal.style.transition = 'all 0.2s ease';
+        btnCustomSelectGlobal.onmouseenter = () => {
+          if (activeCustomSelection !== 'global') {
+            btnCustomSelectGlobal.style.background = 'rgba(255, 255, 255, 0.06)';
+            btnCustomSelectGlobal.style.color = '#fff';
+            btnCustomSelectGlobal.style.borderColor = 'rgba(255,255,255,0.15)';
+          }
+        };
+        btnCustomSelectGlobal.onmouseleave = () => {
+          if (activeCustomSelection !== 'global') {
+            btnCustomSelectGlobal.style.background = 'rgba(255, 255, 255, 0.02)';
+            btnCustomSelectGlobal.style.color = 'var(--text-muted)';
+            btnCustomSelectGlobal.style.borderColor = 'rgba(255,255,255,0.08)';
+          }
+        };
+      }
+
+      const tablesNav = document.getElementById('capitanes-custom-tables-nav');
+      if (tablesNav) {
+        tablesNav.innerHTML = '';
+        const tablesList = allTables || [];
+
+        if (tablesList.length === 0) {
+          tablesNav.innerHTML = `
+            <div style="font-size: 0.7rem; color: var(--text-muted); font-style: italic; text-align: center; padding: 10px 0;">
+              No hay mesas configuradas.
+            </div>
+          `;
+        } else {
+          tablesList.forEach(table => {
+            // Calculate quest count for this table
+            const tableQuestsCount = capitanesConfigData.quests.filter(q => q.mesa === table.name && (!q.invitado || q.invitado === 'Todos')).length;
+            const guestQuestsCount = capitanesConfigData.quests.filter(q => q.mesa === table.name && q.invitado && q.invitado !== 'Todos').length;
+            const totalQuests = tableQuestsCount + guestQuestsCount;
+
+            const navBtn = document.createElement('button');
+            navBtn.type = 'button';
+            navBtn.className = 'btn';
+            navBtn.style.width = '100%';
+            navBtn.style.padding = '10px 12px';
+            navBtn.style.borderRadius = '12px';
+            navBtn.style.fontSize = '0.75rem';
+            navBtn.style.textAlign = 'left';
+            navBtn.style.display = 'flex';
+            navBtn.style.alignItems = 'center';
+            navBtn.style.justifyContent = 'space-between';
+            navBtn.style.transition = 'all 0.2s ease';
+            navBtn.style.cursor = 'pointer';
+
+            const labelSpan = document.createElement('span');
+            labelSpan.textContent = `Mesa ${table.name}`;
+
+            const badgesContainer = document.createElement('div');
+            badgesContainer.style.display = 'flex';
+            badgesContainer.style.gap = '5px';
+            badgesContainer.style.alignItems = 'center';
+
+            if (totalQuests > 0) {
+              const questBadge = document.createElement('span');
+              questBadge.textContent = `🎯 ${totalQuests}`;
+              questBadge.style.fontSize = '0.65rem';
+              questBadge.style.padding = '2px 6px';
+              questBadge.style.borderRadius = '8px';
+              questBadge.style.background = activeCustomSelection === table.name ? 'rgba(0,0,0,0.25)' : 'var(--gold-primary-alpha)';
+              questBadge.style.color = activeCustomSelection === table.name ? '#000' : 'var(--gold-light)';
+              questBadge.style.fontWeight = '700';
+              badgesContainer.appendChild(questBadge);
+            }
+
+            navBtn.appendChild(labelSpan);
+            navBtn.appendChild(badgesContainer);
+
+            const isActive = activeCustomSelection === table.name;
+            styleNavButton(navBtn, isActive);
+
+            navBtn.onmouseenter = () => {
+              if (activeCustomSelection !== table.name) {
+                navBtn.style.background = 'rgba(255, 255, 255, 0.06)';
+                navBtn.style.color = '#fff';
+                navBtn.style.borderColor = 'rgba(255,255,255,0.15)';
+              }
+            };
+            navBtn.onmouseleave = () => {
+              if (activeCustomSelection !== table.name) {
+                navBtn.style.background = 'rgba(255, 255, 255, 0.02)';
+                navBtn.style.color = 'var(--text-muted)';
+                navBtn.style.borderColor = 'rgba(255,255,255,0.08)';
+              }
+            };
+
+            navBtn.addEventListener('click', () => {
+              activeCustomSelection = table.name;
+              renderConfigQuests();
+            });
+
+            tablesNav.appendChild(navBtn);
+          });
+        }
+      }
+
+      // 2. Render Workspace Body
+      const workspaceBody = document.getElementById('capitanes-custom-workspace-body');
+      if (workspaceBody) {
+        workspaceBody.innerHTML = '';
+
+        if (activeCustomSelection === 'global') {
+          // --- Render Global Custom Quests (Todas las mesas) ---
+          const header = document.createElement('div');
+          header.style.display = 'flex';
+          header.style.justifyContent = 'space-between';
+          header.style.alignItems = 'center';
+          header.style.borderBottom = '1px solid rgba(255,255,255,0.08)';
+          header.style.paddingBottom = '10px';
+          header.style.marginBottom = '15px';
+
+          const title = document.createElement('h4');
+          title.textContent = '📢 Misiones para Todas las Mesas';
+          title.style.fontFamily = 'Cinzel, serif';
+          title.style.fontSize = '0.9rem';
+          title.style.color = 'var(--gold-light)';
+          title.style.margin = '0';
+
+          const btnAddGeneral = document.createElement('button');
+          btnAddGeneral.type = 'button';
+          btnAddGeneral.className = 'btn btn-header-action';
+          btnAddGeneral.textContent = '+ Misión General';
+          btnAddGeneral.style.padding = '5px 12px';
+          btnAddGeneral.style.fontSize = '0.75rem';
+          btnAddGeneral.style.borderRadius = '12px';
+          btnAddGeneral.style.flex = 'none';
+          btnAddGeneral.addEventListener('click', () => {
+            capitanesConfigData.quests.push({
+              id: 'q_' + Math.random().toString(36).substr(2, 9),
+              text: '',
+              points: 100,
+              mesa: 'Todas',
+              invitado: 'Todos'
+            });
+            renderConfigQuests();
+          });
+
+          header.appendChild(title);
+          header.appendChild(btnAddGeneral);
+          workspaceBody.appendChild(header);
+
+          const generalQuests = capitanesConfigData.quests.filter(q => q.mesa === 'Todas');
+          if (generalQuests.length === 0) {
+            const emptyGeneral = document.createElement('div');
+            emptyGeneral.innerHTML = `
+              <div style="text-align: center; color: var(--text-muted); font-size: 0.8rem; font-style: italic; padding: 40px 10px; border: 1px dashed rgba(255,255,255,0.05); border-radius: 12px; background: rgba(0,0,0,0.15);">
+                No hay misiones generales configuradas.
+                <br>
+                <span style="font-size: 0.7rem; font-weight: normal; opacity: 0.7; margin-top: 5px; display: inline-block;">Estas misiones se asignan automáticamente a todas las mesas.</span>
+              </div>
+            `;
+            workspaceBody.appendChild(emptyGeneral);
+          } else {
+            const generalQuestsDiv = document.createElement('div');
+            generalQuestsDiv.style.display = 'flex';
+            generalQuestsDiv.style.flexDirection = 'column';
+            generalQuestsDiv.style.gap = '10px';
+            generalQuestsDiv.style.maxHeight = '350px';
+            generalQuestsDiv.style.overflowY = 'auto';
+            generalQuestsDiv.style.paddingRight = '3px';
+            generalQuests.forEach(quest => {
+              const idx = capitanesConfigData.quests.indexOf(quest);
+              const item = createQuestRow(quest, idx, false);
+              generalQuestsDiv.appendChild(item);
+            });
+            workspaceBody.appendChild(generalQuestsDiv);
+          }
+        } else {
+          // --- Render Table Workspace ---
+          const tableName = activeCustomSelection;
+          const table = (allTables || []).find(t => t.name === tableName);
+
+          if (!table) {
+            workspaceBody.innerHTML = `
+              <div style="text-align: center; color: var(--text-muted); font-size: 0.8rem; padding: 40px 10px;">
+                Mesa seleccionada no encontrada o eliminada.
+              </div>
+            `;
+            return;
+          }
+
+          // Calculate guests in this table
+          const tableGuests = (allGuests || []).filter(g => {
+            return g.table && (g.table.trim() === table.name.trim() || `mesa ${g.table.trim().toLowerCase()}` === table.name.trim().toLowerCase() || g.table.trim().toLowerCase() === `mesa ${table.name.trim().toLowerCase()}`);
+          });
+
+          const header = document.createElement('div');
+          header.style.display = 'flex';
+          header.style.justifyContent = 'space-between';
+          header.style.alignItems = 'center';
+          header.style.borderBottom = '1px solid rgba(255,255,255,0.08)';
+          header.style.paddingBottom = '10px';
+          header.style.marginBottom = '15px';
+          header.style.gap = '15px';
+
+          const titleContainer = document.createElement('div');
+          titleContainer.style.display = 'flex';
+          titleContainer.style.flexDirection = 'column';
+          titleContainer.style.gap = '2px';
+
+          const title = document.createElement('h4');
+          title.textContent = `🛡️ Configurando Mesa ${table.name}`;
+          title.style.fontFamily = 'Cinzel, serif';
+          title.style.fontSize = '0.95rem';
+          title.style.color = 'var(--gold-light)';
+          title.style.margin = '0';
+
+          const subtitle = document.createElement('span');
+          subtitle.textContent = `${tableGuests.length} integrantes asignados`;
+          subtitle.style.fontSize = '0.7rem';
+          subtitle.style.color = 'var(--text-muted)';
+
+          titleContainer.appendChild(title);
+          titleContainer.appendChild(subtitle);
+
+          // Print button specifically for this table
+          const btnPrintTableQr = document.createElement('button');
+          btnPrintTableQr.type = 'button';
+          btnPrintTableQr.className = 'btn btn-header-action';
+          btnPrintTableQr.style.display = 'flex';
+          btnPrintTableQr.style.alignItems = 'center';
+          btnPrintTableQr.style.gap = '5px';
+          btnPrintTableQr.style.padding = '5px 10px';
+          btnPrintTableQr.style.fontSize = '0.75rem';
+          btnPrintTableQr.style.borderRadius = '12px';
+          btnPrintTableQr.style.flex = 'none';
+          btnPrintTableQr.innerHTML = `
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+            Imprimir QR
+          `;
+          btnPrintTableQr.addEventListener('click', () => {
+            const container = document.getElementById('print-capitanes-grid-container');
+            if (!container) return;
+
+            container.innerHTML = '';
+            const eventTitleVal = (eventTitleInput ? eventTitleInput.value.trim() : '') || 'Jano\'s Eventos';
+
+            const targetUrl = `${siteOrigin}/capitanes-client.html?event=${encodeURIComponent(eventId)}&mesa=${encodeURIComponent(table.name)}`;
+            const printQrUrl = `${qrBaseUrl}?size=450x450&data=${encodeURIComponent(targetUrl)}&color=000000&bgcolor=ffffff`;
+
+            const card = document.createElement('div');
+            card.className = 'print-capitanes-card';
+            card.innerHTML = `
+              <div>
+                <div class="print-capitanes-card-header">Capitanes de Mesa</div>
+                <div class="print-capitanes-card-event">${eventTitleVal}</div>
+                <div class="print-capitanes-card-divider"></div>
+                <div class="print-capitanes-card-table">Mesa ${table.name}</div>
+              </div>
+              <div class="print-capitanes-card-qr-container">
+                <img src="${printQrUrl}" alt="Mesa ${table.name}" class="print-capitanes-card-qr">
+              </div>
+              <div class="print-capitanes-card-instructions">
+                ¡Capitán de mesa ACTIVO! Todos los integrantes deberán escanear el código QR ubicado en sus mesas para descubrir quién es el CAPITÁN DE MESA asignado!
+              </div>
+            `;
+            container.appendChild(card);
+
+            document.body.classList.add('print-mode-multi-tables');
+            document.body.classList.remove('print-mode-single');
+
+            setTimeout(() => {
+              window.print();
+            }, 400);
+          });
+
+          header.appendChild(titleContainer);
+          header.appendChild(btnPrintTableQr);
+          workspaceBody.appendChild(header);
+
+          // Scrollable area for workspace content
+          const scrollableArea = document.createElement('div');
+          scrollableArea.style.maxHeight = '350px';
+          scrollableArea.style.overflowY = 'auto';
+          scrollableArea.style.paddingRight = '3px';
+          scrollableArea.style.display = 'flex';
+          scrollableArea.style.flexDirection = 'column';
+          scrollableArea.style.gap = '15px';
+
+          // --- Table Quests Sub-section ---
+          const tableQuestsDiv = document.createElement('div');
+          const tableMissionsHeader = document.createElement('div');
+          tableMissionsHeader.style.display = 'flex';
+          tableMissionsHeader.style.justifyContent = 'space-between';
+          tableMissionsHeader.style.alignItems = 'center';
+          tableMissionsHeader.style.marginBottom = '10px';
+
+          const tableMissionsTitle = document.createElement('span');
+          tableMissionsTitle.textContent = '🎯 Misiones Grupales de la Mesa';
+          tableMissionsTitle.style.fontSize = '0.78rem';
+          tableMissionsTitle.style.fontWeight = '600';
+          tableMissionsTitle.style.color = 'var(--gold-primary)';
+
+          const btnAddTableQuest = document.createElement('button');
+          btnAddTableQuest.type = 'button';
+          btnAddTableQuest.className = 'btn btn-header-action';
+          btnAddTableQuest.textContent = '+ Misión Grupal';
+          btnAddTableQuest.style.padding = '4px 10px';
+          btnAddTableQuest.style.fontSize = '0.7rem';
+          btnAddTableQuest.style.borderRadius = '10px';
+          btnAddTableQuest.style.flex = 'none';
+          btnAddTableQuest.addEventListener('click', () => {
+            capitanesConfigData.quests.push({
+              id: 'q_' + Math.random().toString(36).substr(2, 9),
+              text: '',
+              points: 100,
+              mesa: table.name,
+              invitado: 'Todos'
+            });
+            renderConfigQuests();
+          });
+
+          tableMissionsHeader.appendChild(tableMissionsTitle);
+          tableMissionsHeader.appendChild(btnAddTableQuest);
+          tableQuestsDiv.appendChild(tableMissionsHeader);
+
+          const tableQuests = capitanesConfigData.quests.filter(q => q.mesa === table.name && (!q.invitado || q.invitado === 'Todos'));
+          if (tableQuests.length === 0) {
+            const emptyTableQuests = document.createElement('div');
+            emptyTableQuests.innerHTML = `
+              <div style="text-align: center; color: var(--text-muted); font-size: 0.75rem; font-style: italic; padding: 15px 10px; border: 1px dashed rgba(255,255,255,0.05); border-radius: 12px; background: rgba(0,0,0,0.1); margin-bottom: 5px;">
+                No hay misiones grupales configuradas.
+              </div>
+            `;
+            tableQuestsDiv.appendChild(emptyTableQuests);
+          } else {
+            const tableQuestsList = document.createElement('div');
+            tableQuestsList.style.display = 'flex';
+            tableQuestsList.style.flexDirection = 'column';
+            tableQuestsList.style.gap = '8px';
+            tableQuests.forEach(quest => {
+              const idx = capitanesConfigData.quests.indexOf(quest);
+              const item = createQuestRow(quest, idx, false);
+              tableQuestsList.appendChild(item);
+            });
+            tableQuestsDiv.appendChild(tableQuestsList);
+          }
+          scrollableArea.appendChild(tableQuestsDiv);
+
+          // --- Guest Quests Sub-section ---
+          const guestQuestsDiv = document.createElement('div');
+          const guestMissionsTitle = document.createElement('div');
+          guestMissionsTitle.textContent = '👤 Misiones Individuales por Integrante';
+          guestMissionsTitle.style.fontSize = '0.78rem';
+          guestMissionsTitle.style.fontWeight = '600';
+          guestMissionsTitle.style.color = 'var(--gold-primary)';
+          guestMissionsTitle.style.marginBottom = '10px';
+          guestMissionsTitle.style.borderTop = '1px solid rgba(255,255,255,0.05)';
+          guestMissionsTitle.style.paddingTop = '15px';
+          guestQuestsDiv.appendChild(guestMissionsTitle);
+
+          if (tableGuests.length === 0) {
+            const emptyGuests = document.createElement('div');
+            emptyGuests.innerHTML = `
+              <div style="text-align: center; color: var(--text-muted); font-size: 0.75rem; font-style: italic; padding: 15px 10px; border: 1px dashed rgba(255,255,255,0.05); border-radius: 12px; background: rgba(0,0,0,0.1);">
+                No hay invitados asignados en la Mesa ${table.name}.
+              </div>
+            `;
+            guestQuestsDiv.appendChild(emptyGuests);
+          } else {
+            const guestsList = document.createElement('div');
+            guestsList.style.display = 'flex';
+            guestsList.style.flexDirection = 'column';
+            guestsList.style.gap = '12px';
+
+            tableGuests.forEach(guest => {
+              const fullName = `${guest.firstName} ${guest.lastName}`.trim();
+              const guestCard = document.createElement('div');
+              guestCard.style.background = 'rgba(255, 255, 255, 0.02)';
+              guestCard.style.border = '1px solid rgba(255, 255, 255, 0.04)';
+              guestCard.style.borderRadius = '12px';
+              guestCard.style.padding = '12px';
+
+              const guestHeader = document.createElement('div');
+              guestHeader.style.display = 'flex';
+              guestHeader.style.justifyContent = 'space-between';
+              guestHeader.style.alignItems = 'center';
+              guestHeader.style.marginBottom = '8px';
+
+              const nameContainer = document.createElement('div');
+              nameContainer.style.display = 'flex';
+              nameContainer.style.alignItems = 'center';
+              nameContainer.style.gap = '8px';
+
+              const guestNameSpan = document.createElement('span');
+              guestNameSpan.textContent = fullName;
+              guestNameSpan.style.fontSize = '0.75rem';
+              guestNameSpan.style.fontWeight = '600';
+              guestNameSpan.style.color = '#fff';
+              
+              nameContainer.appendChild(guestNameSpan);
+
+              // Add crown button
+              const isThisGuestCaptain = capitanesConfigData.captains && capitanesConfigData.captains[table.name] === fullName;
+              const btnCrown = document.createElement('button');
+              btnCrown.type = 'button';
+              btnCrown.className = 'btn-assign-captain';
+              btnCrown.style.background = 'none';
+              btnCrown.style.border = 'none';
+              btnCrown.style.cursor = 'pointer';
+              btnCrown.style.fontSize = '1.05rem';
+              btnCrown.style.padding = '0';
+              btnCrown.style.display = 'inline-flex';
+              btnCrown.style.alignItems = 'center';
+              btnCrown.style.justifyContent = 'center';
+              btnCrown.style.transition = 'all 0.2s ease';
+              
+              if (isThisGuestCaptain) {
+                btnCrown.innerHTML = '👑';
+                btnCrown.title = 'Capitán de Mesa Activo (Hacé clic para quitar)';
+                btnCrown.style.filter = 'drop-shadow(0 0 4px rgba(212,175,55,0.6))';
+              } else {
+                btnCrown.innerHTML = '☆';
+                btnCrown.title = 'Asignar como Capitán de Mesa';
+                btnCrown.style.color = 'rgba(255,255,255,0.3)';
+              }
+
+              btnCrown.addEventListener('click', async () => {
+                const newCaptain = isThisGuestCaptain ? '' : fullName;
+                try {
+                  const response = await fetch(`/api/capitanes/assign-captain?event=${encodeURIComponent(eventId)}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ table: table.name, guestName: newCaptain })
+                  });
+                  if (!response.ok) {
+                    throw new Error(`Error de servidor (${response.status})`);
+                  }
+                  const result = await response.json();
+                  if (result.success) {
+                    if (!capitanesConfigData.captains) {
+                      capitanesConfigData.captains = {};
+                    }
+                    capitanesConfigData.captains = result.captains;
+                    showToast('success', 'Asignación de Capitán', newCaptain ? `¡${newCaptain} ahora es el Capitán de la Mesa ${table.name}! 👑` : `Se quitó el rol de Capitán de la Mesa ${table.name}.`);
+                    renderConfigQuests();
+                  } else {
+                    showToast('error', 'Error', result.error || 'Error al asignar capitán.');
+                  }
+                } catch (err) {
+                  console.error(err);
+                  showToast('error', 'Error', 'Error de red al asignar capitán. Asegúrate de reiniciar el servidor backend para aplicar los cambios.');
+                }
+              });
+
+              nameContainer.appendChild(btnCrown);
+
+              const btnAddGuestQuest = document.createElement('button');
+              btnAddGuestQuest.type = 'button';
+              btnAddGuestQuest.className = 'btn btn-header-action';
+              btnAddGuestQuest.textContent = '+ Misión Personal';
+              btnAddGuestQuest.style.padding = '3px 8px';
+              btnAddGuestQuest.style.fontSize = '0.65rem';
+              btnAddGuestQuest.style.borderRadius = '8px';
+              btnAddGuestQuest.style.flex = 'none';
+              btnAddGuestQuest.addEventListener('click', () => {
+                capitanesConfigData.quests.push({
+                  id: 'q_' + Math.random().toString(36).substr(2, 9),
+                  text: '',
+                  points: 100,
+                  mesa: table.name,
+                  invitado: fullName
+                });
+                renderConfigQuests();
+              });
+
+              guestHeader.appendChild(nameContainer);
+              guestHeader.appendChild(btnAddGuestQuest);
+              guestCard.appendChild(guestHeader);
+
+              const guestQuests = capitanesConfigData.quests.filter(q => q.mesa === table.name && q.invitado === fullName);
+              if (guestQuests.length === 0) {
+                const noGuestQuests = document.createElement('div');
+                noGuestQuests.textContent = 'Sin misiones individuales configuradas.';
+                noGuestQuests.style.fontSize = '0.7rem';
+                noGuestQuests.style.color = 'var(--text-muted)';
+                noGuestQuests.style.fontStyle = 'italic';
+                noGuestQuests.style.padding = '5px 0';
+                guestCard.appendChild(noGuestQuests);
+              } else {
+                const guestQuestsList = document.createElement('div');
+                guestQuestsList.style.display = 'flex';
+                guestQuestsList.style.flexDirection = 'column';
+                guestQuestsList.style.gap = '8px';
+                guestQuests.forEach(quest => {
+                  const idx = capitanesConfigData.quests.indexOf(quest);
+                  const item = createQuestRow(quest, idx, true);
+                  guestQuestsList.appendChild(item);
+                });
+                guestCard.appendChild(guestQuestsList);
+              }
+              guestsList.appendChild(guestCard);
+            });
+            guestQuestsDiv.appendChild(guestsList);
+          }
+          scrollableArea.appendChild(guestQuestsDiv);
+          workspaceBody.appendChild(scrollableArea);
+        }
+      }
+    }
+  }
+
+  // Update list of tables that have missions assigned and are ready to play
+  function updateReadyTablesList() {
+    const section = document.getElementById('capitanes-ready-tables-section');
+    const listContainer = document.getElementById('capitanes-ready-tables-list');
+    if (!section || !listContainer) return;
+
+    if (capitanesConfigData.gameMode !== 'custom') {
+      section.style.display = 'none';
+      return;
+    }
+
+    listContainer.innerHTML = '';
+    const readyTables = [];
+
+    (allTables || []).forEach(table => {
+      // Count table-specific missions
+      const tableQuestsCount = capitanesConfigData.quests.filter(q => q.mesa === table.name && (!q.invitado || q.invitado === 'Todos')).length;
+      
+      // Count guest-specific missions
+      const guestQuestsCount = capitanesConfigData.quests.filter(q => q.mesa === table.name && q.invitado && q.invitado !== 'Todos').length;
+
+      const totalQuests = tableQuestsCount + guestQuestsCount;
+      if (totalQuests > 0) {
+        readyTables.push({
+          table,
+          tableQuestsCount,
+          guestQuestsCount,
+          totalQuests
+        });
+      }
+    });
+
+    if (readyTables.length === 0) {
+      section.style.display = 'block';
+      listContainer.innerHTML = `
+        <div style="font-size: 0.75rem; color: var(--text-muted); font-style: italic; text-align: center; padding: 15px 10px;">
+          No hay mesas listas para jugar. Asigná misiones a mesas o integrantes para verlas acá.
+        </div>
+      `;
+      return;
+    }
+
+    section.style.display = 'block';
+
+    readyTables.forEach(({ table, tableQuestsCount, guestQuestsCount, totalQuests }) => {
+      const row = document.createElement('div');
+      row.style.display = 'flex';
+      row.style.alignItems = 'center';
+      row.style.justifyContent = 'space-between';
+      row.style.background = 'rgba(255, 255, 255, 0.03)';
+      row.style.border = '1px solid rgba(255, 255, 255, 0.05)';
+      row.style.borderRadius = '12px';
+      row.style.padding = '8px 12px';
+      row.style.gap = '10px';
+
+      // Left Column: Table Details
+      const details = document.createElement('div');
+      details.style.display = 'flex';
+      details.style.flexDirection = 'column';
+      details.style.gap = '2px';
+
+      const tableName = document.createElement('span');
+      tableName.textContent = `Mesa ${table.name}`;
+      tableName.style.fontSize = '0.85rem';
+      tableName.style.fontWeight = '600';
+      tableName.style.color = 'white';
+
+      const stats = document.createElement('span');
+      stats.style.fontSize = '0.7rem';
+      stats.style.color = 'var(--text-muted)';
+      const parts = [];
+      if (tableQuestsCount > 0) {
+        parts.push(`${tableQuestsCount} de mesa`);
+      }
+      if (guestQuestsCount > 0) {
+        parts.push(`${guestQuestsCount} personal${guestQuestsCount > 1 ? 'es' : ''}`);
+      }
+      stats.textContent = parts.join(' + ');
+
+      details.appendChild(tableName);
+      details.appendChild(stats);
+
+      // Right Column: Print Button
+      const btnPrint = document.createElement('button');
+      btnPrint.type = 'button';
+      btnPrint.className = 'btn';
+      btnPrint.style.padding = '5px 10px';
+      btnPrint.style.fontSize = '0.75rem';
+      btnPrint.style.borderRadius = '8px';
+      btnPrint.style.border = '1px solid rgba(212, 175, 55, 0.4)';
+      btnPrint.style.background = 'transparent';
+      btnPrint.style.color = 'var(--gold-primary)';
+      btnPrint.style.cursor = 'pointer';
+      btnPrint.style.display = 'flex';
+      btnPrint.style.alignItems = 'center';
+      btnPrint.style.gap = '5px';
+      btnPrint.style.flex = 'none';
+      btnPrint.innerHTML = `
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+        Imprimir
+      `;
+
+      // Hover effects for print button
+      btnPrint.style.transition = 'all 0.2s ease';
+      btnPrint.addEventListener('mouseenter', () => {
+        btnPrint.style.background = 'rgba(212, 175, 55, 0.1)';
+      });
+      btnPrint.addEventListener('mouseleave', () => {
+        btnPrint.style.background = 'transparent';
+      });
+
+      btnPrint.addEventListener('click', () => {
+        const container = document.getElementById('print-capitanes-grid-container');
+        if (!container) return;
+
+        container.innerHTML = '';
+        const eventTitleVal = (eventTitleInput ? eventTitleInput.value.trim() : '') || 'Jano\'s Eventos';
+
+        const targetUrl = `${siteOrigin}/capitanes-client.html?event=${encodeURIComponent(eventId)}&mesa=${encodeURIComponent(table.name)}`;
+        const printQrUrl = `${qrBaseUrl}?size=450x450&data=${encodeURIComponent(targetUrl)}&color=000000&bgcolor=ffffff`;
+
+        const card = document.createElement('div');
+        card.className = 'print-capitanes-card';
+        card.innerHTML = `
+          <div>
+            <div class="print-capitanes-card-header">Capitanes de Mesa</div>
+            <div class="print-capitanes-card-event">${eventTitleVal}</div>
+            <div class="print-capitanes-card-divider"></div>
+            <div class="print-capitanes-card-table">Mesa ${table.name}</div>
+          </div>
+          <div class="print-capitanes-card-qr-container">
+            <img src="${printQrUrl}" alt="Mesa ${table.name}" class="print-capitanes-card-qr">
+          </div>
+          <div class="print-capitanes-card-instructions">
+            ¡Capitán de mesa ACTIVO! Todos los integrantes deberán escanear el código QR ubicado en sus mesas para descubrir quién es el CAPITÁN DE MESA asignado!
+          </div>
+        `;
+        container.appendChild(card);
+
+        document.body.classList.add('print-mode-multi-tables');
+        document.body.classList.remove('print-mode-single');
+
+        setTimeout(() => {
+          window.print();
+        }, 400);
+      });
+
+      row.appendChild(details);
+      row.appendChild(btnPrint);
+      listContainer.appendChild(row);
+    });
+  }
+
+  // Load Capitanes Config from backend state
+  function loadCapitanesConfig() {
+    fetch(`/api/capitanes/state?event=${encodeURIComponent(eventId)}`)
+      .then(res => res.json())
+      .then(state => {
+        if (state) {
+          capitanesConfigData = {
+            gameMode: state.gameMode || 'general',
+            timeLimit: state.timeLimit || 10,
+            quests: state.quests || [],
+            captains: state.captains || {}
+          };
+          if (modeSelect) {
+            modeSelect.value = capitanesConfigData.gameMode;
+            modeSelect.dispatchEvent(new Event('change'));
+          }
+          if (timeLimitInput) timeLimitInput.value = capitanesConfigData.timeLimit;
+          renderConfigQuests();
+          renderAdminCapitanesState(state);
+        }
+      })
+      .catch(err => {
+        console.error('Error loading Capitanes configuration:', err);
+        showToast('error', 'Error', 'Error al cargar la configuración de Capitanes.');
+      });
+  }
+
+  // Save Config to Server
+  if (btnSaveConfig) {
+    btnSaveConfig.addEventListener('click', () => {
+      setButtonLoading(btnSaveConfig, true, 'Guardando...');
+      const gameMode = modeSelect ? modeSelect.value : 'general';
+      const timeLimit = timeLimitInput ? parseInt(timeLimitInput.value) : 10;
+      
+      // Basic validation
+      const invalid = capitanesConfigData.quests.some(q => !q.text.trim());
+      if (invalid) {
+        showToast('error', 'Error de Validación', 'Por favor escribe el texto de todas las misiones.');
+        setButtonLoading(btnSaveConfig, false);
+        return;
+      }
+
+      fetch(`/api/capitanes/config?event=${encodeURIComponent(eventId)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          gameMode,
+          timeLimit,
+          quests: capitanesConfigData.quests,
+          captains: capitanesConfigData.captains
+        })
+      })
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        return res.json();
+      })
+      .then(data => {
+        if (data.success) {
+          showToast('success', '¡Éxito!', 'Configuración guardada correctamente.');
+        } else {
+          showToast('error', 'Error', data.error || 'Error al guardar la configuración.');
+        }
+      })
+      .catch(err => {
+        console.error('Error saving Capitanes config:', err);
+        showToast('error', 'Error', 'Error de red al guardar la configuración. Asegúrate de reiniciar el servidor backend.');
+      })
+      .finally(() => {
+        setButtonLoading(btnSaveConfig, false);
+      });
+    });
+  }
+
+  // --- Real-time Polling & SSE for Capitanes ---
+  function startCapitanesPolling() {
+    stopCapitanesPolling();
+    lastCapitanesSseTime = Date.now();
+    capitanesEventSource = new EventSource(`/api/capitanes/stream?event=${encodeURIComponent(eventId)}`);
+
+    capitanesEventSource.onmessage = (e) => {
+      lastCapitanesSseTime = Date.now();
+      try {
+        const msg = JSON.parse(e.data);
+        if (msg.type === 'INITIAL_STATE' || msg.type === 'STATE_UPDATE') {
+          renderAdminCapitanesState(msg.data);
+        }
+      } catch (err) {
+        console.error('Error parsing Capitanes SSE msg:', err);
+      }
+    };
+
+    capitanesEventSource.onerror = () => {
+      console.warn('Capitanes SSE disconnected, falling back to polling.');
+    };
+
+    if (!adminCapitanesPollInterval) {
+      adminCapitanesPollInterval = setInterval(() => {
+        const silence = Date.now() - lastCapitanesSseTime;
+        if (silence > 5000) {
+          syncAdminCapitanesStateWithPoll();
+        }
+      }, 3000);
+    }
+  }
+
+  function stopCapitanesPolling() {
+    if (capitanesEventSource) {
+      capitanesEventSource.close();
+      capitanesEventSource = null;
+    }
+    if (adminCapitanesPollInterval) {
+      clearInterval(adminCapitanesPollInterval);
+      adminCapitanesPollInterval = null;
+    }
+    if (capitanesLocalTimerInterval) {
+      clearInterval(capitanesLocalTimerInterval);
+      capitanesLocalTimerInterval = null;
+    }
+  }
+
+  function syncAdminCapitanesStateWithPoll() {
+    fetch(`/api/capitanes/state?event=${encodeURIComponent(eventId)}`)
+      .then(res => res.json())
+      .then(state => {
+        lastCapitanesSseTime = Date.now();
+        renderAdminCapitanesState(state);
+      })
+      .catch(err => {
+        console.error('Error polling Capitanes state:', err);
+      });
+  }
+
+  // Render the current live state of Capitanes in the admin panel
+  function renderAdminCapitanesState(state) {
+    if (!state) return;
+
+    // Update captains mapping and trigger re-render if it changed
+    if (state.captains) {
+      const oldCaptains = JSON.stringify(capitanesConfigData.captains || {});
+      const newCaptains = JSON.stringify(state.captains);
+      if (oldCaptains !== newCaptains) {
+        capitanesConfigData.captains = state.captains;
+        renderConfigQuests();
+      }
+    }
+
+    // Update status badge
+    if (statusBadge) {
+      statusBadge.textContent = state.status;
+      statusBadge.className = 'badge';
+      if (state.status === 'LOBBY') statusBadge.classList.add('badge-pending');
+      else if (state.status === 'PLAYING') statusBadge.classList.add('badge-approved');
+      else if (state.status === 'PAUSED') statusBadge.classList.add('badge-pending');
+      else if (state.status === 'FINISHED') statusBadge.classList.add('badge-rejected');
+    }
+
+    // Set up local timers
+    capitanesStateExpiresAt = state.stateExpiresAt;
+    updateAdminTimerDisplay();
+
+    if (state.status === 'PLAYING') {
+      if (!capitanesLocalTimerInterval) {
+        capitanesLocalTimerInterval = setInterval(updateAdminTimerDisplay, 1000);
+      }
+    } else {
+      if (capitanesLocalTimerInterval) {
+        clearInterval(capitanesLocalTimerInterval);
+        capitanesLocalTimerInterval = null;
+      }
+    }
+
+    // Render live validation list (submissions in SUBMITTED status)
+    if (submissionsList) {
+      submissionsList.innerHTML = '';
+      const pendingSubmissions = [];
+
+      if (state.progress) {
+        Object.entries(state.progress).forEach(([mesa, questsProgress]) => {
+          Object.entries(questsProgress).forEach(([questId, progress]) => {
+            if (progress.status === 'SUBMITTED') {
+              // Find the quest configuration details
+              const configQuest = (state.quests || []).find(q => q.id === questId);
+              pendingSubmissions.push({
+                mesa,
+                questId,
+                questText: configQuest ? configQuest.text : 'Misión Desconocida',
+                questGuest: configQuest ? configQuest.invitado : null,
+                points: configQuest ? configQuest.points : 100,
+                photoUrl: progress.photoUrl,
+                submittedAt: progress.submittedAt
+              });
+            }
+          });
+        });
+      }
+
+      // Sort by submission time (oldest first)
+      pendingSubmissions.sort((a, b) => new Date(a.submittedAt) - new Date(b.submittedAt));
+
+      if (validationCountSpan) {
+        validationCountSpan.textContent = pendingSubmissions.length;
+      }
+
+      if (pendingSubmissions.length === 0) {
+        submissionsList.innerHTML = `<p style="text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 20px 0;">No hay misiones pendientes de aprobación.</p>`;
+        return;
+      }
+
+      pendingSubmissions.forEach(sub => {
+        const row = document.createElement('div');
+        row.style.background = 'rgba(255,255,255,0.02)';
+        row.style.border = '1px solid var(--card-border)';
+        row.style.borderRadius = '15px';
+        row.style.padding = '15px';
+        row.style.display = 'flex';
+        row.style.flexDirection = 'column';
+        row.style.gap = '10px';
+
+        // Header: Mesa name + Points badge
+        const header = document.createElement('div');
+        header.style.display = 'flex';
+        header.style.justifyContent = 'space-between';
+        header.style.alignItems = 'center';
+
+        const title = document.createElement('div');
+        title.style.fontWeight = 'bold';
+        title.style.color = 'white';
+        const displayMesaName = sub.mesa.toLowerCase().startsWith('mesa') ? sub.mesa : `Mesa ${sub.mesa}`;
+        title.textContent = displayMesaName;
+
+        const pointsBadge = document.createElement('span');
+        pointsBadge.className = 'badge badge-approved';
+        pointsBadge.style.fontSize = '0.75rem';
+        pointsBadge.textContent = `+${sub.points} pts`;
+
+        header.appendChild(title);
+        header.appendChild(pointsBadge);
+
+        // Body: Quest Text
+        const bodyText = document.createElement('p');
+        bodyText.style.margin = '0';
+        bodyText.style.fontSize = '0.85rem';
+        bodyText.style.color = 'var(--text-muted)';
+        bodyText.textContent = sub.questText;
+        if (sub.questGuest && sub.questGuest !== 'Todos') {
+          const guestTag = document.createElement('span');
+          guestTag.style.color = 'var(--gold-primary)';
+          guestTag.style.fontSize = '0.75rem';
+          guestTag.style.fontWeight = '500';
+          guestTag.style.marginLeft = '8px';
+          guestTag.textContent = `(Invitado: ${sub.questGuest})`;
+          bodyText.appendChild(guestTag);
+        }
+
+        // Image container (if photoUrl exists)
+        let imgContainer = null;
+        if (sub.photoUrl) {
+          imgContainer = document.createElement('div');
+          imgContainer.style.position = 'relative';
+          imgContainer.style.width = '100%';
+          imgContainer.style.maxHeight = '150px';
+          imgContainer.style.borderRadius = '10px';
+          imgContainer.style.overflow = 'hidden';
+          imgContainer.style.border = '1px solid rgba(255,255,255,0.1)';
+          imgContainer.style.cursor = 'pointer';
+
+          const img = document.createElement('img');
+          img.src = sub.photoUrl;
+          img.style.width = '100%';
+          img.style.height = '100%';
+          img.style.objectFit = 'cover';
+          
+          imgContainer.appendChild(img);
+
+          // Click to expand functionality using alerts or basic overlay
+          imgContainer.addEventListener('click', () => {
+            const overlay = document.createElement('div');
+            overlay.style.position = 'fixed';
+            overlay.style.top = '0';
+            overlay.style.left = '0';
+            overlay.style.width = '100vw';
+            overlay.style.height = '100vh';
+            overlay.style.background = 'rgba(0,0,0,0.9)';
+            overlay.style.display = 'flex';
+            overlay.style.alignItems = 'center';
+            overlay.style.justifyContent = 'center';
+            overlay.style.zIndex = '99999';
+
+            const bigImg = document.createElement('img');
+            bigImg.src = sub.photoUrl;
+            bigImg.style.maxWidth = '90%';
+            bigImg.style.maxHeight = '90%';
+            bigImg.style.borderRadius = '15px';
+            bigImg.style.boxShadow = '0 0 30px rgba(0,0,0,0.5)';
+
+            overlay.appendChild(bigImg);
+            overlay.addEventListener('click', () => overlay.remove());
+            document.body.appendChild(overlay);
+          });
+        }
+
+        // Actions: Approve / Reject
+        const actions = document.createElement('div');
+        actions.style.display = 'flex';
+        actions.style.gap = '10px';
+
+        const btnApprove = document.createElement('button');
+        btnApprove.type = 'button';
+        btnApprove.className = 'btn btn-primary';
+        btnApprove.style.flex = '1';
+        btnApprove.style.padding = '8px 12px';
+        btnApprove.style.fontSize = '0.8rem';
+        btnApprove.style.borderRadius = '10px';
+        btnApprove.textContent = 'Aprobar';
+        btnApprove.addEventListener('click', () => {
+          triggerCapitanesControl('approve', sub.mesa, sub.questId);
+        });
+
+        const btnReject = document.createElement('button');
+        btnReject.type = 'button';
+        btnReject.className = 'btn btn-danger';
+        btnReject.style.flex = '1';
+        btnReject.style.padding = '8px 12px';
+        btnReject.style.fontSize = '0.8rem';
+        btnReject.style.borderRadius = '10px';
+        btnReject.textContent = 'Rechazar';
+        btnReject.addEventListener('click', () => {
+          triggerCapitanesControl('reject', sub.mesa, sub.questId);
+        });
+
+        actions.appendChild(btnApprove);
+        actions.appendChild(btnReject);
+
+        row.appendChild(header);
+        row.appendChild(bodyText);
+        if (imgContainer) row.appendChild(imgContainer);
+        row.appendChild(actions);
+
+        submissionsList.appendChild(row);
+      });
+    }
+  }
+
+  function updateAdminTimerDisplay() {
+    if (!timerDisplay) return;
+    if (!capitanesStateExpiresAt) {
+      timerDisplay.textContent = '10:00';
+      return;
+    }
+    const diff = Math.max(0, Math.round((new Date(capitanesStateExpiresAt).getTime() - Date.now()) / 1000));
+    const mins = Math.floor(diff / 60);
+    const secs = diff % 60;
+    timerDisplay.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  }
+
+  // Send Admin control action (start, pause, reset, approve, reject)
+  function triggerCapitanesControl(action, mesa = null, questId = null) {
+    const body = { action };
+    if (mesa) body.mesa = mesa;
+    if (questId) body.questId = questId;
+
+    fetch(`/api/capitanes/control?event=${encodeURIComponent(eventId)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    })
+    .then(res => {
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+      return res.json();
+    })
+    .then(data => {
+      if (data.success) {
+        showToast('success', '¡Éxito!', `Operación ${action} procesada con éxito.`);
+        // Instantly sync state
+        syncAdminCapitanesStateWithPoll();
+      } else {
+        showToast('error', 'Error', data.error || 'Error al procesar la acción.');
+      }
+    })
+    .catch(err => {
+      console.error('Error triggering Capitanes control:', err);
+      showToast('error', 'Error', 'Error de comunicación con el servidor. Asegúrate de que el backend esté actualizado y corriendo.');
+    });
+  }
+
+  // Wire Control Buttons
+  if (btnStart) btnStart.addEventListener('click', () => triggerCapitanesControl('start'));
+  if (btnPause) btnPause.addEventListener('click', () => triggerCapitanesControl('pause'));
+  if (btnReset) {
+    btnReset.addEventListener('click', () => {
+      showConfirm(
+        '¿Reiniciar Capitanes de Mesa?',
+        '¿Estás seguro de que deseas reiniciar la actividad? Se perderá todo el progreso de las mesas.',
+        () => triggerCapitanesControl('reset')
+      );
+    });
+  }
+  if (btnCapitanesProjector) {
+    btnCapitanesProjector.addEventListener('click', () => {
+      window.open(`/capitanes-screen.html?event=${encodeURIComponent(eventId)}`, '_blank');
+    });
+  }
+
+  if (btnPrintCapitanesGeneralQr) {
+    btnPrintCapitanesGeneralQr.addEventListener('click', () => {
+      document.body.classList.add('print-mode-single');
+      document.body.classList.remove('print-mode-multi-tables');
+      preparePrintPoster('capitanes');
+      setTimeout(() => {
+        window.print();
+      }, 250);
+    });
+  }
+
+  if (btnPrintCapitanesTablesQr) {
+    btnPrintCapitanesTablesQr.addEventListener('click', () => {
+      if (!allTables || allTables.length === 0) {
+        showToast('error', '¡Atención!', 'No hay mesas configuradas en este evento para generar códigos QR.');
+        return;
+      }
+      
+      const container = document.getElementById('print-capitanes-grid-container');
+      if (!container) return;
+      
+      container.innerHTML = '';
+      const eventTitleVal = (eventTitleInput ? eventTitleInput.value.trim() : '') || 'Jano\'s Eventos';
+      
+      allTables.forEach(t => {
+        const targetUrl = `${siteOrigin}/capitanes-client.html?event=${encodeURIComponent(eventId)}&mesa=${encodeURIComponent(t.name)}`;
+        const printQrUrl = `${qrBaseUrl}?size=450x450&data=${encodeURIComponent(targetUrl)}&color=000000&bgcolor=ffffff`;
+        
+        const card = document.createElement('div');
+        card.className = 'print-capitanes-card';
+        card.innerHTML = `
+          <div>
+            <div class="print-capitanes-card-header">Capitanes de Mesa</div>
+            <div class="print-capitanes-card-event">${eventTitleVal}</div>
+            <div class="print-capitanes-card-divider"></div>
+            <div class="print-capitanes-card-table">Mesa ${t.name}</div>
+          </div>
+          <div class="print-capitanes-card-qr-container">
+            <img src="${printQrUrl}" alt="Mesa ${t.name}" class="print-capitanes-card-qr">
+          </div>
+          <div class="print-capitanes-card-instructions">
+            <strong>Capitan de mesa ACTIVO!</strong> Todos los integrantes deberán escanear el codigo QR ubicado en sus mesas para descubrir quien es el <strong>CAPITAN DE MESA</strong> asignado!
+          </div>
+        `;
+        container.appendChild(card);
+      });
+      
+      document.body.classList.add('print-mode-multi-tables');
+      document.body.classList.remove('print-mode-single');
+      
+      setTimeout(() => {
+        window.print();
+      }, 400);
+    });
+  }
+
+  window.addEventListener('afterprint', () => {
+    document.body.classList.remove('print-mode-single', 'print-mode-multi-tables');
+  });
 });
 

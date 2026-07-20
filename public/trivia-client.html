@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Trivia Gamepad | MiFiestAPP</title>
+  <link rel="icon" type="image/png" href="/assets/coronamain.png">
+  <title>Trivia Gamepad | miFiestAPP</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -101,6 +102,11 @@
         opacity: 1;
         transform: translateY(0);
       }
+    }
+
+    @keyframes clientNumberPulse {
+      0%, 100% { transform: scale(1); opacity: 0.9; }
+      50% { transform: scale(1.15); opacity: 1; text-shadow: 0 0 40px rgba(212,175,55,0.7); }
     }
 
     .card.active {
@@ -260,28 +266,52 @@
 
     /* GAMEPAD / OPTION BUTTONS */
     .gamepad-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
       width: 100%;
       margin-top: 0.5rem;
     }
 
     .game-button {
       border: none;
-      border-radius: 20px;
-      font-size: 3.5rem;
+      border-radius: 16px;
+      font-size: 1.05rem;
+      font-weight: 600;
       color: white;
       cursor: pointer;
       display: flex;
       align-items: center;
-      justify-content: center;
-      min-height: 120px;
+      justify-content: flex-start;
+      text-align: left;
+      padding: 0.95rem 1.25rem;
+      min-height: 65px;
+      gap: 1rem;
       position: relative;
       overflow: hidden;
-      box-shadow: 0 8px 15px rgba(0,0,0,0.3);
+      box-shadow: 0 6px 15px rgba(0,0,0,0.3);
       transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
       border: 1px solid rgba(255,255,255,0.08);
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .game-button-shape {
+      font-size: 1.3rem;
+      flex-shrink: 0;
+      display: inline-flex;
+      width: 32px;
+      height: 32px;
+      background: rgba(0,0,0,0.22);
+      border-radius: 50%;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .game-button-text {
+      flex-grow: 1;
+      word-break: break-word;
+      line-height: 1.3;
     }
 
     .game-button::after {
@@ -368,6 +398,43 @@
       color: var(--color-red);
       text-shadow: 0 0 15px rgba(231, 76, 60, 0.2);
     }
+
+    .gamepad-timer-container {
+      margin: 0 auto 1.2rem auto;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 0.5rem 1.4rem;
+      border-radius: 50px;
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.15rem;
+      transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+
+    .gamepad-timer-container.warning-state {
+      background: rgba(220, 53, 69, 0.25);
+      border-color: rgba(220, 53, 69, 0.7);
+      color: #ff4a5a;
+      box-shadow: 0 0 25px rgba(220, 53, 69, 0.45);
+      transform: scale(1.1);
+      animation: timerPulse 1s infinite cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+
+    @keyframes timerPulse {
+      0%, 100% {
+        transform: scale(1.08);
+        box-shadow: 0 0 20px rgba(220, 53, 69, 0.4);
+      }
+      50% {
+        transform: scale(1.22);
+        box-shadow: 0 0 35px rgba(220, 53, 69, 0.8);
+      }
+    }
   </style>
 </head>
 <body>
@@ -396,19 +463,46 @@
     <!-- 2. LOBBY CARD -->
     <div id="card-lobby" class="card">
       <div class="spinner"></div>
-      <h1>¡Conectado!</h1>
+      <h1 id="lobby-title">¡Conectado!</h1>
       <p class="subtitle" id="lobby-welcome">Esperando que el organizador inicie la trivia...</p>
+    </div>
+
+    <!-- 2.5 COUNTDOWN CARD -->
+    <div id="card-countdown" class="card" style="text-align: center; justify-content: center; align-items: center; min-height: 280px; gap: 1rem;">
+      <div class="logo" style="font-size: 1.6rem; letter-spacing: 3px; font-weight: 800; background: var(--gold-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 2px 10px rgba(212,175,55,0.2);">FiestAPP</div>
+      <h2 style="font-size: 1.8rem; color: var(--gold); margin: 0.5rem 0 0; text-shadow: var(--gold-glow); text-transform: uppercase; font-weight: 800;">¡PREPARATE!</h2>
+      <p class="subtitle" style="font-size: 1.1rem; color: #fff; opacity: 0.9; margin: 0;">EL JUEGO COMIENZA EN</p>
+      <div id="client-countdown-number" style="font-size: 5.5rem; font-weight: 900; color: var(--gold); text-shadow: 0 0 30px rgba(212,175,55,0.5); animation: clientNumberPulse 1s infinite ease-in-out; line-height: 1; margin: 0.5rem 0;">10</div>
     </div>
 
     <!-- 3. GAMEPAD CARD -->
     <div id="card-gamepad" class="card" style="padding: 1.5rem 1.2rem;">
-      <h2 style="font-size: 1.3rem; margin-bottom: 0.2rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">¡Respondé Rápido!</h2>
-      <p class="subtitle" style="margin-bottom: 0.8rem; font-size: 0.9rem; opacity: 0.8;">Elegí el color o figura correcto:</p>
+      <div style="text-align: center; width: 100%;">
+        <div class="gamepad-timer-container" id="gamepad-timer-container">
+          <span id="gamepad-timer-seconds">0</span>s
+        </div>
+      </div>
+      <div id="gamepad-question-container" style="margin-bottom: 1.2rem; text-align: center; width: 100%;">
+        <span style="font-size: 0.75rem; color: var(--gold); font-weight: 800; text-transform: uppercase; letter-spacing: 2px; display: block;">Pregunta</span>
+        <h2 id="client-question-text" style="font-size: 1.3rem; margin-top: 0.2rem; color: #fff; font-weight: 700; line-height: 1.35; text-align: center;">¿Cargando pregunta?</h2>
+      </div>
       <div class="gamepad-grid" id="gamepad-grid">
-        <button class="game-button btn-red" data-index="0">▲</button>
-        <button class="game-button btn-blue" data-index="1">♦</button>
-        <button class="game-button btn-yellow" data-index="2">●</button>
-        <button class="game-button btn-green" data-index="3">■</button>
+        <button class="game-button btn-red" data-index="0">
+          <span class="game-button-shape">▲</span>
+          <span class="game-button-text">Opción A</span>
+        </button>
+        <button class="game-button btn-blue" data-index="1">
+          <span class="game-button-shape">♦</span>
+          <span class="game-button-text">Opción B</span>
+        </button>
+        <button class="game-button btn-yellow" data-index="2">
+          <span class="game-button-shape">●</span>
+          <span class="game-button-text">Opción C</span>
+        </button>
+        <button class="game-button btn-green" data-index="3">
+          <span class="game-button-shape">■</span>
+          <span class="game-button-text">Opción D</span>
+        </button>
       </div>
     </div>
 
@@ -623,36 +717,217 @@
       });
     }
 
+    let lastSseMessageTime = Date.now();
+    let pollingInterval = null;
+
     function setupSSE() {
       if (eventSource) eventSource.close();
       
+      lastSseMessageTime = Date.now();
       eventSource = new EventSource(`/api/trivia/stream?event=${eventId}&role=player&nickname=${encodeURIComponent(nickname)}`);
       
       eventSource.onmessage = (e) => {
+        lastSseMessageTime = Date.now();
         const msg = JSON.parse(e.data);
         if (msg.type === 'INITIAL_STATE' || msg.type === 'STATE_UPDATE') {
           handleStateUpdate(msg.data);
         }
       };
+
+      eventSource.onerror = () => {
+        console.warn('SSE connection error. Waiting for fallback polling.');
+      };
+
+      if (!pollingInterval) {
+        pollingInterval = setInterval(() => {
+          const silenceDuration = Date.now() - lastSseMessageTime;
+          if (silenceDuration > 5000) {
+            console.log('SSE silent for 5s. Running fallback state poll.');
+            syncStateWithPoll();
+          }
+        }, 3000);
+      }
     }
 
+    function syncStateWithPoll() {
+      if (window.isPolling) return;
+      window.isPolling = true;
+
+      fetch(`/api/trivia/state?event=${eventId}`)
+        .then(res => res.json())
+        .then(data => {
+          window.isPolling = false;
+          if (data.success && data.state) {
+            lastSseMessageTime = Date.now();
+            handleStateUpdate(data.state);
+          }
+        })
+        .catch(err => {
+          window.isPolling = false;
+          console.error('Error syncing state via poll:', err);
+        });
+    }
+
+    let clientTimerInterval = null;
+    let clockOffset = 0;
+    let lastCountdownSecond = null;
+
+    function playBeepSound(frequency = 880, type = 'sine', duration = 0.15) {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+
+        oscillator.type = type;
+        oscillator.frequency.value = frequency;
+        
+        gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime); // volume 8% on mobile
+        gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + duration);
+      } catch (err) {
+        // Safe fail if browser blocks autoplay
+      }
+    }
+
+    function startClientTimer(stateExpiresAt, serverTime, remainingTime, paused) {
+      clearInterval(clientTimerInterval);
+
+      if (serverTime) {
+        clockOffset = serverTime - Date.now();
+      }
+
+      function updateTick() {
+        let secondsLeft = remainingTime;
+        if (stateExpiresAt && !paused) {
+          const targetTime = stateExpiresAt;
+          const currentCompensatedTime = Date.now() + clockOffset;
+          const msLeft = targetTime - currentCompensatedTime;
+          secondsLeft = Math.max(0, Math.round(msLeft / 1000));
+        }
+
+        const timerContainer = document.getElementById('gamepad-timer-container');
+        const timerSec = document.getElementById('gamepad-timer-seconds');
+        if (timerSec) {
+          timerSec.textContent = secondsLeft;
+        }
+
+        if (timerContainer) {
+          if (secondsLeft <= 10 && secondsLeft > 0) {
+            timerContainer.classList.add('warning-state');
+          } else {
+            timerContainer.classList.remove('warning-state');
+          }
+        }
+
+        if (secondsLeft <= 0) {
+          clearInterval(clientTimerInterval);
+        }
+      }
+
+      updateTick();
+
+      if (paused) return;
+
+      clientTimerInterval = setInterval(updateTick, 250);
+    }
+
+    let lastJoinRequestTime = 0;
+
     function handleStateUpdate(state) {
-      if (state.status === 'LOBBY') {
+      // Auto-rejoin if the player has a nickname, but is not in the server's player list
+      if (nickname && state.players && state.status !== 'INACTIVE') {
+        const isRegistered = state.players.some(p => p.nickname === nickname);
+        const now = Date.now();
+        if (!isRegistered && (now - lastJoinRequestTime > 5000)) {
+          lastJoinRequestTime = now;
+          console.log('Player not found in server state player list. Auto-rejoining...');
+          fetch('/api/trivia/join', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ eventId, nickname })
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              console.log('Successfully auto-rejoined trivia session.');
+            }
+          })
+          .catch(err => console.error('Error auto-rejoining:', err));
+        }
+      }
+
+      if (state.status === 'LOBBY' || state.status === 'INACTIVE') {
+        clearInterval(clientTimerInterval);
         switchCard('card-lobby');
         hasAnswered = false;
         enableGamepad(true);
+        const titleEl = document.getElementById('lobby-title');
+        if (titleEl) titleEl.textContent = '¡Conectado!';
         const welcomeEl = document.getElementById('lobby-welcome');
         if (welcomeEl) {
           if (state.currentQuestionIndex > 0) {
             welcomeEl.textContent = `¡Excelente! Preparate para la Pregunta ${state.currentQuestionIndex + 1}...`;
           } else {
-            welcomeEl.textContent = `Hola ${nickname}, preparate para jugar en breve...`;
+            const shortName = nickname ? nickname.trim().split(' ')[0] : '';
+            welcomeEl.textContent = `Hola ${shortName}, preparate para jugar en breve...`;
           }
         }
       }
       
+      else if (state.status === 'COUNTDOWN') {
+        clearInterval(clientTimerInterval);
+        switchCard('card-countdown');
+        hasAnswered = false;
+        enableGamepad(true);
+        
+        const updateClientCountdown = () => {
+          const expiresAt = state.stateExpiresAt || (Date.now() + 10000);
+          const remaining = Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000));
+          const numEl = document.getElementById('client-countdown-number');
+          if (numEl) numEl.textContent = remaining;
+          
+          if (remaining !== lastCountdownSecond && remaining > 0) {
+            lastCountdownSecond = remaining;
+            const freq = remaining <= 3 ? 1000 : 800;
+            playBeepSound(freq, 'sine', 0.2);
+          }
+          
+          if (remaining <= 0) {
+            clearInterval(clientTimerInterval);
+          }
+        };
+        
+        updateClientCountdown();
+        clientTimerInterval = setInterval(updateClientCountdown, 250);
+      }
+      
       else if (state.status === 'QUESTION_ACTIVE') {
         switchCard('card-gamepad');
+        if (state.currentQuestion) {
+          const qTextEl = document.getElementById('client-question-text');
+          if (qTextEl) {
+            qTextEl.textContent = state.currentQuestion.questionText || 'Pregunta';
+          }
+          
+          const options = state.currentQuestion.options || [];
+          document.querySelectorAll('.game-button').forEach(btn => {
+            const index = parseInt(btn.getAttribute('data-index'));
+            const textEl = btn.querySelector('.game-button-text');
+            if (textEl && options[index] !== undefined) {
+              textEl.textContent = options[index];
+              btn.style.display = 'flex';
+            } else if (textEl) {
+              btn.style.display = 'none';
+            }
+          });
+          
+          startClientTimer(state.stateExpiresAt, state.serverTime, state.currentQuestion.remainingTime, state.paused);
+        }
         if (!hasAnswered) {
           enableGamepad(true);
           questionStartTime = Date.now();
@@ -660,17 +935,25 @@
       }
       
       else if (state.status === 'REVEAL_ANSWER') {
+        clearInterval(clientTimerInterval);
         showFeedback(state);
       }
       
       else if (state.status === 'LEADERBOARD') {
+        clearInterval(clientTimerInterval);
         switchCard('card-lobby');
-        document.getElementById('lobby-welcome').textContent = 'Mirá la pantalla para ver las posiciones parciales...';
+        const titleEl = document.getElementById('lobby-title');
+        if (titleEl) titleEl.textContent = 'Mostrando resultados en pantalla...';
+        const welcomeEl = document.getElementById('lobby-welcome');
+        if (welcomeEl) {
+          welcomeEl.textContent = 'Mirá al frente para ver las posiciones parciales.';
+        }
         hasAnswered = false;
         enableGamepad(true);
       }
       
       else if (state.status === 'PODIUM') {
+        clearInterval(clientTimerInterval);
         switchCard('card-end');
       }
     }

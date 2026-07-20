@@ -16,10 +16,10 @@ const isSupabaseEnabled = !!(SUPABASE_URL && SUPABASE_KEY) && process.env.FORCE_
 
 let supabase = null;
 if (isSupabaseEnabled) {
-  console.log('[MiFiestAPP DB] Supabase database connection enabled.');
+  console.log('[miFiestAPP DB] Supabase database connection enabled.');
   supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 } else {
-  console.log('[MiFiestAPP DB] Local JSON file storage enabled (Supabase credentials missing).');
+  console.log('[miFiestAPP DB] Local JSON file storage enabled (Supabase credentials missing).');
 }
 
 // Local File Paths
@@ -28,7 +28,7 @@ if (!fs.existsSync(DATA_DIR)) {
   try {
     fs.mkdirSync(DATA_DIR, { recursive: true });
   } catch (err) {
-    console.warn('[MiFiestAPP DB] Local DATA_DIR creation ignored/failed (read-only filesystem):', err.message);
+    console.warn('[miFiestAPP DB] Local DATA_DIR creation ignored/failed (read-only filesystem):', err.message);
   }
 }
 const EVENTS_FILE = path.join(DATA_DIR, 'events.json');
@@ -39,7 +39,7 @@ function getLocalEvents() {
     try {
       fs.writeFileSync(EVENTS_FILE, JSON.stringify(defaultEvents, null, 2), 'utf8');
     } catch (err) {
-      console.warn('[MiFiestAPP DB] Local events.json write failed:', err.message);
+      console.warn('[miFiestAPP DB] Local events.json write failed:', err.message);
     }
     return defaultEvents;
   }
@@ -55,7 +55,7 @@ function saveLocalEvents(events) {
   try {
     fs.writeFileSync(EVENTS_FILE, JSON.stringify(events, null, 2), 'utf8');
   } catch (err) {
-    console.error('[MiFiestAPP DB] Local saveLocalEvents write failed:', err.message);
+    console.error('[miFiestAPP DB] Local saveLocalEvents write failed:', err.message);
   }
 }
 
@@ -64,7 +64,7 @@ if (!isSupabaseEnabled && !fs.existsSync(LOCAL_PHOTOS_DIR)) {
   try {
     fs.mkdirSync(LOCAL_PHOTOS_DIR, { recursive: true });
   } catch (err) {
-    console.warn('[MiFiestAPP DB] Local LOCAL_PHOTOS_DIR creation ignored/failed:', err.message);
+    console.warn('[miFiestAPP DB] Local LOCAL_PHOTOS_DIR creation ignored/failed:', err.message);
   }
 }
 
@@ -73,7 +73,7 @@ if (!isSupabaseEnabled && !fs.existsSync(LOCAL_AUDIO_DIR)) {
   try {
     fs.mkdirSync(LOCAL_AUDIO_DIR, { recursive: true });
   } catch (err) {
-    console.warn('[MiFiestAPP DB] Local LOCAL_AUDIO_DIR creation ignored/failed:', err.message);
+    console.warn('[miFiestAPP DB] Local LOCAL_AUDIO_DIR creation ignored/failed:', err.message);
   }
 }
 
@@ -83,7 +83,7 @@ if (!fs.existsSync(defaultDir)) {
   try {
     fs.mkdirSync(defaultDir, { recursive: true });
   } catch (err) {
-    console.warn('[MiFiestAPP DB] Local defaultDir creation failed:', err.message);
+    console.warn('[miFiestAPP DB] Local defaultDir creation failed:', err.message);
   }
 }
 const oldGuests = path.join(DATA_DIR, 'guests.json');
@@ -100,7 +100,7 @@ try {
     fs.copyFileSync(oldPhotos, path.join(defaultDir, 'photos.json'));
   }
 } catch (err) {
-  console.warn('[MiFiestAPP DB] Legacy migration files copy ignored/failed:', err.message);
+  console.warn('[miFiestAPP DB] Legacy migration files copy ignored/failed:', err.message);
 }
 
 /**
@@ -113,7 +113,7 @@ function getEventFiles(eventId) {
     try {
       fs.mkdirSync(eventDir, { recursive: true });
     } catch (err) {
-      console.warn('[MiFiestAPP DB] Local eventDir creation ignored/failed:', err.message);
+      console.warn('[miFiestAPP DB] Local eventDir creation ignored/failed:', err.message);
     }
   }
   return {
@@ -133,11 +133,11 @@ if (isSupabaseEnabled) {
         const exists = buckets.some(b => b.name === 'event-photos');
         if (!exists) {
           await supabase.storage.createBucket('event-photos', { public: true });
-          console.log("[MiFiestAPP DB] Supabase 'event-photos' storage bucket created successfully.");
+          console.log("[miFiestAPP DB] Supabase 'event-photos' storage bucket created successfully.");
         }
       }
     } catch (e) {
-      console.warn("[MiFiestAPP DB] Storage bucket initial setup warning (might lack policy creation rights):", e.message);
+      console.warn("[miFiestAPP DB] Storage bucket initial setup warning (might lack policy creation rights):", e.message);
     }
   })();
 }
@@ -1360,6 +1360,61 @@ async function saveSongSuggestion(eventId = 'default', name, song) {
   }
 }
 
+/**
+ * Capitanes de Mesa configuration and progress helpers
+ */
+async function getCapitanesConfig(eventId = 'default') {
+  const gameMode = await getConfigValue(eventId, 'capitanes_game_mode', 'general');
+  const timeLimitStr = await getConfigValue(eventId, 'capitanes_time_limit', '600');
+  const questsStr = await getConfigValue(eventId, 'capitanes_quests', '[]');
+  const captainsStr = await getConfigValue(eventId, 'capitanes_captains', '{}');
+  
+  let quests = [];
+  try {
+    quests = JSON.parse(questsStr);
+  } catch (e) {
+    console.error('[DB Capitanes Config Parse Error]', e);
+  }
+
+  let captains = {};
+  try {
+    captains = JSON.parse(captainsStr);
+  } catch (e) {
+    console.error('[DB Capitanes Config Captains Parse Error]', e);
+  }
+  
+  return {
+    gameMode: gameMode || 'general',
+    timeLimit: parseInt(timeLimitStr, 10) || 600,
+    quests: quests || [],
+    captains: captains || {}
+  };
+}
+
+async function saveCapitanesConfig(eventId = 'default', config) {
+  const { gameMode, timeLimit, quests, captains } = config;
+  await setConfigValue(eventId, 'capitanes_game_mode', gameMode || 'general');
+  await setConfigValue(eventId, 'capitanes_time_limit', String(timeLimit || 600));
+  await setConfigValue(eventId, 'capitanes_quests', JSON.stringify(quests || []));
+  if (captains !== undefined) {
+    await setConfigValue(eventId, 'capitanes_captains', JSON.stringify(captains || {}));
+  }
+}
+
+async function getCapitanesProgress(eventId = 'default') {
+  const progressStr = await getConfigValue(eventId, 'capitanes_progress', '{}');
+  try {
+    return JSON.parse(progressStr) || {};
+  } catch (e) {
+    console.error('[DB Capitanes Progress Parse Error]', e);
+    return {};
+  }
+}
+
+async function saveCapitanesProgress(eventId = 'default', progress) {
+  await setConfigValue(eventId, 'capitanes_progress', JSON.stringify(progress || {}));
+}
+
 module.exports = {
   isSupabaseEnabled,
   getGuests,
@@ -1393,6 +1448,10 @@ module.exports = {
   getRsvps,
   addRsvp,
   deleteRsvp,
-  saveSongSuggestion
+  saveSongSuggestion,
+  getCapitanesConfig,
+  saveCapitanesConfig,
+  getCapitanesProgress,
+  saveCapitanesProgress
 };
 

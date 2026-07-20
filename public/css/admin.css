@@ -375,15 +375,44 @@ h1 {
 
 /* Templates for Printable Poster */
 @media print {
-  body * {
-    visibility: hidden;
+  /* Reset body styles for clean white printing */
+  body {
+    background: white !important;
+    background-image: none !important;
+    color: #111 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    min-height: auto !important;
+    height: auto !important;
   }
-  
-  #print-area, #print-area * {
-    visibility: visible;
+
+  /* Hide screen elements */
+  .admin-container,
+  .modal-backdrop,
+  #table-custom-dropdown,
+  .toast-container {
+    display: none !important;
   }
-  
+
+  /* Hide print areas by default */
   #print-area {
+    display: none !important;
+  }
+  #print-area-capitanes-tables {
+    display: none !important;
+  }
+
+  /* Show single print area when print mode active */
+  body.print-mode-single #print-area {
+    display: flex !important;
+  }
+
+  /* Show multi-tables print area when print mode active */
+  body.print-mode-multi-tables #print-area-capitanes-tables {
+    display: block !important;
+  }
+  
+  body.print-mode-single #print-area {
     position: absolute;
     left: 0;
     top: 0;
@@ -2201,6 +2230,124 @@ header {
 /* Ensure disabled buttons with spinners have appropriate styling */
 button:disabled {
   cursor: not-allowed !important;
+}
+
+/* Hidden print area for capitanes tables */
+#print-area-capitanes-tables {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: portrait;
+    margin: 0;
+  }
+
+  body.print-mode-multi-tables {
+    background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  .print-capitanes-grid {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    background: white;
+    color: #111;
+  }
+  
+  .print-capitanes-card {
+    page-break-after: always;
+    page-break-inside: avoid;
+    width: 100%;
+    height: 100vh;
+    padding: 8vh 6vw;
+    box-sizing: border-box;
+    background: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-evenly;
+    border: 14px double #c5a059;
+    border-radius: 0;
+    margin: 0;
+    position: relative;
+  }
+  
+  .print-capitanes-card:last-child {
+    page-break-after: avoid;
+  }
+  
+  .print-capitanes-card-header {
+    font-family: 'Cinzel', serif;
+    font-size: 2.8rem;
+    font-weight: 700;
+    letter-spacing: 5px;
+    color: #111;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    text-align: center;
+  }
+  
+  .print-capitanes-card-event {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.4rem;
+    color: #555;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    text-align: center;
+  }
+  
+  .print-capitanes-card-divider {
+    height: 3px;
+    background: #c5a059;
+    width: 250px;
+    margin: 15px auto;
+  }
+  
+  .print-capitanes-card-table {
+    font-family: 'Cinzel', serif;
+    font-size: 4.5rem;
+    font-weight: 700;
+    color: #c5a059;
+    margin-bottom: 15px;
+    text-transform: uppercase;
+    text-align: center;
+    letter-spacing: 2px;
+  }
+  
+  .print-capitanes-card-qr-container {
+    padding: 24px;
+    border: 4px solid #c5a059;
+    background: white;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
+    margin: 15px 0;
+    display: inline-block;
+  }
+  
+  .print-capitanes-card-qr {
+    width: 400px;
+    height: 400px;
+    display: block;
+  }
+  
+  .print-capitanes-card-instructions {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.45rem;
+    color: #111;
+    line-height: 1.8;
+    max-width: 750px;
+    text-align: center;
+    font-weight: 500;
+  }
+
+  .print-capitanes-card-instructions strong {
+    color: #8a6b2e;
+    font-weight: 700;
+  }
 }
 
 

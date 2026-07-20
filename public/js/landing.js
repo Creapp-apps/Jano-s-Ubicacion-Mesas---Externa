@@ -1,14 +1,7 @@
-// MiFiestAPP Landing Page JS - Interactive Simulator Logic
+// miFiestAPP Landing Page JS - Interactive Simulator Logic
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Mobile navbar toggle if we implement it, otherwise basic setup
-  const navToggle = document.querySelector('.nav-toggle');
-  const navLinks = document.querySelector('.nav-links');
-  if (navToggle && navLinks) {
-    navToggle.addEventListener('click', () => {
-      navLinks.style.display = navLinks.style.display === 'flex' ? 'none' : 'flex';
-    });
-  }
+  // --- NAV BAR LOGIC INITIATED ---
 
   // --- INTERACTIVE SIMULATOR SYSTEM ---
   const steps = document.querySelectorAll('.sim-step');
@@ -288,7 +281,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (guest) {
         resultContainer.innerHTML = `
           <div class="sim-ticket-card">
-            <div class="sim-ticket-logo">MIFIESTAPP SERVICES</div>
+            <div class="sim-ticket-logo">miFiestAPP SERVICES</div>
             <div class="sim-ticket-name">${guest.name}</div>
             <div class="sim-ticket-grid">
               <div>
@@ -437,5 +430,60 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+
+  // --- TUBELIGHT FLOATING NAVBAR & SCROLL SPY ---
+  const sections = document.querySelectorAll('section[id]');
+  const navItems = document.querySelectorAll('.nav-item-link');
+  const indicator = document.querySelector('.nav-lamp-indicator');
+
+  function updateIndicator() {
+    const activeLink = document.querySelector('.nav-item-link.active');
+    if (activeLink && indicator) {
+      indicator.style.width = `${activeLink.offsetWidth}px`;
+      indicator.style.left = `${activeLink.offsetLeft}px`;
+    }
+  }
+
+  // Set active link and animate immediately on click
+  navItems.forEach(item => {
+    item.addEventListener('click', () => {
+      navItems.forEach(link => link.classList.remove('active'));
+      item.classList.add('active');
+      updateIndicator();
+    });
+  });
+
+  // IntersectionObserver for active section tracking (Scroll Spy)
+  const observerOptions = {
+    root: null,
+    rootMargin: '-25% 0px -55% 0px', // Focus window centered on the screen
+    threshold: 0
+  };
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const id = entry.target.getAttribute('id');
+        const correspondingLink = document.querySelector(`.nav-item-link[href="#${id}"]`);
+        
+        if (correspondingLink) {
+          navItems.forEach(link => link.classList.remove('active'));
+          correspondingLink.classList.add('active');
+          updateIndicator();
+        }
+      }
+    });
+  }, observerOptions);
+
+  sections.forEach(section => observer.observe(section));
+
+  // Handle initial state and updates on load, resize or font loading
+  updateIndicator();
+  window.addEventListener('resize', updateIndicator);
+  window.addEventListener('load', updateIndicator);
+  
+  // Add small delays to guarantee rendering precision after page adjustments
+  setTimeout(updateIndicator, 200);
+  setTimeout(updateIndicator, 500);
 });
 

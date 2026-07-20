@@ -4,7 +4,31 @@ class TriviaCoordinator {
   }
 
   initializeSession(eventId, questions) {
-    const normalizedQuestions = (questions || []).map(q => ({
+    let finalQuestions = questions || [];
+    if (finalQuestions.length === 0) {
+      finalQuestions = [
+        {
+          questionText: "¿Dónde se conocieron los novios/agasajados?",
+          options: ["En el colegio/universidad", "En una fiesta/boliche", "Por redes sociales", "En el trabajo"],
+          correctOptionIndex: 0,
+          timeLimit: 20
+        },
+        {
+          questionText: "¿Cuál es el plato de comida preferido del agasajado/a?",
+          options: ["Asado", "Pastas", "Sushi", "Hamburguesa"],
+          correctOptionIndex: 1,
+          timeLimit: 20
+        },
+        {
+          questionText: "¿Cuál es su destino soñado para viajar?",
+          options: ["Caribe/Playa", "Europa/Histórico", "Asia/Aventura", "Bariloche/Nieve"],
+          correctOptionIndex: 0,
+          timeLimit: 20
+        }
+      ];
+    }
+
+    const normalizedQuestions = finalQuestions.map(q => ({
       questionText: q.questionText || q.question || '',
       options: q.options || [],
       correctOptionIndex: q.correctOptionIndex !== undefined ? q.correctOptionIndex : (q.correctIndex !== undefined ? q.correctIndex : 0),
@@ -26,6 +50,8 @@ class TriviaCoordinator {
       players: {}, // nickname: { score: 0, lastCorrect: false, lastPoints: 0 }
       responses: {}, // questionIndex: { nickname: { optionIndex, timeTakenMs, points } }
       stateExpiresAt: null,
+      pausedRemainingTime: null,
+      paused: false,
       clients: existingClients, // preserve clients!
       autoMode: false,
       customDuration: existingCustomDuration,
@@ -42,13 +68,70 @@ class TriviaCoordinator {
     this.broadcastState(eventId);
   }
 
+  startCountdown(eventId) {
+    const session = this.sessions[eventId];
+    if (!session) return;
+
+    if (session.timerId) {
+      clearTimeout(session.timerId);
+      session.timerId = null;
+    }
+
+    session.status = 'COUNTDOWN';
+    session.autoMode = true;
+    session.stateExpiresAt = Date.now() + 10000;
+
+    session.timerId = setTimeout(() => {
+      this.startQuestion(eventId, true);
+    }, 10000);
+
+    this.broadcastState(eventId);
+  }
+
+  checkAndTransitionAutoState(eventId) {
+    const session = this.sessions[eventId];
+    if (!session || !session.autoMode || session.paused) return;
+
+    const now = Date.now();
+    if (session.status === 'QUESTION_ACTIVE') {
+      if (session.stateExpiresAt && now > session.stateExpiresAt) {
+        this.revealAnswer(eventId);
+      }
+    } else if (session.status === 'REVEAL_ANSWER') {
+      if (session.stateExpiresAt && now > session.stateExpiresAt) {
+        this.showLeaderboard(eventId);
+      }
+    } else if (session.status === 'LEADERBOARD') {
+      if (session.stateExpiresAt && now > session.stateExpiresAt) {
+        this.nextQuestion(eventId);
+      }
+    } else if (session.status === 'COUNTDOWN') {
+      if (session.stateExpiresAt && now > session.stateExpiresAt) {
+        this.startQuestion(eventId, true);
+      }
+    }
+  }
+
   getSessionState(eventId) {
     const session = this.sessions[eventId];
     if (!session) return { status: 'INACTIVE', players: [], questionsCount: 0, totalQuestions: 0 };
+
+    if (!session.inTransition) {
+      session.inTransition = true;
+      try {
+        this.checkAndTransitionAutoState(eventId);
+      } finally {
+        session.inTransition = false;
+      }
+    }
+
     return {
       status: session.status,
+      paused: session.paused || false,
       autoMode: session.autoMode || false,
       customDuration: session.customDuration || null,
+      serverTime: Date.now(),
+      stateExpiresAt: session.stateExpiresAt,
       currentQuestionIndex: session.currentQuestionIndex,
       players: Object.keys(session.players).map(nick => ({
         nickname: nick,
@@ -60,7 +143,9 @@ class TriviaCoordinator {
         questionText: session.questions[session.currentQuestionIndex].questionText,
         options: session.questions[session.currentQuestionIndex].options,
         timeLimit: session.customDuration || session.questions[session.currentQuestionIndex].timeLimit,
-        remainingTime: session.stateExpiresAt ? Math.max(0, Math.round((session.stateExpiresAt - Date.now()) / 1000)) : (session.customDuration || session.questions[session.currentQuestionIndex].timeLimit),
+        remainingTime: session.stateExpiresAt 
+          ? Math.max(0, Math.round((session.stateExpiresAt - Date.now()) / 1000)) 
+          : (session.pausedRemainingTime !== undefined && session.pausedRemainingTime !== null ? session.pausedRemainingTime : (session.customDuration || session.questions[session.currentQuestionIndex].timeLimit)),
         correctOptionIndex: session.status === 'REVEAL_ANSWER' ? session.questions[session.currentQuestionIndex].correctOptionIndex : undefined,
         optionStats: (() => {
           const stats = [0, 0, 0, 0];
@@ -101,6 +186,10 @@ class TriviaCoordinator {
   startQuestion(eventId, autoMode = null) {
     const session = this.sessions[eventId];
     if (!session || session.status === 'PODIUM') return;
+    if (!session.questions || session.questions.length === 0) {
+      console.warn(`[TriviaCoordinator] Cannot start question: session ${eventId} has 0 questions.`);
+      return;
+    }
 
     if (session.timerId) {
       clearTimeout(session.timerId);
@@ -112,7 +201,14 @@ class TriviaCoordinator {
     }
 
     session.status = 'QUESTION_ACTIVE';
-    const timeLimit = session.customDuration || session.questions[session.currentQuestionIndex].timeLimit;
+    
+    let timeLimit = session.customDuration || session.questions[session.currentQuestionIndex].timeLimit;
+    if (session.pausedRemainingTime !== undefined && session.pausedRemainingTime !== null) {
+      timeLimit = Math.max(1, session.pausedRemainingTime);
+      session.pausedRemainingTime = null;
+    }
+    
+    session.paused = false;
     session.stateExpiresAt = Date.now() + (timeLimit * 1000);
 
     if (session.autoMode) {
@@ -138,7 +234,7 @@ class TriviaCoordinator {
     if (isCorrect) {
       const limitMs = (session.customDuration || question.timeLimit) * 1000;
       const speedFactor = Math.max(0, (limitMs - timeTakenMs) / limitMs);
-      points = Math.round(1000 * (0.3 + 0.7 * speedFactor));
+      points = Math.round(100 * (0.3 + 0.7 * speedFactor));
     }
 
     if (!session.responses[session.currentQuestionIndex]) {
@@ -165,7 +261,15 @@ class TriviaCoordinator {
     }
 
     session.status = 'REVEAL_ANSWER';
-    session.stateExpiresAt = null;
+    
+    if (session.autoMode) {
+      session.stateExpiresAt = Date.now() + 6000;
+      session.timerId = setTimeout(() => {
+        this.showLeaderboard(eventId);
+      }, 6000);
+    } else {
+      session.stateExpiresAt = null;
+    }
 
     const responses = session.responses[session.currentQuestionIndex] || {};
     Object.keys(session.players).forEach(nick => {
@@ -179,13 +283,6 @@ class TriviaCoordinator {
         session.players[nick].lastPoints = 0;
       }
     });
-
-    if (session.autoMode) {
-      // Wait 6 seconds showing the correct answer, then show leaderboard
-      session.timerId = setTimeout(() => {
-        this.showLeaderboard(eventId);
-      }, 6000);
-    }
 
     this.broadcastState(eventId);
   }
@@ -213,10 +310,12 @@ class TriviaCoordinator {
     session.status = 'LEADERBOARD';
 
     if (session.autoMode) {
-      // Wait 8 seconds showing the leaderboard, then proceed
+      session.stateExpiresAt = Date.now() + 8000;
       session.timerId = setTimeout(() => {
         this.nextQuestion(eventId);
       }, 8000);
+    } else {
+      session.stateExpiresAt = null;
     }
 
     this.broadcastState(eventId);
@@ -234,15 +333,16 @@ class TriviaCoordinator {
     if (session.currentQuestionIndex + 1 < session.questions.length) {
       session.currentQuestionIndex++;
       if (session.autoMode) {
-        // Automatically start the next question!
         this.startQuestion(eventId, true);
       } else {
         session.status = 'LOBBY';
+        session.stateExpiresAt = null;
         this.broadcastState(eventId);
       }
     } else {
       session.status = 'PODIUM';
-      session.autoMode = false; // Disable autoMode once finished
+      session.autoMode = false;
+      session.stateExpiresAt = null;
       this.broadcastState(eventId);
     }
   }
@@ -257,6 +357,32 @@ class TriviaCoordinator {
     }
     this.broadcastState(eventId);
     return session.autoMode;
+  }
+
+  stopTrivia(eventId) {
+    const session = this.sessions[eventId];
+    if (!session) return;
+
+    if (session.timerId) {
+      clearTimeout(session.timerId);
+      session.timerId = null;
+    }
+
+    session.autoMode = false;
+    session.paused = true;
+
+    if (session.status === 'COUNTDOWN') {
+      session.status = 'LOBBY';
+      session.paused = false;
+      session.stateExpiresAt = null;
+    } else if (session.status === 'QUESTION_ACTIVE' && session.stateExpiresAt) {
+      session.pausedRemainingTime = Math.max(0, Math.round((session.stateExpiresAt - Date.now()) / 1000));
+      session.stateExpiresAt = null;
+    } else {
+      session.stateExpiresAt = null;
+    }
+
+    this.broadcastState(eventId);
   }
 
   broadcastState(eventId) {
