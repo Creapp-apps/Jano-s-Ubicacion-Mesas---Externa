@@ -914,7 +914,7 @@ app.get('/api/superadmin/events', requireSuperAuth, async (req, res) => {
 
 // API: Superadmin Create Event
 app.post('/api/superadmin/events', requireSuperAuth, async (req, res) => {
-  const { id, clientName, password, clientEmail, serviceTables, servicePhotos, serviceInvitation } = req.body;
+  const { id, clientName, eventName, password, clientEmail, serviceTables, servicePhotos, serviceInvitation } = req.body;
   if (!id || !clientName) {
     return res.status(400).json({ error: 'El ID y el nombre del cliente son requeridos.' });
   }
@@ -922,8 +922,9 @@ app.post('/api/superadmin/events', requireSuperAuth, async (req, res) => {
     const sTables = serviceTables !== false;
     const sPhotos = servicePhotos !== false;
     const sInvitation = serviceInvitation !== false;
+    const resolvedEventName = (eventName || clientName || '').trim();
     
-    const cleanId = await db.createEvent(id, clientName, password || '', clientEmail || '', sTables, sPhotos, sInvitation);
+    const cleanId = await db.createEvent(id, clientName, password || '', clientEmail || '', sTables, sPhotos, sInvitation, true, resolvedEventName);
     
     // Create Google Drive folder in background immediately on event creation
     const { syncPhotosToDrive } = require('./utils/googleDrive');
@@ -935,7 +936,7 @@ app.post('/api/superadmin/events', requireSuperAuth, async (req, res) => {
     let emailStatus = { sent: false };
     if (clientEmail && clientEmail.trim()) {
       try {
-        const emailResult = await sendWelcomeEmail(clientEmail.trim(), clientName.trim(), cleanId, password || '');
+        const emailResult = await sendWelcomeEmail(clientEmail.trim(), clientName.trim(), cleanId, password || '', resolvedEventName);
         if (emailResult.success) {
           emailStatus.sent = true;
           emailStatus.simulated = !!emailResult.simulated;

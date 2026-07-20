@@ -54,7 +54,7 @@ async function runTests() {
     try { await db.deleteEvent(testId); } catch(e) {}
 
     console.log('- Test event creation');
-    await db.createEvent(testId, 'Evento de Prueba Superadmin', '', 'testemail@example.com');
+    await db.createEvent(testId, 'Cliente de Prueba', '', 'testemail@example.com', true, true, true, true, 'Boda de Prueba Decoupled');
     
     console.log('- Test event validation (should be active by default)');
     const isValidDefault = await db.isEventValid(testId);
@@ -64,7 +64,8 @@ async function runTests() {
     const events = await db.getEvents();
     const createdEvent = events.find(e => e.id === testId);
     assert.ok(createdEvent, 'Created event must be in getEvents list');
-    assert.strictEqual(createdEvent.clientName, 'Evento de Prueba Superadmin');
+    assert.strictEqual(createdEvent.clientName, 'Cliente de Prueba');
+    assert.strictEqual(createdEvent.eventName, 'Boda de Prueba Decoupled');
     assert.strictEqual(createdEvent.clientEmail, 'testemail@example.com', 'clientEmail must be saved correctly');
 
     console.log('- Test toggling event to inactive');
@@ -183,15 +184,22 @@ async function runTests() {
         'Cookie': sessionCookie,
         'Content-Type': 'application/json'
       }
-    }, { id: apiTestId, clientName: 'API Test Client', password: 'cliente-api-pass', clientEmail: 'api-client@example.com' });
+    }, { 
+      id: apiTestId, 
+      clientName: 'API Test Client', 
+      eventName: 'API Test Event Name',
+      password: 'cliente-api-pass', 
+      clientEmail: 'api-client@example.com' 
+    });
     
     assert.strictEqual(createRes.statusCode, 200);
     assert.strictEqual(createRes.body.success, true);
     assert.strictEqual(createRes.body.eventId, apiTestId);
 
-    // Verify clientEmail saved in DB via API
+    // Verify clientEmail and eventName saved in DB via API
     const dbEvent = (await db.getEvents()).find(e => e.id === apiTestId);
     assert.strictEqual(dbEvent.clientEmail, 'api-client@example.com', 'Client email must be saved correctly via API');
+    assert.strictEqual(dbEvent.eventName, 'API Test Event Name', 'Event name must be saved correctly via API');
 
     // Test API: Client Admin Login
     console.log('- Test client admin login with correct password');

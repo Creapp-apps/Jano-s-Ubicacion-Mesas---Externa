@@ -9,9 +9,10 @@ const EMAIL_FROM = process.env.EMAIL_FROM || 'onboarding@resend.dev';
  * @param {string} clientName 
  * @param {string} eventId 
  * @param {string} password 
+ * @param {string} [eventName]
  * @returns {Promise<{success: boolean, messageId?: string, error?: string, simulated?: boolean}>}
  */
-async function sendWelcomeEmail(clientEmail, clientName, eventId, password) {
+async function sendWelcomeEmail(clientEmail, clientName, eventId, password, eventName = '') {
   if (!clientEmail) {
     console.log('[EMAIL] No client email provided, skipping welcome email.');
     return { success: false, error: 'No client email provided' };
@@ -31,7 +32,8 @@ async function sendWelcomeEmail(clientEmail, clientName, eventId, password) {
     }
   }
 
-  const subject = `¡Tu servicio de miFiestAPP para "${clientName}" está listo! 🚀`;
+  const displayEventName = eventName || clientName || 'tu evento';
+  const subject = `¡Tu servicio de miFiestAPP para "${displayEventName}" está listo! 🚀`;
 
   // HTML template matching miFiestAPP premium aesthetic
   const html = `

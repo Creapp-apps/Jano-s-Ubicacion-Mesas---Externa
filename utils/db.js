@@ -867,9 +867,11 @@ async function getEvent(eventId) {
       throw error;
     }
     if (!data) return null;
+    const eventName = await getEventTitle(cleanId);
     return {
       id: data.id,
       clientName: data.client_name,
+      eventName: eventName,
       clientEmail: data.client_email || '',
       active: data.active,
       password: data.password || '',
@@ -883,9 +885,11 @@ async function getEvent(eventId) {
     const events = getLocalEvents();
     const e = events.find(event => event.id === cleanId);
     if (!e) return null;
+    const eventName = await getEventTitle(cleanId);
     return {
       id: e.id,
       clientName: e.clientName,
+      eventName: eventName,
       clientEmail: e.clientEmail || '',
       active: e.active,
       password: e.password || '',
@@ -909,9 +913,27 @@ async function getEvents() {
       console.error('Error fetching events from Supabase:', error);
       throw error;
     }
+    
+    // Fetch all event_title from config in one query
+    let titlesMap = {};
+    try {
+      const { data: configData } = await supabase
+        .from('config')
+        .select('event_id, value')
+        .eq('key', 'event_title');
+      if (configData) {
+        configData.forEach(row => {
+          titlesMap[row.event_id] = row.value;
+        });
+      }
+    } catch (err) {
+      console.error('Error fetching event titles config:', err);
+    }
+
     return (data || []).map(e => ({
       id: e.id,
       clientName: e.client_name,
+      eventName: titlesMap[e.id] || '',
       clientEmail: e.client_email || '',
       active: e.active,
       password: e.password || '',
@@ -923,22 +945,33 @@ async function getEvents() {
     }));
   } else {
     const events = getLocalEvents();
-    return events.map(e => ({
-      id: e.id,
-      clientName: e.clientName,
-      clientEmail: e.clientEmail || '',
-      active: e.active,
-      password: e.password || '',
-      createdAt: e.createdAt,
-      serviceTables: e.serviceTables !== false,
-      servicePhotos: e.servicePhotos !== false,
-      serviceInvitation: e.serviceInvitation !== false,
-      serviceTrivia: e.serviceTrivia !== false
+    return Promise.all(events.map(async e => {
+      let eventName = '';
+      try {
+        const { configFile } = getEventFiles(e.id);
+        if (fs.existsSync(configFile)) {
+          const config = JSON.parse(fs.readFileSync(configFile, 'utf8'));
+          eventName = config['event_title'] || '';
+        }
+      } catch (err) {}
+      return {
+        id: e.id,
+        clientName: e.clientName,
+        eventName: eventName,
+        clientEmail: e.clientEmail || '',
+        active: e.active,
+        password: e.password || '',
+        createdAt: e.createdAt,
+        serviceTables: e.serviceTables !== false,
+        servicePhotos: e.servicePhotos !== false,
+        serviceInvitation: e.serviceInvitation !== false,
+        serviceTrivia: e.serviceTrivia !== false
+      };
     }));
   }
 }
 
-async function createEvent(id, clientName, password = '', clientEmail = '', serviceTables = true, servicePhotos = true, serviceInvitation = true, serviceTrivia = true) {
+async function createEvent(id, clientName, password = '', clientEmail = '', serviceTables = true, servicePhotos = true, serviceInvitation = true, serviceTrivia = true, eventName = '') {
   const cleanId = (id || '').trim().toLowerCase().replace(/[^a-zA-Z0-9_-]/g, '');
   if (!cleanId) throw new Error('ID de evento inválido.');
 
@@ -982,6 +1015,12 @@ async function createEvent(id, clientName, password = '', clientEmail = '', serv
     // Auto-create local directories for isolation
     getEventFiles(cleanId);
   }
+
+  // Decoupled event title configuration
+  if (eventName) {
+    await setConfigValue(cleanId, 'event_title', eventName.trim());
+  }
+
   return cleanId;
 }
 
