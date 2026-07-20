@@ -863,7 +863,7 @@ app.post('/api/admin/login', async (req, res) => {
 app.post('/api/admin/logout', (req, res) => {
   const eventId = req.query.event || req.body.event || 'default';
   const cookieName = `admin_session_${eventId}`;
-  res.setHeader('Set-Cookie', `${cookieName}=; Path=/; HttpOnly; Max-Age=0`);
+  res.setHeader('Set-Cookie', `${cookieName}=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT`);
   res.json({ success: true });
 });
 
@@ -889,7 +889,7 @@ app.post('/api/superadmin/login', (req, res) => {
 
 // API: Superadmin Logout
 app.post('/api/superadmin/logout', (req, res) => {
-  res.setHeader('Set-Cookie', `superadmin_session=; Path=/; HttpOnly; Max-Age=0`);
+  res.setHeader('Set-Cookie', `superadmin_session=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT`);
   res.json({ success: true });
 });
 

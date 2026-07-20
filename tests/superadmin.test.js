@@ -302,6 +302,34 @@ async function runTests() {
     assert.strictEqual(apiBlockedRes.statusCode, 403, 'API requests for deactivated events must return 403');
     assert.strictEqual(apiBlockedRes.body.error, 'El Combo Digital ha expirado o no está activo.');
 
+    // Test API: Client admin logout clears session
+    console.log('- Test client admin logout clears session cookie');
+    const clientLogoutRes = await request({
+      hostname: 'localhost',
+      port: port,
+      path: `/api/admin/logout?event=${apiTestId}`,
+      method: 'POST'
+    });
+    assert.strictEqual(clientLogoutRes.statusCode, 200, 'Logout endpoint should return status 200');
+    assert.ok(clientLogoutRes.headers['set-cookie'], 'Logout must clear cookie');
+    const clearedClientCookieHeader = clientLogoutRes.headers['set-cookie'][0];
+    assert.ok(clearedClientCookieHeader.includes('Max-Age=0') || clearedClientCookieHeader.includes('Expires='), 'Cookie should be expired');
+    assert.ok(clearedClientCookieHeader.includes('SameSite=Strict'), 'Cookie clearance must preserve SameSite attributes');
+
+    // Test API: Superadmin logout clears session
+    console.log('- Test superadmin logout clears session cookie');
+    const superadminLogoutRes = await request({
+      hostname: 'localhost',
+      port: port,
+      path: '/api/superadmin/logout',
+      method: 'POST'
+    });
+    assert.strictEqual(superadminLogoutRes.statusCode, 200, 'Superadmin logout should succeed');
+    assert.ok(superadminLogoutRes.headers['set-cookie'], 'Superadmin logout must clear cookie');
+    const clearedSuperCookieHeader = superadminLogoutRes.headers['set-cookie'][0];
+    assert.ok(clearedSuperCookieHeader.includes('Max-Age=0') || clearedSuperCookieHeader.includes('Expires='), 'Superadmin cookie should be expired');
+    assert.ok(clearedSuperCookieHeader.includes('SameSite=Strict'), 'Superadmin cookie clearance must preserve SameSite attributes');
+
     // -------------------------------------------------------------
     // Part 3: Cleanup
     // -------------------------------------------------------------
