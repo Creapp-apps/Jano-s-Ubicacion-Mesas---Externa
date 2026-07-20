@@ -98,6 +98,11 @@
       
       <form id="login-form">
         <div class="form-group">
+          <label for="email">Email del Cliente</label>
+          <input type="email" id="email" class="form-control" placeholder="cliente@ejemplo.com" required autocomplete="username">
+        </div>
+
+        <div class="form-group">
           <label for="password">Contraseña de Acceso</label>
           <div class="password-wrapper" style="position: relative; width: 100%;">
             <input type="password" id="password" class="form-control" placeholder="••••••••" required autocomplete="current-password" style="padding-right: 50px;">
@@ -110,7 +115,7 @@
         </div>
         
         <button type="submit" class="btn btn-primary" style="width: 100%;">Ingresar</button>
-        <div id="error-message" class="login-error">Contraseña incorrecta</div>
+        <div id="error-message" class="login-error">Email o contraseña incorrectos</div>
       </form>
     </div>
   </div>
@@ -159,6 +164,7 @@
 
     document.getElementById('login-form').addEventListener('submit', async (e) => {
       e.preventDefault();
+      const email = document.getElementById('email').value.trim();
       const password = document.getElementById('password').value;
       const errorMsg = document.getElementById('error-message');
       
@@ -173,7 +179,7 @@
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ password, eventId })
+          body: JSON.stringify({ email, password, eventId })
         });
         
         const data = await response.json();
@@ -181,7 +187,8 @@
         if (response.ok && data.success) {
           // Redirect to admin panel
           const service = urlParams.get('service');
-          const redirectUrl = `/admin?event=${encodeURIComponent(eventId)}${service ? `&service=${encodeURIComponent(service)}` : ''}`;
+          const targetEventId = data.eventId || eventId;
+          const redirectUrl = `/admin?event=${encodeURIComponent(targetEventId)}${service ? `&service=${encodeURIComponent(service)}` : ''}`;
           window.location.href = redirectUrl;
         } else {
           errorMsg.textContent = data.error || 'Error al iniciar sesión';
