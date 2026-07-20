@@ -253,6 +253,18 @@ async function runTests() {
     }, { email: 'api-client@example.com', password: 'wrong-password' });
     assert.strictEqual(clientLoginEmailFailRes.statusCode, 401, 'Incorrect credentials must fail');
 
+    console.log('- Test authenticated login redirection to event.html');
+    const authLoginRedirectRes = await request({
+      hostname: 'localhost',
+      port: port,
+      path: `/login?event=${apiTestId}`,
+      method: 'GET',
+      headers: { 'Cookie': clientEmailCookie }
+    });
+    assert.strictEqual(authLoginRedirectRes.statusCode, 302, 'Should return 302 redirect for logged in admin');
+    assert.ok(authLoginRedirectRes.headers.location.includes('/event.html'), 'Should redirect to event.html');
+
+
     // Test Middleware: Validate event routing (Active event)
     console.log('- Test page routing for active event (should serve landing page)');
     const activeRouteRes = await request({

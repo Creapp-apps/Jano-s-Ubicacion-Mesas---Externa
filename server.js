@@ -1824,7 +1824,7 @@ app.get('/login', (req, res) => {
     if (req.query.event) queryParams.set('event', req.query.event);
     if (req.query.service) queryParams.set('service', req.query.service);
     const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
-    return res.redirect(`/admin${queryString}`);
+    return res.redirect(`/event.html${queryString}`);
   }
   res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });

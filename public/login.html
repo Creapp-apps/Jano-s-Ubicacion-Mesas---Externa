@@ -185,10 +185,10 @@
         const data = await response.json();
         
         if (response.ok && data.success) {
-          // Redirect to admin panel
+          // Redirect to event home page
           const service = urlParams.get('service');
           const targetEventId = data.eventId || eventId;
-          const redirectUrl = `/admin?event=${encodeURIComponent(targetEventId)}${service ? `&service=${encodeURIComponent(service)}` : ''}`;
+          const redirectUrl = `/event.html?event=${encodeURIComponent(targetEventId)}${service ? `&service=${encodeURIComponent(service)}` : ''}`;
           window.location.href = redirectUrl;
         } else {
           errorMsg.textContent = data.error || 'Error al iniciar sesión';
