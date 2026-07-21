@@ -929,18 +929,70 @@
       top: 20px;
       right: 20px;
       display: flex;
+      gap: 10px;
       z-index: 100;
     }
-    .btn-admin-control-item:hover {
-      filter: brightness(1.2);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    .btn-admin-control-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border-radius: 30px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    .btn-admin-control-item .admin-icon {
+      width: 14px;
+      height: 14px;
+      stroke-width: 2.2px;
+      transition: transform 0.3s ease;
+    }
+    .btn-admin-help {
+      background: rgba(212, 175, 55, 0.05);
+      border: 1px solid rgba(212, 175, 55, 0.25);
+      color: var(--gold-primary);
+      box-shadow: 0 4px 15px rgba(212, 175, 55, 0.05);
+    }
+    .btn-admin-help:hover {
+      background: rgba(212, 175, 55, 0.15);
+      border-color: var(--gold-primary);
+      color: var(--text-main);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(212, 175, 55, 0.25), inset 0 0 8px rgba(212, 175, 55, 0.2);
+    }
+    .btn-admin-help:hover .admin-icon {
+      transform: scale(1.15);
+    }
+    .btn-admin-logout {
+      background: rgba(231, 29, 54, 0.05);
+      border: 1px solid rgba(231, 29, 54, 0.25);
+      color: #e71d36;
+      box-shadow: 0 4px 15px rgba(231, 29, 54, 0.05);
+    }
+    .btn-admin-logout:hover {
+      background: rgba(231, 29, 54, 0.15);
+      border-color: #e71d36;
+      color: #ffffff;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(231, 29, 54, 0.25), inset 0 0 8px rgba(231, 29, 54, 0.2);
+    }
+    .btn-admin-logout:hover .admin-icon {
+      transform: translateX(3px);
     }
     @media (max-width: 600px) {
       .admin-header-controls {
         position: static;
         justify-content: center;
-        margin-bottom: 15px;
+        margin-bottom: 20px;
+        width: 100%;
+        gap: 12px;
       }
     }
   </style>
@@ -1581,8 +1633,22 @@
               const adminControls = document.createElement('div');
               adminControls.className = 'admin-header-controls';
               adminControls.innerHTML = `
-                <button id="btn-admin-guide" class="btn-admin-control-item" style="background: rgba(212, 175, 55, 0.1); border: 1px solid rgba(212, 175, 55, 0.3); color: var(--gold-primary); padding: 8px 16px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; transition: all 0.3s; margin-right: 8px;">Ayuda</button>
-                <button id="btn-admin-logout" class="btn-admin-control-item" style="background: rgba(231, 29, 54, 0.1); border: 1px solid rgba(231, 29, 54, 0.3); color: #e71d36; padding: 8px 16px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; transition: all 0.3s;">Cerrar Sesión</button>
+                <button id="btn-admin-guide" class="btn-admin-control-item btn-admin-help">
+                  <svg class="admin-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                  </svg>
+                  Ayuda
+                </button>
+                <button id="btn-admin-logout" class="btn-admin-control-item btn-admin-logout">
+                  <svg class="admin-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                  </svg>
+                  Cerrar Sesión
+                </button>
               `;
               header.appendChild(adminControls);
 
