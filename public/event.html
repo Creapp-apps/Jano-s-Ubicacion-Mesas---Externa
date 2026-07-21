@@ -1582,7 +1582,7 @@
               adminControls.className = 'admin-header-controls';
               adminControls.innerHTML = `
                 <button id="btn-admin-guide" class="btn-admin-control-item" style="background: rgba(212, 175, 55, 0.1); border: 1px solid rgba(212, 175, 55, 0.3); color: var(--gold-primary); padding: 8px 16px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; transition: all 0.3s; margin-right: 8px;">Ayuda</button>
-                <button id="btn-admin-logout" class="btn-admin-control-item" style="background: rgba(231, 29, 54, 0.1); border: 1px solid rgba(231, 29, 54, 0.3); color: #e71d36; padding: 8px 16px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; transition: all 0.3s;">Salir</button>
+                <button id="btn-admin-logout" class="btn-admin-control-item" style="background: rgba(231, 29, 54, 0.1); border: 1px solid rgba(231, 29, 54, 0.3); color: #e71d36; padding: 8px 16px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; transition: all 0.3s;">Cerrar Sesión</button>
               `;
               header.appendChild(adminControls);
 
@@ -1590,7 +1590,7 @@
               document.getElementById('btn-admin-logout').addEventListener('click', () => {
                 fetch(`/api/admin/logout?event=${encodeURIComponent(eventId)}`, { method: 'POST' })
                   .then(() => {
-                    window.location.reload();
+                    window.location.href = `/login?event=${encodeURIComponent(eventId)}`;
                   });
               });
             }
