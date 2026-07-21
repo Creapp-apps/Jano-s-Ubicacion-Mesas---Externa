@@ -926,18 +926,18 @@
     /* Admin header controls positioning and styling */
     .admin-header-controls {
       position: absolute;
-      top: 20px;
-      right: 20px;
+      top: 25px;
+      right: 25px;
       display: flex;
-      gap: 10px;
+      gap: 12px;
       z-index: 100;
+      align-items: center;
     }
     .btn-admin-control-item {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      padding: 10px 18px;
-      border-radius: 30px;
+      justify-content: center;
+      height: 40px;
       font-family: 'Montserrat', sans-serif;
       font-size: 0.72rem;
       font-weight: 600;
@@ -949,12 +949,15 @@
       -webkit-backdrop-filter: blur(8px);
     }
     .btn-admin-control-item .admin-icon {
-      width: 14px;
-      height: 14px;
+      width: 15px;
+      height: 15px;
       stroke-width: 2.2px;
       transition: transform 0.3s ease;
     }
     .btn-admin-help {
+      padding: 0 18px;
+      border-radius: 30px;
+      gap: 8px;
       background: rgba(212, 175, 55, 0.05);
       border: 1px solid rgba(212, 175, 55, 0.25);
       color: var(--gold-primary);
@@ -971,6 +974,9 @@
       transform: scale(1.15);
     }
     .btn-admin-logout {
+      width: 40px;
+      padding: 0;
+      border-radius: 50%;
       background: rgba(231, 29, 54, 0.05);
       border: 1px solid rgba(231, 29, 54, 0.25);
       color: #e71d36;
@@ -988,11 +994,18 @@
     }
     @media (max-width: 600px) {
       .admin-header-controls {
-        position: static;
-        justify-content: center;
-        margin-bottom: 20px;
-        width: 100%;
-        gap: 12px;
+        top: 15px;
+        right: 15px;
+        gap: 8px;
+      }
+      .btn-admin-help {
+        padding: 0 12px;
+        height: 34px;
+        font-size: 0.65rem;
+      }
+      .btn-admin-logout {
+        width: 34px;
+        height: 34px;
       }
     }
   </style>
@@ -1626,40 +1639,35 @@
         .then(res => res.json())
         .then(data => {
           if (data && data.loggedIn) {
-            // Append admin controls in header
-            const header = document.querySelector('header');
-            if (header) {
-              header.style.position = 'relative';
-              const adminControls = document.createElement('div');
-              adminControls.className = 'admin-header-controls';
-              adminControls.innerHTML = `
-                <button id="btn-admin-guide" class="btn-admin-control-item btn-admin-help">
-                  <svg class="admin-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                  </svg>
-                  Ayuda
-                </button>
-                <button id="btn-admin-logout" class="btn-admin-control-item btn-admin-logout">
-                  <svg class="admin-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                    <polyline points="16 17 21 12 16 7"></polyline>
-                    <line x1="21" y1="12" x2="9" y2="12"></line>
-                  </svg>
-                  Cerrar Sesión
-                </button>
-              `;
-              header.appendChild(adminControls);
+            // Append admin controls to body for absolute screen positioning
+            const adminControls = document.createElement('div');
+            adminControls.className = 'admin-header-controls';
+            adminControls.innerHTML = `
+              <button id="btn-admin-guide" class="btn-admin-control-item btn-admin-help" title="Ayuda">
+                <svg class="admin-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+                Ayuda
+              </button>
+              <button id="btn-admin-logout" class="btn-admin-control-item btn-admin-logout" title="Cerrar Sesión">
+                <svg class="admin-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                  <polyline points="16 17 21 12 16 7"></polyline>
+                  <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+              </button>
+            `;
+            document.body.appendChild(adminControls);
 
-              document.getElementById('btn-admin-guide').addEventListener('click', openOnboarding);
-              document.getElementById('btn-admin-logout').addEventListener('click', () => {
-                fetch(`/api/admin/logout?event=${encodeURIComponent(eventId)}`, { method: 'POST' })
-                  .then(() => {
-                    window.location.href = `/login?event=${encodeURIComponent(eventId)}`;
-                  });
-              });
-            }
+            document.getElementById('btn-admin-guide').addEventListener('click', openOnboarding);
+            document.getElementById('btn-admin-logout').addEventListener('click', () => {
+              fetch(`/api/admin/logout?event=${encodeURIComponent(eventId)}`, { method: 'POST' })
+                .then(() => {
+                  window.location.href = `/login?event=${encodeURIComponent(eventId)}`;
+                });
+            });
 
             // Show onboarding welcome modal if not dismissed
             if (!localStorage.getItem(`onboarding_dismissed_${eventId}`)) {
