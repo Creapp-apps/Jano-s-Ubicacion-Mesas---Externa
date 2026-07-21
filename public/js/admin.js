@@ -1,9 +1,172 @@
 document.addEventListener('DOMContentLoaded', () => {
   const urlParams = new URLSearchParams(window.location.search);
   const eventId = urlParams.get('event') || 'default';
+  let isFormDirty = false;
+  let initialFormState = null;
+
+  function captureFormState() {
+    const form = document.getElementById('invitation-config-form');
+    if (!form) return '';
+    const formData = {};
+    const elements = form.querySelectorAll('input, select, textarea');
+    elements.forEach(el => {
+      if (el.id) {
+        if (el.type === 'checkbox' || el.type === 'radio') {
+          formData[el.id] = el.checked;
+        } else {
+          formData[el.id] = el.value;
+        }
+      }
+    });
+    return JSON.stringify(formData);
+  }
+
+  function clearDirtyHighlights() {
+    const form = document.getElementById('invitation-config-form');
+    if (form) {
+      const elements = form.querySelectorAll('.input-dirty');
+      elements.forEach(el => {
+        el.classList.remove('input-dirty');
+      });
+    }
+  }
+
+  function checkFormDirtyState() {
+    if (!initialFormState) return;
+    try {
+      const initialObj = JSON.parse(initialFormState);
+      const form = document.getElementById('invitation-config-form');
+      if (!form) return;
+      let dirty = false;
+      const elements = form.querySelectorAll('input, select, textarea');
+      elements.forEach(el => {
+        if (el.id && initialObj.hasOwnProperty(el.id)) {
+          let isFieldDirty = false;
+          if (el.type === 'checkbox' || el.type === 'radio') {
+            isFieldDirty = (el.checked !== initialObj[el.id]);
+          } else {
+            isFieldDirty = (el.value !== initialObj[el.id]);
+          }
+
+          const targetEl = (el.parentElement && el.parentElement.classList.contains('custom-datepicker-container')) ? el.parentElement : el;
+
+          if (isFieldDirty) {
+            targetEl.classList.add('input-dirty');
+            dirty = true;
+          } else {
+            targetEl.classList.remove('input-dirty');
+          }
+        }
+      });
+      isFormDirty = dirty;
+    } catch(e) {
+      const currentState = captureFormState();
+      isFormDirty = (currentState !== initialFormState);
+    }
+  }
+
+  function restoreFormState() {
+    if (!initialFormState) return;
+    try {
+      const data = JSON.parse(initialFormState);
+      const form = document.getElementById('invitation-config-form');
+      if (form) {
+        Object.keys(data).forEach(id => {
+          const el = document.getElementById(id);
+          if (el) {
+            if (el.type === 'checkbox' || el.type === 'radio') {
+              el.checked = data[id];
+            } else {
+              el.value = data[id];
+            }
+            const targetEl = (el.parentElement && el.parentElement.classList.contains('custom-datepicker-container')) ? el.parentElement : el;
+            targetEl.classList.remove('input-dirty');
+          }
+        });
+      }
+    } catch(e){}
+    isFormDirty = false;
+  }
+
+  function showUnsavedChangesModal(onSave, onDiscard, onCancel) {
+    const existing = document.getElementById('unsaved-changes-modal');
+    if (existing) existing.remove();
+
+    const backdrop = document.createElement('div');
+    backdrop.id = 'unsaved-changes-modal';
+    backdrop.className = 'unsaved-modal-backdrop';
+
+    const card = document.createElement('div');
+    card.className = 'unsaved-modal-card';
+    card.innerHTML = `
+      <div class="unsaved-modal-icon">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+      </div>
+      <h2 class="unsaved-modal-title">Cambios sin guardar</h2>
+      <p class="unsaved-modal-desc">Tienes cambios sin guardar en esta sección. ¿Deseas guardar los cambios antes de continuar?</p>
+      <div class="unsaved-modal-actions">
+        <button type="button" class="unsaved-btn-save" id="unsaved-btn-save">Guardar y Continuar</button>
+        <button type="button" class="unsaved-btn-discard" id="unsaved-btn-discard">Descartar Cambios</button>
+        <button type="button" class="unsaved-btn-cancel" id="unsaved-btn-cancel">Cancelar</button>
+      </div>
+    `;
+
+    backdrop.appendChild(card);
+    document.body.appendChild(backdrop);
+
+    const btnSave = card.querySelector('#unsaved-btn-save');
+    const btnDiscard = card.querySelector('#unsaved-btn-discard');
+    const btnCancel = card.querySelector('#unsaved-btn-cancel');
+
+    const closeModal = () => backdrop.remove();
+
+    btnSave.addEventListener('click', () => {
+      closeModal();
+      if (onSave) onSave();
+    });
+
+    btnDiscard.addEventListener('click', () => {
+      closeModal();
+      if (onDiscard) onDiscard();
+    });
+
+    btnCancel.addEventListener('click', () => {
+      closeModal();
+      if (onCancel) onCancel();
+    });
+  }
+
+  window.addEventListener('beforeunload', (e) => {
+    if (isFormDirty) {
+      e.preventDefault();
+      e.returnValue = '';
+      return '';
+    }
+  });
+
   const btnBackToPortal = document.getElementById('btn-back-to-portal');
   if (btnBackToPortal) {
     btnBackToPortal.href = `/event.html?event=${encodeURIComponent(eventId)}`;
+    btnBackToPortal.addEventListener('click', (e) => {
+      if (isFormDirty) {
+        e.preventDefault();
+        showUnsavedChangesModal(
+          () => {
+            saveInvitationConfig();
+            window.location.href = `/event.html?event=${encodeURIComponent(eventId)}`;
+          },
+          () => {
+            isFormDirty = false;
+            window.location.href = `/event.html?event=${encodeURIComponent(eventId)}`;
+          },
+          null
+        );
+      }
+    });
   }
 
   function showToast(type, title, message, duration = 3000) {
@@ -227,6 +390,24 @@ document.addEventListener('DOMContentLoaded', () => {
   let activeCustomSelection = 'global'; // 'global' or table name (string)
 
   function switchTab(tabId) {
+    if (isFormDirty) {
+      showUnsavedChangesModal(
+        () => {
+          saveInvitationConfig();
+          performSwitchTab(tabId);
+        },
+        () => {
+          restoreFormState();
+          performSwitchTab(tabId);
+        },
+        null
+      );
+      return;
+    }
+    performSwitchTab(tabId);
+  }
+
+  function performSwitchTab(tabId) {
     if (tabId === 'mesas') {
       if (tabBtnMesas) tabBtnMesas.classList.add('active');
       if (tabBtnFotos) tabBtnFotos.classList.remove('active');
@@ -312,6 +493,24 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   window.switchSubTab = function(subTabId) {
+    if (isFormDirty) {
+      showUnsavedChangesModal(
+        () => {
+          saveInvitationConfig();
+          performSwitchSubTab(subTabId);
+        },
+        () => {
+          restoreFormState();
+          performSwitchSubTab(subTabId);
+        },
+        null
+      );
+      return;
+    }
+    performSwitchSubTab(subTabId);
+  };
+
+  function performSwitchSubTab(subTabId) {
     const subtabs = ['informacion', 'diseno', 'fotos-inv', 'regalos', 'confirmaciones', 'respuestas', 'invitados'];
     subtabs.forEach(t => {
       const btn = document.getElementById(`subtab-btn-${t}`);
@@ -337,7 +536,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
     });
-  };
+  }
 
   function startPhotoPolling() {
     stopPhotoPolling(); // Clean up any existing connection/polling
@@ -934,7 +1133,22 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Salir trigger (volver al home)
-  btnLogout.addEventListener('click', () => {
+  btnLogout.addEventListener('click', (e) => {
+    if (isFormDirty) {
+      e.preventDefault();
+      showUnsavedChangesModal(
+        () => {
+          saveInvitationConfig();
+          window.location.href = `/?event=${encodeURIComponent(eventId)}`;
+        },
+        () => {
+          isFormDirty = false;
+          window.location.href = `/?event=${encodeURIComponent(eventId)}`;
+        },
+        null
+      );
+      return;
+    }
     window.location.href = `/?event=${encodeURIComponent(eventId)}`;
   });
 
@@ -1110,6 +1324,18 @@ document.addEventListener('DOMContentLoaded', () => {
         if (prevTitle) {
           prevTitle.textContent = data.eventTitle || 'JANO\'S EVENTOS';
         }
+
+        setTimeout(() => {
+          initialFormState = captureFormState();
+          isFormDirty = false;
+
+          const invForm = document.getElementById('invitation-config-form');
+          if (invForm && !invForm.dataset.dirtyListenersBound) {
+            invForm.dataset.dirtyListenersBound = 'true';
+            invForm.addEventListener('input', checkFormDirtyState);
+            invForm.addEventListener('change', checkFormDirtyState);
+          }
+        }, 150);
 
         const driveLoadingContainer = document.getElementById('drive-loading-container');
         let pollCount = 0;
@@ -1909,6 +2135,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (eventTitleInput) eventTitleInput.value = payload.eventTitle;
         if (eventTitlePhotosInput) eventTitlePhotosInput.value = payload.eventTitle;
         if (printEventTitle) printEventTitle.textContent = payload.eventTitle;
+
+        setTimeout(() => {
+          initialFormState = captureFormState();
+          clearDirtyHighlights();
+          isFormDirty = false;
+        }, 100);
       } else {
         showToast('error', 'Error', data.error || 'Error al guardar la configuración.', 4000);
       }

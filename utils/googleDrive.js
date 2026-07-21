@@ -15,19 +15,7 @@ function getDriveClient() {
 
   let auth;
 
-  if (refreshToken) {
-    auth = new google.auth.OAuth2(
-      clientId,
-      clientSecret
-    );
-    auth.setCredentials({
-      refresh_token: refreshToken
-    });
-  } else {
-    if (!clientEmail || !privateKey) {
-      throw new Error('Las credenciales de Google Drive (Cuenta de Servicio o OAuth2) no están configuradas en las variables de entorno.');
-    }
-
+  if (clientEmail && privateKey) {
     // Replace literal '\n' characters in private key string
     const formattedKey = privateKey.replace(/\\n/g, '\n');
 
@@ -36,6 +24,16 @@ function getDriveClient() {
       key: formattedKey,
       scopes: ['https://www.googleapis.com/auth/drive']
     });
+  } else if (refreshToken) {
+    auth = new google.auth.OAuth2(
+      clientId,
+      clientSecret
+    );
+    auth.setCredentials({
+      refresh_token: refreshToken
+    });
+  } else {
+    throw new Error('Las credenciales de Google Drive (Cuenta de Servicio o OAuth2) no están configuradas en las variables de entorno.');
   }
 
   return google.drive({ version: 'v3', auth });
@@ -53,7 +51,7 @@ async function syncPhotosToDrive(eventId = 'default', photoId = null) {
   // 1. Get Event Details to build the folder name matching the ClientName - DD-MM-YYYY format
   const eventTitle = await db.getEventTitle(eventId);
   const event = await db.getEvent(eventId);
-  let folderName = `Jano's - Mural de Fotos - ${eventTitle}`;
+  let folderName = `miFiestAPP - Mural de Fotos - ${eventTitle}`;
 
   if (event) {
     const clientName = event.clientName || eventTitle;
@@ -83,30 +81,39 @@ async function syncPhotosToDrive(eventId = 'default', photoId = null) {
       parents: parentFolderId ? [parentFolderId] : []
     };
 
-    const folderResponse = await drive.files.create({
-      resource: fileMetadata,
-      fields: 'id, webViewLink',
-      supportsAllDrives: true
-    });
+    try {
+      const folderResponse = await drive.files.create({
+        resource: fileMetadata,
+        fields: 'id, webViewLink',
+        supportsAllDrives: true
+      });
 
-    folderId = folderResponse.data.id;
-    folderUrl = folderResponse.data.webViewLink;
+      folderId = folderResponse.data.id;
+      folderUrl = folderResponse.data.webViewLink;
 
-    console.log(`[Google Drive] Carpeta creada con ID: ${folderId}`);
+      console.log(`[Google Drive] Carpeta creada con ID: ${folderId}`);
 
-    // Make the folder publicly readable so anyone with the link can view it
-    await drive.permissions.create({
-      fileId: folderId,
-      resource: {
-        role: 'reader',
-        type: 'anyone'
+      // Make the folder publicly readable so anyone with the link can view it
+      await drive.permissions.create({
+        fileId: folderId,
+        resource: {
+          role: 'reader',
+          type: 'anyone'
+        }
+      });
+      console.log(`[Google Drive] Permisos de lectura pública otorgados.`);
+
+      // Save folder ID and URL in event config
+      await db.setConfigValue(eventId, 'google_drive_folder_id', folderId);
+      await db.setConfigValue(eventId, 'google_drive_folder_url', folderUrl);
+    } catch (err) {
+      if (err.message && (err.message.includes('invalid_grant') || err.message.includes('expired'))) {
+        console.error(`[Google Drive] ⚠️ ATENCIÓN: El token de autenticación de Google Drive ha expirado (invalid_grant). Por favor regenera GOOGLE_DRIVE_REFRESH_TOKEN en el archivo .env o configura una Cuenta de Servicio.`);
+      } else {
+        console.error(`[Google Drive] Error al crear la carpeta en Google Drive:`, err.message || err);
       }
-    });
-    console.log(`[Google Drive] Permisos de lectura pública otorgados.`);
-
-    // Save folder ID and URL in event config
-    await db.setConfigValue(eventId, 'google_drive_folder_id', folderId);
-    await db.setConfigValue(eventId, 'google_drive_folder_url', folderUrl);
+      throw err;
+    }
   } else {
     console.log(`[Google Drive] Usando carpeta existente: ${folderId}`);
   }
