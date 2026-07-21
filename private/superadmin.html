@@ -340,6 +340,10 @@
                 <input type="checkbox" id="service-invitation" checked style="accent-color: var(--gold-primary); width: 18px; height: 18px; cursor: pointer;">
                 Servicio 3: Invitación Interactiva
               </label>
+              <label style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem; color: var(--text-main); font-weight: 500; cursor: pointer; text-transform: none; letter-spacing: 0; margin-bottom: 0;">
+                <input type="checkbox" id="service-trivia" checked style="accent-color: var(--gold-primary); width: 18px; height: 18px; cursor: pointer;">
+                Servicio 4: Juegos (Trivia y Capitanes de mesa)
+              </label>
             </div>
           </div>
           
@@ -434,6 +438,7 @@
           if (event.serviceTables !== false) servicesList.push('Mesas');
           if (event.servicePhotos !== false) servicesList.push('Fotos');
           if (event.serviceInvitation !== false) servicesList.push('Invitación');
+          if (event.serviceTrivia !== false) servicesList.push('Juegos');
           const servicesHtml = servicesList.length > 0 
             ? servicesList.map(s => `<span class="badge" style="background: rgba(212,175,55,0.15); color: var(--gold-light); border: 1px solid rgba(212,175,55,0.3); padding: 2px 6px; font-size: 0.7rem; margin-right: 2px; margin-bottom: 2px; text-transform:none; letter-spacing:0; display:inline-block;">${s}</span>`).join('')
             : '<span style="color: var(--text-muted); font-size: 0.8rem;">Ninguno</span>';
@@ -589,7 +594,8 @@
             password: passwordInput.value.trim(),
             serviceTables: document.getElementById('service-tables').checked,
             servicePhotos: document.getElementById('service-photos').checked,
-            serviceInvitation: document.getElementById('service-invitation').checked
+            serviceInvitation: document.getElementById('service-invitation').checked,
+            serviceTrivia: document.getElementById('service-trivia').checked
           })
         });
         
@@ -624,6 +630,7 @@
           document.getElementById('service-tables').checked = true;
           document.getElementById('service-photos').checked = true;
           document.getElementById('service-invitation').checked = true;
+          document.getElementById('service-trivia').checked = true;
           loadEvents();
         } else {
           statusDiv.style.color = 'var(--error)';

@@ -914,7 +914,7 @@ app.get('/api/superadmin/events', requireSuperAuth, async (req, res) => {
 
 // API: Superadmin Create Event
 app.post('/api/superadmin/events', requireSuperAuth, async (req, res) => {
-  const { id, clientName, eventName, password, clientEmail, serviceTables, servicePhotos, serviceInvitation } = req.body;
+  const { id, clientName, eventName, password, clientEmail, serviceTables, servicePhotos, serviceInvitation, serviceTrivia } = req.body;
   if (!id || !clientName) {
     return res.status(400).json({ error: 'El ID y el nombre del cliente son requeridos.' });
   }
@@ -922,9 +922,10 @@ app.post('/api/superadmin/events', requireSuperAuth, async (req, res) => {
     const sTables = serviceTables !== false;
     const sPhotos = servicePhotos !== false;
     const sInvitation = serviceInvitation !== false;
+    const sTrivia = serviceTrivia !== false;
     const resolvedEventName = (eventName || clientName || '').trim();
     
-    const cleanId = await db.createEvent(id, clientName, password || '', clientEmail || '', sTables, sPhotos, sInvitation, true, resolvedEventName);
+    const cleanId = await db.createEvent(id, clientName, password || '', clientEmail || '', sTables, sPhotos, sInvitation, sTrivia, resolvedEventName);
     
     // Create Google Drive folder in background immediately on event creation
     const { syncPhotosToDrive } = require('./utils/googleDrive');

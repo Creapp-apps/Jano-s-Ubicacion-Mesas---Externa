@@ -431,3 +431,28 @@ En esta sesión implementamos la lógica de verificación de identidad de invita
 ### 📌 Diagnóstico para Continuación (Checkpoint de Reinicio)
 * **Reinicio del Servidor**: El servidor local ha sido apagado (`^C` en la terminal) para permitir la carga fresca del backend. Al retomar, simplemente levanta la aplicación con `npm run dev` para que las rutas de seguridad y asignación estén registradas en caliente.
 * **Estado Actual**: Código completamente consistente, robusto, testeado y listo para pruebas de juego en vivo de punta a punta.
+
+---
+
+## 🌌 Sesión - Alta de Eventos Superadmin: Incorporación de "Servicio 4: Juegos (Trivia y Capitanes de mesa)"
+
+En esta sesión implementamos e integramos la opción del **Servicio 4** en el alta y gestión de eventos desde el panel de Superadministrador (`private/superadmin.html`), asegurando que la activación/desactivación del servicio de Juegos abarque tanto la Trivia como Capitanes de Mesa.
+
+### 🛠️ Logros e Implementaciones
+1. **Formulario de Alta de Evento (`private/superadmin.html`)**:
+   - Agregamos la casilla de verificación `<input type="checkbox" id="service-trivia">` correspondiente a **`Servicio 4: Juegos (Trivia y Capitanes de mesa)`** dentro de la sección de Servicios Habilitados.
+   - Actualizamos el envío de datos JSON del formulario (`fetch /api/superadmin/events`) para incluir la propiedad `serviceTrivia`.
+   - Se contempló el reseteo automático a `checked = true` tras cada creación exitosa.
+
+2. **Visualización de Badges de Servicios**:
+   - Actualizamos la función `loadEvents` en `superadmin.html` para listar la etiqueta dorada `'Juegos'` cuando `event.serviceTrivia !== false`.
+
+3. **Recepción en Endpoint Backend (`server.js`)**:
+   - Actualizamos la ruta `POST /api/superadmin/events` para extraer `serviceTrivia` de `req.body`, calcular `sTrivia = serviceTrivia !== false` y transmitirlo al adaptador de base de datos (`db.createEvent`).
+
+4. **Visualización en el Dashboard del Evento (`public/event.html`)**:
+   - Ajustamos la lógica de ocultamiento dinámico de tarjetas (`data.serviceTrivia === false`) para ocultar de manera conjunta las tarjetas de **Trivia Show** (`#card-service-trivia`) y **Capitanes de Mesa** (`#card-service-capitanes`).
+
+5. **Pruebas de Integración (`tests/superadmin.test.js`)**:
+   - Actualizamos las suites de test para incluir la verificación del flag `serviceTrivia` en la creación de eventos con servicios personalizados. Todos los tests de la suite pasaron al 100% en verde.
+

@@ -94,7 +94,7 @@ async function runTests() {
     console.log('- Test event creation with custom services');
     const testCustomServicesId = 'test-services-event';
     try { await db.deleteEvent(testCustomServicesId); } catch(e) {}
-    await db.createEvent(testCustomServicesId, 'Custom Services Event', 'mypass', 'custom@example.com', true, false, true);
+    await db.createEvent(testCustomServicesId, 'Custom Services Event', 'mypass', 'custom@example.com', true, false, true, false);
     
     const eventsList = await db.getEvents();
     const customEvent = eventsList.find(e => e.id === testCustomServicesId);
@@ -102,6 +102,7 @@ async function runTests() {
     assert.strictEqual(customEvent.serviceTables, true, 'serviceTables should be true');
     assert.strictEqual(customEvent.servicePhotos, false, 'servicePhotos should be false');
     assert.strictEqual(customEvent.serviceInvitation, true, 'serviceInvitation should be true');
+    assert.strictEqual(customEvent.serviceTrivia, false, 'serviceTrivia should be false');
     
     // Clean up
     await db.deleteEvent(testCustomServicesId);

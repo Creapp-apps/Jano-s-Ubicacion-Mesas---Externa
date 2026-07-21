@@ -119,17 +119,6 @@ async function sendWelcomeEmail(clientEmail, clientName, eventId, password, even
                     </tr>
                   </table>
 
-                  <!-- Guest access -->
-                  <p style="font-size: 14px; line-height: 1.5; color: #888096; text-align: center; margin-bottom: 25px;">
-                    Tus invitados ingresarán para buscar sus mesas y jugar con el siguiente botón:
-                  </p>
-
-                  <div align="center" style="margin-bottom: 40px;">
-                    <a href="${baseUrl}/?event=${eventId}" style="background: linear-gradient(135deg, #d4af37 0%, #b8931d 100%); color: #0b0b0c; text-decoration: none; padding: 15px 30px; border-radius: 35px; font-weight: 700; font-size: 15px; display: inline-block; box-shadow: 0 10px 20px rgba(212, 175, 55, 0.25); text-transform: uppercase; letter-spacing: 0.5px;">
-                      Acceso para Invitados
-                    </a>
-                  </div>
-
                 </td>
               </tr>
               

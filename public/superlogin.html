@@ -140,8 +140,23 @@
       e.preventDefault();
       const password = document.getElementById('password').value;
       const errorMsg = document.getElementById('error-message');
+      const submitBtn = document.querySelector('#login-form button[type="submit"]');
       
       errorMsg.classList.remove('visible');
+      
+      // Save original button content and lock button with loading spinner
+      const originalBtnHtml = submitBtn.innerHTML;
+      submitBtn.disabled = true;
+      submitBtn.style.opacity = '0.8';
+      submitBtn.style.cursor = 'wait';
+      submitBtn.innerHTML = '<span class="spinner-loader"></span> Ingresando...';
+
+      const resetBtn = () => {
+        submitBtn.disabled = false;
+        submitBtn.style.opacity = '';
+        submitBtn.style.cursor = '';
+        submitBtn.innerHTML = originalBtnHtml;
+      };
       
       try {
         const response = await fetch('/api/superadmin/login', {
@@ -157,10 +172,12 @@
         if (response.ok && data.success) {
           window.location.href = '/superadmin';
         } else {
+          resetBtn();
           errorMsg.textContent = data.error || 'Error al iniciar sesión';
           errorMsg.classList.add('visible');
         }
       } catch (err) {
+        resetBtn();
         errorMsg.textContent = 'Error de conexión con el servidor';
         errorMsg.classList.add('visible');
       }
