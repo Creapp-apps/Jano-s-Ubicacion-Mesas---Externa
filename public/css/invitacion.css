@@ -2979,25 +2979,26 @@ select.form-control {
 /* VOLUME PROMPT TOAST */
 .volume-prompt-toast {
   position: fixed;
-  top: 25px;
+  top: 22px;
   left: 50%;
   transform: translateX(-50%) translateY(-25px);
   z-index: 99999;
-  background: rgba(18, 18, 22, 0.92);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(212, 175, 55, 0.55);
-  border-radius: 40px;
-  padding: 10px 22px;
-  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.6), 0 0 25px rgba(212, 175, 55, 0.3);
+  background: rgba(16, 16, 20, 0.94);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(212, 175, 55, 0.6);
+  border-radius: 50px;
+  padding: 10px 20px;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.65), 0 0 25px rgba(212, 175, 55, 0.35);
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   cursor: pointer;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-  max-width: 90vw;
+  width: calc(100% - 36px);
+  max-width: 430px;
 }
 
 .volume-prompt-toast.visible {
@@ -3008,11 +3009,11 @@ select.form-control {
 
 .volume-icon-wrapper {
   position: relative;
-  width: 42px;
-  height: 42px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(212, 175, 55, 0.3) 0%, rgba(212, 175, 55, 0.05) 100%);
-  border: 1px solid rgba(212, 175, 55, 0.5);
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.35) 0%, rgba(212, 175, 55, 0.08) 100%);
+  border: 1px solid rgba(212, 175, 55, 0.55);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3049,23 +3050,31 @@ select.form-control {
 .volume-text-block {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-width: 0;
 }
 
 .volume-title {
   font-family: 'Cinzel', var(--font-family-title), serif;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 700;
   color: var(--gold-light, #f3e5ab);
-  letter-spacing: 1px;
+  letter-spacing: 0.8px;
   text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .volume-subtitle {
   font-family: var(--font-family-body), sans-serif;
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   color: rgba(255, 255, 255, 0.88);
-  margin-top: 2px;
+  margin-top: 1px;
   font-weight: 400;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .volume-bars-equalizer {
