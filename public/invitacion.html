@@ -115,6 +115,7 @@
           Cerrar
         </button>
       </div>
+    </div>
   </div>
 
   <!-- Add to Calendar Modal -->
@@ -2081,6 +2082,11 @@
         const flapTop = document.getElementById('envelope-flap-top');
         const innerCard = document.getElementById('envelope-inner-card');
 
+        // Ensure main content is visible and active immediately
+        invitationMain.style.display = 'flex';
+        invitationMain.style.opacity = '1';
+        gsap.set(invitationMain, { opacity: 1, y: 0 });
+
         const mainTimeline = gsap.timeline({
           onComplete: () => {
             envelopeScreen.style.display = 'none';
@@ -2092,41 +2098,35 @@
           scale: 0, 
           rotation: -45, 
           opacity: 0, 
-          duration: 0.4, 
+          duration: 0.3, 
           ease: 'power2.in' 
         })
         .to(flapTop, {
           rotationX: 180,
-          duration: 0.6,
+          duration: 0.5,
           ease: 'power2.inOut',
           z: 1
         }, '-=0.1')
         .to(innerCard, {
           y: -120,
           scale: 1.05,
-          duration: 0.8,
+          duration: 0.6,
           ease: 'power2.out'
         }, '+=0.1')
         .to(envelopeScreen, {
           opacity: 0,
-          duration: 0.8,
+          duration: 0.5,
           ease: 'power2.inOut'
-        }, '+=0.2');
-
-        invitationMain.style.display = 'flex';
-        gsap.fromTo(invitationMain, 
-          { opacity: 0, y: 30 }, 
-          { opacity: 1, y: 0, duration: 1.2, delay: 1.4, ease: 'power2.out' }
-        );
+        }, '+=0.1');
 
         // Start typewriter text animation when main content displays
         setTimeout(() => {
           startTypewriter('welcome-instructions', 'Faltan muy pocos días para compartir este momento especial:');
-        }, 1400);
+        }, 800);
 
         isEnvelopeOpened = true;
         playBgMusic();
-        setTimeout(showVolumePromptToast, 1200);
+        setTimeout(showVolumePromptToast, 1000);
       }
 
       function showVolumePromptToast() {
