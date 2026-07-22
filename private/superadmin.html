@@ -582,6 +582,8 @@
       } catch (err) {
         showToast('Error de conexión con el servidor', 'error');
       }
+    }
+
     async function syncDriveFolder(id) {
       const btn = document.getElementById(`btn-sync-drive-${id}`);
       const originalText = btn ? btn.textContent : '';

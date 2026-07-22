@@ -337,6 +337,21 @@ async function runTests() {
     console.log('\n--- Part 3: Cleanup ---');
     console.log('- Delete test events');
     await db.deleteEvent(testId);
+    console.log('- Test SuperAdmin HTML script syntax validation');
+    const fs = require('fs');
+    const path = require('path');
+    const superadminHtml = fs.readFileSync(path.join(__dirname, '../private/superadmin.html'), 'utf8');
+    const scriptMatches = superadminHtml.match(/<script[\s\S]*?>([\s\S]*?)<\/script>/gi);
+    assert.ok(scriptMatches && scriptMatches.length > 0, 'SuperAdmin HTML must contain inline script');
+    scriptMatches.forEach((scriptTag, idx) => {
+      const code = scriptTag.replace(/<script[\s\S]*?>/i, '').replace(/<\/script>/i, '');
+      if (code.trim() && !scriptTag.includes('src=')) {
+        assert.doesNotThrow(() => {
+          new Function(code);
+        }, `SuperAdmin script #${idx + 1} contains syntax error`);
+      }
+    });
+
     await db.deleteEvent(apiTestId);
     
     server.close();
