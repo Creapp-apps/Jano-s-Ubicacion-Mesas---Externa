@@ -3730,28 +3730,14 @@ Tu presencia hará que esta celebración sea aún más significativa.
       }
 
       let rsvpStatusHtml = `
-        <div class="custom-rsvp-dropdown">
-          <button type="button" class="rsvp-dropdown-trigger" 
-                  data-guest-name="${escapeHtml(g.firstName + ' ' + g.lastName)}"
-                  data-rsvp-id="${rsvp ? rsvp.id : ''}">
-            <span>${statusLabel}</span>
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="transition: transform 0.2s; pointer-events: none;"><path d="M6 9l6 6 6-6"/></svg>
-          </button>
-          <div class="custom-rsvp-dropdown-menu">
-            <div class="rsvp-dropdown-item ${status === 'pending' ? 'selected' : ''}" data-value="pending">
-              <span class="check-icon">${status === 'pending' ? '✓' : ''}</span>
-              <span>⏳ Pendiente</span>
-            </div>
-            <div class="rsvp-dropdown-item ${status === 'confirmed' ? 'selected' : ''}" data-value="confirmed">
-              <span class="check-icon">${status === 'confirmed' ? '✓' : ''}</span>
-              <span>✅ Asistirá</span>
-            </div>
-            <div class="rsvp-dropdown-item ${status === 'declined' ? 'selected' : ''}" data-value="declined">
-              <span class="check-icon">${status === 'declined' ? '✓' : ''}</span>
-              <span>❌ No Asistirá</span>
-            </div>
-          </div>
-        </div>
+        <select class="select-rsvp-status" 
+                data-guest-name="${escapeHtml(g.firstName + ' ' + g.lastName)}"
+                data-rsvp-id="${rsvp ? rsvp.id : ''}"
+                onchange="onGuestRsvpSelectChange(this)">
+          <option value="pending" ${status === 'pending' ? 'selected' : ''}>⏳ Pendiente</option>
+          <option value="confirmed" ${status === 'confirmed' ? 'selected' : ''}>✅ Asistirá</option>
+          <option value="declined" ${status === 'declined' ? 'selected' : ''}>❌ No Asistirá</option>
+        </select>
       `;
 
       return `
@@ -3848,59 +3834,13 @@ Tu presencia hará que esta celebración sea aún más significativa.
     renderInvitadosTable();
   });
 
-  // Click event listener for interactive RSVP custom dropdown update
-  document.addEventListener('click', (e) => {
-    // 1. Toggle custom RSVP dropdown
-    const trigger = e.target.closest('.rsvp-dropdown-trigger');
-    if (trigger) {
-      e.preventDefault();
-      e.stopPropagation();
-      const dropdownMenu = trigger.nextElementSibling;
-      const isVisible = dropdownMenu.style.display === 'block';
-      
-      // Close all other rsvp dropdowns first
-      document.querySelectorAll('.custom-rsvp-dropdown-menu').forEach(menu => {
-        menu.style.display = 'none';
-      });
-      document.querySelectorAll('.rsvp-dropdown-trigger svg').forEach(svg => {
-        svg.style.transform = 'rotate(0deg)';
-      });
-
-      if (!isVisible) {
-        dropdownMenu.style.display = 'block';
-        const svg = trigger.querySelector('svg');
-        if (svg) svg.style.transform = 'rotate(180deg)';
-      }
-      return;
-    }
-
-    // 2. Handle item selection inside dropdown
-    const rsvpItem = e.target.closest('.rsvp-dropdown-item');
-    if (rsvpItem) {
-      e.preventDefault();
-      e.stopPropagation();
-      const dropdownMenu = rsvpItem.parentNode;
-      const trigger = dropdownMenu.previousElementSibling;
-      const guestName = trigger.getAttribute('data-guest-name');
-      const rsvpId = trigger.getAttribute('data-rsvp-id');
-      const newValue = rsvpItem.getAttribute('data-value');
-      
-      dropdownMenu.style.display = 'none';
-      const svg = trigger.querySelector('svg');
-      if (svg) svg.style.transform = 'rotate(0deg)';
-
-      updateGuestRsvpStatus(guestName, rsvpId, newValue);
-      return;
-    }
-
-    // 3. Close all dropdowns when clicking outside
-    document.querySelectorAll('.custom-rsvp-dropdown-menu').forEach(menu => {
-      menu.style.display = 'none';
-    });
-    document.querySelectorAll('.rsvp-dropdown-trigger svg').forEach(svg => {
-      svg.style.transform = 'rotate(0deg)';
-    });
-  });
+  window.onGuestRsvpSelectChange = function(selectElem) {
+    if (!selectElem) return;
+    const guestName = selectElem.getAttribute('data-guest-name');
+    const rsvpId = selectElem.getAttribute('data-rsvp-id');
+    const newValue = selectElem.value;
+    updateGuestRsvpStatus(guestName, rsvpId, newValue);
+  };
 
   function updateGuestRsvpStatus(guestName, rsvpId, statusValue) {
     if (statusValue === 'pending') {

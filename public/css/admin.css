@@ -2113,72 +2113,48 @@ header {
   text-align: center;
 }
 
-/* Custom RSVP Dropdown */
-.custom-rsvp-dropdown {
-  position: relative;
-  display: inline-block;
-}
-
-.rsvp-dropdown-trigger {
+/* Native RSVP Select Control */
+.select-rsvp-status {
   padding: 8px 30px 8px 14px;
-  border-radius: 12px;
-  font-size: 0.75rem;
+  border-radius: 14px;
+  font-size: 0.78rem;
+  font-weight: 600;
   border: 1px solid var(--gold-primary);
-  background: rgba(0,0,0,0.3);
+  background-color: rgba(15, 15, 18, 0.95);
   color: var(--gold-primary);
   cursor: pointer;
   font-family: 'Montserrat', sans-serif;
   min-width: 140px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
+  text-align: center;
   outline: none;
-  position: relative;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23d4af37%22%20stroke-width%3D%223%22%3E%3Cpath%20d%3D%22M6%209l6%206%206-6%22%2F%3E%3C%2Fsvg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 12px 12px;
   transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
 
-.rsvp-dropdown-trigger:hover {
+.select-rsvp-status:hover {
   border-color: var(--gold-light, #fffbe6);
-  background: rgba(212, 175, 55, 0.05);
-  box-shadow: 0 0 10px rgba(212, 175, 55, 0.15);
+  background-color: rgba(212, 175, 55, 0.08);
+  box-shadow: 0 0 12px rgba(212, 175, 55, 0.25);
 }
 
-.rsvp-dropdown-trigger svg {
-  position: absolute;
-  right: 10px;
-  top: calc(50% - 5px);
-  transition: transform 0.2s ease;
-  flex-shrink: 0;
+.select-rsvp-status:focus {
+  border-color: var(--gold-primary);
+  box-shadow: 0 0 15px rgba(212, 175, 55, 0.35);
 }
 
-.custom-rsvp-dropdown-menu {
-  display: none;
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%) translateY(8px);
-  top: 100%;
-  min-width: 155px;
-  background: rgba(15, 15, 18, 0.98);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(212, 175, 55, 0.45);
-  border-radius: 15px;
-  z-index: 1000;
-  box-shadow: 0 12px 35px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05);
-  padding: 6px 0;
-  animation: rsvpDropdownFadeIn 0.2s ease;
-}
-
-@keyframes rsvpDropdownFadeIn {
-  from {
-    opacity: 0;
-    transform: translateX(-50%) translateY(3px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(-50%) translateY(8px);
-  }
+.select-rsvp-status option {
+  background-color: #121215;
+  color: #ffffff;
+  padding: 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
 }
 
 .rsvp-dropdown-item {
