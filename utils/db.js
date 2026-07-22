@@ -267,9 +267,13 @@ async function saveGuests(eventId = 'default', guestsList) {
     }
   }
 
-  // Always write to local storage as fallback/primary
-  const { guestsFile } = getEventFiles(eventId);
-  fs.writeFileSync(guestsFile, JSON.stringify(formattedGuests, null, 2), 'utf8');
+  // Always write to local storage as fallback/primary if environment allows
+  try {
+    const { guestsFile } = getEventFiles(eventId);
+    fs.writeFileSync(guestsFile, JSON.stringify(formattedGuests, null, 2), 'utf8');
+  } catch (err) {
+    console.warn('[miFiestAPP DB] Local guests JSON file write ignored (Vercel read-only filesystem):', err.message);
+  }
 }
 
 /**
@@ -285,9 +289,13 @@ async function clearGuests(eventId = 'default') {
       console.error('Error clearing guests in Supabase:', error);
     }
   }
-  const { guestsFile } = getEventFiles(eventId);
-  if (fs.existsSync(guestsFile)) {
-    fs.unlinkSync(guestsFile);
+  try {
+    const { guestsFile } = getEventFiles(eventId);
+    if (fs.existsSync(guestsFile)) {
+      fs.unlinkSync(guestsFile);
+    }
+  } catch (err) {
+    console.warn('[miFiestAPP DB] Local guests file delete ignored (read-only filesystem):', err.message);
   }
 }
 
@@ -321,16 +329,20 @@ async function addGuest(eventId = 'default', guest) {
     }
   }
 
-  // Always update local guests JSON file
-  const guests = await getGuests(eventId);
-  const existingIdx = guests.findIndex(g => g.firstName.toLowerCase() === newGuest.firstName.toLowerCase() && g.lastName.toLowerCase() === newGuest.lastName.toLowerCase());
-  if (existingIdx >= 0) {
-    guests[existingIdx] = newGuest;
-  } else {
-    guests.push(newGuest);
+  // Always update local guests JSON file if environment allows
+  try {
+    const guests = await getGuests(eventId);
+    const existingIdx = guests.findIndex(g => g.firstName.toLowerCase() === newGuest.firstName.toLowerCase() && g.lastName.toLowerCase() === newGuest.lastName.toLowerCase());
+    if (existingIdx >= 0) {
+      guests[existingIdx] = newGuest;
+    } else {
+      guests.push(newGuest);
+    }
+    const { guestsFile } = getEventFiles(eventId);
+    fs.writeFileSync(guestsFile, JSON.stringify(guests, null, 2), 'utf8');
+  } catch (err) {
+    console.warn('[miFiestAPP DB] Local guests JSON file update ignored (read-only filesystem):', err.message);
   }
-  const { guestsFile } = getEventFiles(eventId);
-  fs.writeFileSync(guestsFile, JSON.stringify(guests, null, 2), 'utf8');
 }
 
 /**
@@ -377,9 +389,13 @@ async function updateGuest(eventId = 'default', index, updatedGuest) {
     }
   }
 
-  guests[index] = newFields;
-  const { guestsFile } = getEventFiles(eventId);
-  fs.writeFileSync(guestsFile, JSON.stringify(guests, null, 2), 'utf8');
+  try {
+    guests[index] = newFields;
+    const { guestsFile } = getEventFiles(eventId);
+    fs.writeFileSync(guestsFile, JSON.stringify(guests, null, 2), 'utf8');
+  } catch (err) {
+    console.warn('[miFiestAPP DB] Local guests JSON file update ignored (read-only filesystem):', err.message);
+  }
 }
 
 /**
@@ -403,10 +419,14 @@ async function deleteGuest(eventId = 'default', index) {
       console.error('Error deleting guest in Supabase:', error);
       throw error;
     }
-  } else {
+  }
+  
+  try {
     guests.splice(index, 1);
     const { guestsFile } = getEventFiles(eventId);
     fs.writeFileSync(guestsFile, JSON.stringify(guests, null, 2), 'utf8');
+  } catch (err) {
+    console.warn('[miFiestAPP DB] Local guests file delete ignored (read-only filesystem):', err.message);
   }
 }
 
