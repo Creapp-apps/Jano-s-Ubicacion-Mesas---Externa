@@ -1084,6 +1084,7 @@ body.font-romantic-charms .hero-title {
   opacity: 0;
   transform: translateY(30px) scale(0.98);
   width: 100%;
+  padding-bottom: 30px;
 }
 .invitation-slide.active {
   display: block;
