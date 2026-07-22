@@ -2281,6 +2281,7 @@ app.get('/admin', (req, res) => {
   const eventId = req.query.event || 'default';
   const cookieName = `admin_session_${eventId}`;
   if (req.cookies && req.cookies[cookieName] === `${ADMIN_SESSION_TOKEN}_${eventId}`) {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     return res.sendFile(path.join(__dirname, 'private', 'admin.html'));
   }
   const queryParams = new URLSearchParams();
