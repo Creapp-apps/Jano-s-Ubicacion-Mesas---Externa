@@ -188,24 +188,27 @@ app.get(['/invitacion', '/invitacion.html'], async (req, res) => {
     const dateAndLoc = `${datePart ? ` (${datePart})` : ''}${addressPart ? ` en ${addressPart}` : ''}`;
 
     if (guestName) {
-      displayTitle = `¡${guestName}, estás invitado/a! 💌`;
-      ogTitle = `¡${guestName}, estás invitado/a! 💌`;
-      ogDescription = `${eventTitle || 'Nuestra Fiesta'} 🥂${dateAndLoc} | Hacé clic para abrir tu tarjeta interactiva, ver ubicación, sugerir música y confirmar asistencia.`;
+      displayTitle = `¡${guestName}, estás invitado/a! 💌 | ${eventTitle || 'miFiestAPP'}`;
+      ogTitle = `✨ ¡${guestName}, tenés una invitación especial!`;
+      ogDescription = `${eventTitle ? `${eventTitle} 🥂` : 'Te invitamos a celebrar este día tan especial 🥂'}${dateAndLoc} | Hacé clic para abrir tu tarjeta interactiva personalizada, ver detalles, mapas y confirmar asistencia.`;
     } else {
       displayTitle = eventTitle ? `Invitación Interactiva | ${eventTitle}` : 'Invitación Interactiva';
-      ogTitle = `¡Tenés una invitación especial! ✉️`;
-      ogDescription = `${eventTitle || 'Te invitamos a nuestra fiesta'} 🥂${dateAndLoc} | Hacé clic para abrir tu invitación, ver detalles y confirmar tu asistencia.`;
+      ogTitle = eventTitle ? `✨ ¡Invitación Especial | ${eventTitle}! 🥂` : '✨ ¡Tenés una invitación especial! 🥂';
+      ogDescription = `${eventTitle || 'Nuestra Fiesta'} ${dateAndLoc} | Hacé clic para abrir la invitación interactiva, ver ubicación, sugerir música y confirmar asistencia.`;
     }
+
+    // Clean any existing Open Graph / Twitter tags to avoid duplicates
+    html = html.replace(/<meta\s+(property|name)=["'](og|twitter):[^>]+>/gi, '');
 
     // Dynamic replacement of <title>
     html = html.replace(/<title>.*?<\/title>/, `<title>${displayTitle}</title>`);
     
     // Construct dynamic image URL (absolute URL required by crawlers like WhatsApp)
-    const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'http';
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
     const host = req.get('host');
     const baseUrl = `${protocol}://${host}`;
     
-    const configuredImage = config['invitation_cover_url'] || config['invitation_photo_1'] || config['invitation_bg_url'] || '';
+    const configuredImage = config['invitation_photo_1'] || config['invitation_cover_url'] || config['invitation_bg_url'] || '';
     let ogImageUrl = '';
     
     if (configuredImage) {
@@ -216,7 +219,7 @@ app.get(['/invitacion', '/invitacion.html'], async (req, res) => {
         ogImageUrl = `${baseUrl}${cleanImagePath}`;
       }
     } else {
-      ogImageUrl = `${baseUrl}/assets/fiestapp_preview.png`;
+      ogImageUrl = `${baseUrl}/assets/coronamain.png`;
     }
 
     // Inject Open Graph tags for premium WhatsApp previews

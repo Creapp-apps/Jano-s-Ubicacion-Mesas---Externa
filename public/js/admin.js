@@ -1990,7 +1990,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function buildWhatsAppInvitationMessage(guestName, personalUrl) {
-    return `✨ Hay momentos que se sueñan durante mucho tiempo, y finalmente llegó el mío.
+    const greeting = guestName ? `✨ ¡Hola ${guestName}! 👋` : `✨ ¡Hola! 👋`;
+    return `${greeting}
+
+Hay momentos que se sueñan durante mucho tiempo, y finalmente llegó el mío.
 
 Con enorme alegría quiero invitarte a celebrar mis XV años, una noche que quedará para siempre en mi corazón y que deseo compartir junto a las personas que forman parte de mi vida.
 

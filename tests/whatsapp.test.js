@@ -23,7 +23,10 @@ function normalizeWhatsAppNumber(phone) {
 }
 
 function buildWhatsAppInvitationMessage(guestName, personalUrl) {
-  const text = `✨ Hay momentos que se sueñan durante mucho tiempo, y finalmente llegó el mío.
+  const greeting = guestName ? `✨ ¡Hola ${guestName}! 👋` : `✨ ¡Hola! 👋`;
+  const text = `${greeting}
+
+Hay momentos que se sueñan durante mucho tiempo, y finalmente llegó el mío.
 
 Con enorme alegría quiero invitarte a celebrar mis XV años, una noche que quedará para siempre en mi corazón y que deseo compartir junto a las personas que forman parte de mi vida.
 
