@@ -246,7 +246,13 @@ app.get(['/invitacion', '/invitacion.html'], async (req, res) => {
   }
 });
 
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.js') || filePath.endsWith('.css') || filePath.endsWith('.html')) {
+      res.setHeader('Content-Type', `${res.getHeader('Content-Type') || 'text/plain'}; charset=utf-8`);
+    }
+  }
+}));
 
 // Authentication middleware
 function requireAuth(req, res, next) {
@@ -424,6 +430,7 @@ app.get('/api/config', async (req, res) => {
 
     const triviaQuestions = config['trivia_questions'] || '[]';
     const invitationEventDate = config['invitation_event_date'] || '';
+    const invitationEventTimeEnd = config['invitation_event_time_end'] || '';
     const invitationMusicUrl = config['invitation_music_url'] || '';
     const invitationPartyAddress = config['invitation_party_address'] || '';
     const invitationPartyMapsUrl = config['invitation_party_maps_url'] || '';
@@ -431,6 +438,22 @@ app.get('/api/config', async (req, res) => {
     const invitationAlias = config['invitation_alias'] || '';
     const invitationBankHolder = config['invitation_bank_holder'] || '';
     const invitationDressCode = config['invitation_dress_code'] || 'Elegante';
+
+    // Calculate eventTimeMode ('dia' or 'noche') based on start hour (06:00 to 18:00 = 'dia', 18:00 to 06:00 = 'noche')
+    let eventTimeMode = 'noche';
+    if (invitationEventDate && invitationEventDate.includes('T')) {
+      const timePart = invitationEventDate.split('T')[1];
+      if (timePart) {
+        const startHour = parseInt(timePart.split(':')[0], 10);
+        if (!isNaN(startHour)) {
+          if (startHour >= 6 && startHour < 18) {
+            eventTimeMode = 'dia';
+          } else {
+            eventTimeMode = 'noche';
+          }
+        }
+      }
+    }
 
     const invitationThemeColor = config['invitation_theme_color'] || 'golden-luxury';
     const invitationThemeFont = config['invitation_theme_font'] || 'classic-editorial';
@@ -456,6 +479,8 @@ app.get('/api/config', async (req, res) => {
       serviceCapitanes,
       triviaQuestions,
       invitationEventDate,
+      invitationEventTimeEnd,
+      eventTimeMode,
       invitationMusicUrl,
       invitationPartyAddress,
       invitationPartyMapsUrl,
@@ -676,6 +701,7 @@ app.post('/api/config', requireAuth, async (req, res) => {
   const { 
     eventTitle,
     invitationEventDate,
+    invitationEventTimeEnd,
     invitationMusicUrl,
     invitationPartyAddress,
     invitationPartyMapsUrl,
@@ -705,6 +731,7 @@ app.post('/api/config', requireAuth, async (req, res) => {
     await db.setEventTitle(eventId, eventTitle);
     
     if (invitationEventDate !== undefined) await db.setConfigValue(eventId, 'invitation_event_date', invitationEventDate);
+    if (invitationEventTimeEnd !== undefined) await db.setConfigValue(eventId, 'invitation_event_time_end', invitationEventTimeEnd);
     if (invitationMusicUrl !== undefined) await db.setConfigValue(eventId, 'invitation_music_url', invitationMusicUrl);
     if (invitationPartyAddress !== undefined) await db.setConfigValue(eventId, 'invitation_party_address', invitationPartyAddress);
     if (invitationPartyMapsUrl !== undefined) await db.setConfigValue(eventId, 'invitation_party_maps_url', invitationPartyMapsUrl);
@@ -1128,13 +1155,13 @@ app.get('/api/admin/guests', requireAuth, async (req, res) => {
 
 // API: Add Guest (Admin)
 app.post('/api/guests', requireAuth, async (req, res) => {
-  const { firstName, lastName, table } = req.body;
+  const { firstName, lastName, table, phone } = req.body;
   const eventId = req.query.event || 'default';
   if (!firstName && !lastName) {
     return res.status(400).json({ error: 'El nombre o apellido es requerido' });
   }
   try {
-    await db.addGuest(eventId, { firstName, lastName, table });
+    await db.addGuest(eventId, { firstName, lastName, table, phone: phone || '' });
     const guests = await db.getGuests(eventId);
     res.json({ success: true, count: guests.length });
   } catch (error) {
@@ -1145,13 +1172,13 @@ app.post('/api/guests', requireAuth, async (req, res) => {
 // API: Edit Guest (Admin)
 app.put('/api/guests/:index', requireAuth, async (req, res) => {
   const index = parseInt(req.params.index, 10);
-  const { firstName, lastName, table } = req.body;
+  const { firstName, lastName, table, phone } = req.body;
   const eventId = req.query.event || 'default';
   if (!firstName && !lastName) {
     return res.status(400).json({ error: 'El nombre o apellido es requerido' });
   }
   try {
-    await db.updateGuest(eventId, index, { firstName, lastName, table });
+    await db.updateGuest(eventId, index, { firstName, lastName, table, phone: phone || '' });
     res.json({ success: true });
   } catch (error) {
     console.error('Error updating guest:', error);
@@ -1359,8 +1386,463 @@ app.get('/api/admin/export-guests', requireAuth, async (req, res) => {
   }
 });
 
+// API: Export Dietary Restrictions & Menus to Excel (Admin - Black & Gold Theme)
+app.get('/api/admin/export-menus', requireAuth, async (req, res) => {
+  try {
+    const eventId = req.query.event || 'default';
+    const guests = await db.getGuests(eventId);
+    const rsvps = await db.getRsvps(eventId);
 
+    const formatTableDisplay = (table) => {
+      if (!table) return 'Sin Mesa';
+      const t = String(table).trim();
+      if (t.toLowerCase() === 'sin mesa') return 'Sin Mesa';
+      if (/^mesa\b/i.test(t)) {
+        return t.charAt(0).toUpperCase() + t.slice(1);
+      }
+      return `Mesa ${t}`;
+    };
 
+    let eventTitle = "NUESTRO EVENTO";
+    try {
+      const configTitle = await db.getEventTitle(eventId);
+      if (configTitle) eventTitle = configTitle.toUpperCase();
+    } catch (err) {}
+
+    const guestTableMap = {};
+    guests.forEach(g => {
+      const fn = `${g.firstName || ''} ${g.lastName || ''}`.trim().toLowerCase();
+      if (fn) guestTableMap[fn] = formatTableDisplay(g.table);
+    });
+
+    const menuItems = [];
+    const countsMap = {};
+
+    rsvps.forEach(r => {
+      const restriction = (r.dietaryRestrictions || '').trim();
+      if (restriction) {
+        const fn = (r.name || '').trim().toLowerCase();
+        const table = guestTableMap[fn] || 'Sin Mesa';
+        
+        menuItems.push({
+          guestName: r.name,
+          table: table,
+          attending: r.attending ? 'Confirmado' : 'No asistirá',
+          restriction: restriction
+        });
+
+        const normKey = restriction.charAt(0).toUpperCase() + restriction.slice(1);
+        countsMap[normKey] = (countsMap[normKey] || 0) + 1;
+      }
+    });
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Menúes Especiales');
+    worksheet.views = [{ showGridLines: true }];
+
+    const columnsConfig = [
+      { header: 'Invitado / Titular', key: 'guestName', width: 32 },
+      { header: 'Mesa', key: 'table', width: 18 },
+      { header: 'Estado', key: 'attending', width: 18 },
+      { header: 'Menú Especial / Restricción', key: 'restriction', width: 45 }
+    ];
+
+    worksheet.columns = columnsConfig.map(col => ({ key: col.key, width: col.width }));
+
+    // Row 1: Main Header Banner (Onyx & Gold)
+    worksheet.mergeCells('A1:D1');
+    const titleRow = worksheet.getRow(1);
+    titleRow.height = 42;
+    const titleCell = worksheet.getCell('A1');
+    titleCell.value = `miFiestAPP  •  REPORTE DE MENÚES ESPECIALES & RESTRICCIONES`;
+    titleCell.font = { name: 'Segoe UI', size: 14, bold: true, color: { argb: 'FFD4AF37' } };
+    titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF111113' } };
+    titleCell.alignment = { vertical: 'middle', horizontal: 'center' };
+
+    // Row 2: Subtitle Row (Event Info)
+    worksheet.mergeCells('A2:D2');
+    const subRow = worksheet.getRow(2);
+    subRow.height = 24;
+    const subCell = worksheet.getCell('A2');
+    subCell.value = `EVENTO: ${eventTitle}  |  TOTAL RESTRICCIONES REGISTRADAS: ${menuItems.length}`;
+    subCell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FFF3E5AB' } };
+    subCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F1F24' } };
+    subCell.alignment = { vertical: 'middle', horizontal: 'center' };
+
+    // Row 3: Blank spacing
+    worksheet.getRow(3).height = 10;
+
+    // Row 4: Summary Header
+    worksheet.mergeCells('A4:D4');
+    const sumHeaderRow = worksheet.getRow(4);
+    sumHeaderRow.height = 24;
+    const sumHeaderCell = worksheet.getCell('A4');
+    sumHeaderCell.value = `📊 RESUMEN EJECUTIVO PARA CATERING & COCINA`;
+    sumHeaderCell.font = { name: 'Segoe UI', size: 11, bold: true, color: { argb: 'FFD4AF37' } };
+    sumHeaderCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2A220F' } };
+    sumHeaderCell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
+
+    // Row 5+: Summary Rows
+    let currentRowIdx = 5;
+    const summaryEntries = Object.entries(countsMap);
+    if (summaryEntries.length === 0) {
+      worksheet.mergeCells(`A${currentRowIdx}:D${currentRowIdx}`);
+      const emptySumCell = worksheet.getCell(`A${currentRowIdx}`);
+      emptySumCell.value = 'No se registraron restricciones alimenticias especiales aún.';
+      emptySumCell.font = { name: 'Segoe UI', size: 10, italic: true, color: { argb: 'FFA0A0A5' } };
+      emptySumCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF161618' } };
+      currentRowIdx++;
+    } else {
+      summaryEntries.forEach(([menuType, count]) => {
+        worksheet.mergeCells(`A${currentRowIdx}:C${currentRowIdx}`);
+        const typeCell = worksheet.getCell(`A${currentRowIdx}`);
+        typeCell.value = `• ${menuType}`;
+        typeCell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FFF0F0F5' } };
+        typeCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A1A1E' } };
+        
+        const countCell = worksheet.getCell(`D${currentRowIdx}`);
+        countCell.value = `${count} ${count === 1 ? 'persona' : 'personas'}`;
+        countCell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FFD4AF37' } };
+        countCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A1A1E' } };
+        countCell.alignment = { horizontal: 'right', indent: 1 };
+        currentRowIdx++;
+      });
+    }
+
+    worksheet.getRow(currentRowIdx).height = 15;
+    currentRowIdx++;
+
+    // Table Header Row
+    const headerRow = worksheet.getRow(currentRowIdx);
+    headerRow.height = 26;
+    ['A', 'B', 'C', 'D'].forEach((colLetter, idx) => {
+      const cell = worksheet.getCell(`${colLetter}${currentRowIdx}`);
+      cell.value = columnsConfig[idx].header;
+      cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FFD4AF37' } };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F1A0A' } };
+      cell.alignment = { vertical: 'middle', horizontal: 'center' };
+      cell.border = {
+        top: { style: 'thin', color: { argb: 'FF3A2F0F' } },
+        bottom: { style: 'medium', color: { argb: 'FFD4AF37' } },
+        left: { style: 'thin', color: { argb: 'FF3A2F0F' } },
+        right: { style: 'thin', color: { argb: 'FF3A2F0F' } }
+      };
+    });
+    currentRowIdx++;
+
+    // Data Rows
+    if (menuItems.length === 0) {
+      worksheet.mergeCells(`A${currentRowIdx}:D${currentRowIdx}`);
+      const noDataCell = worksheet.getCell(`A${currentRowIdx}`);
+      noDataCell.value = 'Sin solicitudes de menúes especiales.';
+      noDataCell.font = { name: 'Segoe UI', size: 10, italic: true, color: { argb: 'FF888888' } };
+      noDataCell.alignment = { horizontal: 'center' };
+      currentRowIdx++;
+    } else {
+      menuItems.forEach((item, i) => {
+        const row = worksheet.getRow(currentRowIdx);
+        row.height = 22;
+        const bgHex = (i % 2 === 0) ? 'FF161619' : 'FF1E1E23';
+
+        worksheet.getCell(`A${currentRowIdx}`).value = item.guestName;
+        worksheet.getCell(`B${currentRowIdx}`).value = item.table;
+        worksheet.getCell(`C${currentRowIdx}`).value = item.attending;
+        worksheet.getCell(`D${currentRowIdx}`).value = item.restriction;
+
+        ['A', 'B', 'C', 'D'].forEach(col => {
+          const c = worksheet.getCell(`${col}${currentRowIdx}`);
+          c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bgHex } };
+          c.font = { name: 'Segoe UI', size: 10, color: { argb: 'FFF0F0F5' } };
+          c.border = {
+            bottom: { style: 'thin', color: { argb: 'FF2A2A30' } },
+            right: { style: 'thin', color: { argb: 'FF2A2A30' } }
+          };
+        });
+
+        worksheet.getCell(`B${currentRowIdx}`).font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FFD4AF37' } };
+        worksheet.getCell(`D${currentRowIdx}`).font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FFF3E5AB' } };
+        
+        currentRowIdx++;
+      });
+    }
+
+    worksheet.getRow(currentRowIdx).height = 15;
+    currentRowIdx++;
+
+    worksheet.mergeCells(`A${currentRowIdx}:D${currentRowIdx}`);
+    const footerCell = worksheet.getCell(`A${currentRowIdx}`);
+    footerCell.value = `© 2026 miFiestAPP  •  Digitalizá Tu Fiesta  •  www.mifiestapp.com.ar`;
+    footerCell.font = { name: 'Segoe UI', size: 9, bold: true, color: { argb: 'FFD4AF37' } };
+    footerCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF111113' } };
+    footerCell.alignment = { vertical: 'middle', horizontal: 'center' };
+    worksheet.getRow(currentRowIdx).height = 28;
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="Menus-Especiales-${eventId}.xlsx"`);
+
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    console.error('Error generating Menus Excel:', error);
+    res.status(500).json({ error: 'Error al exportar los menúes especiales' });
+  }
+});
+
+// API: Export DJ Song Suggestions to Excel (Admin - Black & Gold Theme)
+app.get('/api/admin/export-dj-songs', requireAuth, async (req, res) => {
+  try {
+    const eventId = req.query.event || 'default';
+    const guests = await db.getGuests(eventId);
+    const rsvps = await db.getRsvps(eventId);
+
+    const formatTableDisplay = (table) => {
+      if (!table) return 'Sin Mesa';
+      const t = String(table).trim();
+      if (t.toLowerCase() === 'sin mesa') return 'Sin Mesa';
+      if (/^mesa\b/i.test(t)) {
+        return t.charAt(0).toUpperCase() + t.slice(1);
+      }
+      return `Mesa ${t}`;
+    };
+
+    let eventTitle = "NUESTRO EVENTO";
+    try {
+      const configTitle = await db.getEventTitle(eventId);
+      if (configTitle) eventTitle = configTitle.toUpperCase();
+    } catch (err) {}
+
+    const guestTableMap = {};
+    guests.forEach(g => {
+      const fn = `${g.firstName || ''} ${g.lastName || ''}`.trim().toLowerCase();
+      if (fn) guestTableMap[fn] = formatTableDisplay(g.table);
+    });
+
+    const songItems = [];
+    rsvps.forEach(r => {
+      const song = (r.suggestedSong || '').trim();
+      if (song) {
+        songItems.push({
+          song: song,
+          guestName: r.name
+        });
+      }
+    });
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Sugerencias DJ');
+    worksheet.views = [{ showGridLines: true }];
+
+    const columnsConfig = [
+      { header: 'Canción / Tema Sugerido', key: 'song', width: 50 },
+      { header: 'Sugerido Por (Invitado)', key: 'guestName', width: 35 }
+    ];
+
+    worksheet.columns = columnsConfig.map(col => ({ key: col.key, width: col.width }));
+
+    // Row 1: Header Banner (Onyx & Gold)
+    worksheet.mergeCells('A1:B1');
+    const titleRow = worksheet.getRow(1);
+    titleRow.height = 42;
+    const titleCell = worksheet.getCell('A1');
+    titleCell.value = `miFiestAPP  •  LISTADO DE SUGERENCIAS PARA EL DJ`;
+    titleCell.font = { name: 'Segoe UI', size: 14, bold: true, color: { argb: 'FFD4AF37' } };
+    titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF111113' } };
+    titleCell.alignment = { vertical: 'middle', horizontal: 'center' };
+
+    // Row 2: Subtitle Row
+    worksheet.mergeCells('A2:B2');
+    const subRow = worksheet.getRow(2);
+    subRow.height = 24;
+    const subCell = worksheet.getCell('A2');
+    subCell.value = `EVENTO: ${eventTitle}  |  TOTAL CANCIONES SUGERIDAS: ${songItems.length}`;
+    subCell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FFF3E5AB' } };
+    subCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F1F24' } };
+    subCell.alignment = { vertical: 'middle', horizontal: 'center' };
+
+    // Row 3: Blank
+    worksheet.getRow(3).height = 10;
+
+    // Row 4: Table Header
+    let currentRowIdx = 4;
+    const headerRow = worksheet.getRow(currentRowIdx);
+    headerRow.height = 26;
+    ['A', 'B'].forEach((colLetter, idx) => {
+      const cell = worksheet.getCell(`${colLetter}${currentRowIdx}`);
+      cell.value = columnsConfig[idx].header;
+      cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FFD4AF37' } };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F1A0A' } };
+      cell.alignment = { vertical: 'middle', horizontal: 'center' };
+      cell.border = {
+        top: { style: 'thin', color: { argb: 'FF3A2F0F' } },
+        bottom: { style: 'medium', color: { argb: 'FFD4AF37' } },
+        left: { style: 'thin', color: { argb: 'FF3A2F0F' } },
+        right: { style: 'thin', color: { argb: 'FF3A2F0F' } }
+      };
+    });
+    currentRowIdx++;
+
+    // Data Rows
+    if (songItems.length === 0) {
+      worksheet.mergeCells(`A${currentRowIdx}:B${currentRowIdx}`);
+      const noDataCell = worksheet.getCell(`A${currentRowIdx}`);
+      noDataCell.value = 'Sin sugerencias de canciones registradas aún.';
+      noDataCell.font = { name: 'Segoe UI', size: 10, italic: true, color: { argb: 'FF888888' } };
+      noDataCell.alignment = { horizontal: 'center' };
+      currentRowIdx++;
+    } else {
+      songItems.forEach((item, i) => {
+        const row = worksheet.getRow(currentRowIdx);
+        row.height = 22;
+        const bgHex = (i % 2 === 0) ? 'FF161619' : 'FF1E1E23';
+
+        worksheet.getCell(`A${currentRowIdx}`).value = item.song;
+        worksheet.getCell(`B${currentRowIdx}`).value = item.guestName;
+
+        ['A', 'B'].forEach(col => {
+          const c = worksheet.getCell(`${col}${currentRowIdx}`);
+          c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bgHex } };
+          c.font = { name: 'Segoe UI', size: 10, color: { argb: 'FFF0F0F5' } };
+          c.border = {
+            bottom: { style: 'thin', color: { argb: 'FF2A2A30' } },
+            right: { style: 'thin', color: { argb: 'FF2A2A30' } }
+          };
+        });
+
+        worksheet.getCell(`A${currentRowIdx}`).font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FFD4AF37' } };
+
+        currentRowIdx++;
+      });
+    }
+
+    worksheet.getRow(currentRowIdx).height = 15;
+    currentRowIdx++;
+
+    worksheet.mergeCells(`A${currentRowIdx}:B${currentRowIdx}`);
+    const footerCell = worksheet.getCell(`A${currentRowIdx}`);
+    footerCell.value = `© 2026 miFiestAPP  •  Digitalizá Tu Fiesta  •  www.mifiestapp.com.ar`;
+    footerCell.font = { name: 'Segoe UI', size: 9, bold: true, color: { argb: 'FFD4AF37' } };
+    footerCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF111113' } };
+    footerCell.alignment = { vertical: 'middle', horizontal: 'center' };
+    worksheet.getRow(currentRowIdx).height = 28;
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="Sugerencias-DJ-${eventId}.xlsx"`);
+
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    console.error('Error generating DJ Songs Excel:', error);
+    res.status(500).json({ error: 'Error al exportar las sugerencias para el DJ' });
+  }
+});
+
+// API: Download Guest List Template (Admin - Black & Gold Theme)
+app.get(['/api/download-template', '/assets/plantilla_invitados.xlsx'], async (req, res) => {
+  try {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Plantilla Invitados');
+    worksheet.views = [{ showGridLines: true }];
+
+    const columnsConfig = [
+      { header: 'Nombre', key: 'firstName', width: 28 },
+      { header: 'Apellido', key: 'lastName', width: 28 },
+      { header: 'Teléfono (Opcional)', key: 'phone', width: 28 }
+    ];
+
+    worksheet.columns = columnsConfig.map(col => ({ key: col.key, width: col.width }));
+
+    // Row 1: Header Banner (Onyx & Gold)
+    worksheet.mergeCells('A1:C1');
+    const titleRow = worksheet.getRow(1);
+    titleRow.height = 38;
+    const titleCell = worksheet.getCell('A1');
+    titleCell.value = `miFiestAPP  •  REGISTRO DE INVITADOS`;
+    titleCell.font = { name: 'Segoe UI', size: 12, bold: true, color: { argb: 'FFD4AF37' } };
+    titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF111113' } };
+    titleCell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+
+    // Row 2: Subtitle Row
+    worksheet.mergeCells('A2:C2');
+    const subRow = worksheet.getRow(2);
+    subRow.height = 24;
+    const subCell = worksheet.getCell('A2');
+    subCell.value = `Completá nombres, apellidos y teléfonos de tus invitados`;
+    subCell.font = { name: 'Segoe UI', size: 9, bold: true, color: { argb: 'FFF3E5AB' } };
+    subCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F1F24' } };
+    subCell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+
+    // Row 3: Blank spacing
+    worksheet.getRow(3).height = 10;
+
+    // Row 4: Table Header Row
+    const headerRow = worksheet.getRow(4);
+    headerRow.height = 26;
+    ['A', 'B', 'C'].forEach((colLetter, idx) => {
+      const cell = worksheet.getCell(`${colLetter}4`);
+      cell.value = columnsConfig[idx].header;
+      cell.font = { name: 'Segoe UI', size: 11, bold: true, color: { argb: 'FFD4AF37' } };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F1A0A' } };
+      cell.alignment = { vertical: 'middle', horizontal: 'center' };
+      cell.border = {
+        top: { style: 'thin', color: { argb: 'FF3A2F0F' } },
+        bottom: { style: 'medium', color: { argb: 'FFD4AF37' } },
+        left: { style: 'thin', color: { argb: 'FF3A2F0F' } },
+        right: { style: 'thin', color: { argb: 'FF3A2F0F' } }
+      };
+    });
+
+    // Rows 5-8: Example Rows
+    const exampleGuests = [
+      { firstName: 'Juan', lastName: 'Pérez', phone: '11 1234 5678' },
+      { firstName: 'María', lastName: 'López', phone: '11 8765 4321' },
+      { firstName: 'Esteban', lastName: 'Maza', phone: '11 9999 8888' },
+      { firstName: 'Ana', lastName: 'Gómez', phone: '11 5555 4444' }
+    ];
+
+    exampleGuests.forEach((g, i) => {
+      const rowIdx = 5 + i;
+      const row = worksheet.getRow(rowIdx);
+      row.height = 22;
+      const bgHex = (i % 2 === 0) ? 'FF161619' : 'FF1E1E23';
+
+      worksheet.getCell(`A${rowIdx}`).value = g.firstName;
+      worksheet.getCell(`B${rowIdx}`).value = g.lastName;
+      worksheet.getCell(`C${rowIdx}`).value = g.phone;
+
+      ['A', 'B', 'C'].forEach(col => {
+        const c = worksheet.getCell(`${col}${rowIdx}`);
+        c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bgHex } };
+        c.font = { name: 'Segoe UI', size: 10, color: { argb: 'FFF0F0F5' } };
+        c.alignment = { vertical: 'middle', horizontal: 'center' };
+        c.border = {
+          bottom: { style: 'thin', color: { argb: 'FF2A2A30' } },
+          right: { style: 'thin', color: { argb: 'FF2A2A30' } }
+        };
+      });
+    });
+
+    // Blank row
+    worksheet.getRow(9).height = 15;
+
+    // Footer row
+    worksheet.mergeCells('A10:C10');
+    const footerCell = worksheet.getCell('A10');
+    footerCell.value = `© 2026 miFiestAPP  •  Digitalizá Tu Fiesta  •  www.mifiestapp.com.ar`;
+    footerCell.font = { name: 'Segoe UI', size: 9, bold: true, color: { argb: 'FFD4AF37' } };
+    footerCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF111113' } };
+    footerCell.alignment = { vertical: 'middle', horizontal: 'center' };
+    worksheet.getRow(10).height = 28;
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename="plantilla_invitados.xlsx"');
+
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    console.error('Error generating template file:', error);
+    res.status(500).json({ error: 'Error al generar la plantilla de invitados' });
+  }
+});
 
 // API: Upload Excel or CSV file
 app.post('/api/upload', requireAuth, upload.single('file'), (req, res) => {
@@ -1369,44 +1851,33 @@ app.post('/api/upload', requireAuth, upload.single('file'), (req, res) => {
   }
 
   const filePath = req.file.path;
-  const fileExt = path.extname(req.file.originalname).toLowerCase();
-  const eventId = req.query.event || 'default';
-
   try {
-    let rawData = [];
-
-    if (fileExt === '.csv') {
-      // Parse CSV
+    if (req.file.originalname.endsWith('.csv')) {
       const results = [];
       fs.createReadStream(filePath)
         .pipe(csvParser())
         .on('data', (data) => results.push(data))
         .on('end', () => {
-          processParsedData(eventId, results, filePath, res);
-        })
-        .on('error', (err) => {
-          console.error(err);
-          fs.unlinkSync(filePath);
-          res.status(500).json({ error: 'Error al leer el archivo CSV' });
+          processParsedData(req.query.event || 'default', results, filePath, res);
         });
-    } else if (fileExt === '.xlsx' || fileExt === '.xls') {
-      // Parse Excel
+    } else if (req.file.originalname.endsWith('.xlsx') || req.file.originalname.endsWith('.xls')) {
       const workbook = xlsx.readFile(filePath);
       const sheetName = workbook.SheetNames[0];
       const sheet = workbook.Sheets[sheetName];
       
-      // Resilient check to see if row 1 is a title or merged banner
+      // Smart header row finder
       let rangeOption = 0;
-      const cellA1 = sheet['A1'] ? String(sheet['A1'].v || '').trim().toLowerCase() : '';
-      const cellA2 = sheet['A2'] ? String(sheet['A2'].v || '').trim().toLowerCase() : '';
-      const cellB2 = sheet['B2'] ? String(sheet['B2'].v || '').trim().toLowerCase() : '';
-      
-      if (cellA1.includes("plantilla") || cellA1.includes("jano") || cellA2.includes("nombre") || cellB2.includes("apellido")) {
-        rangeOption = 1; // Skip title row, headers are on row 2
+      const rows = xlsx.utils.sheet_to_json(sheet, { header: 1 });
+      for (let i = 0; i < Math.min(rows.length, 10); i++) {
+        const rowStr = (rows[i] || []).join(' ').toLowerCase();
+        if (rowStr.includes('nombre') && rowStr.includes('apellido')) {
+          rangeOption = i;
+          break;
+        }
       }
       
-      rawData = xlsx.utils.sheet_to_json(sheet, { range: rangeOption });
-      processParsedData(eventId, rawData, filePath, res);
+      const rawData = xlsx.utils.sheet_to_json(sheet, { range: rangeOption });
+      processParsedData(req.query.event || 'default', rawData, filePath, res);
     } else {
       fs.unlinkSync(filePath);
       return res.status(400).json({ error: 'Formato de archivo no soportado. Suba un .xlsx, .xls o .csv' });
@@ -1434,13 +1905,21 @@ async function processParsedData(eventId, data, filePath, res) {
                          Object.keys(row).find(k => /apellido|surname/i.test(k));
       const tableKey = Object.keys(row).find(k => k.trim().replace(/\s+/g, '').toLowerCase() === 'numerodemesa') || 
                        Object.keys(row).find(k => /mesa|table|ubicacion/i.test(k));
+      const phoneKey = Object.keys(row).find(k => /teléfono|telefono|phone|celular|mobile|whatsapp/i.test(k));
 
       return {
-        firstName: nameKey ? String(row[nameKey]).trim() : '',
-        lastName: surnameKey ? String(row[surnameKey]).trim() : '',
-        table: tableKey ? String(row[tableKey]).trim() : 'Sin Mesa'
+        firstName: nameKey ? String(row[nameKey] || '').trim() : '',
+        lastName: surnameKey ? String(row[surnameKey] || '').trim() : '',
+        table: tableKey ? String(row[tableKey] || '').trim() : 'Sin Mesa',
+        phone: phoneKey ? String(row[phoneKey] || '').trim() : ''
       };
-    }).filter(g => g.firstName !== '' || g.lastName !== '');
+    }).filter(g => {
+      const fn = g.firstName.toLowerCase();
+      const ln = g.lastName.toLowerCase();
+      return (g.firstName !== '' || g.lastName !== '') && 
+             !fn.includes('mifiestapp') && !ln.includes('mifiestapp') &&
+             !fn.includes('©') && !ln.includes('©');
+    });
 
     // Write file using db adapter
     await db.saveGuests(eventId, guests);

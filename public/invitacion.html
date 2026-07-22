@@ -3,6 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Open Graph / WhatsApp Rich Link Preview -->
+  <meta property="og:title" content="✨ Invitación Especial | miFiestAPP">
+  <meta property="og:description" content="Estás invitado a celebrar este día tan especial. Hacé clic para abrir tu invitación interactiva personalizada.">
+  <meta property="og:image" content="/assets/coronamain.png">
+  <meta property="og:type" content="website">
   <link rel="icon" type="image/png" href="/assets/coronamain.png">
   <title>Invitación Interactiva</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1500,7 +1505,7 @@
 
           // Populate Premium Date elements
           if (data.invitationEventDate) {
-            const premDate = formatDateStringPremium(data.invitationEventDate);
+            const premDate = formatDateStringPremium(data.invitationEventDate, data.invitationEventTimeEnd);
             const dateLblPrem = document.getElementById('event-date-lbl-premium');
             const timeLblPrem = document.getElementById('event-time-lbl-premium');
             if (dateLblPrem) dateLblPrem.textContent = premDate.dateLine;
@@ -1515,6 +1520,10 @@
             // Also legacy selector for safety
             const dateLblLegacy = document.getElementById('event-date-lbl');
             if (dateLblLegacy) dateLblLegacy.textContent = formatDateString(data.invitationEventDate);
+
+            // DIA vs NOCHE texts
+            const isNight = data.eventTimeMode !== 'dia';
+            updateDayNightTexts(isNight);
           } else {
             const dateLblPrem = document.getElementById('event-date-lbl-premium');
             if (dateLblPrem) dateLblPrem.textContent = 'Fecha a confirmar';
@@ -1726,7 +1735,7 @@
         }
       }
 
-      function formatDateStringPremium(dateStr) {
+      function formatDateStringPremium(dateStr, timeEndStr = '') {
         try {
           const date = new Date(dateStr);
           if (isNaN(date.getTime())) return { dateLine: dateStr, timeLine: '' };
@@ -1741,12 +1750,37 @@
           let hours = date.getHours().toString().padStart(2, '0');
           let minutes = date.getMinutes().toString().padStart(2, '0');
           
+          let timeLineStr = `${hours}:${minutes} hs`;
+          if (timeEndStr && timeEndStr.trim()) {
+            timeLineStr = `${hours}:${minutes} a ${timeEndStr.trim()} hs`;
+          }
+          
           return {
             dateLine: `${weekday}, ${day} de ${month} de ${year}`,
-            timeLine: `${hours}:${minutes} hs`
+            timeLine: timeLineStr
           };
         } catch (e) {
           return { dateLine: dateStr, timeLine: '' };
+        }
+      }
+
+      function updateDayNightTexts(isNight) {
+        const chestCardText = document.querySelector('#slide-5 .chest-gift-card p');
+        if (chestCardText) {
+          if (isNight) {
+            chestCardText.textContent = "Nuestro mejor regalo el día de la fiesta, es tu presencia y tus ganas de disfrutar una noche con nosotros! De todas formas, en caso que desees realizar un aporte económico, simplemente girá la tarjeta.";
+          } else {
+            chestCardText.textContent = "Nuestro mejor regalo el día de la fiesta, es tu presencia y tus ganas de disfrutar un día con nosotros! De todas formas, en caso que desees realizar un aporte económico, simplemente girá la tarjeta.";
+          }
+        }
+
+        const rsvpSuccessSubtitle = document.querySelector('#rsvp-modal .success-subtitle');
+        if (rsvpSuccessSubtitle) {
+          if (isNight) {
+            rsvpSuccessSubtitle.textContent = "Te esperamos para pasar una noche increíble con nosotros.";
+          } else {
+            rsvpSuccessSubtitle.textContent = "Te esperamos para pasar un día increíble con nosotros.";
+          }
         }
       }
 
@@ -2602,8 +2636,9 @@
 
           if (config.date !== undefined) {
             const timeVal = config.time || '21:00';
+            const timeEndVal = config.timeEnd || '';
             const fullDateTimeStr = `${config.date}T${timeVal}`;
-            const premDate = formatDateStringPremium(fullDateTimeStr);
+            const premDate = formatDateStringPremium(fullDateTimeStr, timeEndVal);
 
             const dateLblPrem = document.getElementById('event-date-lbl-premium');
             const timeLblPrem = document.getElementById('event-time-lbl-premium');
@@ -2617,6 +2652,10 @@
 
             const dateLblLegacy = document.getElementById('event-date-lbl');
             if (dateLblLegacy) dateLblLegacy.textContent = formatDateString(fullDateTimeStr);
+
+            const startHour = parseInt(timeVal.split(':')[0], 10);
+            const isNight = isNaN(startHour) ? true : !(startHour >= 6 && startHour < 18);
+            updateDayNightTexts(isNight);
 
             startCountdown(fullDateTimeStr);
           }
@@ -4034,7 +4073,13 @@
         ctx.fillText(`📅 ${dateText}`, 540, 920);
 
         // Time
-        const timeText = (invitationData && invitationData.invitationPartyTime) ? invitationData.invitationPartyTime : '21:00 HS';
+        let timeText = '21:00 HS';
+        if (invitationData && invitationData.invitationEventDate) {
+          const pd = formatDateStringPremium(invitationData.invitationEventDate, invitationData.invitationEventTimeEnd);
+          if (pd && pd.timeLine) timeText = pd.timeLine;
+        } else if (invitationData && invitationData.invitationPartyTime) {
+          timeText = invitationData.invitationPartyTime;
+        }
         ctx.fillStyle = 'rgba(255,255,255,0.85)';
         ctx.font = '26px Montserrat, sans-serif';
         ctx.fillText(`⏰ Horario: ${timeText}`, 540, 975);
@@ -4052,9 +4097,20 @@
         ctx.fillText(`👔 ${dressText}`, 540, 1115);
 
         // Farewell Quote
+        let isNightCanvas = true;
+        if (invitationData && invitationData.eventTimeMode) {
+          isNightCanvas = invitationData.eventTimeMode !== 'dia';
+        } else if (invitationData && invitationData.invitationEventDate && invitationData.invitationEventDate.includes('T')) {
+          const h = parseInt(invitationData.invitationEventDate.split('T')[1].split(':')[0], 10);
+          if (!isNaN(h) && h >= 6 && h < 18) isNightCanvas = false;
+        }
+        const farewellMsg = isNightCanvas 
+          ? '“Te esperamos para pasar una noche increíble con nosotros.”' 
+          : '“Te esperamos para pasar un día increíble con nosotros.”';
+
         ctx.fillStyle = 'rgba(255,255,255,0.75)';
         ctx.font = 'italic 24px Georgia, serif';
-        ctx.fillText('“Te esperamos para pasar una noche increíble con nosotros.”', 540, 1260);
+        ctx.fillText(farewellMsg, 540, 1260);
 
         // Footer Branding
         ctx.fillStyle = '#d4af37';

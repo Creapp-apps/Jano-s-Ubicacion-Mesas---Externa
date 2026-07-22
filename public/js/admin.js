@@ -170,19 +170,23 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function showToast(type, title, message, duration = 3000) {
-    // Backwards compatibility for:
-    // 1. showToast(message, type)
-    // 2. showToast(message)
+    const validTypes = ['success', 'error', 'loading', 'warning', 'info'];
+
     if (!title && !message) {
       // Single argument call: showToast(message)
       message = type;
       type = 'success';
       title = '¡Éxito!';
-    } else if (title === 'success' || title === 'error' || title === 'loading') {
-      // Two arguments call: showToast(message, type)
+    } else if (typeof title === 'string' && validTypes.includes(title.toLowerCase())) {
+      // Two argument call: showToast(message, type)
       message = type;
-      type = title;
-      title = (type === 'success') ? '¡Éxito!' : (type === 'error') ? 'Error' : '';
+      type = title.toLowerCase();
+      title = (type === 'success') ? '¡Éxito!' : (type === 'error') ? 'Error' : (type === 'warning') ? '¡Atención!' : '';
+    } else if (!message && title) {
+      // Two argument call: showToast(title, message)
+      message = title;
+      title = (type && !validTypes.includes(type)) ? type : '¡Atención!';
+      type = 'warning';
     }
 
     const existingToast = document.getElementById('floating-toast');
@@ -208,6 +212,12 @@ document.addEventListener('DOMContentLoaded', () => {
             <circle class="toast-checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
             <path class="toast-checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
           </svg>
+        </div>
+      `;
+    } else if (type === 'warning') {
+      iconHtml = `
+        <div class="toast-icon-wrapper" style="color: var(--gold-primary);">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
         </div>
       `;
     } else if (type === 'error') {
@@ -522,6 +532,14 @@ document.addEventListener('DOMContentLoaded', () => {
           wrapper.classList.add('active-subtab');
           wrapper.offsetHeight; // Force reflow
           wrapper.classList.add('fade-in-subtab');
+          if (t === 'invitados') {
+            setTimeout(() => {
+              updateTableScrollHint('invitados-table-wrapper', 'invitados-scroll-hint');
+            }, 50);
+            setTimeout(() => {
+              updateTableScrollHint('invitados-table-wrapper', 'invitados-scroll-hint');
+            }, 250);
+          }
         }
       } else {
         if (btn) btn.classList.remove('active');
@@ -757,6 +775,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const invTitleInput = document.getElementById('inv-title-input');
   const invDateOnlyInput = document.getElementById('inv-date-only-input');
   const invTimeOnlyInput = document.getElementById('inv-time-only-input');
+  const invTimeEndInput = document.getElementById('inv-time-end-input');
   const invMusicInput = document.getElementById('inv-music-input');
   const invAudioUpload = document.getElementById('inv-audio-upload');
   const invAudioUploadStatus = document.getElementById('inv-audio-upload-status');
@@ -1202,12 +1221,25 @@ document.addEventListener('DOMContentLoaded', () => {
     modalFirstName.value = '';
     modalLastName.value = '';
     modalTable.value = '';
+    const modalPhone = document.getElementById('modal-phone');
+    if (modalPhone) {
+      modalPhone.value = '';
+      modalPhone.classList.remove('input-highlight-pulse');
+    }
     hideCustomDropdown();
     guestModal.classList.add('active');
   });
 
+  const modalPhoneInput = document.getElementById('modal-phone');
+  if (modalPhoneInput) {
+    modalPhoneInput.addEventListener('input', () => {
+      modalPhoneInput.classList.remove('input-highlight-pulse');
+    });
+  }
+
   btnCloseModal.addEventListener('click', () => {
     guestModal.classList.remove('active');
+    if (modalPhoneInput) modalPhoneInput.classList.remove('input-highlight-pulse');
     hideCustomDropdown();
   });
 
@@ -1280,6 +1312,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (invTimeOnlyInput && timeVal) {
               invTimeOnlyInput.value = timeVal;
+            }
+            if (invTimeEndInput && data.invitationEventTimeEnd) {
+              invTimeEndInput.value = data.invitationEventTimeEnd;
+            }
+
+            const onboardingHeading = document.getElementById('onboarding-title-heading');
+            if (onboardingHeading && data.eventTimeMode) {
+              onboardingHeading.textContent = data.eventTimeMode === 'dia' ? '¡Todo listo para tu gran día!' : '¡Todo listo para tu gran noche!';
             }
           } catch (e) {
             console.error('Error parsing date for input:', e);
@@ -1611,6 +1651,35 @@ document.addEventListener('DOMContentLoaded', () => {
         </td>
       </tr>
     `).join('');
+
+    setTimeout(() => {
+      updateTableScrollHint('guests-table-wrapper', 'guests-scroll-hint');
+    }, 50);
+  }
+
+  function updateTableScrollHint(wrapperId, hintId, guestCount) {
+    const wrapper = document.getElementById(wrapperId);
+    const hint = document.getElementById(hintId);
+    if (!wrapper || !hint) return;
+
+    let count = guestCount;
+    if (count === undefined || count === null) {
+      const rows = wrapper.querySelectorAll('tbody tr');
+      count = rows.length;
+    }
+
+    let hasMoreScroll = false;
+    if (wrapper.clientHeight > 0) {
+      hasMoreScroll = (wrapper.scrollHeight - wrapper.scrollTop - wrapper.clientHeight) > 15;
+    } else if (count > 5) {
+      hasMoreScroll = true;
+    }
+
+    if (hasMoreScroll) {
+      hint.classList.add('visible');
+    } else {
+      hint.classList.remove('visible');
+    }
   }
 
   // Update modal tabs presentation
@@ -1829,10 +1898,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function saveGuestForm() {
     const idx = guestIndexInput.value;
+    const modalPhone = document.getElementById('modal-phone');
     const guestData = {
       firstName: modalFirstName.value.trim(),
       lastName: modalLastName.value.trim(),
-      table: modalTable.value.trim()
+      table: modalTable.value.trim(),
+      phone: modalPhone ? modalPhone.value.trim() : ''
     };
 
     const isEdit = idx !== '';
@@ -1899,17 +1970,90 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   }
 
+  function normalizeWhatsAppNumber(phone) {
+    if (!phone) return '';
+    let str = String(phone).trim();
+    let cleaned = str.replace(/\D/g, '');
+    if (!cleaned) return '';
+
+    if (cleaned.startsWith('0')) {
+      cleaned = cleaned.substring(1);
+    }
+
+    if (cleaned.length === 10 && !cleaned.startsWith('54')) {
+      cleaned = '549' + cleaned;
+    } else if (!cleaned.startsWith('54') && cleaned.length < 12) {
+      cleaned = '549' + cleaned;
+    }
+
+    return cleaned;
+  }
+
+  function buildWhatsAppInvitationMessage(guestName, personalUrl) {
+    return `✨ Hay momentos que se sueñan durante mucho tiempo, y finalmente llegó el mío.
+
+Con enorme alegría quiero invitarte a celebrar mis XV años, una noche que quedará para siempre en mi corazón y que deseo compartir junto a las personas que forman parte de mi vida.
+
+En el siguiente enlace vas a encontrar toda la información de este día tan especial:
+
+🔗 ${personalUrl}
+
+Tu presencia hará que esta celebración sea aún más significativa.
+
+💖 Te espero para vivir juntos una noche inolvidable.`;
+  }
+
+  window.sendWhatsAppInvite = (index) => {
+    const guest = allGuests[index];
+    if (!guest) return;
+
+    if (!guest.phone || !guest.phone.trim()) {
+      showToast('warning', '¡Sin Teléfono Asignado!', 'Este invitado no tiene un número de teléfono registrado. Ingresá el número a continuación para enviarle su invitación por WhatsApp.', 5000);
+      window.openEditGuestModal(index, 'phone');
+      return;
+    }
+
+    const normalizedPhone = normalizeWhatsAppNumber(guest.phone);
+    if (!normalizedPhone) {
+      showToast('error', '¡Teléfono Inválido!', 'El número de teléfono cargado no posee un formato válido. Editá el invitado para corregirlo.', 5000);
+      window.openEditGuestModal(index, 'phone');
+      return;
+    }
+
+    const currentOrigin = window.location.origin;
+    const personalUrl = `${currentOrigin}/invitacion.html?event=${encodeURIComponent(eventId)}&n=${encodeURIComponent(guest.firstName + ' ' + guest.lastName)}`;
+    const text = buildWhatsAppInvitationMessage(`${guest.firstName} ${guest.lastName}`, personalUrl);
+    
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const baseUrl = isMobile ? 'https://api.whatsapp.com/send' : 'https://web.whatsapp.com/send';
+    const waUrl = `${baseUrl}?phone=${normalizedPhone}&text=${encodeURIComponent(text)}`;
+
+    window.open(waUrl, '_blank');
+  };
 
   // Expose CRUD helper triggers to window since table templates use them inline
-  window.openEditGuestModal = (index) => {
+  window.openEditGuestModal = (index, highlightField) => {
     const guest = allGuests[index];
     modalTitle.textContent = 'Editar Invitado';
     guestIndexInput.value = index;
     modalFirstName.value = guest.firstName;
     modalLastName.value = guest.lastName;
     modalTable.value = guest.table;
+    const modalPhone = document.getElementById('modal-phone');
+    if (modalPhone) {
+      modalPhone.value = guest.phone || '';
+      modalPhone.classList.remove('input-highlight-pulse');
+    }
     hideCustomDropdown();
     guestModal.classList.add('active');
+
+    if (highlightField === 'phone' && modalPhone) {
+      setTimeout(() => {
+        modalPhone.classList.add('input-highlight-pulse');
+        modalPhone.focus();
+        modalPhone.select();
+      }, 150);
+    }
   };
 
   window.confirmDeleteGuest = (index) => {
@@ -2093,6 +2237,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         return '';
       })(),
+      invitationEventTimeEnd: invTimeEndInput ? invTimeEndInput.value.trim() : '',
       invitationMusicUrl: invMusicInput ? invMusicInput.value.trim() : '',
       invitationPartyAddress: invAddressInput ? invAddressInput.value.trim() : '',
       invitationPartyMapsUrl: invMapsInput ? invMapsInput.value.trim() : '',
@@ -2775,6 +2920,39 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  if (invTimeEndInput) {
+    invTimeEndInput.addEventListener('input', (e) => {
+      let val = e.target.value.replace(/[^0-9:]/g, '');
+      if (val.length === 4 && !val.includes(':')) {
+        val = val.substring(0, 2) + ':' + val.substring(2);
+      }
+      e.target.value = val;
+    });
+
+    invTimeEndInput.addEventListener('blur', (e) => {
+      let val = e.target.value.trim();
+      if (!val) return;
+      
+      if (/^\d+$/.test(val)) {
+        if (val.length === 1) val = '0' + val + ':00';
+        else if (val.length === 2) val = val + ':00';
+        else if (val.length === 3) val = '0' + val.substring(0,1) + ':' + val.substring(1);
+        else if (val.length === 4) val = val.substring(0, 2) + ':' + val.substring(2);
+      }
+      
+      const match = val.match(/^(\d{1,2}):(\d{2})$/);
+      if (match) {
+        let hrs = parseInt(match[1], 10);
+        let mins = parseInt(match[2], 10);
+        if (hrs > 23) hrs = 23;
+        if (mins > 59) mins = 59;
+        e.target.value = `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+      } else {
+        e.target.value = '';
+      }
+    });
+  }
+
   if (rsvpSearchInput) {
     rsvpSearchInput.addEventListener('input', renderRsvpTable);
   }
@@ -2893,7 +3071,8 @@ document.addEventListener('DOMContentLoaded', () => {
       invPhoto5: invPhoto5 ? invPhoto5.value.trim() : '',
       title: invTitleInput ? invTitleInput.value.trim() : '',
       date: invDateOnlyInput ? invDateOnlyInput.value.trim() : '',
-      time: invTimeOnlyInput ? invTimeOnlyInput.value.trim() : '21:00'
+      time: invTimeOnlyInput ? invTimeOnlyInput.value.trim() : '21:00',
+      timeEnd: invTimeEndInput ? invTimeEndInput.value.trim() : ''
     };
 
     previewIframe.contentWindow.postMessage({
@@ -2905,7 +3084,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- Real-time preview input listeners ---
   const inputsToListen = [
     invThemeFont, invThemeColor, invBgEffect, invWaxSeal,
-    invBgUrl, invTitleInput, invDateOnlyInput, invTimeOnlyInput,
+    invBgUrl, invTitleInput, invDateOnlyInput, invTimeOnlyInput, invTimeEndInput,
     invPhoto1, invPhoto2, invPhoto3, invPhoto4, invPhoto5
   ];
 
@@ -3329,6 +3508,20 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  const btnExportMenus = document.getElementById('btn-export-menus');
+  if (btnExportMenus) {
+    btnExportMenus.addEventListener('click', () => {
+      window.location.href = `/api/admin/export-menus?event=${encodeURIComponent(eventId)}`;
+    });
+  }
+
+  const btnExportDjSongs = document.getElementById('btn-export-dj-songs');
+  if (btnExportDjSongs) {
+    btnExportDjSongs.addEventListener('click', () => {
+      window.location.href = `/api/admin/export-dj-songs?event=${encodeURIComponent(eventId)}`;
+    });
+  }
+
   if (btnAddGuestInvitados) {
     btnAddGuestInvitados.addEventListener('click', () => {
       modalTitle.textContent = 'Agregar Invitado';
@@ -3336,6 +3529,8 @@ document.addEventListener('DOMContentLoaded', () => {
       modalFirstName.value = '';
       modalLastName.value = '';
       modalTable.value = '';
+      const modalPhone = document.getElementById('modal-phone');
+      if (modalPhone) modalPhone.value = '';
       hideCustomDropdown();
       guestModal.classList.add('active');
     });
@@ -3570,6 +3765,10 @@ document.addEventListener('DOMContentLoaded', () => {
           <td style="text-align: center; vertical-align: middle;">
             <div style="display: flex; justify-content: center; gap: 6px; flex-wrap: nowrap;">
               <button class="btn-action edit" onclick="openEditGuestModal(${g.originalIndex})">Editar</button>
+              <button class="btn-action whatsapp" title="${g.phone ? 'Enviar Invitación por WhatsApp (' + escapeHtml(g.phone) + ')' : 'Sin teléfono (haz clic para agregar)'}" onclick="sendWhatsAppInvite(${g.originalIndex})">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.842-1.001zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+                WhatsApp
+              </button>
               <button class="btn-action edit" style="border-color: var(--gold-primary); color: var(--gold-primary);" onclick="copyGuestUrl(${g.originalIndex}, this)">Copiar</button>
               <button class="btn-action delete" onclick="confirmDeleteGuest(${g.originalIndex})">Eliminar</button>
             </div>
@@ -3577,6 +3776,34 @@ document.addEventListener('DOMContentLoaded', () => {
         </tr>
       `;
     }).join('');
+
+    setTimeout(() => {
+      updateTableScrollHint('invitados-table-wrapper', 'invitados-scroll-hint', filteredGuests.length);
+    }, 50);
+  }
+
+  // Attach scroll & resize observers to table wrappers for automatic real-time hint updates
+  const wrapperInvitados = document.getElementById('invitados-table-wrapper');
+  if (wrapperInvitados) {
+    wrapperInvitados.addEventListener('scroll', () => {
+      updateTableScrollHint('invitados-table-wrapper', 'invitados-scroll-hint');
+    });
+  }
+
+  const wrapperGuests = document.getElementById('guests-table-wrapper');
+  if (wrapperGuests) {
+    wrapperGuests.addEventListener('scroll', () => {
+      updateTableScrollHint('guests-table-wrapper', 'guests-scroll-hint');
+    });
+  }
+
+  if (typeof ResizeObserver !== 'undefined') {
+    const tableResizeObserver = new ResizeObserver(() => {
+      updateTableScrollHint('invitados-table-wrapper', 'invitados-scroll-hint');
+      updateTableScrollHint('guests-table-wrapper', 'guests-scroll-hint');
+    });
+    if (wrapperInvitados) tableResizeObserver.observe(wrapperInvitados);
+    if (wrapperGuests) tableResizeObserver.observe(wrapperGuests);
   }
 
   // Handle click on collapsible table headers

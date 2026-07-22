@@ -2500,9 +2500,86 @@ input.input-dirty,
 select.input-dirty,
 textarea.input-dirty,
 .form-control-admin.input-dirty,
-.form-control.input-dirty {
-  animation: unsavedGlowPulse 2s infinite ease-in-out !important;
-  background: rgba(212, 175, 55, 0.08) !important;
+.form-control.input-dirty,
+.input-highlight-pulse,
+input.input-highlight-pulse {
+  animation: unsavedGlowPulse 1.8s infinite ease-in-out !important;
+  background: rgba(212, 175, 55, 0.12) !important;
+  border-color: rgba(255, 215, 0, 1) !important;
+}
+
+/* Scroll More Floating Indicator */
+@keyframes bounceArrow {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(4px);
+  }
+}
+
+@keyframes goldPulseGlow {
+  0%, 100% {
+    box-shadow: 0 4px 15px rgba(212, 175, 55, 0.25);
+    border-color: rgba(212, 175, 55, 0.6);
+  }
+  50% {
+    box-shadow: 0 4px 22px rgba(212, 175, 55, 0.65);
+    border-color: rgba(212, 175, 55, 0.95);
+  }
+}
+
+.scroll-more-hint {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%) translateY(8px);
+  background: rgba(17, 17, 19, 0.92);
+  border: 1px solid var(--gold-primary);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 20px;
+  padding: 7px 18px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #D4AF37;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.35s ease, transform 0.35s ease;
+  z-index: 10;
+  font-family: 'Montserrat', sans-serif;
+  letter-spacing: 0.5px;
+}
+
+.scroll-more-hint.visible {
+  opacity: 1 !important;
+  transform: translateX(-50%) translateY(0) !important;
+  animation: goldPulseGlow 2.5s infinite ease-in-out;
+}
+
+.scroll-more-hint svg.bounce-arrow {
+  animation: bounceArrow 1.4s infinite ease-in-out;
+}
+
+/* WhatsApp Action Button Styling */
+.btn-action.whatsapp {
+  border-color: rgba(37, 211, 102, 0.6) !important;
+  color: #25D366 !important;
+  background: rgba(37, 211, 102, 0.08) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+}
+
+.btn-action.whatsapp:hover {
+  background: rgba(37, 211, 102, 0.22) !important;
+  border-color: #25D366 !important;
+  box-shadow: 0 0 12px rgba(37, 211, 102, 0.4) !important;
+  transform: translateY(-1px);
 }
 
 

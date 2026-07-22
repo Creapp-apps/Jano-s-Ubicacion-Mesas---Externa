@@ -164,7 +164,7 @@ async function getGuests(eventId = 'default') {
   if (isSupabaseEnabled) {
     const { data, error } = await supabase
       .from('guests')
-      .select('id, first_name, last_name, table_number')
+      .select('*')
       .eq('event_id', eventId)
       .order('id', { ascending: true });
       
@@ -173,12 +173,27 @@ async function getGuests(eventId = 'default') {
       throw error;
     }
     
-    return (data || []).map(g => ({
-      id: g.id,
-      firstName: g.first_name,
-      lastName: g.last_name,
-      table: normalizeTable(g.table_number)
-    }));
+    const { guestsFile } = getEventFiles(eventId);
+    let localGuests = [];
+    if (fs.existsSync(guestsFile)) {
+      try {
+        localGuests = JSON.parse(fs.readFileSync(guestsFile, 'utf8')) || [];
+      } catch (e) {}
+    }
+    
+    return (data || []).map(g => {
+      const localMatch = localGuests.find(lg => 
+        (lg.firstName || '').trim().toLowerCase() === (g.first_name || '').trim().toLowerCase() &&
+        (lg.lastName || '').trim().toLowerCase() === (g.last_name || '').trim().toLowerCase()
+      );
+      return {
+        id: g.id,
+        firstName: g.first_name || '',
+        lastName: g.last_name || '',
+        table: normalizeTable(g.table_number),
+        phone: g.phone || g.telephone || g.telefono || (localMatch ? localMatch.phone : '') || ''
+      };
+    });
   } else {
     const { guestsFile } = getEventFiles(eventId);
     if (!fs.existsSync(guestsFile)) {
@@ -189,7 +204,8 @@ async function getGuests(eventId = 'default') {
       const parsed = JSON.parse(fileData);
       return (parsed || []).map(g => ({
         ...g,
-        table: normalizeTable(g.table)
+        table: normalizeTable(g.table),
+        phone: g.phone || ''
       }));
     } catch (err) {
       console.error('Error reading local guests file:', err);
@@ -205,7 +221,8 @@ async function saveGuests(eventId = 'default', guestsList) {
   const formattedGuests = guestsList.map(g => ({
     firstName: (g.firstName || '').trim(),
     lastName: (g.lastName || '').trim(),
-    table: normalizeTable(g.table)
+    table: normalizeTable(g.table),
+    phone: (g.phone || '').trim()
   }));
 
   if (isSupabaseEnabled) {
@@ -223,25 +240,38 @@ async function saveGuests(eventId = 'default', guestsList) {
     if (formattedGuests.length === 0) return;
 
     // 2. Insert new records
-    const rowsToInsert = formattedGuests.map(g => ({
+    let rowsToInsert = formattedGuests.map(g => ({
       event_id: eventId,
       first_name: g.firstName,
       last_name: g.lastName,
-      table_number: g.table
+      table_number: g.table,
+      phone: g.phone || ''
     }));
 
-    const { error: insertError } = await supabase
+    let { error: insertError } = await supabase
       .from('guests')
       .insert(rowsToInsert);
+
+    if (insertError && (insertError.code === 'PGRST204' || insertError.message?.includes('phone'))) {
+      rowsToInsert = formattedGuests.map(g => ({
+        event_id: eventId,
+        first_name: g.firstName,
+        last_name: g.lastName,
+        table_number: g.table
+      }));
+      const res = await supabase.from('guests').insert(rowsToInsert);
+      insertError = res.error;
+    }
 
     if (insertError) {
       console.error('Error inserting guests into Supabase:', insertError);
       throw insertError;
     }
-  } else {
-    const { guestsFile } = getEventFiles(eventId);
-    fs.writeFileSync(guestsFile, JSON.stringify(formattedGuests, null, 2), 'utf8');
   }
+
+  // Always write to local storage as fallback/primary
+  const { guestsFile } = getEventFiles(eventId);
+  fs.writeFileSync(guestsFile, JSON.stringify(formattedGuests, null, 2), 'utf8');
 }
 
 /**
@@ -257,11 +287,10 @@ async function clearGuests(eventId = 'default') {
       console.error('Error clearing guests in Supabase:', error);
       throw error;
     }
-  } else {
-    const { guestsFile } = getEventFiles(eventId);
-    if (fs.existsSync(guestsFile)) {
-      fs.unlinkSync(guestsFile);
-    }
+  }
+  const { guestsFile } = getEventFiles(eventId);
+  if (fs.existsSync(guestsFile)) {
+    fs.unlinkSync(guestsFile);
   }
 }
 
@@ -272,28 +301,42 @@ async function addGuest(eventId = 'default', guest) {
   const newGuest = {
     firstName: (guest.firstName || '').trim(),
     lastName: (guest.lastName || '').trim(),
-    table: normalizeTable(guest.table)
+    table: normalizeTable(guest.table),
+    phone: (guest.phone || '').trim()
   };
 
   if (isSupabaseEnabled) {
-    const { error } = await supabase
-      .from('guests')
-      .insert([{
-        event_id: eventId,
-        first_name: newGuest.firstName,
-        last_name: newGuest.lastName,
-        table_number: newGuest.table
-      }]);
-    if (error) {
+    const payload = {
+      event_id: eventId,
+      first_name: newGuest.firstName,
+      last_name: newGuest.lastName,
+      table_number: newGuest.table,
+      phone: newGuest.phone
+    };
+    const { error } = await supabase.from('guests').insert([payload]);
+    if (error && (error.code === 'PGRST204' || error.message?.includes('phone'))) {
+      delete payload.phone;
+      const { error: retryErr } = await supabase.from('guests').insert([payload]);
+      if (retryErr) {
+        console.error('Error inserting single guest into Supabase:', retryErr);
+        throw retryErr;
+      }
+    } else if (error) {
       console.error('Error inserting single guest into Supabase:', error);
       throw error;
     }
-  } else {
-    const guests = await getGuests(eventId);
-    guests.push(newGuest);
-    const { guestsFile } = getEventFiles(eventId);
-    fs.writeFileSync(guestsFile, JSON.stringify(guests, null, 2), 'utf8');
   }
+
+  // Always update local guests JSON file
+  const guests = await getGuests(eventId);
+  const existingIdx = guests.findIndex(g => g.firstName.toLowerCase() === newGuest.firstName.toLowerCase() && g.lastName.toLowerCase() === newGuest.lastName.toLowerCase());
+  if (existingIdx >= 0) {
+    guests[existingIdx] = newGuest;
+  } else {
+    guests.push(newGuest);
+  }
+  const { guestsFile } = getEventFiles(eventId);
+  fs.writeFileSync(guestsFile, JSON.stringify(guests, null, 2), 'utf8');
 }
 
 /**
@@ -309,28 +352,39 @@ async function updateGuest(eventId = 'default', index, updatedGuest) {
   const newFields = {
     firstName: (updatedGuest.firstName || '').trim(),
     lastName: (updatedGuest.lastName || '').trim(),
-    table: normalizeTable(updatedGuest.table)
+    table: normalizeTable(updatedGuest.table),
+    phone: (updatedGuest.phone || '').trim()
   };
 
-  if (isSupabaseEnabled) {
+  if (isSupabaseEnabled && target.id) {
+    const payload = {
+      first_name: newFields.firstName,
+      last_name: newFields.lastName,
+      table_number: newFields.table,
+      phone: newFields.phone
+    };
     const { error } = await supabase
       .from('guests')
-      .update({
-        first_name: newFields.firstName,
-        last_name: newFields.lastName,
-        table_number: newFields.table
-      })
+      .update(payload)
       .eq('id', target.id)
       .eq('event_id', eventId);
-    if (error) {
+
+    if (error && (error.code === 'PGRST204' || error.message?.includes('phone'))) {
+      delete payload.phone;
+      await supabase
+        .from('guests')
+        .update(payload)
+        .eq('id', target.id)
+        .eq('event_id', eventId);
+    } else if (error) {
       console.error('Error updating guest in Supabase:', error);
       throw error;
     }
-  } else {
-    guests[index] = newFields;
-    const { guestsFile } = getEventFiles(eventId);
-    fs.writeFileSync(guestsFile, JSON.stringify(guests, null, 2), 'utf8');
   }
+
+  guests[index] = newFields;
+  const { guestsFile } = getEventFiles(eventId);
+  fs.writeFileSync(guestsFile, JSON.stringify(guests, null, 2), 'utf8');
 }
 
 /**

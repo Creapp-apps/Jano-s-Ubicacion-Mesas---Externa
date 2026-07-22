@@ -142,22 +142,28 @@
         </div>
       </div>
 
-      <div class="table-wrapper" style="margin-top: 25px; overflow-x: auto; max-height: 400px; overflow-y: auto;">
-        <table class="guests-table">
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>Apellido</th>
-              <th>Mesa</th>
-              <th style="width: 150px; text-align: center;">Acciones</th>
-            </tr>
-          </thead>
-          <tbody id="guests-table-body">
-            <tr>
-              <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 30px;">Cargando listado de invitados...</td>
-            </tr>
-          </tbody>
-        </table>
+      <div style="position: relative;">
+        <div class="table-wrapper" id="guests-table-wrapper" style="margin-top: 25px; overflow-x: auto; max-height: 400px; overflow-y: auto;">
+          <table class="guests-table">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Apellido</th>
+                <th>Mesa</th>
+                <th style="width: 150px; text-align: center;">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="guests-table-body">
+              <tr>
+                <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 30px;">Cargando listado de invitados...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="guests-scroll-hint" class="scroll-more-hint">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="bounce-arrow"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+          <span>Deslizá hacia abajo para ver todos los invitados</span>
+        </div>
       </div>
     </div>
     </div> <!-- Close tab-mesas -->
@@ -284,8 +290,8 @@
                 <label style="display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Título del Evento</label>
                 <input type="text" id="inv-title-input" class="form-control-admin" placeholder="Ej. Boda de Laura & Martín" style="width: 100%; padding: 12px 18px; border-radius: 20px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif;">
               </div>
-              <div style="margin-bottom: 15px; display: flex; gap: 15px; text-align: left;">
-                <div style="flex: 1;">
+              <div style="margin-bottom: 15px; display: flex; gap: 12px; text-align: left; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 150px;">
                   <label style="display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Fecha del Evento</label>
                   <div class="custom-datepicker-container" id="datepicker-container">
                     <input type="text" id="inv-date-only-input" class="form-control-admin" placeholder="DD/MM/AAAA" maxlength="10" autocomplete="off" style="width: 100%; padding: 12px 42px 12px 18px; border-radius: 20px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif;">
@@ -300,9 +306,13 @@
                     <div class="custom-datepicker-dropdown" id="custom-datepicker-dropdown"></div>
                   </div>
                 </div>
-                <div style="width: 130px;">
-                  <label style="display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Hora (24hs)</label>
-                  <input type="text" id="inv-time-only-input" class="form-control-admin" placeholder="21:00" maxlength="5" style="width: 100%; padding: 12px 18px; border-radius: 20px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif; text-align: center;">
+                <div style="width: 110px;">
+                  <label style="display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600; white-space: nowrap;">Hora Inicio</label>
+                  <input type="text" id="inv-time-only-input" class="form-control-admin" placeholder="21:00" maxlength="5" style="width: 100%; padding: 12px 10px; border-radius: 20px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif; text-align: center;">
+                </div>
+                <div style="width: 110px;">
+                  <label style="display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600; white-space: nowrap;">Hora Fin</label>
+                  <input type="text" id="inv-time-end-input" class="form-control-admin" placeholder="05:00" maxlength="5" style="width: 100%; padding: 12px 10px; border-radius: 20px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif; text-align: center;">
                 </div>
               </div>
 
@@ -763,7 +773,13 @@
           <div class="admin-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
             <!-- Dietary and food requirements list -->
             <div style="border: 1px solid var(--card-border); background: rgba(0,0,0,0.2); border-radius: 20px; padding: 20px; text-align: left;">
-              <h3 style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; color: var(--gold-primary); margin-bottom: 12px;">Menú Especial / Restricciones</h3>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                <h3 style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; color: var(--gold-primary); margin: 0;">Menú Especial / Restricciones</h3>
+                <button type="button" id="btn-export-menus" class="btn" style="padding: 8px 16px; font-size: 0.72rem; border-radius: 20px; background: var(--gold-gradient); color: #0b0b0c; font-weight: 700; border: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex: none; text-align: center; font-family: 'Montserrat', sans-serif; transition: transform 0.2s, box-shadow 0.2s;" title="Exportar reporte de menúes especiales a Excel">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                  Exportar Menúes
+                </button>
+              </div>
               <div class="tables-list-container" id="rsvp-diet-breakdown" style="max-height: 250px; overflow-y: auto;">
                 <div style="padding: 10px; text-align: center; color: var(--text-muted); font-size: 0.8rem;">Cargando restricciones...</div>
               </div>
@@ -771,7 +787,13 @@
 
             <!-- Suggested Songs list -->
             <div style="border: 1px solid var(--card-border); background: rgba(0,0,0,0.2); border-radius: 20px; padding: 20px; text-align: left;">
-              <h3 style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; color: var(--gold-primary); margin-bottom: 12px;">Sugerencias para el DJ</h3>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                <h3 style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; color: var(--gold-primary); margin: 0;">Sugerencias para el DJ</h3>
+                <button type="button" id="btn-export-dj-songs" class="btn" style="padding: 8px 16px; font-size: 0.72rem; border-radius: 20px; background: var(--gold-gradient); color: #0b0b0c; font-weight: 700; border: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex: none; text-align: center; font-family: 'Montserrat', sans-serif; transition: transform 0.2s, box-shadow 0.2s;" title="Exportar reporte de canciones para el DJ a Excel">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                  Exportar Sugerencias DJ
+                </button>
+              </div>
               <div class="tables-list-container" id="rsvp-songs-list" style="max-height: 250px; overflow-y: auto;">
                 <div style="padding: 10px; text-align: center; color: var(--text-muted); font-size: 0.8rem;">Cargando sugerencias de canciones...</div>
               </div>
@@ -820,10 +842,6 @@
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
               Gestión de Invitados & Enlaces
             </h2>
-            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-left: auto;">
-              <input type="text" id="invitados-guest-search" class="form-control-admin" placeholder="Buscar por nombre..." style="padding: 10px 15px; font-size: 0.85rem; border-radius: 15px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif; width: 220px;">
-              <button type="button" class="btn btn-primary" id="btn-add-guest-invitados" style="padding: 10px 20px; font-size: 0.8rem; border-radius: 20px; flex: none;">+ Agregar Invitado</button>
-            </div>
           </div>
           <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; margin-bottom: 20px; text-align: left;">
             Carga tu listado de invitados para poder generar y copiar sus enlaces de invitación personalizados.
@@ -855,34 +873,46 @@
             </div>
           </div>
 
-          <!-- Filter Tabs for RSVP Status -->
-          <div class="filter-tabs-container" style="display: flex; gap: 8px; margin-top: 25px; margin-bottom: 5px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px; align-items: center; flex-wrap: wrap;">
-            <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--gold-primary); font-weight: 600; margin-right: 10px;">Filtrar por:</span>
-            <button type="button" class="filter-tab-btn active" data-status-filter="all">Todos (<span id="count-all">0</span>)</button>
-            <button type="button" class="filter-tab-btn" data-status-filter="confirmed">Confirmados (<span id="count-confirmed">0</span>)</button>
-            <button type="button" class="filter-tab-btn" data-status-filter="pending">Pendientes (<span id="count-pending">0</span>)</button>
-            <button type="button" class="filter-tab-btn" data-status-filter="declined">No asistirán (<span id="count-declined">0</span>)</button>
+          <!-- Filter Tabs & Table Control Bar -->
+          <div class="filter-tabs-container" style="display: flex; justify-content: space-between; align-items: center; gap: 15px; margin-top: 25px; margin-bottom: 5px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px; flex-wrap: wrap;">
+            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+              <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--gold-primary); font-weight: 600; margin-right: 10px;">Filtrar por:</span>
+              <button type="button" class="filter-tab-btn active" data-status-filter="all">Todos (<span id="count-all">0</span>)</button>
+              <button type="button" class="filter-tab-btn" data-status-filter="confirmed">Confirmados (<span id="count-confirmed">0</span>)</button>
+              <button type="button" class="filter-tab-btn" data-status-filter="pending">Pendientes (<span id="count-pending">0</span>)</button>
+              <button type="button" class="filter-tab-btn" data-status-filter="declined">No asistirán (<span id="count-declined">0</span>)</button>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+              <input type="text" id="invitados-guest-search" class="form-control-admin" placeholder="Buscar por nombre..." style="padding: 9px 16px; font-size: 0.82rem; border-radius: 20px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif; width: 220px; transition: border-color 0.2s, box-shadow 0.2s;">
+              <button type="button" class="btn btn-primary" id="btn-add-guest-invitados" style="padding: 9px 18px; font-size: 0.8rem; border-radius: 20px; flex: none; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">+ Agregar Invitado</button>
+            </div>
           </div>
 
           <!-- Table of Guests & Personal Links -->
-          <div class="table-wrapper" style="margin-top: 20px; max-height: 400px; overflow-y: auto; overflow-x: auto;">
-            <table class="guests-table" style="font-size: 0.8rem;">
-              <thead>
-                <tr>
-                  <th>Nombre</th>
-                  <th>Apellido</th>
-                  <th>Mesa</th>
-                  <th style="text-align: center; width: 120px;">Confirmación</th>
-                  <th>Enlace de Invitación</th>
-                  <th style="width: 180px; text-align: center;">Acciones</th>
-                </tr>
-              </thead>
-              <tbody id="invitados-table-body">
-                <tr>
-                  <td colspan="6" style="text-align: center; padding: 20px; color: var(--text-muted);">Cargando listado de invitados...</td>
-                </tr>
-              </tbody>
-            </table>
+          <div style="position: relative;">
+            <div class="table-wrapper" id="invitados-table-wrapper" style="margin-top: 20px; max-height: 400px; overflow-y: auto; overflow-x: auto;">
+              <table class="guests-table" style="font-size: 0.8rem;">
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Apellido</th>
+                    <th>Mesa</th>
+                    <th style="text-align: center; width: 120px;">Confirmación</th>
+                    <th>Enlace de Invitación</th>
+                    <th style="width: 180px; text-align: center;">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="invitados-table-body">
+                  <tr>
+                    <td colspan="6" style="text-align: center; padding: 20px; color: var(--text-muted);">Cargando listado de invitados...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div id="invitados-scroll-hint" class="scroll-more-hint">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="bounce-arrow"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+              <span>Deslizá hacia abajo para ver todos los invitados</span>
+            </div>
           </div>
         </div>
       </div>
@@ -1192,6 +1222,10 @@
             </button>
           </div>
           <div id="table-custom-dropdown" class="custom-dropdown-menu"></div>
+        </div>
+        <div style="margin-bottom: 20px; text-align: left;">
+          <label style="display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Teléfono / WhatsApp <span style="font-size: 0.65rem; color: var(--text-muted); text-transform: none; font-weight: 400;">(Opcional)</span></label>
+          <input type="tel" id="modal-phone" class="form-control-admin" placeholder="Ej. 11 1234 5678" style="width: 100%; padding: 12px 18px; border-radius: 20px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif;">
         </div>
         <div class="modal-actions" style="display: flex; gap: 15px; margin-top: 30px;">
           <button type="button" class="btn btn-danger" id="btn-close-modal">Cancelar</button>
@@ -2179,7 +2213,7 @@
               <path d="M58 85 L59 88 L62 89 L59 90 L58 93 L57 90 L54 89 L57 88 Z" fill="#2ecc71" class="welcome-sparkle-2" />
             </svg>
           </div>
-          <h2 class="onboarding-title">¡Todo listo para tu gran noche!</h2>
+          <h2 class="onboarding-title" id="onboarding-title-heading">¡Todo listo para tu gran noche!</h2>
           <p class="onboarding-desc">Ya tienes el control de la fiesta de tus sueños. Puedes comenzar a cargar invitados, personalizar tu invitación y preparar las preguntas para la trivia.</p>
           <p class="onboarding-desc" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 15px;">Recuerda que si necesitas repasar esta guía en el futuro, puedes acceder presionando el botón <strong>Ayuda</strong> en la parte superior del panel.</p>
         </div>

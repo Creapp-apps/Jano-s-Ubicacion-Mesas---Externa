@@ -10,9 +10,10 @@ const EMAIL_FROM = process.env.EMAIL_FROM || 'onboarding@resend.dev';
  * @param {string} eventId 
  * @param {string} password 
  * @param {string} [eventName]
+ * @param {string} [eventTimeMode]
  * @returns {Promise<{success: boolean, messageId?: string, error?: string, simulated?: boolean}>}
  */
-async function sendWelcomeEmail(clientEmail, clientName, eventId, password, eventName = '') {
+async function sendWelcomeEmail(clientEmail, clientName, eventId, password, eventName = '', eventTimeMode = 'noche') {
   if (!clientEmail) {
     console.log('[EMAIL] No client email provided, skipping welcome email.');
     return { success: false, error: 'No client email provided' };
@@ -34,6 +35,7 @@ async function sendWelcomeEmail(clientEmail, clientName, eventId, password, even
 
   const displayEventName = eventName || clientName || 'tu evento';
   const subject = `¡Tu servicio de miFiestAPP para "${displayEventName}" está listo! 🚀`;
+  const timePhrase = eventTimeMode === 'dia' ? 'tu gran día' : 'tu gran noche';
 
   // HTML template matching miFiestAPP premium aesthetic
   const html = `
@@ -42,21 +44,17 @@ async function sendWelcomeEmail(clientEmail, clientName, eventId, password, even
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Tu evento está listo</title>
+      <title>Bienvenido a miFiestAPP</title>
     </head>
-    <body style="margin: 0; padding: 0; background-color: #0b0b0c; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
-      <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #0b0b0c; padding: 40px 10px;">
+    <body style="margin: 0; padding: 0; background-color: #0b0b0c; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #e1e1e6; -webkit-font-smoothing: antialiased;">
+      <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color: #0b0b0c; padding: 40px 10px;">
         <tr>
           <td align="center">
-            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background: #141416; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
-              
-              <!-- Header Section -->
+            <table width="100%" border="0" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: #121214; border: 1px solid rgba(212, 175, 55, 0.25); border-radius: 24px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.8);">
+              <!-- Header -->
               <tr>
-                <td align="center" style="background: linear-gradient(135deg, #1b0a3a 0%, #080214 100%); padding: 40px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.06);">
-                  <div style="background: linear-gradient(135deg, #4a90e2, #2ecc71); display: inline-block; padding: 6px 16px; border-radius: 30px; font-weight: 700; font-size: 11px; color: #ffffff; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 15px; box-shadow: 0 0 20px rgba(74, 144, 226, 0.3);">
-                    Servicio Premium Activado
-                  </div>
-                  <h1 style="color: #ffffff; font-size: 28px; margin: 0; font-weight: 800; letter-spacing: -0.5px;">
+                <td align="center" style="padding: 40px 30px 20px 30px; background: linear-gradient(180deg, rgba(212, 175, 55, 0.08) 0%, rgba(18, 18, 20, 0) 100%); border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+                  <h1 style="margin: 0; font-size: 28px; font-weight: 800; letter-spacing: 2px; color: #ffffff; text-transform: uppercase;">
                     miFiest<span style="color: #d4af37;">APP</span>
                   </h1>
                   <p style="font-size: 14px; color: #a59cb5; margin: 8px 0 0 0; font-weight: 400; letter-spacing: 0.5px;">Gestión Exclusiva de Mesas y Eventos en Vivo</p>
@@ -70,7 +68,7 @@ async function sendWelcomeEmail(clientEmail, clientName, eventId, password, even
                     ¡Hola, <strong>${clientName}</strong>! 👋
                   </p>
                   <p style="font-size: 15px; line-height: 1.6; color: #a59cb5; margin-bottom: 25px;">
-                    Te damos la bienvenida a la experiencia digital de tu gran noche. Tu evento ha sido registrado exitosamente y ya puedes acceder a toda la configuración interactiva.
+                    Te damos la bienvenida a la experiencia digital de ${timePhrase}. Tu evento ha sido registrado exitosamente y ya puedes acceder a toda la configuración interactiva.
                   </p>
                   
                   <!-- Credentials Card -->
