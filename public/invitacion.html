@@ -2462,12 +2462,48 @@
                   const successContainer = document.getElementById('rsvp-success-container');
                   successContainer.style.display = 'block';
                   
-                  // Prepare title text for stagger animation
                   const titleEl = successContainer.querySelector('.success-title');
-                  if (!titleEl.dataset.originalText) {
-                    titleEl.dataset.originalText = titleEl.textContent;
+                  const subtitleEl = successContainer.querySelector('.success-subtitle');
+                  const btnSouvenir = document.getElementById('btn-save-invitation-souvenir');
+
+                  if (attending) {
+                    if (titleEl) {
+                      titleEl.textContent = '¡Asistencia confirmada con éxito!';
+                      titleEl.dataset.originalText = '¡Asistencia confirmada con éxito!';
+                    }
+                    if (subtitleEl) {
+                      subtitleEl.textContent = 'Te esperamos para pasar una noche increíble con nosotros.';
+                    }
+                    if (btnSouvenir) {
+                      btnSouvenir.innerHTML = `
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                          <circle cx="12" cy="13" r="4"></circle>
+                        </svg>
+                        <span>📸 Guardar en Mi Galería</span>`;
+                      btnSouvenir.onclick = () => saveInvitationSouvenir();
+                    }
+                  } else {
+                    if (titleEl) {
+                      titleEl.textContent = '¡Respuesta registrada!';
+                      titleEl.dataset.originalText = '¡Respuesta registrada!';
+                    }
+                    if (subtitleEl) {
+                      subtitleEl.textContent = '¡Qué lástima! Esperábamos contar con vos :( Muchas gracias por avisarnos.';
+                    }
+                    if (btnSouvenir) {
+                      btnSouvenir.innerHTML = `
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <line x1="18" y1="6" x2="6" y2="18"></line>
+                          <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                        <span>Cerrar invitación</span>`;
+                      btnSouvenir.onclick = () => closeInvitation();
+                    }
                   }
-                  const words = titleEl.dataset.originalText.split(' ');
+                  
+                  // Prepare title text for stagger animation
+                  const words = (titleEl.dataset.originalText || titleEl.textContent).split(' ');
                   titleEl.innerHTML = words.map(w => `<span class="success-word">${w}</span>`).join(' ');
                   
                   // Reset success container animations
@@ -4144,6 +4180,48 @@
             console.error('Error generating souvenir image:', e);
           }
         }, 200);
+      };
+
+      // --- Close Invitation Action ---
+      window.closeInvitation = function() {
+        const envelopeScreen = document.getElementById('envelope-screen');
+        const invitationMain = document.getElementById('invitation-main');
+        const bgAudio = document.getElementById('bg-audio');
+        const musicDiscVisual = document.getElementById('music-disc-visual');
+        const musicStatusLbl = document.getElementById('music-status-lbl');
+        
+        if (bgAudio) bgAudio.pause();
+        isMusicPlaying = false;
+        if (musicDiscVisual) musicDiscVisual.classList.remove('playing');
+        if (musicStatusLbl) musicStatusLbl.textContent = 'Música Off';
+
+        if (typeof window.showInvitationSuccessToast === 'function') {
+          window.showInvitationSuccessToast('👋 Muchas gracias por avisarnos');
+        }
+
+        gsap.to('#invitation-main', {
+          opacity: 0,
+          duration: 0.5,
+          onComplete: () => {
+            if (invitationMain) invitationMain.style.display = 'none';
+            if (envelopeScreen) {
+              envelopeScreen.style.display = 'flex';
+              envelopeScreen.style.opacity = '1';
+              envelopeScreen.style.pointerEvents = 'auto';
+              
+              const envelopeBox = document.getElementById('envelope-box');
+              const flapTop = document.getElementById('envelope-flap-top');
+              const innerCard = document.getElementById('envelope-inner-card');
+              const waxSealBtn = document.getElementById('wax-seal-btn');
+
+              if (envelopeBox) gsap.set(envelopeBox, { rotationX: 0, rotationY: 0 });
+              if (flapTop) gsap.set(flapTop, { rotationX: 0 });
+              if (innerCard) gsap.set(innerCard, { y: 0, scale: 1 });
+              if (waxSealBtn) gsap.set(waxSealBtn, { scale: 1, rotation: 0, opacity: 1 });
+              isEnvelopeOpened = false;
+            }
+          }
+        });
       };
     }
   </script>
