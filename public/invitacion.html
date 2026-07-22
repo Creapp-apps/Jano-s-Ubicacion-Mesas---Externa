@@ -3781,8 +3781,22 @@
       let startX = 0;
       let currentRotation = 0;
       let startRotation = 0;
+      let lastTouchTime = 0;
+      let lastFlipTime = 0;
       
       if (chestGiftCard && giftCardInner) {
+        const toggleFlip = () => {
+          const now = Date.now();
+          if (now - lastFlipTime < 400) return; // Debounce double-toggle from touch + synthetic click
+          lastFlipTime = now;
+
+          if (giftCardInner.classList.contains('flipped')) {
+            giftCardInner.classList.remove('flipped');
+          } else {
+            giftCardInner.classList.add('flipped');
+          }
+        };
+
         const startDrag = (clientX) => {
           if (!chestGiftCard.classList.contains('dispatched')) return;
           isDragging = true;
@@ -3811,36 +3825,32 @@
           if (hasDraggedFar) {
             const finalRotation = startRotation - currentRotation;
             if (Math.abs(finalRotation) > 30) {
-              if (giftCardInner.classList.contains('flipped')) {
-                giftCardInner.classList.remove('flipped');
-              } else {
-                giftCardInner.classList.add('flipped');
-              }
+              toggleFlip();
             }
           } else {
             // Tap / Click gesture: flip card cleanly
-            if (giftCardInner.classList.contains('flipped')) {
-              giftCardInner.classList.remove('flipped');
-            } else {
-              giftCardInner.classList.add('flipped');
-            }
+            toggleFlip();
           }
         };
         
         chestGiftCard.addEventListener('mousedown', (e) => {
+          if (Date.now() - lastTouchTime < 800) return; // Suppress synthetic mouse events on touch devices
           if (e.target.closest('button, input, a, #btn-copy-cbu-new, #btn-copy-alias-new')) return;
           startDrag(e.clientX);
         });
         
         window.addEventListener('mousemove', (e) => {
+          if (Date.now() - lastTouchTime < 800) return;
           moveDrag(e.clientX);
         });
         
         window.addEventListener('mouseup', () => {
+          if (Date.now() - lastTouchTime < 800) return;
           endDrag();
         });
         
         chestGiftCard.addEventListener('touchstart', (e) => {
+          lastTouchTime = Date.now();
           if (e.target.closest('button, input, a, #btn-copy-cbu-new, #btn-copy-alias-new')) return;
           if (e.touches && e.touches.length > 0) {
             startDrag(e.touches[0].clientX);
@@ -3848,16 +3858,19 @@
         }, { passive: true });
         
         chestGiftCard.addEventListener('touchmove', (e) => {
+          lastTouchTime = Date.now();
           if (e.touches && e.touches.length > 0) {
             moveDrag(e.touches[0].clientX);
           }
         }, { passive: true });
         
         chestGiftCard.addEventListener('touchend', () => {
+          lastTouchTime = Date.now();
           endDrag();
         });
 
         chestGiftCard.addEventListener('touchcancel', () => {
+          lastTouchTime = Date.now();
           endDrag();
         });
       }
