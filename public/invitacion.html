@@ -115,6 +115,43 @@
           Cerrar
         </button>
       </div>
+  </div>
+
+  <!-- Add to Calendar Modal -->
+  <div id="calendar-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.92); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); z-index: 10000; align-items: center; justify-content: center; flex-direction: column; padding: 20px; text-align: center;">
+    <div style="max-width: 360px; width: 100%; position: relative; display: flex; flex-direction: column; align-items: center; background: rgba(22, 22, 25, 0.96); border: 1px solid var(--border-gold); border-radius: 18px; padding: 26px 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.85);">
+      <button type="button" onclick="closeCalendarModal()" style="position: absolute; top: 12px; right: 14px; background: rgba(255,255,255,0.1); border: 1px solid var(--border-gold); color: #fff; border-radius: 50%; width: 32px; height: 32px; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;">&times;</button>
+      
+      <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(212,175,55,0.12); border: 1px solid var(--gold-primary); display: flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="var(--gold-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="16" y1="2" x2="16" y2="6"></line>
+          <line x1="8" y1="2" x2="8" y2="6"></line>
+          <line x1="3" y1="10" x2="21" y2="10"></line>
+        </svg>
+      </div>
+
+      <h3 style="font-family: 'Cinzel', serif; color: var(--gold-primary); font-size: 1.15rem; margin-bottom: 6px; letter-spacing: 0.5px;">Agendar Evento</h3>
+      <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 22px; line-height: 1.4;">Elegí tu aplicación de calendario preferida para guardar el recordatorio:</p>
+      
+      <div style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
+        <button type="button" onclick="addToGoogleCalendar()" class="btn-gold" style="width: 100%; padding: 13px; font-size: 0.82rem; display: flex; align-items: center; justify-content: center; gap: 10px; border-radius: 12px; font-weight: 600; cursor: pointer;">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
+          </svg>
+          <span>🗓️ Google Calendar</span>
+        </button>
+
+        <button type="button" onclick="downloadIcsCalendar()" class="btn-gold" style="width: 100%; padding: 13px; font-size: 0.82rem; display: flex; align-items: center; justify-content: center; gap: 10px; border-radius: 12px; background: rgba(255,255,255,0.06); border: 1px solid var(--border-gold); color: #ffffff; font-weight: 600; cursor: pointer;">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+          <span>📱 Apple Calendar / Celular (.ics)</span>
+        </button>
+      </div>
     </div>
   </div>
 
@@ -670,13 +707,25 @@
             <h3 class="success-title">¡Asistencia confirmada con éxito!</h3>
             <p class="success-subtitle">Te esperamos para pasar una noche increíble con nosotros.</p>
 
-            <div style="margin-top: 22px; display: flex; flex-direction: column; align-items: center; gap: 10px; z-index: 10; position: relative;">
+            <div style="margin-top: 22px; display: flex; flex-direction: column; align-items: center; gap: 10px; z-index: 10; position: relative; width: 100%; max-width: 320px; margin-left: auto; margin-right: auto;">
               <button type="button" class="btn-gold btn-glow-breath" id="btn-save-invitation-souvenir" onclick="saveInvitationSouvenir()" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.82rem; padding: 12px 18px;">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
                   <circle cx="12" cy="13" r="4"></circle>
                 </svg>
                 <span>📸 Guardar en Mi Galería</span>
+              </button>
+
+              <button type="button" id="btn-add-to-calendar" onclick="openCalendarModal()" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.82rem; padding: 11px 18px; border-radius: 25px; border: 1px solid var(--gold-primary); background: rgba(0,0,0,0.4); color: var(--gold-primary); font-weight: 600; cursor: pointer; transition: all 0.3s ease;">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                  <line x1="12" y1="14" x2="12" y2="18"></line>
+                  <line x1="10" y1="16" x2="14" y2="16"></line>
+                </svg>
+                <span>📅 Agendar en Mi Calendario</span>
               </button>
             </div>
           </div>
@@ -2488,6 +2537,7 @@
                   const titleEl = successContainer.querySelector('.success-title');
                   const subtitleEl = successContainer.querySelector('.success-subtitle');
                   const btnSouvenir = document.getElementById('btn-save-invitation-souvenir');
+                  const btnCalendar = document.getElementById('btn-add-to-calendar');
 
                   if (attending) {
                     if (titleEl) {
@@ -2506,6 +2556,9 @@
                         <span>📸 Guardar en Mi Galería</span>`;
                       btnSouvenir.onclick = () => saveInvitationSouvenir();
                     }
+                    if (btnCalendar) {
+                      btnCalendar.style.display = 'flex';
+                    }
                   } else {
                     if (titleEl) {
                       titleEl.textContent = '¡Respuesta registrada!';
@@ -2522,6 +2575,9 @@
                         </svg>
                         <span>Cerrar invitación</span>`;
                       btnSouvenir.onclick = () => closeInvitation();
+                    }
+                    if (btnCalendar) {
+                      btnCalendar.style.display = 'none';
                     }
                   }
                   
@@ -4256,6 +4312,117 @@
       window.closeSouvenirModal = function() {
         const souvenirModal = document.getElementById('souvenir-modal');
         if (souvenirModal) souvenirModal.style.display = 'none';
+      };
+
+      // --- Add to Calendar Helpers & Actions ---
+      window.openCalendarModal = function() {
+        const modal = document.getElementById('calendar-modal');
+        if (modal) modal.style.display = 'flex';
+      };
+
+      window.closeCalendarModal = function() {
+        const modal = document.getElementById('calendar-modal');
+        if (modal) modal.style.display = 'none';
+      };
+
+      function getEventCalendarDetails() {
+        const title = (invitationData && invitationData.invitationMainTitle) 
+          ? invitationData.invitationMainTitle 
+          : ((invitationData && invitationData.eventTitle) ? invitationData.eventTitle : 'Celebración VIP');
+        
+        const location = (invitationData && invitationData.invitationPartyAddress) 
+          ? invitationData.invitationPartyAddress 
+          : '';
+          
+        const description = `¡Te esperamos para celebrar ${title}! Digitalizá tu fiesta con miFiestAPP.`;
+
+        let startIso = '';
+        let endIso = '';
+
+        if (invitationData && invitationData.invitationEventDate) {
+          try {
+            const rawDateStr = invitationData.invitationEventDate;
+            let d;
+            if (rawDateStr.includes('T')) {
+              d = new Date(rawDateStr);
+            } else {
+              const partyTime = (invitationData && invitationData.invitationPartyTime) ? invitationData.invitationPartyTime : '21:00';
+              const timeParts = partyTime.match(/(\d{1,2}):(\d{2})/);
+              const hh = timeParts ? timeParts[1].padStart(2, '0') : '21';
+              const mm = timeParts ? timeParts[2] : '00';
+              d = new Date(`${rawDateStr}T${hh}:${mm}:00`);
+            }
+
+            if (!isNaN(d.getTime())) {
+              const endD = new Date(d.getTime() + (6 * 3600 * 1000));
+              const formatIso = (dateObj) => {
+                const pad = (n) => String(n).padStart(2, '0');
+                return dateObj.getUTCFullYear() +
+                       pad(dateObj.getUTCMonth() + 1) +
+                       pad(dateObj.getUTCDate()) + 'T' +
+                       pad(dateObj.getUTCHours()) +
+                       pad(dateObj.getUTCMinutes()) +
+                       pad(dateObj.getUTCSeconds()) + 'Z';
+              };
+              startIso = formatIso(d);
+              endIso = formatIso(endD);
+            }
+          } catch (e) {
+            console.warn('Error parsing calendar date:', e);
+          }
+        }
+
+        if (!startIso) {
+          startIso = '20261025T210000Z';
+          endIso = '20261026T030000Z';
+        }
+
+        return { title, location, description, startIso, endIso };
+      }
+
+      window.addToGoogleCalendar = function() {
+        const details = getEventCalendarDetails();
+        const googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(details.title)}&details=${encodeURIComponent(details.description)}&location=${encodeURIComponent(details.location)}&dates=${details.startIso}/${details.endIso}`;
+        window.open(googleUrl, '_blank');
+        closeCalendarModal();
+      };
+
+      window.downloadIcsCalendar = function() {
+        const details = getEventCalendarDetails();
+        const icsLines = [
+          'BEGIN:VCALENDAR',
+          'VERSION:2.0',
+          'PRODID:-//miFiestAPP//Event Calendar//ES',
+          'CALSCALE:GREGORIAN',
+          'METHOD:PUBLISH',
+          'BEGIN:VEVENT',
+          `SUMMARY:${details.title}`,
+          `DESCRIPTION:${details.description}`,
+          `LOCATION:${details.location}`,
+          `DTSTART:${details.startIso}`,
+          `DTEND:${details.endIso}`,
+          'STATUS:CONFIRMED',
+          'END:VEVENT',
+          'END:VCALENDAR'
+        ];
+
+        const icsContent = icsLines.join('\r\n');
+        const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+        const cleanName = details.title.replace(/[^a-zA-Z0-9]/g, '_');
+        const filename = `Evento-${cleanName}.ics`;
+        const blobUrl = URL.createObjectURL(blob);
+        
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        if (typeof window.showInvitationSuccessToast === 'function') {
+          window.showInvitationSuccessToast('📅 Evento descargado. ¡Agregalo a tu calendario!');
+        }
+        closeCalendarModal();
       };
 
       // --- Close Invitation Action ---
