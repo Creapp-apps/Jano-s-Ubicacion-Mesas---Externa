@@ -88,6 +88,9 @@
   </div>
   <audio id="bg-audio" loop></audio>
 
+  <!-- Camera Flash Effect Overlay -->
+  <div id="camera-flash-overlay" class="camera-flash-overlay"></div>
+
   <!-- Volume Prompt Toast -->
   <div class="volume-prompt-toast" id="volume-prompt-toast" style="display: none;">
     <div class="volume-icon-wrapper">
@@ -382,7 +385,8 @@
                   <span class="checklist-text">Prohibido venir de blanco (¡Shh!)</span>
                   <span class="checklist-item-gold-icon">
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                     </svg>
                   </span>
                 </label>
@@ -462,7 +466,7 @@
         <div class="chest-wrapper" id="chest-wrapper">
           <div class="chest-box" id="chest-box" style="transform-style: preserve-3d; width: 220px; height: 160px; margin-top: 105px; position: relative;">
              <!-- 3D WebGL Canvas Container -->
-            <div id="chest-3d-container" style="position: absolute; top: -60px; left: calc(50% - 190px); width: 380px; height: 320px; z-index: 2; pointer-events: auto;"></div>
+            <div id="chest-3d-container" style="position: absolute; top: -60px; left: calc(50% - 190px); width: 380px; height: 220px; z-index: 2; pointer-events: auto;"></div>
             <div class="key-glow-ring" id="key-glow-ring"></div>
             
             <!-- Dummy lock plate to prevent GSAP warnings -->
@@ -506,8 +510,8 @@
           
         </div>
 
-        <div style="display: flex; justify-content: center; width: 100%; margin-top: 15px; margin-bottom: 35px; z-index: 10; position: relative;">
-          <button type="button" class="btn-gold btn-next-to-spotify btn-step-advance" id="btn-next-to-spotify-decoupled" onclick="goToSlide(5, true)" style="opacity: 0; pointer-events: none; display: block; width: 220px; padding: 10px 16px; font-size: 0.8rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(212,175,55,0.3); color: var(--gold-primary); transition: all 0.5s ease; border-radius: 20px; transform: translateY(10px); text-align: center; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">
+        <div style="display: flex; justify-content: center; width: 100%; margin-top: 15px; margin-bottom: 35px; z-index: 99999; position: relative; pointer-events: auto;">
+          <button type="button" class="btn-gold btn-next-to-spotify btn-step-advance" id="btn-next-to-spotify-decoupled" onclick="goToSlide(5, true)" style="opacity: 1; pointer-events: auto; cursor: pointer; display: block; width: 220px; padding: 10px 16px; font-size: 0.8rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(212,175,55,0.3); color: var(--gold-primary); transition: all 0.5s ease; border-radius: 20px; text-align: center; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">
             <span>Siguiente paso</span>
             <span class="gold-pointer-pill">
               <span class="gold-pointer-ring"></span>
@@ -609,16 +613,33 @@
           <!-- Success Screen Container (hidden initially) -->
           <div id="rsvp-success-container">
             <div class="success-seal-container">
-              <div class="success-seal">
-                <!-- SVG of Elegant Gold Crown/Monogram -->
-                <svg width="35" height="35" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+              <div class="success-seal gold-cheers-seal">
+                <span class="cheers-glow-aura"></span>
+                <svg width="44" height="44" viewBox="0 0 64 64" fill="none">
+                  <!-- Left Champagne Glass -->
+                  <path d="M22 12 C22 24, 29 27, 29 37 L29 50 L20 50 L20 54 L44 54 L44 50 L35 50 L35 37 C35 27, 42 24, 42 12 Z" stroke="#111" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="rgba(17,17,17,0.15)"/>
+                  <!-- Liquid Level & Bubbles -->
+                  <path d="M24 20 C28 22, 36 22, 40 20 C38 27, 34 27, 24 20 Z" fill="#111"/>
+                  <!-- Clinking Toast Sparkle -->
+                  <path d="M32 4 L33.5 8.5 L38 10 L33.5 11.5 L32 16 L30.5 11.5 L26 10 L30.5 8.5 Z" fill="#111"/>
+                  <circle cx="18" cy="8" r="2" fill="#111"/>
+                  <circle cx="46" cy="6" r="1.5" fill="#111"/>
                 </svg>
               </div>
             </div>
             
             <h3 class="success-title">¡Asistencia confirmada con éxito!</h3>
             <p class="success-subtitle">Te esperamos para pasar una noche increíble con nosotros.</p>
+
+            <div style="margin-top: 22px; display: flex; flex-direction: column; align-items: center; gap: 10px; z-index: 10; position: relative;">
+              <button type="button" class="btn-gold btn-glow-breath" id="btn-save-invitation-souvenir" onclick="saveInvitationSouvenir()" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.82rem; padding: 12px 18px;">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                  <circle cx="12" cy="13" r="4"></circle>
+                </svg>
+                <span>📸 Guardar en Mi Galería</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -2016,7 +2037,10 @@
       function showInvitationSuccessToast(msg, callback) {
         const modal = document.getElementById('invitation-success-toast');
         const msgEl = document.getElementById('invitation-toast-msg');
-        if (!modal) return;
+        if (!modal) {
+          if (typeof callback === 'function') callback();
+          return;
+        }
         if (msgEl) msgEl.textContent = msg || '¡Canción enviada correctamente!';
         modal.style.display = 'flex';
         setTimeout(() => modal.classList.add('active'), 20);
@@ -2029,6 +2053,7 @@
           }, 380);
         }, 1800);
       }
+      window.showInvitationSuccessToast = showInvitationSuccessToast;
 
       if (waxSealBtn) waxSealBtn.addEventListener('click', triggerEnvelopeOpening);
 
@@ -3652,14 +3677,22 @@
         });
       }
       
-      const handleNextToSpotify = () => {
+      const handleNextToSpotify = (e) => {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
         const targetIndex = slides.findIndex(s => s.id === 'slide-6');
         if (targetIndex !== -1) {
-          goToSlide(targetIndex);
+          goToSlide(targetIndex, true);
         }
       };
       
-      if (btnNextToSpotifyDecoupled) btnNextToSpotifyDecoupled.onclick = handleNextToSpotify;
+      if (btnNextToSpotifyDecoupled) {
+        btnNextToSpotifyDecoupled.onclick = handleNextToSpotify;
+        btnNextToSpotifyDecoupled.addEventListener('pointerdown', handleNextToSpotify);
+        btnNextToSpotifyDecoupled.style.zIndex = '99999';
+      }
       
       const copyToClipboard = (text, btnElement) => {
         navigator.clipboard.writeText(text).then(() => {
@@ -3827,13 +3860,21 @@
                 rsvpNameInput.value = name;
               }
 
-              // Display central luxury success toast modal and advance to slide-4
-              showInvitationSuccessToast('¡Canción enviada correctamente!', () => {
+              if (btnSubmitSong) btnSubmitSong.style.display = 'none';
+              if (spotifySuccessContainer) spotifySuccessContainer.style.display = 'block';
+
+              const triggerAdvance = () => {
                 const targetIndex = slides.findIndex(s => s.id === 'slide-4');
                 if (targetIndex !== -1) {
                   goToSlide(targetIndex, true);
                 }
-              });
+              };
+
+              if (typeof window.showInvitationSuccessToast === 'function') {
+                window.showInvitationSuccessToast('¡Canción enviada correctamente!', triggerAdvance);
+              } else {
+                triggerAdvance();
+              }
             }
           })
           .catch(err => {
@@ -3848,10 +3889,172 @@
         btnSpotifySuccessNext.onclick = () => {
           const targetIndex = slides.findIndex(s => s.id === 'slide-4');
           if (targetIndex !== -1) {
-            goToSlide(targetIndex);
+            goToSlide(targetIndex, true);
           }
         };
       }
+
+      // --- Souvenir Card Camera Flash & Download Function ---
+      window.saveInvitationSouvenir = function() {
+        const flash = document.getElementById('camera-flash-overlay');
+        if (flash) {
+          flash.classList.add('active');
+          setTimeout(() => flash.classList.remove('active'), 250);
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = 1080;
+        canvas.height = 1600;
+        const ctx = canvas.getContext('2d');
+
+        // Background Radial Gradient
+        const bgGrad = ctx.createRadialGradient(540, 800, 100, 540, 800, 900);
+        bgGrad.addColorStop(0, '#1c1b18');
+        bgGrad.addColorStop(0.6, '#111113');
+        bgGrad.addColorStop(1, '#080809');
+        ctx.fillStyle = bgGrad;
+        ctx.fillRect(0, 0, 1080, 1600);
+
+        // Gold Filigree Border Frame
+        ctx.strokeStyle = '#d4af37';
+        ctx.lineWidth = 6;
+        ctx.strokeRect(40, 40, 1000, 1520);
+
+        ctx.strokeStyle = 'rgba(212, 175, 55, 0.4)';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(52, 52, 976, 1496);
+
+        // Header Brand
+        ctx.fillStyle = '#f3e5ab';
+        ctx.font = 'bold 28px Cinzel, serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('miFiestAPP  •  PASE DE RECUERDO VIP', 540, 130);
+
+        ctx.strokeStyle = 'rgba(212, 175, 55, 0.3)';
+        ctx.beginPath();
+        ctx.moveTo(180, 160);
+        ctx.lineTo(900, 160);
+        ctx.stroke();
+
+        // Main Event Name
+        const mainTitle = (invitationData && invitationData.invitationMainTitle) ? invitationData.invitationMainTitle : 'XV DE TATIANA';
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 58px Cinzel, serif';
+        ctx.fillText(mainTitle.toUpperCase(), 540, 260);
+
+        // Gold Badge Seal Circle
+        ctx.save();
+        ctx.shadowColor = 'rgba(212, 175, 55, 0.8)';
+        ctx.shadowBlur = 40;
+        ctx.beginPath();
+        ctx.arc(540, 430, 100, 0, Math.PI * 2);
+        const sealGrad = ctx.createRadialGradient(540, 430, 0, 540, 430, 100);
+        sealGrad.addColorStop(0, '#f3e5ab');
+        sealGrad.addColorStop(0.7, '#d4af37');
+        sealGrad.addColorStop(1, '#aa7c11');
+        ctx.fillStyle = sealGrad;
+        ctx.fill();
+        ctx.restore();
+
+        // Toasting Flutes Emoji/Icon
+        ctx.fillStyle = '#111113';
+        ctx.font = '70px serif';
+        ctx.fillText('🥂', 540, 455);
+
+        // Confirmation Status Box
+        ctx.fillStyle = 'rgba(212, 175, 55, 0.12)';
+        ctx.strokeStyle = 'rgba(212, 175, 55, 0.5)';
+        ctx.lineWidth = 3;
+        if (ctx.roundRect) {
+          ctx.roundRect(140, 590, 800, 140, 20);
+        } else {
+          ctx.rect(140, 590, 800, 140);
+        }
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#f3e5ab';
+        ctx.font = 'bold 36px Montserrat, sans-serif';
+        ctx.fillText('¡ASISTENCIA CONFIRMADA!', 540, 650);
+
+        // Guest Name
+        const guestNameVal = (typeof guestName !== 'undefined' && guestName && guestName !== 'Invitado') ? guestName : '';
+        const rsvpInputName = document.getElementById('rsvp-name');
+        const finalName = guestNameVal || (rsvpInputName ? rsvpInputName.value.trim() : '') || 'Invitado Especial';
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '30px Montserrat, sans-serif';
+        ctx.fillText(`Invitado: ${finalName}`, 540, 700);
+
+        // Details Card Box
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+        ctx.lineWidth = 2;
+        if (ctx.roundRect) {
+          ctx.roundRect(140, 770, 800, 580, 24);
+        } else {
+          ctx.rect(140, 770, 800, 580);
+        }
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#d4af37';
+        ctx.font = 'bold 32px Cinzel, serif';
+        ctx.fillText('DETALLES DEL EVENTO', 540, 840);
+
+        // Date
+        const dateText = (invitationData && invitationData.invitationPartyDate) ? invitationData.invitationPartyDate : 'Sábado 25 de Octubre, 2026';
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 30px Montserrat, sans-serif';
+        ctx.fillText(`📅 ${dateText}`, 540, 920);
+
+        // Time
+        const timeText = (invitationData && invitationData.invitationPartyTime) ? invitationData.invitationPartyTime : '21:00 HS';
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        ctx.font = '26px Montserrat, sans-serif';
+        ctx.fillText(`⏰ Horario: ${timeText}`, 540, 975);
+
+        // Address
+        const addressText = (invitationData && invitationData.invitationPartyAddress) ? invitationData.invitationPartyAddress : 'Salon de Eventos';
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 28px Montserrat, sans-serif';
+        ctx.fillText(`📍 ${addressText}`, 540, 1050);
+
+        // Dresscode tip
+        const dressText = (invitationData && invitationData.invitationDressCodeType) ? `Dress Code: ${invitationData.invitationDressCodeType}` : 'Dress Code: Elegante';
+        ctx.fillStyle = '#f3e5ab';
+        ctx.font = '26px Montserrat, sans-serif';
+        ctx.fillText(`👔 ${dressText}`, 540, 1115);
+
+        // Farewell Quote
+        ctx.fillStyle = 'rgba(255,255,255,0.75)';
+        ctx.font = 'italic 24px Georgia, serif';
+        ctx.fillText('“Te esperamos para pasar una noche increíble con nosotros.”', 540, 1260);
+
+        // Footer Branding
+        ctx.fillStyle = '#d4af37';
+        ctx.font = 'bold 24px Montserrat, sans-serif';
+        ctx.fillText('© 2026 miFiestAPP  •  Digitalizá Tu Fiesta', 540, 1460);
+
+        setTimeout(() => {
+          try {
+            const imageURI = canvas.toDataURL('image/png');
+            const downloadLink = document.createElement('a');
+            const cleanName = (invitationData && invitationData.invitationMainTitle) ? invitationData.invitationMainTitle.replace(/[^a-zA-Z0-9]/g, '_') : 'Evento';
+            downloadLink.download = `Recuerdito-Invitacion-${cleanName}.png`;
+            downloadLink.href = imageURI;
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+
+            if (typeof window.showInvitationSuccessToast === 'function') {
+              window.showInvitationSuccessToast('📸 ¡Invitación guardada en tu galería!');
+            }
+          } catch (e) {
+            console.error('Error generating souvenir image:', e);
+          }
+        }, 200);
+      };
     }
   </script>
 </body>
