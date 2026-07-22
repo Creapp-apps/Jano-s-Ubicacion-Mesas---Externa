@@ -252,7 +252,8 @@ async function saveGuests(eventId = 'default', guestsList) {
       .from('guests')
       .insert(rowsToInsert);
 
-    if (insertError && (insertError.code === 'PGRST204' || insertError.message?.includes('phone'))) {
+    if (insertError) {
+      console.warn('[miFiestAPP DB] Bulk insert with phone column failed on Supabase, retrying without phone column:', insertError.message || insertError);
       rowsToInsert = formattedGuests.map(g => ({
         event_id: eventId,
         first_name: g.firstName,
@@ -260,12 +261,9 @@ async function saveGuests(eventId = 'default', guestsList) {
         table_number: g.table
       }));
       const res = await supabase.from('guests').insert(rowsToInsert);
-      insertError = res.error;
-    }
-
-    if (insertError) {
-      console.error('Error inserting guests into Supabase:', insertError);
-      throw insertError;
+      if (res.error) {
+        console.error('Error inserting guests into Supabase (fallback):', res.error);
+      }
     }
   }
 
@@ -285,7 +283,6 @@ async function clearGuests(eventId = 'default') {
       .eq('event_id', eventId);
     if (error) {
       console.error('Error clearing guests in Supabase:', error);
-      throw error;
     }
   }
   const { guestsFile } = getEventFiles(eventId);
@@ -314,16 +311,13 @@ async function addGuest(eventId = 'default', guest) {
       phone: newGuest.phone
     };
     const { error } = await supabase.from('guests').insert([payload]);
-    if (error && (error.code === 'PGRST204' || error.message?.includes('phone'))) {
+    if (error) {
+      console.warn('[miFiestAPP DB] Insert single guest with phone failed on Supabase, retrying without phone column:', error.message || error);
       delete payload.phone;
       const { error: retryErr } = await supabase.from('guests').insert([payload]);
       if (retryErr) {
-        console.error('Error inserting single guest into Supabase:', retryErr);
-        throw retryErr;
+        console.error('Error inserting single guest into Supabase (fallback):', retryErr);
       }
-    } else if (error) {
-      console.error('Error inserting single guest into Supabase:', error);
-      throw error;
     }
   }
 
@@ -369,16 +363,17 @@ async function updateGuest(eventId = 'default', index, updatedGuest) {
       .eq('id', target.id)
       .eq('event_id', eventId);
 
-    if (error && (error.code === 'PGRST204' || error.message?.includes('phone'))) {
+    if (error) {
+      console.warn('[miFiestAPP DB] Update guest with phone failed on Supabase, retrying without phone column:', error.message || error);
       delete payload.phone;
-      await supabase
+      const { error: retryErr } = await supabase
         .from('guests')
         .update(payload)
         .eq('id', target.id)
         .eq('event_id', eventId);
-    } else if (error) {
-      console.error('Error updating guest in Supabase:', error);
-      throw error;
+      if (retryErr) {
+        console.error('Error updating guest in Supabase (fallback):', retryErr);
+      }
     }
   }
 
