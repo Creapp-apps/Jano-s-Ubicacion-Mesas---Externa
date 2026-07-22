@@ -1222,25 +1222,60 @@
           greetingEl.style.display = 'none';
         }
 
-        // Dynamic service hiding based on tenant config
+        function lockServiceCard(cardId) {
+          const card = document.getElementById(cardId);
+          if (!card) return;
+          card.classList.add('disabled', 'service-card-locked');
+          card.style.display = 'flex';
+          card.style.flexDirection = 'column';
+          card.style.opacity = '0.65';
+          card.style.filter = 'grayscale(0.85)';
+          card.style.cursor = 'not-allowed';
+          card.style.position = 'relative';
+
+          // Add top-right lock badge if not present
+          if (!card.querySelector('.badge-locked')) {
+            const badge = document.createElement('span');
+            badge.className = 'badge-locked';
+            badge.style.cssText = 'position: absolute; top: 15px; right: 15px; background: rgba(255, 65, 65, 0.15); border: 1px solid rgba(255, 65, 65, 0.4); color: #ff6b6b; padding: 5px 12px; border-radius: 20px; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); z-index: 10;';
+            badge.innerHTML = '🔒 Bloqueado';
+            card.appendChild(badge);
+          }
+
+          // Add lock legend below service description
+          const descEl = card.querySelector('.service-desc');
+          if (descEl && !card.querySelector('.lock-legend-text')) {
+            const legend = document.createElement('div');
+            legend.className = 'lock-legend-text';
+            legend.style.cssText = 'font-size: 0.73rem; color: var(--gold-primary, #d4af37); font-weight: 600; margin: 10px 0 14px 0; display: flex; align-items: center; justify-content: center; gap: 6px; background: rgba(212,175,55,0.08); padding: 7px 12px; border-radius: 8px; border: 1px solid rgba(212,175,55,0.25); text-align: center; width: 100%; box-sizing: border-box;';
+            legend.innerHTML = '🔒 Actualizá tu plan para acceder a todas las funciones';
+            descEl.after(legend);
+          }
+
+          // Disable action buttons inside card
+          const btns = card.querySelectorAll('a, button, .service-btn');
+          btns.forEach(btn => {
+            btn.removeAttribute('href');
+            btn.setAttribute('disabled', 'true');
+            btn.style.cssText = 'opacity: 0.45; cursor: not-allowed; pointer-events: none; background: rgba(255,255,255,0.05) !important; border-color: rgba(255,255,255,0.1) !important; color: rgba(255,255,255,0.4) !important; text-decoration: none; text-align: center; display: block; width: 100%; box-sizing: border-box; font-size: 0.8rem; padding: 10px; font-weight: 600;';
+            btn.textContent = '🔒 Servicio Bloqueado';
+          });
+        }
+
+        // Dynamic service locking based on tenant config
         if (data) {
           if (data.serviceTables === false) {
-            const el = document.getElementById('card-service-tables');
-            if (el) el.style.display = 'none';
+            lockServiceCard('card-service-tables');
           }
           if (data.servicePhotos === false) {
-            const el = document.getElementById('card-service-photos');
-            if (el) el.style.display = 'none';
+            lockServiceCard('card-service-photos');
           }
           if (data.serviceInvitation === false) {
-            const el = document.getElementById('card-service-invitation');
-            if (el) el.style.display = 'none';
+            lockServiceCard('card-service-invitation');
           }
           if (data.serviceTrivia === false) {
-            const el1 = document.getElementById('card-service-trivia');
-            if (el1) el1.style.display = 'none';
-            const el2 = document.getElementById('card-service-capitanes');
-            if (el2) el2.style.display = 'none';
+            lockServiceCard('card-service-trivia');
+            lockServiceCard('card-service-capitanes');
           }
         }
       })
