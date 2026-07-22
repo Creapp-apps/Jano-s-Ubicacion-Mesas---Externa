@@ -4185,61 +4185,72 @@
         ctx.font = 'bold 24px Montserrat, sans-serif';
         ctx.fillText('© 2026 miFiestAPP  •  Digitalizá Tu Fiesta', 540, 1460);
 
-        canvas.toBlob(async (blob) => {
-          if (!blob) {
-            console.error('Failed to export souvenir canvas to blob');
-            return;
+        // Synchronous Data URL & File generation to preserve user gesture stack for iOS Safari / Chrome Android
+        const imageURI = canvas.toDataURL('image/png');
+        const cleanTitle = (invitationData && invitationData.invitationMainTitle) ? invitationData.invitationMainTitle.replace(/[^a-zA-Z0-9]/g, '_') : 'Evento';
+        const filename = `Recuerdito-VIP-${cleanTitle}.png`;
+
+        function dataURLtoFile(dataurl, fname) {
+          const arr = dataurl.split(',');
+          const mime = arr[0].match(/:(.*?);/)[1];
+          const bstr = atob(arr[1]);
+          let n = bstr.length;
+          const u8arr = new Uint8Array(n);
+          while (n--) {
+            u8arr[n] = bstr.charCodeAt(n);
           }
+          return new File([u8arr], fname, { type: mime });
+        }
 
-          const cleanTitle = (invitationData && invitationData.invitationMainTitle) ? invitationData.invitationMainTitle.replace(/[^a-zA-Z0-9]/g, '_') : 'Evento';
-          const filename = `Recuerdito-VIP-${cleanTitle}.png`;
-          const file = new File([blob], filename, { type: 'image/png' });
+        const file = dataURLtoFile(imageURI, filename);
 
-          // 1. Web Share API for native mobile gallery save (iOS Safari 15+ / Android Chrome)
-          if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            try {
-              await navigator.share({
-                files: [file],
-                title: `Pase VIP - ${mainTitle}`,
-                text: `¡Mi pase de recuerdito para ${mainTitle}!`
-              });
-              if (typeof window.showInvitationSuccessToast === 'function') {
-                window.showInvitationSuccessToast('📸 ¡Pase guardado en tu galería!');
-              }
-              return;
-            } catch (shareErr) {
-              if (shareErr.name === 'AbortError') return;
-              console.warn('Native share cancelled or not completed, opening preview:', shareErr);
-            }
-          }
-
-          // 2. Direct Blob Download for Desktop / Unsupported Web Share browsers
-          const blobUrl = URL.createObjectURL(blob);
-          const downloadLink = document.createElement('a');
-          downloadLink.download = filename;
-          downloadLink.href = blobUrl;
-          document.body.appendChild(downloadLink);
-          downloadLink.click();
-          document.body.removeChild(downloadLink);
-
-          // 3. Display Souvenir Modal for touch screens and in-app browsers
+        const openSouvenirModal = (url) => {
           const souvenirModal = document.getElementById('souvenir-modal');
           const souvenirImg = document.getElementById('souvenir-modal-img');
           const souvenirDownloadBtn = document.getElementById('souvenir-modal-download-btn');
           
           if (souvenirModal && souvenirImg) {
-            souvenirImg.src = blobUrl;
+            souvenirImg.src = url;
             if (souvenirDownloadBtn) {
-              souvenirDownloadBtn.href = blobUrl;
+              souvenirDownloadBtn.href = url;
               souvenirDownloadBtn.download = filename;
             }
             souvenirModal.style.display = 'flex';
           }
+        };
 
-          if (typeof window.showInvitationSuccessToast === 'function') {
-            window.showInvitationSuccessToast('📸 ¡Pase VIP listo!');
-          }
-        }, 'image/png');
+        // 1. Synchronous Web Share API (Instant native OS share/save dialog on iOS Safari / Android)
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          navigator.share({
+            files: [file],
+            title: `Pase VIP - ${mainTitle}`,
+            text: `¡Mi pase de recuerdito para ${mainTitle}!`
+          }).then(() => {
+            if (typeof window.showInvitationSuccessToast === 'function') {
+              window.showInvitationSuccessToast('📸 ¡Pase guardado en tu galería!');
+            }
+          }).catch((shareErr) => {
+            if (shareErr.name === 'AbortError') return;
+            console.warn('Native share fallback:', shareErr);
+            openSouvenirModal(imageURI);
+          });
+          return;
+        }
+
+        // 2. Direct Download for Desktop Browsers
+        const downloadLink = document.createElement('a');
+        downloadLink.download = filename;
+        downloadLink.href = imageURI;
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+
+        // 3. Open Souvenir Modal for in-app / legacy mobile browsers
+        openSouvenirModal(imageURI);
+
+        if (typeof window.showInvitationSuccessToast === 'function') {
+          window.showInvitationSuccessToast('📸 ¡Pase VIP generado!');
+        }
       };
 
       window.closeSouvenirModal = function() {
