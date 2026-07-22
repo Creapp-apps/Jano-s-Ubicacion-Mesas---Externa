@@ -951,11 +951,13 @@ app.post('/api/superadmin/events', requireSuperAuth, async (req, res) => {
     
     const cleanId = await db.createEvent(id, clientName, password || '', clientEmail || '', sTables, sPhotos, sInvitation, sTrivia, resolvedEventName);
     
-    // Create Google Drive folder in background immediately on event creation
+    // Create Google Drive folder immediately on event creation (awaited to guarantee completion on Vercel)
     const { syncPhotosToDrive } = require('./utils/googleDrive');
-    syncPhotosToDrive(cleanId).catch(err => {
-      console.error(`[Google Drive] Error al crear la carpeta inicial para el evento ${cleanId}:`, err);
-    });
+    try {
+      await syncPhotosToDrive(cleanId);
+    } catch (driveErr) {
+      console.error(`[Google Drive] Error al crear la carpeta inicial para el evento ${cleanId}:`, driveErr);
+    }
     
     // Send welcome email and track status to inform UI
     let emailStatus = { sent: false };
