@@ -552,12 +552,12 @@
               <input type="text" id="spotify-guest-name-input" class="form-control" placeholder="Ingresá tu nombre" required>
             </div>
 
-            <div style="position: relative;">
+            <div style="position: relative; z-index: 30;">
               <label style="display: block; text-align: center; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Buscar Canción o Artista</label>
               <input type="text" id="spotify-search-input" class="form-control" placeholder="Ej: Daft Punk - One More Time" autocomplete="off" required>
               
               <!-- Search Results Dropdown -->
-              <div id="spotify-search-results" class="autocomplete-results" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: rgba(18,18,20,0.98); border: 1px solid var(--border-gold); border-radius: 8px; max-height: 200px; overflow-y: auto; z-index: 10; margin-top: 5px;">
+              <div id="spotify-search-results" class="autocomplete-results" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: rgba(18,18,20,0.98); border: 1px solid var(--border-gold); border-radius: 8px; max-height: 220px; overflow-y: auto; z-index: 1000; margin-top: 5px; box-shadow: 0 10px 30px rgba(0,0,0,0.9); -webkit-overflow-scrolling: touch;">
                 <!-- Autocomplete items -->
               </div>
             </div>
@@ -3845,43 +3845,53 @@
                 }
                 
                 spotifySearchResultsDiv.innerHTML = results.map((track, idx) => `
-                  <div class="spotify-search-item" data-idx="${idx}" style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s;">
-                    <img src="${track.artworkUrl60 || 'https://via.placeholder.com/40'}" style="width: 40px; height: 40px; border-radius: 4px; object-fit: cover;">
-                    <div style="text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">
+                  <div class="spotify-search-item" data-idx="${idx}" style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.08); transition: background 0.2s; -webkit-tap-highlight-color: rgba(212,175,55,0.2);">
+                    <img src="${track.artworkUrl60 || 'https://via.placeholder.com/40'}" style="width: 40px; height: 40px; border-radius: 6px; object-fit: cover; pointer-events: none;">
+                    <div style="text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; pointer-events: none;">
                       <div style="font-weight: 600; font-size: 0.85rem; color: #fff;">${track.trackName}</div>
                       <div style="font-size: 0.75rem; color: var(--text-muted);">${track.artistName}</div>
                     </div>
                   </div>
                 `).join('');
                 
-                document.querySelectorAll('.spotify-search-item').forEach(item => {
+                spotifySearchResultsDiv.querySelectorAll('.spotify-search-item').forEach(item => {
                   item.addEventListener('mouseenter', () => {
-                    item.style.background = 'rgba(212,175,55,0.1)';
+                    item.style.background = 'rgba(212,175,55,0.15)';
                   });
                   item.addEventListener('mouseleave', () => {
                     item.style.background = '';
                   });
-                  item.onclick = () => {
-                    const idx = parseInt(item.getAttribute('data-idx'));
+
+                  const handleSelectTrack = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const idx = parseInt(item.getAttribute('data-idx'), 10);
                     const track = spotifySearchResults[idx];
-                    spotifySearchInput.value = `${track.trackName} - ${track.artistName}`;
-                    spotifySearchResultsDiv.style.display = 'none';
+                    if (track) {
+                      spotifySearchInput.value = `${track.trackName} - ${track.artistName}`;
+                      spotifySearchResultsDiv.style.display = 'none';
+                    }
                   };
+
+                  item.addEventListener('click', handleSelectTrack);
+                  item.addEventListener('touchend', handleSelectTrack);
                 });
                 
                 spotifySearchResultsDiv.style.display = 'block';
               })
               .catch(err => {
-                console.error('iTunes API lookup failed:', err);
+                console.error('Music API lookup failed:', err);
               });
           }, 300);
         });
         
-        document.addEventListener('click', (e) => {
-          if (e.target !== spotifySearchInput && e.target !== spotifySearchResultsDiv) {
+        const handleOutsideClick = (e) => {
+          if (!spotifySearchInput.contains(e.target) && !spotifySearchResultsDiv.contains(e.target)) {
             spotifySearchResultsDiv.style.display = 'none';
           }
-        });
+        };
+        document.addEventListener('click', handleOutsideClick);
+        document.addEventListener('touchend', handleOutsideClick);
       }
       
       if (btnSubmitSong) {
