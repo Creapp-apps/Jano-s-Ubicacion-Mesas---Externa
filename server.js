@@ -246,13 +246,7 @@ app.get(['/invitacion', '/invitacion.html'], async (req, res) => {
   }
 });
 
-app.use(express.static(path.join(__dirname, 'public'), {
-  setHeaders: (res, filePath) => {
-    if (filePath.endsWith('.js') || filePath.endsWith('.css') || filePath.endsWith('.html')) {
-      res.setHeader('Content-Type', `${res.getHeader('Content-Type') || 'text/plain'}; charset=utf-8`);
-    }
-  }
-}));
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Authentication middleware
 function requireAuth(req, res, next) {
