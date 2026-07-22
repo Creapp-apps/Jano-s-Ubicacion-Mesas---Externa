@@ -1168,24 +1168,50 @@ body.font-romantic-charms .hero-title {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 12px;
+  background: linear-gradient(135deg, #ffffff 0%, #f6f0e6 60%, #e9dec9 100%) !important;
+  color: #111113 !important;
+  font-weight: 700 !important;
+  letter-spacing: 2px !important;
+  border-radius: 50px !important;
+  border: 1px solid rgba(212, 175, 55, 0.6) !important;
+  box-shadow: 0 8px 25px rgba(255, 255, 255, 0.2), 0 0 20px rgba(212, 175, 55, 0.35) !important;
+  padding: 13px 26px !important;
+  transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1) !important;
+  text-decoration: none;
+}
+
+.btn-step-advance:hover {
+  transform: translateY(-2px) scale(1.02) !important;
+  box-shadow: 0 12px 30px rgba(255, 255, 255, 0.35), 0 0 25px rgba(212, 175, 55, 0.6) !important;
+}
+
+.btn-step-advance span {
+  color: #111113 !important;
+  font-weight: 800 !important;
 }
 
 .gold-pointer-pill {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(212, 175, 55, 0.35) 0%, rgba(212, 175, 55, 0.08) 100%);
-  border: 1.5px solid rgba(212, 175, 55, 0.65);
+  background: radial-gradient(circle, #ffffff 0%, #f3e5ab 70%, #d4af37 100%);
+  border: 2px solid #d4af37;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--gold-light, #f3e5ab);
+  color: #111113;
   margin-left: 4px;
   position: relative;
   flex-shrink: 0;
-  box-shadow: 0 0 12px rgba(212, 175, 55, 0.35);
+  box-shadow: 0 0 14px rgba(212, 175, 55, 0.6);
   animation: pointerPillGlide 1.3s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+}
+
+.gold-pointer-pill svg {
+  stroke: #111113 !important;
+  width: 15px;
+  height: 15px;
 }
 
 .gold-pointer-ring {
@@ -2059,9 +2085,9 @@ body.font-romantic-charms .hero-title {
 /* GIFT CARD (CARTA QUE SUBE DEL COFRE) */
 .chest-gift-card {
   position: absolute;
-  left: 5px;
-  width: 210px;
-  height: 220px;
+  left: -8px;
+  width: 236px;
+  height: 255px;
   bottom: 0px;
   z-index: 1; /* Hidden inside the box layers */
   opacity: 0;
@@ -2093,15 +2119,78 @@ body.font-romantic-charms .hero-title {
   width: 100%;
   height: 100%;
   backface-visibility: hidden;
-  border-radius: 12px;
-  border: 1px solid rgba(212, 175, 55, 0.4);
-  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(212, 175, 55, 0.45);
+  padding: 12px 14px 10px 14px;
   box-sizing: border-box;
   text-align: center;
   box-shadow: 0 10px 25px rgba(0,0,0,0.5);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  overflow: hidden;
+}
+
+/* KEY INTERACTION BEACON (HIGH VISIBILITY TAP INDICATOR) */
+.key-interaction-beacon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 10px auto 0 auto;
+  padding: 8px 18px;
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.25) 0%, rgba(20, 20, 24, 0.9) 100%);
+  border: 1.5px solid var(--gold-primary, #d4af37);
+  border-radius: 30px;
+  color: var(--gold-light, #f3e5ab);
+  font-family: var(--font-family-body), sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+  position: relative;
+  z-index: 10;
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
+  animation: beaconBounceUp 1.4s ease-in-out infinite;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.beacon-pointer-pill {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ffffff 0%, #f3e5ab 70%, #d4af37 100%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #111113;
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.6);
+}
+
+.beacon-pointer-pill svg {
+  stroke: #111113 !important;
+}
+
+.beacon-ripple-ring {
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  border-radius: 30px;
+  border: 1.5px solid rgba(212, 175, 55, 0.6);
+  animation: beaconRingPulse 1.8s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+  pointer-events: none;
+}
+
+@keyframes beaconBounceUp {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-7px); border-color: #ffffff; box-shadow: 0 0 25px rgba(255, 255, 255, 0.6); }
+}
+
+@keyframes beaconRingPulse {
+  0% { transform: scale(1); opacity: 0.8; }
+  100% { transform: scale(1.15, 1.3); opacity: 0; }
 }
 
 /* Front face (instructions) styling: warm parchment */
