@@ -113,6 +113,25 @@ body {
   position: relative;
 }
 
+/* Fixed Background Layer for Pixel-Perfect Mobile Rendering */
+.bg-fixed-layer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  z-index: -2;
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  pointer-events: none;
+  transform: translate3d(0, 0, 0);
+  -webkit-transform: translate3d(0, 0, 0);
+  will-change: transform;
+  transition: opacity 0.4s ease;
+}
+
 /* Ambient Particles Canvas */
 #ambient-particles-canvas {
   position: fixed;

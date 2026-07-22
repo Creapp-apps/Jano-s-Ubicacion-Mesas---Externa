@@ -22,6 +22,9 @@
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 </head>
 <body>
+  <!-- Fixed Background Layer for Pixel-Perfect Mobile Rendering -->
+  <div id="bg-fixed-layer" class="bg-fixed-layer"></div>
+
   <!-- Ambient Gold Particles Canvas -->
   <canvas id="ambient-particles-canvas"></canvas>
 
@@ -2595,12 +2598,12 @@
 
         // 5. Custom Background Image
         const bgUrl = data.invitationBgUrl || data.invBgUrl || '';
-        if (bgUrl) {
-          document.body.style.backgroundImage = `linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('${bgUrl}')`;
-          document.body.style.backgroundSize = 'cover';
-          document.body.style.backgroundPosition = 'center';
-          document.body.style.backgroundAttachment = 'fixed';
-        } else {
+        const bgFixedLayer = document.getElementById('bg-fixed-layer');
+        if (bgUrl && bgFixedLayer) {
+          bgFixedLayer.style.backgroundImage = `linear-gradient(rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0.65)), url('${bgUrl}')`;
+          document.body.style.backgroundImage = '';
+        } else if (bgFixedLayer) {
+          bgFixedLayer.style.backgroundImage = '';
           document.body.style.backgroundImage = '';
         }
       }
