@@ -95,6 +95,29 @@
   <!-- Camera Flash Effect Overlay -->
   <div id="camera-flash-overlay" class="camera-flash-overlay"></div>
 
+  <!-- Souvenir Image Preview Modal -->
+  <div id="souvenir-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.92); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); z-index: 10000; align-items: center; justify-content: center; flex-direction: column; padding: 20px; text-align: center;">
+    <div style="max-width: 360px; width: 100%; position: relative; display: flex; flex-direction: column; align-items: center; background: rgba(22, 22, 25, 0.95); border: 1px solid var(--border-gold); border-radius: 16px; padding: 24px 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.8);">
+      <button type="button" onclick="closeSouvenirModal()" style="position: absolute; top: 12px; right: 14px; background: rgba(255,255,255,0.1); border: 1px solid var(--border-gold); color: #fff; border-radius: 50%; width: 32px; height: 32px; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;">&times;</button>
+      
+      <p style="font-size: 0.85rem; color: var(--gold-light); margin-bottom: 14px; font-weight: 600; line-height: 1.4;">
+        📸 <strong>¡Tu Pase VIP está listo!</strong><br>
+        <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 400;">Mantené presionada la imagen para guardarla en tu celular o usá el botón inferior.</span>
+      </p>
+      
+      <img id="souvenir-modal-img" src="" alt="Recuerdito VIP" style="width: 100%; max-height: 52vh; object-fit: contain; border-radius: 10px; border: 1.5px solid var(--gold-primary); box-shadow: 0 10px 25px rgba(212,175,55,0.2);">
+      
+      <div style="display: flex; gap: 10px; width: 100%; margin-top: 16px;">
+        <a id="souvenir-modal-download-btn" href="#" download="Recuerdito-VIP.png" class="btn-gold" style="flex: 1; text-align: center; text-decoration: none; padding: 10px; font-size: 0.78rem; display: flex; align-items: center; justify-content: center; gap: 6px;">
+          <span>📥 Descargar Imagen</span>
+        </a>
+        <button type="button" onclick="closeSouvenirModal()" class="btn-gold" style="background: transparent; border: 1px solid var(--border-gold); color: #fff; padding: 10px 14px; font-size: 0.78rem;">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Volume Prompt Toast -->
   <div class="volume-prompt-toast" id="volume-prompt-toast" style="display: none;">
     <div class="volume-icon-wrapper">
@@ -4162,24 +4185,66 @@
         ctx.font = 'bold 24px Montserrat, sans-serif';
         ctx.fillText('© 2026 miFiestAPP  •  Digitalizá Tu Fiesta', 540, 1460);
 
-        setTimeout(() => {
-          try {
-            const imageURI = canvas.toDataURL('image/png');
-            const downloadLink = document.createElement('a');
-            const cleanName = (invitationData && invitationData.invitationMainTitle) ? invitationData.invitationMainTitle.replace(/[^a-zA-Z0-9]/g, '_') : 'Evento';
-            downloadLink.download = `Recuerdito-Invitacion-${cleanName}.png`;
-            downloadLink.href = imageURI;
-            document.body.appendChild(downloadLink);
-            downloadLink.click();
-            document.body.removeChild(downloadLink);
-
-            if (typeof window.showInvitationSuccessToast === 'function') {
-              window.showInvitationSuccessToast('📸 ¡Invitación guardada en tu galería!');
-            }
-          } catch (e) {
-            console.error('Error generating souvenir image:', e);
+        canvas.toBlob(async (blob) => {
+          if (!blob) {
+            console.error('Failed to export souvenir canvas to blob');
+            return;
           }
-        }, 200);
+
+          const cleanTitle = (invitationData && invitationData.invitationMainTitle) ? invitationData.invitationMainTitle.replace(/[^a-zA-Z0-9]/g, '_') : 'Evento';
+          const filename = `Recuerdito-VIP-${cleanTitle}.png`;
+          const file = new File([blob], filename, { type: 'image/png' });
+
+          // 1. Web Share API for native mobile gallery save (iOS Safari 15+ / Android Chrome)
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            try {
+              await navigator.share({
+                files: [file],
+                title: `Pase VIP - ${mainTitle}`,
+                text: `¡Mi pase de recuerdito para ${mainTitle}!`
+              });
+              if (typeof window.showInvitationSuccessToast === 'function') {
+                window.showInvitationSuccessToast('📸 ¡Pase guardado en tu galería!');
+              }
+              return;
+            } catch (shareErr) {
+              if (shareErr.name === 'AbortError') return;
+              console.warn('Native share cancelled or not completed, opening preview:', shareErr);
+            }
+          }
+
+          // 2. Direct Blob Download for Desktop / Unsupported Web Share browsers
+          const blobUrl = URL.createObjectURL(blob);
+          const downloadLink = document.createElement('a');
+          downloadLink.download = filename;
+          downloadLink.href = blobUrl;
+          document.body.appendChild(downloadLink);
+          downloadLink.click();
+          document.body.removeChild(downloadLink);
+
+          // 3. Display Souvenir Modal for touch screens and in-app browsers
+          const souvenirModal = document.getElementById('souvenir-modal');
+          const souvenirImg = document.getElementById('souvenir-modal-img');
+          const souvenirDownloadBtn = document.getElementById('souvenir-modal-download-btn');
+          
+          if (souvenirModal && souvenirImg) {
+            souvenirImg.src = blobUrl;
+            if (souvenirDownloadBtn) {
+              souvenirDownloadBtn.href = blobUrl;
+              souvenirDownloadBtn.download = filename;
+            }
+            souvenirModal.style.display = 'flex';
+          }
+
+          if (typeof window.showInvitationSuccessToast === 'function') {
+            window.showInvitationSuccessToast('📸 ¡Pase VIP listo!');
+          }
+        }, 'image/png');
+      };
+
+      window.closeSouvenirModal = function() {
+        const souvenirModal = document.getElementById('souvenir-modal');
+        if (souvenirModal) souvenirModal.style.display = 'none';
       };
 
       // --- Close Invitation Action ---
