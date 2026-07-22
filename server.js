@@ -468,6 +468,7 @@ app.get('/api/config', async (req, res) => {
     res.json({
       eventTitle,
       googleDriveFolderUrl,
+      supportWhatsappNumber: process.env.SUPPORT_WHATSAPP_NUMBER || '5491122334455',
       clientName,
       serviceTables,
       servicePhotos,
@@ -996,6 +997,19 @@ app.put('/api/superadmin/events/:id', requireSuperAuth, async (req, res) => {
   } catch (error) {
     console.error('Error toggling event status:', error);
     res.status(500).json({ error: 'Error al actualizar el estado del evento' });
+  }
+});
+
+// API: Superadmin Manual Google Drive Folder Sync/Create
+app.post('/api/superadmin/events/:id/sync-drive', requireSuperAuth, async (req, res) => {
+  const { id } = req.params;
+  try {
+    const { syncPhotosToDrive } = require('./utils/googleDrive');
+    const folderUrl = await syncPhotosToDrive(id);
+    res.json({ success: true, folderUrl });
+  } catch (error) {
+    console.error(`[Google Drive] Error al sincronizar carpeta para ${id}:`, error);
+    res.status(500).json({ error: error.message || 'Error al conectar con Google Drive' });
   }
 });
 

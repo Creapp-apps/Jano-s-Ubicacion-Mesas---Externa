@@ -1365,6 +1365,16 @@ document.addEventListener('DOMContentLoaded', () => {
           prevTitle.textContent = data.eventTitle || 'JANO\'S EVENTOS';
         }
 
+        // Update WhatsApp support links in admin
+        const supportPhone = (data && data.supportWhatsappNumber) ? data.supportWhatsappNumber : '5491122334455';
+        const title = (data && data.eventTitle) ? data.eventTitle : 'miFiestAPP';
+        const id = eventId || 'default';
+        const msg = `¡Hola miFiestAPP! 👋 Necesito soporte técnico / ayuda con mi evento: "${title}" (ID: ${id}).`;
+        const whatsappUrl = `https://wa.me/${supportPhone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(msg)}`;
+
+        const adminSupportBtn = document.getElementById('btn-admin-support-header');
+        if (adminSupportBtn) adminSupportBtn.href = whatsappUrl;
+
         setTimeout(() => {
           initialFormState = captureFormState();
           isFormDirty = false;

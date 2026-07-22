@@ -983,26 +983,29 @@ async function getEvents() {
       throw error;
     }
     
-    // Fetch all event_title from config in one query
+    // Fetch all event_title and google_drive_folder_url from config in one query
     let titlesMap = {};
+    let driveUrlMap = {};
     try {
       const { data: configData } = await supabase
         .from('config')
-        .select('event_id, value')
-        .eq('key', 'event_title');
+        .select('event_id, key, value')
+        .in('key', ['event_title', 'google_drive_folder_url']);
       if (configData) {
         configData.forEach(row => {
-          titlesMap[row.event_id] = row.value;
+          if (row.key === 'event_title') titlesMap[row.event_id] = row.value;
+          if (row.key === 'google_drive_folder_url') driveUrlMap[row.event_id] = row.value;
         });
       }
     } catch (err) {
-      console.error('Error fetching event titles config:', err);
+      console.error('Error fetching event config:', err);
     }
 
     return (data || []).map(e => ({
       id: e.id,
       clientName: e.client_name,
       eventName: titlesMap[e.id] || '',
+      googleDriveFolderUrl: driveUrlMap[e.id] || '',
       clientEmail: e.client_email || '',
       active: e.active,
       password: e.password || '',
@@ -1016,17 +1019,20 @@ async function getEvents() {
     const events = getLocalEvents();
     return Promise.all(events.map(async e => {
       let eventName = '';
+      let googleDriveFolderUrl = '';
       try {
         const { configFile } = getEventFiles(e.id);
         if (fs.existsSync(configFile)) {
           const config = JSON.parse(fs.readFileSync(configFile, 'utf8'));
           eventName = config['event_title'] || '';
+          googleDriveFolderUrl = config['google_drive_folder_url'] || '';
         }
       } catch (err) {}
       return {
         id: e.id,
         clientName: e.clientName,
         eventName: eventName,
+        googleDriveFolderUrl: googleDriveFolderUrl,
         clientEmail: e.clientEmail || '',
         active: e.active,
         password: e.password || '',
