@@ -4273,7 +4273,9 @@
         ctx.stroke();
 
         // Main Event Name
-        const mainTitle = (invitationData && invitationData.invitationMainTitle) ? invitationData.invitationMainTitle : 'XV DE TATIANA';
+        const mainTitle = (invitationData && (invitationData.eventTitle || invitationData.invitationMainTitle || invitationData.clientName)) 
+          ? (invitationData.eventTitle || invitationData.invitationMainTitle || invitationData.clientName) 
+          : 'NUESTRO EVENTO';
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 58px Cinzel, serif';
         ctx.fillText(mainTitle.toUpperCase(), 540, 260);
@@ -4338,35 +4340,41 @@
         ctx.font = 'bold 32px Cinzel, serif';
         ctx.fillText('DETALLES DEL EVENTO', 540, 840);
 
-        // Date
-        const dateText = (invitationData && invitationData.invitationPartyDate) ? invitationData.invitationPartyDate : 'Sábado 25 de Octubre, 2026';
+        // Date & Time extraction
+        let dateText = 'Fecha a confirmar';
+        let timeText = 'Horario a confirmar';
+        if (invitationData && invitationData.invitationEventDate) {
+          const pd = formatDateStringPremium(invitationData.invitationEventDate, invitationData.invitationEventTimeEnd);
+          if (pd) {
+            if (pd.dateLine) dateText = pd.dateLine;
+            if (pd.timeLine) timeText = pd.timeLine;
+          }
+        } else if (invitationData && invitationData.invitationPartyDate) {
+          dateText = invitationData.invitationPartyDate;
+          if (invitationData.invitationPartyTime) timeText = invitationData.invitationPartyTime;
+        }
+
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 30px Montserrat, sans-serif';
         ctx.fillText(`📅 ${dateText}`, 540, 920);
 
-        // Time
-        let timeText = '21:00 HS';
-        if (invitationData && invitationData.invitationEventDate) {
-          const pd = formatDateStringPremium(invitationData.invitationEventDate, invitationData.invitationEventTimeEnd);
-          if (pd && pd.timeLine) timeText = pd.timeLine;
-        } else if (invitationData && invitationData.invitationPartyTime) {
-          timeText = invitationData.invitationPartyTime;
-        }
         ctx.fillStyle = 'rgba(255,255,255,0.85)';
         ctx.font = '26px Montserrat, sans-serif';
         ctx.fillText(`⏰ Horario: ${timeText}`, 540, 975);
 
         // Address
-        const addressText = (invitationData && invitationData.invitationPartyAddress) ? invitationData.invitationPartyAddress : 'Salon de Eventos';
+        const addressText = (invitationData && invitationData.invitationPartyAddress) ? invitationData.invitationPartyAddress : 'Dirección a confirmar';
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 28px Montserrat, sans-serif';
         ctx.fillText(`📍 ${addressText}`, 540, 1050);
 
         // Dresscode tip
-        const dressText = (invitationData && invitationData.invitationDressCodeType) ? `Dress Code: ${invitationData.invitationDressCodeType}` : 'Dress Code: Elegante';
+        const dressCodeVal = (invitationData && (invitationData.invitationDressCode || invitationData.invitationDressCodeType)) 
+          ? (invitationData.invitationDressCode || invitationData.invitationDressCodeType) 
+          : 'Elegante';
         ctx.fillStyle = '#f3e5ab';
         ctx.font = '26px Montserrat, sans-serif';
-        ctx.fillText(`👔 ${dressText}`, 540, 1115);
+        ctx.fillText(`👔 Dress Code: ${dressCodeVal}`, 540, 1115);
 
         // Farewell Quote
         let isNightCanvas = true;
@@ -4389,12 +4397,12 @@
         ctx.font = 'bold 24px Montserrat, sans-serif';
         ctx.fillText('© 2026 miFiestAPP  •  Digitalizá Tu Fiesta', 540, 1460);
 
-        // Synchronous Data URL & File generation to preserve user gesture stack for iOS Safari / Chrome Android
+        // Convert canvas to Data URL and Blob for cross-platform compatibility
         const imageURI = canvas.toDataURL('image/png');
-        const cleanTitle = (invitationData && invitationData.invitationMainTitle) ? invitationData.invitationMainTitle.replace(/[^a-zA-Z0-9]/g, '_') : 'Evento';
+        const cleanTitle = mainTitle.replace(/[^a-zA-Z0-9]/g, '_');
         const filename = `Recuerdito-VIP-${cleanTitle}.png`;
 
-        function dataURLtoFile(dataurl, fname) {
+        function dataURLtoBlob(dataurl) {
           const arr = dataurl.split(',');
           const mime = arr[0].match(/:(.*?);/)[1];
           const bstr = atob(arr[1]);
@@ -4403,10 +4411,12 @@
           while (n--) {
             u8arr[n] = bstr.charCodeAt(n);
           }
-          return new File([u8arr], fname, { type: mime });
+          return new Blob([u8arr], { type: mime });
         }
 
-        const file = dataURLtoFile(imageURI, filename);
+        const blob = dataURLtoBlob(imageURI);
+        const file = new File([blob], filename, { type: 'image/png' });
+        const blobUrl = URL.createObjectURL(blob);
 
         const openSouvenirModal = (url) => {
           const souvenirModal = document.getElementById('souvenir-modal');
@@ -4423,7 +4433,10 @@
           }
         };
 
-        // 1. Synchronous Web Share API (Instant native OS share/save dialog on iOS Safari / Android)
+        // Always show Souvenir Modal so the guest sees their card on screen immediately
+        openSouvenirModal(blobUrl);
+
+        // Native OS Share Sheet (iOS Safari / Android Chrome on HTTPS)
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
           navigator.share({
             files: [file],
@@ -4431,29 +4444,23 @@
             text: `¡Mi pase de recuerdito para ${mainTitle}!`
           }).then(() => {
             if (typeof window.showInvitationSuccessToast === 'function') {
-              window.showInvitationSuccessToast('📸 ¡Pase guardado en tu galería!');
+              window.showInvitationSuccessToast('📸 ¡Pase guardado / compartido con éxito!');
             }
           }).catch((shareErr) => {
-            if (shareErr.name === 'AbortError') return;
-            console.warn('Native share fallback:', shareErr);
-            openSouvenirModal(imageURI);
+            console.log('Native share dismissed or handled via modal:', shareErr);
           });
-          return;
-        }
+        } else {
+          // Direct Download fallback for desktop browsers
+          const downloadLink = document.createElement('a');
+          downloadLink.download = filename;
+          downloadLink.href = blobUrl;
+          document.body.appendChild(downloadLink);
+          downloadLink.click();
+          document.body.removeChild(downloadLink);
 
-        // 2. Direct Download for Desktop Browsers
-        const downloadLink = document.createElement('a');
-        downloadLink.download = filename;
-        downloadLink.href = imageURI;
-        document.body.appendChild(downloadLink);
-        downloadLink.click();
-        document.body.removeChild(downloadLink);
-
-        // 3. Open Souvenir Modal for in-app / legacy mobile browsers
-        openSouvenirModal(imageURI);
-
-        if (typeof window.showInvitationSuccessToast === 'function') {
-          window.showInvitationSuccessToast('📸 ¡Pase VIP generado!');
+          if (typeof window.showInvitationSuccessToast === 'function') {
+            window.showInvitationSuccessToast('📸 ¡Pase VIP generado!');
+          }
         }
       };
 
