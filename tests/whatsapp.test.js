@@ -58,8 +58,9 @@ assert.ok(message.includes('Hay momentos que se sue\u00f1an durante mucho tiempo
 // Test 3: DB Guest Phone Field Persistence
 const db = require('../utils/db');
 (async () => {
-  const testEventId = 'xvdetati';
+  const testEventId = 'test_wa_' + Date.now();
   try {
+    await db.createEvent(testEventId, 'Test WhatsApp Client', 'pass123');
     await db.addGuest(testEventId, { firstName: 'SebaTestPhone', lastName: 'MazaTestPhone', table: '1', phone: '1136434314' });
     let guests = await db.getGuests(testEventId);
     assert.ok(guests.length > 0, 'Guest should be added');
@@ -73,10 +74,7 @@ const db = require('../utils/db');
     const updatedGuest = guests.find(g => g.firstName === 'SebaTestPhone');
     assert.strictEqual(updatedGuest.phone, '1199998888', 'Guest phone should be updated');
 
-    const delIdx = guests.findIndex(g => g.firstName === 'SebaTestPhone');
-    if (delIdx >= 0) {
-      await db.deleteGuest(testEventId, delIdx);
-    }
+    await db.deleteEvent(testEventId);
     console.log('All WhatsApp & DB Phone tests passed successfully!');
   } catch (err) {
     console.error('WhatsApp Test error:', err);
