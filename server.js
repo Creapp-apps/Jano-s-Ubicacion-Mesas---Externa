@@ -452,6 +452,7 @@ app.get('/api/config', async (req, res) => {
       }
     }
 
+    const invitationTemplate = config['invitation_template'] || 'interactivo-3d';
     const invitationThemeColor = config['invitation_theme_color'] || 'golden-luxury';
     const invitationThemeFont = config['invitation_theme_font'] || 'classic-editorial';
     const invitationBgEffect = config['invitation_bg_effect'] || 'golden-dust';
@@ -502,6 +503,7 @@ app.get('/api/config', async (req, res) => {
       invitationAlias,
       invitationBankHolder,
       invitationDressCode,
+      invitationTemplate,
       invitationThemeColor,
       invitationThemeFont,
       invitationBgEffect,
@@ -723,6 +725,7 @@ app.post('/api/config', requireAuth, async (req, res) => {
     invitationAlias,
     invitationBankHolder,
     invitationDressCode,
+    invitationTemplate,
     invitationThemeColor,
     invitationThemeFont,
     invitationBgEffect,
@@ -754,6 +757,7 @@ app.post('/api/config', requireAuth, async (req, res) => {
     if (invitationBankHolder !== undefined) await db.setConfigValue(eventId, 'invitation_bank_holder', invitationBankHolder);
     if (invitationDressCode !== undefined) await db.setConfigValue(eventId, 'invitation_dress_code', invitationDressCode);
 
+    if (invitationTemplate !== undefined) await db.setConfigValue(eventId, 'invitation_template', invitationTemplate);
     if (invitationThemeColor !== undefined) await db.setConfigValue(eventId, 'invitation_theme_color', invitationThemeColor);
     if (invitationThemeFont !== undefined) await db.setConfigValue(eventId, 'invitation_theme_font', invitationThemeFont);
     if (invitationBgEffect !== undefined) await db.setConfigValue(eventId, 'invitation_bg_effect', invitationBgEffect);
