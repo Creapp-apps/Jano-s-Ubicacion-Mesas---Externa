@@ -109,6 +109,8 @@ CREATE TABLE IF NOT EXISTS public.vendors (
 );
 
 ALTER TABLE public.vendors ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow public access to vendors" ON public.vendors;
+CREATE POLICY "Allow public access to vendors" ON public.vendors FOR ALL USING (true) WITH CHECK (true);
 
 -- 9. Add Vendor and Demo fields to EVENTS Table
 ALTER TABLE public.events ADD COLUMN IF NOT EXISTS vendor_id TEXT REFERENCES public.vendors(id) ON DELETE SET NULL;
