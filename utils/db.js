@@ -1328,7 +1328,7 @@ async function getRsvps(eventId = 'default') {
 }
 
 /**
- * Add an RSVP submission
+ * Add or Update an RSVP submission (Deduplicated by Phone or Name)
  */
 async function addRsvp(eventId = 'default', rsvpData) {
   let companionsNamesStr = '';
@@ -1338,9 +1338,10 @@ async function addRsvp(eventId = 'default', rsvpData) {
     companionsNamesStr = rsvpData.companionsNames.trim();
   }
 
+  const cleanPhone = (rsvpData.phone || '').replace(/[^0-9]/g, '');
   const rsvp = {
     name: (rsvpData.name || '').trim(),
-    phone: (rsvpData.phone || '').trim(),
+    phone: cleanPhone,
     source: (rsvpData.source || 'individual').trim(),
     attending: !!rsvpData.attending,
     companionsCount: parseInt(rsvpData.companionsCount, 10) || 0,
@@ -1350,8 +1351,66 @@ async function addRsvp(eventId = 'default', rsvpData) {
     createdAt: new Date().toISOString()
   };
 
-  const newId = Date.now();
+  const normName = rsvp.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ');
+  const rsvps = await getRsvps(eventId);
 
+  // Match existing by phone or fallback to name if no phone set
+  let existing = null;
+  if (cleanPhone && cleanPhone.length >= 6) {
+    existing = rsvps.find(r => (r.phone || '').replace(/[^0-9]/g, '') === cleanPhone);
+  }
+  if (!existing && normName) {
+    existing = rsvps.find(r => {
+      const existingNorm = (r.name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ');
+      const existingPhone = (r.phone || '').replace(/[^0-9]/g, '');
+      return existingNorm === normName && (!existingPhone || existingPhone.length < 6);
+    });
+  }
+
+  if (existing) {
+    // Update existing record
+    if (isSupabaseEnabled) {
+      const payload = {
+        name: rsvp.name,
+        phone: rsvp.phone || existing.phone || '',
+        attending: rsvp.attending,
+        companions_count: rsvp.companionsCount,
+        companions_names: rsvp.companionsNames,
+        dietary_restrictions: rsvp.dietaryRestrictions || existing.dietary_restrictions || 'Ninguno',
+        suggested_song: rsvp.suggestedSong || existing.suggested_song || ''
+      };
+      await supabase.from('rsvps').update(payload).eq('id', existing.id).eq('event_id', eventId);
+    } else {
+      const { configFile } = getEventFiles(eventId);
+      const eventDir = path.dirname(configFile);
+      const rsvpsFile = path.join(eventDir, 'rsvps.json');
+      let currentRsvps = [];
+      if (fs.existsSync(rsvpsFile)) {
+        try {
+          currentRsvps = JSON.parse(fs.readFileSync(rsvpsFile, 'utf8'));
+        } catch (e) {}
+      }
+      const idx = currentRsvps.findIndex(r => String(r.id) === String(existing.id));
+      if (idx !== -1) {
+        currentRsvps[idx] = {
+          ...currentRsvps[idx],
+          name: rsvp.name,
+          phone: rsvp.phone || currentRsvps[idx].phone || '',
+          attending: rsvp.attending,
+          companions_count: rsvp.companionsCount,
+          companions_names: rsvp.companionsNames,
+          dietary_restrictions: rsvp.dietaryRestrictions || currentRsvps[idx].dietary_restrictions || 'Ninguno',
+          suggested_song: rsvp.suggestedSong || currentRsvps[idx].suggested_song || '',
+          updated_at: rsvp.createdAt
+        };
+      }
+      fs.writeFileSync(rsvpsFile, JSON.stringify(currentRsvps, null, 2), 'utf8');
+    }
+    return existing.id;
+  }
+
+  // Insert new record if no existing record found
+  const newId = Date.now();
   if (isSupabaseEnabled) {
     const payload = {
       event_id: eventId,
@@ -1365,34 +1424,26 @@ async function addRsvp(eventId = 'default', rsvpData) {
       suggested_song: rsvp.suggestedSong
     };
 
-    const { error } = await supabase
-      .from('rsvps')
-      .insert([payload]);
-
+    const { error } = await supabase.from('rsvps').insert([payload]);
     if (error) {
-      console.warn('[miFiestAPP DB] Insert RSVP with phone/source failed on Supabase, retrying without optional columns:', error.message || error);
       delete payload.phone;
       delete payload.source;
       if (rsvp.phone && rsvp.phone.trim()) {
         payload.dietary_restrictions = `${payload.dietary_restrictions || ''} [Tel: ${rsvp.phone.trim()}]`.trim();
       }
-      const { error: retryError } = await supabase.from('rsvps').insert([payload]);
-      if (retryError) {
-        console.error('Error inserting RSVP into Supabase:', retryError);
-        throw retryError;
-      }
+      await supabase.from('rsvps').insert([payload]);
     }
   } else {
     const { configFile } = getEventFiles(eventId);
     const eventDir = path.dirname(configFile);
     const rsvpsFile = path.join(eventDir, 'rsvps.json');
-    let rsvps = [];
+    let currentRsvps = [];
     if (fs.existsSync(rsvpsFile)) {
       try {
-        rsvps = JSON.parse(fs.readFileSync(rsvpsFile, 'utf8'));
+        currentRsvps = JSON.parse(fs.readFileSync(rsvpsFile, 'utf8'));
       } catch (e) {}
     }
-    const newRsvp = {
+    currentRsvps.push({
       id: newId,
       name: rsvp.name,
       phone: rsvp.phone,
@@ -1403,9 +1454,8 @@ async function addRsvp(eventId = 'default', rsvpData) {
       dietary_restrictions: rsvp.dietaryRestrictions,
       suggested_song: rsvp.suggestedSong,
       created_at: rsvp.createdAt
-    };
-    rsvps.push(newRsvp);
-    fs.writeFileSync(rsvpsFile, JSON.stringify(rsvps, null, 2), 'utf8');
+    });
+    fs.writeFileSync(rsvpsFile, JSON.stringify(currentRsvps, null, 2), 'utf8');
   }
   return newId;
 }

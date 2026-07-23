@@ -3686,23 +3686,103 @@ Tu presencia hará que esta celebración sea aún más significativa.
     });
   }
 
-  function updateInvitadosFilterCounts() {
-    let allCount = allGuests.length;
-    let confirmedCount = 0;
-    let pendingCount = 0;
-    let declinedCount = 0;
+  function normalizeName(str) {
+    if (!str) return '';
+    return str
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, ' ');
+  }
 
-    allGuests.forEach(g => {
-      const fullName = `${g.firstName} ${g.lastName}`.trim().toLowerCase();
-      const rsvp = allRsvps.find(r => r.name.trim().toLowerCase() === fullName);
-      if (!rsvp) {
-        pendingCount++;
-      } else if (rsvp.attending) {
-        confirmedCount++;
-      } else {
-        declinedCount++;
+  function getUnifiedInvitadosList() {
+    const unified = [];
+    const matchedRsvpIds = new Set();
+
+    // 1. Pre-registered guests
+    allGuests.forEach((g, index) => {
+      const first = (g.firstName || '').trim();
+      const last = (g.lastName || '').trim();
+      const fullGuestName = `${first} ${last}`.trim();
+      const normGuestName = normalizeName(fullGuestName);
+      const cleanGuestPhone = (g.phone || '').replace(/[^0-9]/g, '');
+
+      let rsvp = allRsvps.find(r => {
+        if (matchedRsvpIds.has(r.id)) return false;
+        const normRsvpName = normalizeName(r.name);
+        if (normRsvpName === normGuestName) return true;
+
+        // Partial match check
+        if (normGuestName && normRsvpName && (normRsvpName.includes(normGuestName) || normGuestName.includes(normRsvpName))) {
+          return true;
+        }
+
+        // Clean phone match
+        const cleanRsvpPhone = (r.phone || '').replace(/[^0-9]/g, '');
+        if (cleanGuestPhone && cleanRsvpPhone && cleanGuestPhone.length >= 6 && cleanGuestPhone === cleanRsvpPhone) {
+          return true;
+        }
+
+        return false;
+      });
+
+      if (rsvp) {
+        matchedRsvpIds.add(rsvp.id);
       }
+
+      let status = 'pending';
+      if (rsvp) {
+        status = rsvp.attending ? 'confirmed' : 'declined';
+      }
+
+      unified.push({
+        ...g,
+        firstName: first || fullGuestName || 'Invitado',
+        lastName: last || '',
+        originalIndex: index,
+        isPreRegistered: true,
+        displayName: fullGuestName || 'Invitado Sin Nombre',
+        rsvp: rsvp || null,
+        status: status
+      });
     });
+
+    // 2. Un-matched RSVPs (e.g. autoconfirmed via generic QR link)
+    allRsvps.forEach(r => {
+      if (matchedRsvpIds.has(r.id)) return;
+
+      const normRsvpName = normalizeName(r.name);
+      const exists = unified.some(u => normalizeName(u.displayName) === normRsvpName);
+      if (exists) return;
+
+      const status = r.attending ? 'confirmed' : 'declined';
+      const nameParts = (r.name || 'Invitado QR').trim().split(' ');
+      const fName = nameParts[0] || 'Invitado';
+      const lName = nameParts.slice(1).join(' ') || '(QR Autoconfirmado)';
+
+      unified.push({
+        firstName: fName,
+        lastName: lName,
+        table: r.table || 'Sin Mesa',
+        phone: r.phone || '',
+        originalIndex: -1,
+        isPreRegistered: false,
+        displayName: r.name || 'Invitado QR',
+        rsvp: r,
+        status: status
+      });
+    });
+
+    return unified;
+  }
+
+  function updateInvitadosFilterCounts() {
+    const list = getUnifiedInvitadosList();
+    let allCount = list.length;
+    let confirmedCount = list.filter(item => item.status === 'confirmed').length;
+    let pendingCount = list.filter(item => item.status === 'pending').length;
+    let declinedCount = list.filter(item => item.status === 'declined').length;
 
     const elAll = document.getElementById('count-all');
     const elConfirmed = document.getElementById('count-confirmed');
@@ -3719,36 +3799,25 @@ Tu presencia hará que esta celebración sea aún más significativa.
     const tableBody = document.getElementById('invitados-table-body');
     if (!tableBody) return;
 
-    // Update filter count labels
     updateInvitadosFilterCounts();
 
     const searchFilter = invitadosGuestSearch ? invitadosGuestSearch.value.trim().toLowerCase() : '';
-    
-    const filteredGuests = allGuests.map((g, index) => ({ ...g, originalIndex: index }))
-      .filter(g => {
-        // 1. Filter by RSVP Status
-        const fullName = `${g.firstName} ${g.lastName}`.trim().toLowerCase();
-        const rsvp = allRsvps.find(r => r.name.trim().toLowerCase() === fullName);
-        
-        let status = 'pending';
-        if (rsvp) {
-          status = rsvp.attending ? 'confirmed' : 'declined';
-        }
+    const unifiedList = getUnifiedInvitadosList();
 
-        if (activeInvitadosStatusFilter !== 'all' && status !== activeInvitadosStatusFilter) {
-          return false;
-        }
-
-        // 2. Filter by search input
-        const table = String(g.table).toLowerCase();
-        return fullName.includes(searchFilter) || table.includes(searchFilter);
-      });
+    const filteredGuests = unifiedList.filter(g => {
+      if (activeInvitadosStatusFilter !== 'all' && g.status !== activeInvitadosStatusFilter) {
+        return false;
+      }
+      const fullName = `${g.firstName} ${g.lastName}`.trim().toLowerCase();
+      const table = String(g.table).toLowerCase();
+      return fullName.includes(searchFilter) || table.includes(searchFilter);
+    });
 
     if (filteredGuests.length === 0) {
       tableBody.innerHTML = `
         <tr>
           <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 30px;">
-            ${allGuests.length === 0 ? 'No hay invitados registrados en la base de datos.' : 'No se encontraron coincidencias.'}
+            ${unifiedList.length === 0 ? 'No hay invitados registrados en la base de datos.' : 'No se encontraron coincidencias.'}
           </td>
         </tr>
       `;
@@ -3758,18 +3827,11 @@ Tu presencia hará que esta celebración sea aún más significativa.
     const currentOrigin = window.location.origin;
     tableBody.innerHTML = filteredGuests.map(g => {
       const personalUrl = `${currentOrigin}/invitacion.html?event=${encodeURIComponent(eventId)}&n=${encodeURIComponent(g.firstName + ' ' + g.lastName)}`;
-      
-      const fullName = `${g.firstName} ${g.lastName}`.trim().toLowerCase();
-      const rsvp = allRsvps.find(r => r.name.trim().toLowerCase() === fullName);
-      
-      let status = 'pending';
-      let statusLabel = '⏳ Pendiente';
+      const rsvp = g.rsvp;
+      const status = g.status;
       let rowClass = 'row-pending';
-      if (rsvp) {
-        status = rsvp.attending ? 'confirmed' : 'declined';
-        statusLabel = rsvp.attending ? '✅ Asistirá' : '❌ No Asistirá';
-        rowClass = rsvp.attending ? 'row-confirmed' : 'row-declined';
-      }
+      if (status === 'confirmed') rowClass = 'row-confirmed';
+      if (status === 'declined') rowClass = 'row-declined';
 
       let rsvpStatusHtml = `
         <select class="select-rsvp-status" 
@@ -3782,26 +3844,36 @@ Tu presencia hará que esta celebración sea aún más significativa.
         </select>
       `;
 
+      const sourceBadge = (!g.isPreRegistered) 
+        ? `<span style="font-size: 0.65rem; background: rgba(212,175,55,0.15); border: 1px solid var(--border-gold); color: var(--gold-light); padding: 2px 6px; border-radius: 8px; margin-left: 6px;">📲 QR / Genérico</span>` 
+        : '';
+
+      const actionsHtml = g.isPreRegistered ? `
+        <button class="btn-action edit" onclick="openEditGuestModal(${g.originalIndex})">Editar</button>
+        <button class="btn-action whatsapp" title="${g.phone ? 'Enviar Invitación por WhatsApp (' + escapeHtml(g.phone) + ')' : 'Sin teléfono (haz clic para agregar)'}" onclick="sendWhatsAppInvite(${g.originalIndex})">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.842-1.001zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+          WhatsApp
+        </button>
+        <button class="btn-action edit" style="border-color: var(--gold-primary); color: var(--gold-primary);" onclick="copyGuestUrl(${g.originalIndex}, this)">Copiar</button>
+        <button class="btn-action delete" onclick="confirmDeleteGuest(${g.originalIndex})">Eliminar</button>
+      ` : `
+        <button class="btn-action delete" onclick="deleteRsvpById('${rsvp ? rsvp.id : ''}')">Eliminar</button>
+      `;
+
       return `
         <tr class="${rowClass}">
-          <td style="color: var(--text-main); font-weight: 500;">${g.firstName}</td>
-          <td style="color: var(--text-main); font-weight: 500;">${g.lastName}</td>
+          <td style="color: var(--text-main); font-weight: 500;">${escapeHtml(g.firstName)} ${sourceBadge}</td>
+          <td style="color: var(--text-main); font-weight: 500;">${escapeHtml(g.lastName)}</td>
           <td style="color: var(--gold-primary); font-weight: 600;">${formatTableDisplay(g.table)}</td>
           <td style="text-align: center; vertical-align: middle;">${rsvpStatusHtml}</td>
           <td>
             <div style="display: flex; gap: 8px; align-items: center; width: 100%; max-width: 180px;">
-              <input type="text" readonly value="${personalUrl}" class="form-control-admin" style="padding: 6px 12px; font-size: 0.7rem; border-radius: 12px; width: 100%; min-width: 0; border: 1px solid rgba(255,255,255,0.05); background: rgba(0,0,0,0.2); text-overflow: ellipsis; white-space: nowrap; overflow: hidden; pointer-events: none;" id="guest-url-${g.originalIndex}">
+              <input type="text" readonly value="${personalUrl}" class="form-control-admin" style="padding: 6px 12px; font-size: 0.7rem; border-radius: 12px; width: 100%; min-width: 0; border: 1px solid rgba(255,255,255,0.05); background: rgba(0,0,0,0.2); text-overflow: ellipsis; white-space: nowrap; overflow: hidden; pointer-events: none;">
             </div>
           </td>
           <td style="text-align: center; vertical-align: middle;">
             <div style="display: flex; justify-content: center; gap: 6px; flex-wrap: nowrap;">
-              <button class="btn-action edit" onclick="openEditGuestModal(${g.originalIndex})">Editar</button>
-              <button class="btn-action whatsapp" title="${g.phone ? 'Enviar Invitación por WhatsApp (' + escapeHtml(g.phone) + ')' : 'Sin teléfono (haz clic para agregar)'}" onclick="sendWhatsAppInvite(${g.originalIndex})">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.842-1.001zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
-                WhatsApp
-              </button>
-              <button class="btn-action edit" style="border-color: var(--gold-primary); color: var(--gold-primary);" onclick="copyGuestUrl(${g.originalIndex}, this)">Copiar</button>
-              <button class="btn-action delete" onclick="confirmDeleteGuest(${g.originalIndex})">Eliminar</button>
+              ${actionsHtml}
             </div>
           </td>
         </tr>
