@@ -107,13 +107,18 @@
       
       <img id="souvenir-modal-img" src="" alt="Recuerdito VIP" style="width: 100%; max-height: 52vh; object-fit: contain; border-radius: 10px; border: 1.5px solid var(--gold-primary); box-shadow: 0 10px 25px rgba(212,175,55,0.2);">
       
-      <div style="display: flex; gap: 10px; width: 100%; margin-top: 16px;">
-        <a id="souvenir-modal-download-btn" href="#" download="Recuerdito-VIP.png" class="btn-gold" style="flex: 1; text-align: center; text-decoration: none; padding: 10px; font-size: 0.78rem; display: flex; align-items: center; justify-content: center; gap: 6px;">
-          <span>📥 Descargar Imagen</span>
+      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; margin-top: 16px;">
+        <a id="souvenir-modal-download-btn" href="#" download="Recuerdito-VIP.png" class="btn-gold" style="width: 100%; text-align: center; text-decoration: none; padding: 12px; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700;">
+          <span>📥 Descargar Imagen en Tu Celular</span>
         </a>
-        <button type="button" onclick="closeSouvenirModal()" class="btn-gold" style="background: transparent; border: 1px solid var(--border-gold); color: #fff; padding: 10px 14px; font-size: 0.78rem;">
-          Cerrar
-        </button>
+        <div style="display: flex; gap: 10px; width: 100%;">
+          <button type="button" onclick="openSouvenirInNewTab()" class="btn-gold" style="flex: 1; background: rgba(255,255,255,0.08); border: 1px solid var(--border-gold); color: var(--gold-light); padding: 9px 12px; font-size: 0.78rem;">
+            👁️ Ver en Pantalla Completa
+          </button>
+          <button type="button" onclick="closeSouvenirModal()" class="btn-gold" style="background: transparent; border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 9px 14px; font-size: 0.78rem;">
+            Cerrar
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -4433,34 +4438,44 @@
           }
         };
 
-        // Always show Souvenir Modal so the guest sees their card on screen immediately
+        // 1. Direct Web Download Execution (Triggers native browser download popup on iOS & Android & Desktop)
+        try {
+          const downloadLink = document.createElement('a');
+          downloadLink.download = filename;
+          downloadLink.href = blobUrl;
+          downloadLink.target = '_blank';
+          document.body.appendChild(downloadLink);
+          downloadLink.click();
+          setTimeout(() => {
+            if (downloadLink.parentNode) document.body.removeChild(downloadLink);
+          }, 500);
+        } catch (e) {
+          console.warn('Direct download attempt error:', e);
+        }
+
+        // 2. Open Souvenir Modal Preview on screen with explicit download / view buttons
         openSouvenirModal(blobUrl);
 
-        // Native OS Share Sheet (iOS Safari / Android Chrome on HTTPS)
+        // 3. Optional Native Share Sheet for HTTPS browsers supporting File sharing
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
           navigator.share({
             files: [file],
             title: `Pase VIP - ${mainTitle}`,
             text: `¡Mi pase de recuerdito para ${mainTitle}!`
-          }).then(() => {
-            if (typeof window.showInvitationSuccessToast === 'function') {
-              window.showInvitationSuccessToast('📸 ¡Pase guardado / compartido con éxito!');
-            }
           }).catch((shareErr) => {
             console.log('Native share dismissed or handled via modal:', shareErr);
           });
-        } else {
-          // Direct Download fallback for desktop browsers
-          const downloadLink = document.createElement('a');
-          downloadLink.download = filename;
-          downloadLink.href = blobUrl;
-          document.body.appendChild(downloadLink);
-          downloadLink.click();
-          document.body.removeChild(downloadLink);
+        }
 
-          if (typeof window.showInvitationSuccessToast === 'function') {
-            window.showInvitationSuccessToast('📸 ¡Pase VIP generado!');
-          }
+        if (typeof window.showInvitationSuccessToast === 'function') {
+          window.showInvitationSuccessToast('📸 ¡Pase VIP preparado para descargar!');
+        }
+      };
+
+      window.openSouvenirInNewTab = function() {
+        const souvenirImg = document.getElementById('souvenir-modal-img');
+        if (souvenirImg && souvenirImg.src) {
+          window.open(souvenirImg.src, '_blank');
         }
       };
 
