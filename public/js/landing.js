@@ -406,13 +406,6 @@ document.addEventListener('DOMContentLoaded', () => {
     closeClientLoginBtn.addEventListener('click', () => {
       clientLoginModal.classList.remove('active');
     });
-    
-    // Close on overlay click
-    clientLoginModal.addEventListener('click', (e) => {
-      if (e.target === clientLoginModal) {
-        clientLoginModal.classList.remove('active');
-      }
-    });
   }
 
   if (modalLoginForm) {
