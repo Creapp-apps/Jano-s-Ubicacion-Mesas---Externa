@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal Vendedores | miFiestAPP</title>
+  <!-- Google Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/admin.css">
+  <style>
+    :root {
+      --bg-dark: #0a0a0c;
+      --card-bg: #121216;
+      --gold-primary: #d4af37;
+      --gold-light: #f3e5ab;
+      --gold-dark: #aa8c2c;
+      --text-main: #f0f0f5;
+      --text-muted: #8a8a9e;
+      --border-gold: rgba(212, 175, 55, 0.3);
+      --success: #25d366;
+      --warning: #ffb703;
+      --error: #ff4d4d;
+    }
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: 'Outfit', sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+    .vendedor-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px 20px;
+    }
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border-gold);
+      margin-bottom: 30px;
+    }
+    .logo-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo-title h1 {
+      font-family: 'Playfair Display', serif;
+      margin: 0;
+      font-size: 1.8rem;
+      color: var(--gold-light);
+    }
+    .badge-vendedor {
+      background: rgba(212, 175, 55, 0.15);
+      border: 1px solid var(--gold-primary);
+      color: var(--gold-light);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 30px;
+    }
+    .stat-card {
+      background: var(--card-bg);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 20px;
+      text-align: center;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .stat-card:hover {
+      border-color: var(--border-gold);
+      transform: translateY(-2px);
+    }
+    .stat-number {
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: var(--gold-light);
+      margin-top: 6px;
+    }
+    .stat-label {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .action-bar {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 30px;
+    }
+    .btn-vendedor {
+      background: linear-gradient(135deg, var(--gold-primary), var(--gold-dark));
+      color: #000;
+      font-weight: 700;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+      box-shadow: 0 4px 15px rgba(212, 175, 55, 0.2);
+    }
+    .btn-vendedor:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(212, 175, 55, 0.35);
+    }
+    .btn-vendedor-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-gold);
+      color: var(--gold-light);
+      font-weight: 600;
+      padding: 12px 24px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .btn-vendedor-secondary:hover {
+      background: rgba(212, 175, 55, 0.15);
+    }
+    .section-box {
+      background: var(--card-bg);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      padding: 24px;
+      margin-bottom: 30px;
+    }
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .section-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: var(--gold-light);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .custom-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+    .custom-table th {
+      text-align: left;
+      color: var(--text-muted);
+      font-weight: 600;
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .custom-table td {
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: var(--text-main);
+    }
+    .custom-table tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .status-tag {
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      display: inline-block;
+    }
+    .status-pending {
+      background: rgba(255, 183, 3, 0.15);
+      border: 1px solid var(--warning);
+      color: var(--warning);
+    }
+    .status-active {
+      background: rgba(37, 211, 102, 0.15);
+      border: 1px solid var(--success);
+      color: var(--success);
+    }
+    .status-demo {
+      background: rgba(186, 85, 211, 0.15);
+      border: 1px solid #ba55d3;
+      color: #da70d6;
+    }
+    .status-rejected {
+      background: rgba(255, 77, 77, 0.15);
+      border: 1px solid var(--error);
+      color: var(--error);
+    }
+    /* Modal Styling */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .modal-content {
+      background: #141419;
+      border: 1px solid var(--border-gold);
+      border-radius: 24px;
+      width: 90%;
+      max-width: 520px;
+      padding: 30px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .modal-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.4rem;
+      color: var(--gold-light);
+      margin: 0;
+    }
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+    .form-group {
+      margin-bottom: 16px;
+    }
+    .form-group label {
+      display: block;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-bottom: 6px;
+    }
+    .form-control {
+      width: 100%;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #fff;
+      padding: 12px 14px;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      font-family: inherit;
+    }
+    .form-control:focus {
+      border-color: var(--gold-primary);
+      outline: none;
+    }
+    /* Login Modal Exclusive */
+    #login-view {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 80vh;
+    }
+    .login-box {
+      background: var(--card-bg);
+      border: 1px solid var(--border-gold);
+      border-radius: 24px;
+      padding: 40px;
+      width: 100%;
+      max-width: 420px;
+      text-align: center;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- VIEW 1: VENDOR LOGIN -->
+  <div id="login-view">
+    <div class="login-box">
+      <div style="font-size: 2.5rem; margin-bottom: 10px;">💼</div>
+      <h2 style="font-family: 'Playfair Display', serif; color: var(--gold-light); margin: 0 0 8px 0;">miFiestAPP</h2>
+      <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 24px;">Portal Exclusivo para Vendedores y Agentes</p>
+      
+      <form id="vendor-login-form">
+        <div class="form-group" style="text-align: left;">
+          <label>Correo Electrónico de Vendedor</label>
+          <input type="email" id="login-email" class="form-control" placeholder="vendedor@mifiestapp.com" required>
+        </div>
+        <div class="form-group" style="text-align: left;">
+          <label>Contraseña</label>
+          <input type="password" id="login-password" class="form-control" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn-vendedor" style="width: 100%; justify-content: center; margin-top: 20px;">
+          Ingresar al Panel
+        </button>
+      </form>
+      <div id="login-error" style="color: var(--error); margin-top: 15px; font-size: 0.85rem; display: none;"></div>
+    </div>
+  </div>
+
+  <!-- VIEW 2: VENDOR DASHBOARD -->
+  <div id="dashboard-view" style="display: none;">
+    <div class="vendedor-container">
+      
+      <!-- Header Bar -->
+      <div class="header-bar">
+        <div class="logo-title">
+          <h1>miFiestAPP</h1>
+          <span class="badge-vendedor">Panel Vendedor</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <span id="vendor-name-display" style="color: var(--text-main); font-weight: 500;">👋 Hola, Vendedor</span>
+          <button class="btn-vendedor-secondary" onclick="logoutVendor()" style="padding: 8px 16px; font-size: 0.85rem;">
+            Cerrar Sesión
+          </button>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="action-bar">
+        <button class="btn-vendedor" onclick="openModal('modal-demo')">
+          🎬 Crear Demo Instantánea
+        </button>
+        <button class="btn-vendedor-secondary" onclick="openModal('modal-request')">
+          ➕ Solicitar Alta de Evento Cliente
+        </button>
+      </div>
+
+      <!-- Stats Grid -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Total Clientes</div>
+          <div class="stat-number" id="stat-total">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Eventos Activos</div>
+          <div class="stat-number" id="stat-active" style="color: var(--success);">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Pendientes Aprobación</div>
+          <div class="stat-number" id="stat-pending" style="color: var(--warning);">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Invitaciones Demo</div>
+          <div class="stat-number" id="stat-demo" style="color: #da70d6;">0</div>
+        </div>
+      </div>
+
+      <!-- Section: Pendientes de Aprobación -->
+      <div class="section-box">
+        <div class="section-header">
+          <div class="section-title">
+            <span>⏳</span> Solicitudes Pendientes de Aprobación por Superadmin
+          </div>
+        </div>
+        <div style="overflow-x: auto;">
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>ID Evento</th>
+                <th>Cliente</th>
+                <th>Nombre del Evento</th>
+                <th>Fecha Solicitud</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody id="table-pending-body">
+              <tr>
+                <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 20px;">
+                  No tienes solicitudes pendientes en este momento.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Section: Eventos Activos -->
+      <div class="section-box">
+        <div class="section-header">
+          <div class="section-title">
+            <span>🎉</span> Clientes y Eventos Activos Asignados
+          </div>
+        </div>
+        <div style="overflow-x: auto;">
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>ID Evento</th>
+                <th>Cliente</th>
+                <th>Nombre del Evento</th>
+                <th>Contraseña Cliente</th>
+                <th>Acciones de Vendedor</th>
+              </tr>
+            </thead>
+            <tbody id="table-active-body">
+              <tr>
+                <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 20px;">
+                  Aún no tienes eventos activos aprobados.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Section: Demos Instantáneas -->
+      <div class="section-box">
+        <div class="section-header">
+          <div class="section-title">
+            <span>🎬</span> Invitaciones de Demostración (Demos)
+          </div>
+        </div>
+        <div style="overflow-x: auto;">
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>ID Demo</th>
+                <th>Cliente Prospecto</th>
+                <th>Fecha Expiración</th>
+                <th>Enlace Demo</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="table-demo-body">
+              <tr>
+                <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 20px;">
+                  No has generado invitaciones de demostración aún.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL: Crear Demo Instantánea -->
+  <div class="modal-overlay" id="modal-demo">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">🎬 Generar Demo Instantánea</h3>
+        <button class="modal-close" onclick="closeModal('modal-demo')">&times;</button>
+      </div>
+      <form id="form-create-demo">
+        <div class="form-group">
+          <label>Nombre del Cliente Prospecto</label>
+          <input type="text" id="demo-client-name" class="form-control" placeholder="Ej: Familia Gómez" required>
+        </div>
+        <div class="form-group">
+          <label>Título del Evento Demo</label>
+          <input type="text" id="demo-event-name" class="form-control" placeholder="Ej: Mis 15 Sofía" required>
+        </div>
+        <div style="margin-top: 24px; display: flex; gap: 10px; justify-content: flex-end;">
+          <button type="button" class="btn-vendedor-secondary" onclick="closeModal('modal-demo')">Cancelar</button>
+          <button type="submit" class="btn-vendedor">Generar Demo Ahora</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: Solicitar Alta de Evento -->
+  <div class="modal-overlay" id="modal-request">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">➕ Solicitar Alta de Evento Cliente</h3>
+        <button class="modal-close" onclick="closeModal('modal-request')">&times;</button>
+      </div>
+      <form id="form-request-event">
+        <div class="form-group">
+          <label>ID del Evento (slug único)</label>
+          <input type="text" id="req-id" class="form-control" placeholder="ej: quince-sofia-2026" required>
+        </div>
+        <div class="form-group">
+          <label>Nombre del Cliente</label>
+          <input type="text" id="req-client-name" class="form-control" placeholder="Ej: Juan Pérez" required>
+        </div>
+        <div class="form-group">
+          <label>Correo del Cliente</label>
+          <input type="email" id="req-client-email" class="form-control" placeholder="cliente@gmail.com">
+        </div>
+        <div class="form-group">
+          <label>Título del Evento / Fiesta</label>
+          <input type="text" id="req-event-name" class="form-control" placeholder="Ej: Mis 15 Sofía">
+        </div>
+        <div class="form-group">
+          <label>Contraseña Acceso Cliente</label>
+          <input type="text" id="req-password" class="form-control" placeholder="ej: sofia2026" required>
+        </div>
+        <div style="margin-top: 24px; display: flex; gap: 10px; justify-content: flex-end;">
+          <button type="button" class="btn-vendedor-secondary" onclick="closeModal('modal-request')">Cancelar</button>
+          <button type="submit" class="btn-vendedor">Enviar a Aprobación</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script style="display:none">
+    // Vendor Logic
+    let currentVendor = null;
+    let vendorEvents = [];
+
+    document.addEventListener('DOMContentLoaded', () => {
+      checkVendorSession();
+
+      document.getElementById('vendor-login-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+        const errorEl = document.getElementById('login-error');
+        errorEl.style.display = 'none';
+
+        try {
+          const res = await fetch('/api/vendor/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+          });
+          const data = await res.json();
+          if (data.success) {
+            currentVendor = data.vendor;
+            showDashboard();
+          } else {
+            errorEl.textContent = data.error || 'Credenciales incorrectas';
+            errorEl.style.display = 'block';
+          }
+        } catch (err) {
+          errorEl.textContent = 'Error al conectar con el servidor';
+          errorEl.style.display = 'block';
+        }
+      });
+
+      document.getElementById('form-create-demo').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const clientName = document.getElementById('demo-client-name').value;
+        const eventName = document.getElementById('demo-event-name').value;
+
+        try {
+          const res = await fetch('/api/vendor/events/demo', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ clientName, eventName })
+          });
+          const data = await res.json();
+          if (data.success) {
+            closeModal('modal-demo');
+            document.getElementById('form-create-demo').reset();
+            loadVendorEvents();
+          } else {
+            alert(data.error || 'Error al generar la demo');
+          }
+        } catch (err) {
+          alert('Error de conexión');
+        }
+      });
+
+      document.getElementById('form-request-event').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('req-id').value;
+        const clientName = document.getElementById('req-client-name').value;
+        const clientEmail = document.getElementById('req-client-email').value;
+        const eventName = document.getElementById('req-event-name').value;
+        const password = document.getElementById('req-password').value;
+
+        try {
+          const res = await fetch('/api/vendor/events/request', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, clientName, clientEmail, eventName, password })
+          });
+          const data = await res.json();
+          if (data.success) {
+            closeModal('modal-request');
+            document.getElementById('form-request-event').reset();
+            loadVendorEvents();
+            alert('¡Solicitud enviada al Superadmin para su aprobación!');
+          } else {
+            alert(data.error || 'Error al solicitar evento');
+          }
+        } catch (err) {
+          alert('Error de conexión');
+        }
+      });
+    });
+
+    async function checkVendorSession() {
+      try {
+        const res = await fetch('/api/vendor/check');
+        const data = await res.json();
+        if (data.loggedIn && data.vendor) {
+          currentVendor = data.vendor;
+          showDashboard();
+        } else {
+          showLogin();
+        }
+      } catch (e) {
+        showLogin();
+      }
+    }
+
+    function showLogin() {
+      document.getElementById('login-view').style.display = 'flex';
+      document.getElementById('dashboard-view').style.display = 'none';
+    }
+
+    function showDashboard() {
+      document.getElementById('login-view').style.display = 'none';
+      document.getElementById('dashboard-view').style.display = 'block';
+      if (currentVendor) {
+        document.getElementById('vendor-name-display').textContent = `👋 Hola, ${currentVendor.name}`;
+      }
+      loadVendorEvents();
+    }
+
+    async function logoutVendor() {
+      await fetch('/api/vendor/logout', { method: 'POST' });
+      currentVendor = null;
+      showLogin();
+    }
+
+    async function loadVendorEvents() {
+      try {
+        const res = await fetch('/api/vendor/events');
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          vendorEvents = data;
+          renderVendorDashboard();
+        }
+      } catch (err) {
+        console.error('Error loading vendor events:', err);
+      }
+    }
+
+    function renderVendorDashboard() {
+      const activeEvents = vendorEvents.filter(e => e.approvalStatus === 'active');
+      const pendingEvents = vendorEvents.filter(e => e.approvalStatus === 'pending_approval');
+      const demoEvents = vendorEvents.filter(e => e.isDemo || e.approvalStatus === 'demo');
+
+      document.getElementById('stat-total').textContent = vendorEvents.length;
+      document.getElementById('stat-active').textContent = activeEvents.length;
+      document.getElementById('stat-pending').textContent = pendingEvents.length;
+      document.getElementById('stat-demo').textContent = demoEvents.length;
+
+      // Pending table
+      const pendingBody = document.getElementById('table-pending-body');
+      if (pendingEvents.length === 0) {
+        pendingBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 20px;">No tienes solicitudes pendientes.</td></tr>`;
+      } else {
+        pendingBody.innerHTML = pendingEvents.map(e => `
+          <tr>
+            <td><strong>${e.id}</strong></td>
+            <td>${e.clientName}</td>
+            <td>${e.eventName || '-'}</td>
+            <td>${new Date(e.createdAt).toLocaleDateString()}</td>
+            <td><span class="status-tag status-pending">⏳ En Revisión por Superadmin</span></td>
+          </tr>
+        `).join('');
+      }
+
+      // Active table
+      const activeBody = document.getElementById('table-active-body');
+      if (activeEvents.length === 0) {
+        activeBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 20px;">No tienes eventos activos asignados aún.</td></tr>`;
+      } else {
+        activeBody.innerHTML = activeEvents.map(e => `
+          <tr>
+            <td><strong>${e.id}</strong></td>
+            <td>${e.clientName}</td>
+            <td>${e.eventName || '-'}</td>
+            <td><code>${e.password}</code></td>
+            <td>
+              <div style="display: flex; gap: 8px;">
+                <a href="/admin?event=${encodeURIComponent(e.id)}" target="_blank" class="btn-vendedor" style="padding: 6px 12px; font-size: 0.75rem;">🔑 Panel Admin</a>
+                <a href="/event.html?event=${encodeURIComponent(e.id)}" target="_blank" class="btn-vendedor-secondary" style="padding: 6px 12px; font-size: 0.75rem;">👁️ Ver Invitación</a>
+              </div>
+            </td>
+          </tr>
+        `).join('');
+      }
+
+      // Demo table
+      const demoBody = document.getElementById('table-demo-body');
+      if (demoEvents.length === 0) {
+        demoBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 20px;">No has generado Demos aún.</td></tr>`;
+      } else {
+        const origin = window.location.origin;
+        demoBody.innerHTML = demoEvents.map(e => {
+          const demoUrl = `${origin}/invitacion.html?event=${encodeURIComponent(e.id)}`;
+          const expires = e.demoExpiresAt ? new Date(e.demoExpiresAt).toLocaleDateString() : '7 días';
+          return `
+            <tr>
+              <td><strong>${e.id}</strong></td>
+              <td>${e.clientName}</td>
+              <td>${expires}</td>
+              <td><input type="text" readonly value="${demoUrl}" class="form-control" style="padding: 4px 8px; font-size: 0.75rem;"></td>
+              <td>
+                <div style="display: flex; gap: 8px;">
+                  <a href="${demoUrl}" target="_blank" class="btn-vendedor" style="padding: 6px 12px; font-size: 0.75rem;">👁️ Probar Demo</a>
+                  <a href="/admin?event=${encodeURIComponent(e.id)}" target="_blank" class="btn-vendedor-secondary" style="padding: 6px 12px; font-size: 0.75rem;">🔑 Configurar Demo</a>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+    }
+
+    function openModal(id) {
+      document.getElementById(id).classList.add('active');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('active');
+    }
+  </script>
+</body>
+</html>

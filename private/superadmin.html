@@ -410,6 +410,49 @@
         
         <div style="border-top: 1px solid var(--card-border); padding-top: 15px; margin-top: 15px; font-size: 0.8rem; color: var(--text-muted); line-height: 1.5;">
           <strong>Nota de Operación:</strong> Al desactivar un evento, las vistas de invitados y el panel de administración de dicho evento serán redirigidos a la pantalla de servicio inactivo. Las llamadas API correspondientes serán bloqueadas con un código 403.
+      </div>
+    </div>
+
+    <!-- Vendor Management & Pending Approvals Panel -->
+    <div class="panel" style="margin-bottom: 30px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+        <h2 style="margin: 0;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px; vertical-align: middle;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Gestión de Vendedores y Solicitudes
+        </h2>
+        <button onclick="promptCreateVendor()" class="btn-primary-custom" style="font-size: 0.82rem; padding: 8px 16px; border-radius: 12px;">
+          ➕ Crear Vendedor
+        </button>
+      </div>
+
+      <!-- Pending Proposals Grid -->
+      <div style="margin-bottom: 30px; background: rgba(255,183,3,0.05); border: 1px solid rgba(255,183,3,0.3); border-radius: 16px; padding: 20px;">
+        <h3 style="font-size: 0.95rem; color: #ffb703; margin-top: 0; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+          ⏳ Solicitudes de Eventos Pendientes de Aprobación
+        </h3>
+        <div id="pending-events-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px;">
+          <div style="color: var(--text-muted); font-size: 0.85rem;">Cargando solicitudes...</div>
+        </div>
+      </div>
+
+      <!-- Vendors Table -->
+      <div>
+        <h3 style="font-size: 0.95rem; color: var(--gold-light); margin-bottom: 12px;">👨‍💼 Equipo de Vendedores Registrados</h3>
+        <div style="overflow-x: auto;">
+          <table class="table" style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+            <thead>
+              <tr style="border-bottom: 1px solid var(--card-border); color: var(--text-muted); text-align: left;">
+                <th style="padding: 10px;">Nombre Vendedor</th>
+                <th style="padding: 10px;">Email Access</th>
+                <th style="padding: 10px;">Teléfono</th>
+                <th style="padding: 10px;">Estado</th>
+                <th style="padding: 10px; text-align: center;">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="vendors-list-body">
+              <tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 15px;">Cargando vendedores...</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -794,8 +837,176 @@
       });
     }
 
+    // --- VENDOR & PENDING APPROVALS LOGIC ---
+    async function loadVendors() {
+      const tbody = document.getElementById('vendors-list-body');
+      if (!tbody) return;
+      try {
+        const res = await fetch('/api/superadmin/vendors');
+        const vendors = await res.json();
+        if (!Array.isArray(vendors) || vendors.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 15px;">No hay vendedores registrados aún.</td></tr>`;
+          return;
+        }
+        tbody.innerHTML = vendors.map(v => `
+          <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+            <td style="padding: 10px; font-weight: 600; color: white;">${escapeHtml(v.name)}</td>
+            <td style="padding: 10px; color: var(--gold-light);">${escapeHtml(v.email)}</td>
+            <td style="padding: 10px; color: var(--text-muted);">${escapeHtml(v.phone || '-')}</td>
+            <td style="padding: 10px;">
+              <span class="badge ${v.active ? 'badge-active' : 'badge-inactive'}">
+                ${v.active ? 'Activo' : 'Inactivo'}
+              </span>
+            </td>
+            <td style="padding: 10px; text-align: center;">
+              <button onclick="toggleVendorStatus('${v.id}', ${v.active})" class="event-card-btn event-card-btn-toggle" style="margin-right: 4px;">
+                ${v.active ? 'Desactivar' : 'Activar'}
+              </button>
+              <button onclick="deleteVendorAccount('${v.id}')" class="event-card-btn event-card-btn-delete">
+                Eliminar
+              </button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--error); padding: 15px;">Error al cargar vendedores</td></tr>`;
+      }
+    }
+
+    function renderPendingEvents(events) {
+      const container = document.getElementById('pending-events-container');
+      if (!container) return;
+      const pendingList = events.filter(e => e.approvalStatus === 'pending_approval');
+      if (pendingList.length === 0) {
+        container.innerHTML = `<div style="color: var(--text-muted); font-size: 0.85rem;">🎉 No hay solicitudes pendientes de aprobación. Todo al día.</div>`;
+        return;
+      }
+      container.innerHTML = pendingList.map(e => `
+        <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-gold); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between; gap: 10px;">
+          <div>
+            <div style="font-weight: 700; color: white; font-size: 0.95rem;">${escapeHtml(e.clientName)}</div>
+            <div style="color: var(--gold-light); font-size: 0.8rem; margin-top: 2px;">Evento: ${escapeHtml(e.eventName || e.clientName)}</div>
+            <div style="color: var(--text-muted); font-size: 0.75rem; margin-top: 2px;">ID Slug: <code>${escapeHtml(e.id)}</code></div>
+            <div style="color: var(--text-muted); font-size: 0.75rem; margin-top: 2px;">Email: ${escapeHtml(e.clientEmail || '-')} | Pass: <code>${escapeHtml(e.password || '-')}</code></div>
+          </div>
+          <div style="display: flex; gap: 8px; margin-top: 6px;">
+            <button onclick="approvePendingEvent('${e.id}')" style="flex: 1; background: linear-gradient(135deg, #25d366, #128c7e); border: none; color: white; font-weight: 700; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 0.78rem;">
+              ✅ Aprobar
+            </button>
+            <button onclick="rejectPendingEvent('${e.id}')" style="flex: 1; background: rgba(231,29,54,0.15); border: 1px solid var(--error); color: var(--error); font-weight: 600; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 0.78rem;">
+              ❌ Rechazar
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function approvePendingEvent(id) {
+      if (!confirm(`¿Aprobar e instalar el evento "${id}"?`)) return;
+      try {
+        const res = await fetch(`/api/superadmin/events/${id}/approve`, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          showToast('✅ Evento aprobado con éxito', 'success');
+          loadEvents();
+        } else {
+          showToast(data.error || 'Error al aprobar', 'error');
+        }
+      } catch (err) {
+        showToast('Error de conexión', 'error');
+      }
+    }
+
+    async function rejectPendingEvent(id) {
+      if (!confirm(`¿Rechazar la solicitud de evento "${id}"?`)) return;
+      try {
+        const res = await fetch(`/api/superadmin/events/${id}/reject`, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Solicitud rechazada', 'success');
+          loadEvents();
+        } else {
+          showToast(data.error || 'Error al rechazar', 'error');
+        }
+      } catch (err) {
+        showToast('Error de conexión', 'error');
+      }
+    }
+
+    async function promptCreateVendor() {
+      const name = prompt('Nombre completo del vendedor:');
+      if (!name) return;
+      const email = prompt('Correo electrónico (para iniciar sesión):');
+      if (!email) return;
+      const password = prompt('Contraseña inicial:');
+      if (!password) return;
+      const phone = prompt('Número de celular / WhatsApp (opcional):') || '';
+
+      try {
+        const res = await fetch('/api/superadmin/vendors', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, password, phone })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('✅ Vendedor creado con éxito', 'success');
+          loadVendors();
+        } else {
+          showToast(data.error || 'Error al crear vendedor', 'error');
+        }
+      } catch (err) {
+        showToast('Error al conectar con el servidor', 'error');
+      }
+    }
+
+    async function toggleVendorStatus(id, currentActive) {
+      try {
+        const res = await fetch(`/api/superadmin/vendors/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ active: !currentActive })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Estado de vendedor actualizado', 'success');
+          loadVendors();
+        }
+      } catch (err) {
+        showToast('Error al actualizar vendedor', 'error');
+      }
+    }
+
+    async function deleteVendorAccount(id) {
+      if (!confirm('¿Seguro que deseas eliminar esta cuenta de vendedor?')) return;
+      try {
+        const res = await fetch(`/api/superadmin/vendors/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Vendedor eliminado', 'success');
+          loadVendors();
+        }
+      } catch (err) {
+        showToast('Error al eliminar vendedor', 'error');
+      }
+    }
+
+    // Wrap loadEvents to also update pending list
+    const originalLoadEvents = loadEvents;
+    loadEvents = async function() {
+      try {
+        const response = await fetch('/api/superadmin/events');
+        if (response.ok) {
+          const events = await response.json();
+          renderPendingEvents(events);
+        }
+      } catch (e) {}
+      await originalLoadEvents();
+    };
+
     // Initial load
     loadEvents();
+    loadVendors();
     loadSupportPhone();
   </script>
 </body>

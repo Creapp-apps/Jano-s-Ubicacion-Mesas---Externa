@@ -252,11 +252,24 @@ app.get(['/invitacion', '/invitacion.html'], async (req, res) => {
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Authentication middleware
-function requireAuth(req, res, next) {
+async function requireAuth(req, res, next) {
   const eventId = req.query.event || req.body.event || 'default';
   const cookieName = `admin_session_${eventId}`;
   if (req.cookies && req.cookies[cookieName] === `${ADMIN_SESSION_TOKEN}_${eventId}`) {
     return next();
+  }
+  if (req.cookies && req.cookies.superadmin_session === SUPERADMIN_SESSION_TOKEN) {
+    return next();
+  }
+  const vendorSession = req.cookies ? req.cookies.vendor_session : null;
+  if (vendorSession) {
+    try {
+      const events = await db.getEvents();
+      const targetEvent = events.find(e => e.id === eventId);
+      if (targetEvent && targetEvent.vendorId === vendorSession) {
+        return next();
+      }
+    } catch (e) {}
   }
   res.status(401).json({ error: 'No autorizado. Inicie sesión.' });
 }
@@ -266,6 +279,28 @@ function requireSuperAuth(req, res, next) {
     return next();
   }
   res.status(401).json({ error: 'No autorizado. Inicie sesión como Superadmin.' });
+}
+
+async function requireVendorAuth(req, res, next) {
+  const vendorSession = req.cookies ? req.cookies.vendor_session : null;
+  if (!vendorSession) {
+    return res.status(401).json({ error: 'No autorizado. Inicie sesión como vendedor.' });
+  }
+
+  try {
+    const vendors = await db.getVendors();
+    const vendor = vendors.find(v => v.id === vendorSession && v.active);
+
+    if (!vendor) {
+      return res.status(401).json({ error: 'Sesión de vendedor inválida o cuenta desactivada.' });
+    }
+
+    req.vendor = vendor;
+    req.vendorId = vendor.id;
+    next();
+  } catch (err) {
+    res.status(500).json({ error: 'Error al verificar sesión de vendedor.' });
+  }
 }
 
 
@@ -1143,6 +1178,203 @@ app.delete('/api/superadmin/events/:id', requireSuperAuth, async (req, res) => {
   } catch (error) {
     console.error('Error deleting event:', error);
     res.status(500).json({ error: 'Error al eliminar el evento' });
+  }
+});
+
+// API: Superadmin Approve Pending Event Proposal
+app.post('/api/superadmin/events/:id/approve', requireSuperAuth, async (req, res) => {
+  const { id } = req.params;
+  try {
+    await db.approveEvent(id);
+    res.json({ success: true, message: 'Evento aprobado e instalado correctamente' });
+  } catch (error) {
+    console.error('Error approving event:', error);
+    res.status(500).json({ error: 'Error al aprobar el evento' });
+  }
+});
+
+// API: Superadmin Reject Pending Event Proposal
+app.post('/api/superadmin/events/:id/reject', requireSuperAuth, async (req, res) => {
+  const { id } = req.params;
+  try {
+    await db.rejectEvent(id);
+    res.json({ success: true, message: 'Solicitud de evento rechazada' });
+  } catch (error) {
+    console.error('Error rejecting event:', error);
+    res.status(500).json({ error: 'Error al rechazar el evento' });
+  }
+});
+
+// API: Superadmin Vendor Management (Get All Vendors)
+app.get('/api/superadmin/vendors', requireSuperAuth, async (req, res) => {
+  try {
+    const vendors = await db.getVendors();
+    res.json(vendors);
+  } catch (error) {
+    console.error('Error fetching vendors:', error);
+    res.status(500).json({ error: 'Error al obtener vendedores' });
+  }
+});
+
+// API: Superadmin Vendor Management (Create Vendor)
+app.post('/api/superadmin/vendors', requireSuperAuth, async (req, res) => {
+  const { name, email, password, phone } = req.body;
+  if (!name || !email || !password) {
+    return res.status(400).json({ error: 'Nombre, email y contraseña son requeridos' });
+  }
+  try {
+    const vendor = await db.createVendor(name, email, password, phone || '');
+    res.json({ success: true, vendor });
+  } catch (error) {
+    console.error('Error creating vendor:', error);
+    res.status(500).json({ error: 'Error al crear la cuenta de vendedor' });
+  }
+});
+
+// API: Superadmin Vendor Management (Toggle Vendor Active)
+app.put('/api/superadmin/vendors/:id', requireSuperAuth, async (req, res) => {
+  const { active } = req.body;
+  try {
+    await db.toggleVendor(req.params.id, !!active);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error toggling vendor:', error);
+    res.status(500).json({ error: 'Error al cambiar estado del vendedor' });
+  }
+});
+
+// API: Superadmin Vendor Management (Delete Vendor)
+app.delete('/api/superadmin/vendors/:id', requireSuperAuth, async (req, res) => {
+  try {
+    await db.deleteVendor(req.params.id);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting vendor:', error);
+    res.status(500).json({ error: 'Error al eliminar vendedor' });
+  }
+});
+
+// --- VENDOR PORTAL API ROUTES ---
+
+// API: Vendor Login
+app.post('/api/vendor/login', async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email y contraseña requeridos' });
+  }
+  const cleanEmail = email.trim().toLowerCase();
+  try {
+    const vendors = await db.getVendors();
+    const vendor = vendors.find(v => v.email === cleanEmail && v.active);
+    if (!vendor || vendor.passwordHash !== password.trim()) {
+      return res.status(401).json({ error: 'Credenciales de vendedor incorrectas' });
+    }
+
+    res.setHeader('Set-Cookie', `vendor_session=${vendor.id}; Path=/; Max-Age=2592000; HttpOnly; SameSite=Strict`);
+    res.json({ success: true, vendor: { id: vendor.id, name: vendor.name, email: vendor.email } });
+  } catch (error) {
+    console.error('Error logging in vendor:', error);
+    res.status(500).json({ error: 'Error al iniciar sesión de vendedor' });
+  }
+});
+
+// API: Vendor Logout
+app.post('/api/vendor/logout', (req, res) => {
+  res.setHeader('Set-Cookie', `vendor_session=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT`);
+  res.json({ success: true });
+});
+
+// API: Vendor Check Session
+app.get('/api/vendor/check', async (req, res) => {
+  const vendorSession = req.cookies ? req.cookies.vendor_session : null;
+  if (!vendorSession) return res.json({ loggedIn: false });
+
+  try {
+    const vendors = await db.getVendors();
+    const vendor = vendors.find(v => v.id === vendorSession && v.active);
+    if (vendor) {
+      return res.json({ loggedIn: true, vendor: { id: vendor.id, name: vendor.name, email: vendor.email } });
+    }
+  } catch (err) {}
+  res.json({ loggedIn: false });
+});
+
+// API: Vendor Get Assigned Events
+app.get('/api/vendor/events', requireVendorAuth, async (req, res) => {
+  try {
+    const allEvents = await db.getEvents();
+    const vendorEvents = allEvents.filter(e => e.vendorId === req.vendorId);
+    res.json(vendorEvents);
+  } catch (error) {
+    console.error('Error fetching vendor events:', error);
+    res.status(500).json({ error: 'Error al obtener los eventos del vendedor' });
+  }
+});
+
+// API: Vendor Request New Event (Pending Superadmin Approval)
+app.post('/api/vendor/events/request', requireVendorAuth, async (req, res) => {
+  const { id, clientName, eventName, password, clientEmail, serviceTables, servicePhotos, serviceInvitation, serviceTrivia } = req.body;
+  if (!id || !clientName) {
+    return res.status(400).json({ error: 'El ID y el nombre del cliente son requeridos.' });
+  }
+  try {
+    const cleanId = await db.createEvent(
+      id,
+      clientName,
+      password || '',
+      clientEmail || '',
+      serviceTables !== false,
+      servicePhotos !== false,
+      serviceInvitation !== false,
+      serviceTrivia !== false,
+      eventName || clientName,
+      {
+        vendorId: req.vendorId,
+        approvalStatus: 'pending_approval',
+        isDemo: false
+      }
+    );
+    res.json({ success: true, eventId: cleanId, status: 'pending_approval' });
+  } catch (error) {
+    console.error('Error requesting event creation:', error);
+    res.status(500).json({ error: error.message || 'Error al solicitar el alta del evento' });
+  }
+});
+
+// API: Vendor Create Instant Demo Event (Watermarked / Temporary)
+app.post('/api/vendor/events/demo', requireVendorAuth, async (req, res) => {
+  const { clientName, eventName } = req.body;
+  const demoId = 'demo_' + Math.random().toString(36).substring(2, 8);
+  const resolvedClient = (clientName || 'Cliente Prospecto').trim();
+  const resolvedEventName = (eventName || `Demo - ${resolvedClient}`).trim();
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+  try {
+    const cleanId = await db.createEvent(
+      demoId,
+      resolvedClient,
+      'demo123',
+      '',
+      true, true, true, true,
+      resolvedEventName,
+      {
+        vendorId: req.vendorId,
+        approvalStatus: 'demo',
+        isDemo: true,
+        demoExpiresAt: expiresAt
+      }
+    );
+
+    // Seed sample demo configuration for an immediate WOW factor
+    await db.setConfigValue(cleanId, 'event_date', '2026-12-31');
+    await db.setConfigValue(cleanId, 'event_time', '21:00');
+    await db.setConfigValue(cleanId, 'event_location_name', 'Jano\'s Salón Principal');
+    await db.setConfigValue(cleanId, 'event_location_address', 'Av. Corrientes 1234, CABA');
+
+    res.json({ success: true, eventId: cleanId, isDemo: true, demoExpiresAt: expiresAt });
+  } catch (error) {
+    console.error('Error creating demo event:', error);
+    res.status(500).json({ error: 'Error al generar la invitación de demostración' });
   }
 });
 
@@ -2414,10 +2646,26 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.get('/admin', (req, res) => {
+app.get('/admin', async (req, res) => {
   const eventId = req.query.event || 'default';
   const cookieName = `admin_session_${eventId}`;
-  if (req.cookies && req.cookies[cookieName] === `${ADMIN_SESSION_TOKEN}_${eventId}`) {
+  
+  const isSuperadmin = req.cookies && req.cookies.superadmin_session === SUPERADMIN_SESSION_TOKEN;
+  const isClientAdmin = req.cookies && req.cookies[cookieName] === `${ADMIN_SESSION_TOKEN}_${eventId}`;
+  let isVendorAdmin = false;
+
+  const vendorSession = req.cookies ? req.cookies.vendor_session : null;
+  if (vendorSession) {
+    try {
+      const events = await db.getEvents();
+      const targetEvent = events.find(e => e.id === eventId);
+      if (targetEvent && targetEvent.vendorId === vendorSession) {
+        isVendorAdmin = true;
+      }
+    } catch (e) {}
+  }
+
+  if (isSuperadmin || isClientAdmin || isVendorAdmin) {
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     return res.sendFile(path.join(__dirname, 'private', 'admin.html'));
   }
@@ -2450,6 +2698,10 @@ app.get('/login.html', (req, res) => {
 });
 
 // Serve Superadmin & Inactive views
+app.get(['/vendedor', '/vendedor/panel', '/vendedor.html'], (req, res) => {
+  res.sendFile(path.join(__dirname, 'private', 'vendedor.html'));
+});
+
 app.get('/superadmin', (req, res) => {
   if (req.cookies && req.cookies.superadmin_session === SUPERADMIN_SESSION_TOKEN) {
     return res.sendFile(path.join(__dirname, 'private', 'superadmin.html'));

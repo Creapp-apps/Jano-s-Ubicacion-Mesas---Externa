@@ -983,18 +983,26 @@ async function getEvents() {
       throw error;
     }
     
-    // Fetch all event_title and google_drive_folder_url from config in one query
+    // Fetch config values for title, drive url, and vendor metadata in one query
     let titlesMap = {};
     let driveUrlMap = {};
+    let vendorIdMap = {};
+    let approvalStatusMap = {};
+    let isDemoMap = {};
+    let demoExpiresAtMap = {};
     try {
       const { data: configData } = await supabase
         .from('config')
         .select('event_id, key, value')
-        .in('key', ['event_title', 'google_drive_folder_url']);
+        .in('key', ['event_title', 'google_drive_folder_url', 'vendor_id', 'approval_status', 'is_demo', 'demo_expires_at']);
       if (configData) {
         configData.forEach(row => {
           if (row.key === 'event_title') titlesMap[row.event_id] = row.value;
           if (row.key === 'google_drive_folder_url') driveUrlMap[row.event_id] = row.value;
+          if (row.key === 'vendor_id') vendorIdMap[row.event_id] = row.value;
+          if (row.key === 'approval_status') approvalStatusMap[row.event_id] = row.value;
+          if (row.key === 'is_demo') isDemoMap[row.event_id] = row.value === 'true';
+          if (row.key === 'demo_expires_at') demoExpiresAtMap[row.event_id] = row.value;
         });
       }
     } catch (err) {
@@ -1013,7 +1021,11 @@ async function getEvents() {
       serviceTables: e.service_tables !== false,
       servicePhotos: e.service_photos !== false,
       serviceInvitation: e.service_invitation !== false,
-      serviceTrivia: e.service_trivia !== false
+      serviceTrivia: e.service_trivia !== false,
+      vendorId: e.vendor_id || e.vendorId || vendorIdMap[e.id] || null,
+      approvalStatus: e.approval_status || e.approvalStatus || approvalStatusMap[e.id] || 'active',
+      isDemo: !!(e.is_demo || e.isDemo || isDemoMap[e.id]),
+      demoExpiresAt: e.demo_expires_at || e.demoExpiresAt || demoExpiresAtMap[e.id] || null
     }));
   } else {
     const events = getLocalEvents();
@@ -1040,34 +1052,53 @@ async function getEvents() {
         serviceTables: e.serviceTables !== false,
         servicePhotos: e.servicePhotos !== false,
         serviceInvitation: e.serviceInvitation !== false,
-        serviceTrivia: e.serviceTrivia !== false
+        serviceTrivia: e.serviceTrivia !== false,
+        vendorId: e.vendorId || null,
+        approvalStatus: e.approvalStatus || 'active',
+        isDemo: !!e.isDemo,
+        demoExpiresAt: e.demoExpiresAt || null
       };
     }));
   }
 }
 
-async function createEvent(id, clientName, password = '', clientEmail = '', serviceTables = true, servicePhotos = true, serviceInvitation = true, serviceTrivia = true, eventName = '') {
+async function createEvent(id, clientName, password = '', clientEmail = '', serviceTables = true, servicePhotos = true, serviceInvitation = true, serviceTrivia = true, eventName = '', options = {}) {
   const cleanId = (id || '').trim().toLowerCase().replace(/[^a-zA-Z0-9_-]/g, '');
   if (!cleanId) throw new Error('ID de evento inválido.');
 
+  const vendorId = options.vendorId || null;
+  const approvalStatus = options.approvalStatus || 'active';
+  const isDemo = !!options.isDemo;
+  const demoExpiresAt = options.demoExpiresAt || null;
+
   if (isSupabaseEnabled) {
+    const payload = { 
+      id: cleanId, 
+      client_name: clientName.trim(), 
+      client_email: (clientEmail || '').trim().toLowerCase(), 
+      active: approvalStatus === 'pending_approval' ? false : true, 
+      password: password.trim(),
+      service_tables: serviceTables,
+      service_photos: servicePhotos,
+      service_invitation: serviceInvitation,
+      service_trivia: serviceTrivia,
+      vendor_id: vendorId,
+      approval_status: approvalStatus,
+      is_demo: isDemo,
+      demo_expires_at: demoExpiresAt
+    };
     const { error } = await supabase
       .from('events')
-      .insert([{ 
-        id: cleanId, 
-        client_name: clientName.trim(), 
-        client_email: (clientEmail || '').trim().toLowerCase(), 
-        active: true, 
-        password: password.trim(),
-        service_tables: serviceTables,
-        service_photos: servicePhotos,
-        service_invitation: serviceInvitation,
-        service_trivia: serviceTrivia
-      }]);
+      .insert([payload]);
 
     if (error) {
-      console.error('Error creating event in Supabase:', error);
-      throw error;
+      console.warn('Error creating event with vendor fields in Supabase, retrying standard insert:', error.message);
+      delete payload.vendor_id;
+      delete payload.approval_status;
+      delete payload.is_demo;
+      delete payload.demo_expires_at;
+      const { error: retryError } = await supabase.from('events').insert([payload]);
+      if (retryError) throw retryError;
     }
   } else {
     const events = getLocalEvents();
@@ -1078,18 +1109,28 @@ async function createEvent(id, clientName, password = '', clientEmail = '', serv
       id: cleanId,
       clientName: clientName.trim(),
       clientEmail: (clientEmail || '').trim().toLowerCase(),
-      active: true,
+      active: approvalStatus === 'pending_approval' ? false : true,
       password: password.trim(),
       createdAt: new Date().toISOString(),
       serviceTables,
       servicePhotos,
       serviceInvitation,
-      serviceTrivia
+      serviceTrivia,
+      vendorId,
+      approvalStatus,
+      isDemo,
+      demoExpiresAt
     });
     saveLocalEvents(events);
     // Auto-create local directories for isolation
     getEventFiles(cleanId);
   }
+
+  // Save metadata to config table for fallback lookup
+  if (vendorId) await setConfigValue(cleanId, 'vendor_id', vendorId);
+  if (approvalStatus) await setConfigValue(cleanId, 'approval_status', approvalStatus);
+  if (isDemo) await setConfigValue(cleanId, 'is_demo', 'true');
+  if (demoExpiresAt) await setConfigValue(cleanId, 'demo_expires_at', demoExpiresAt);
 
   // Decoupled event title configuration
   if (eventName) {
@@ -1146,7 +1187,6 @@ async function deleteEvent(id) {
   } catch (clearErr) {
     console.warn(`[db] Error clearing photos during deletion of event ${id}:`, clearErr.message);
   }
-
   if (isSupabaseEnabled) {
     const { error } = await supabase
       .from('events')
@@ -1156,13 +1196,12 @@ async function deleteEvent(id) {
     if (error) {
       console.error('Error deleting event from Supabase:', error);
       throw error;
-      }
+    }
   } else {
-    let events = getLocalEvents();
-    events = events.filter(e => e.id !== id);
-    saveLocalEvents(events);
+    const events = getLocalEvents();
+    const updatedEvents = events.filter(e => e.id !== id);
+    saveLocalEvents(updatedEvents);
 
-    // Delete local directory if exists
     try {
       const cleanId = (id || '').replace(/[^a-zA-Z0-9_-]/g, '');
       const eventDir = path.join(DATA_DIR, cleanId);
@@ -1173,6 +1212,129 @@ async function deleteEvent(id) {
       console.warn('Could not clean up local event directories:', err.message);
     }
   }
+}
+
+async function approveEvent(id) {
+  await setConfigValue(id, 'approval_status', 'active');
+  await toggleEvent(id, true);
+  if (isSupabaseEnabled) {
+    try {
+      await supabase.from('events').update({ approval_status: 'active', active: true }).eq('id', id);
+    } catch (e) {}
+  }
+}
+
+async function rejectEvent(id) {
+  await setConfigValue(id, 'approval_status', 'rejected');
+  await toggleEvent(id, false);
+  if (isSupabaseEnabled) {
+    try {
+      await supabase.from('events').update({ approval_status: 'rejected', active: false }).eq('id', id);
+    } catch (e) {}
+  }
+}
+
+/**
+ * Vendor Management DB Functions
+ */
+function getLocalVendors() {
+  const file = path.join(__dirname, '..', 'data', 'vendors.json');
+  if (!fs.existsSync(file)) return [];
+  try {
+    return JSON.parse(fs.readFileSync(file, 'utf8'));
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveLocalVendors(vendors) {
+  const dir = path.join(__dirname, '..', 'data');
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  const file = path.join(dir, 'vendors.json');
+  fs.writeFileSync(file, JSON.stringify(vendors, null, 2), 'utf8');
+}
+
+async function getVendors() {
+  if (isSupabaseEnabled) {
+    const { data, error } = await supabase
+      .from('vendors')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.warn('[miFiestAPP DB] Supabase getVendors warning, falling back to local:', error.message);
+      return getLocalVendors();
+    }
+    return (data || []).map(v => ({
+      id: v.id,
+      name: v.name,
+      email: v.email,
+      passwordHash: v.password_hash,
+      phone: v.phone || '',
+      active: v.active !== false,
+      createdAt: v.created_at
+    }));
+  }
+  return getLocalVendors();
+}
+
+async function createVendor(name, email, passwordHash, phone = '') {
+  const cleanEmail = (email || '').trim().toLowerCase();
+  const id = 'vendor_' + Date.now();
+  const vendor = {
+    id,
+    name: (name || '').trim(),
+    email: cleanEmail,
+    passwordHash: passwordHash || '',
+    phone: (phone || '').trim(),
+    active: true,
+    createdAt: new Date().toISOString()
+  };
+
+  if (isSupabaseEnabled) {
+    const { error } = await supabase.from('vendors').insert([{
+      id: vendor.id,
+      name: vendor.name,
+      email: vendor.email,
+      password_hash: vendor.passwordHash,
+      phone: vendor.phone,
+      active: vendor.active
+    }]);
+
+    if (error) {
+      console.warn('[miFiestAPP DB] Supabase createVendor warning, saving locally:', error.message);
+      const vendors = getLocalVendors();
+      vendors.push(vendor);
+      saveLocalVendors(vendors);
+      return vendor;
+    }
+  } else {
+    const vendors = getLocalVendors();
+    vendors.push(vendor);
+    saveLocalVendors(vendors);
+  }
+  return vendor;
+}
+
+async function toggleVendor(id, active) {
+  if (isSupabaseEnabled) {
+    await supabase.from('vendors').update({ active }).eq('id', id);
+  }
+  const vendors = getLocalVendors();
+  const v = vendors.find(item => item.id === id);
+  if (v) {
+    v.active = active;
+    saveLocalVendors(vendors);
+  }
+}
+
+async function deleteVendor(id) {
+  if (isSupabaseEnabled) {
+    await supabase.from('vendors').delete().eq('id', id);
+  }
+  const vendors = getLocalVendors();
+  const updated = vendors.filter(item => item.id !== id);
+  saveLocalVendors(updated);
 }
 
 async function validateEventPassword(eventId, password) {
@@ -1742,6 +1904,12 @@ module.exports = {
   toggleEvent,
   updateEventServiceTrivia,
   deleteEvent,
+  approveEvent,
+  rejectEvent,
+  getVendors,
+  createVendor,
+  toggleVendor,
+  deleteVendor,
   validateEventPassword,
   findEventByEmailAndPassword,
   getRsvps,

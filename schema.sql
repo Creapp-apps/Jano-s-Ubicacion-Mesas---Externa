@@ -97,3 +97,26 @@ ALTER TABLE public.events ADD COLUMN IF NOT EXISTS service_trivia BOOLEAN DEFAUL
 ALTER TABLE public.rsvps ADD COLUMN IF NOT EXISTS phone TEXT;
 ALTER TABLE public.rsvps ADD COLUMN IF NOT EXISTS source TEXT DEFAULT 'individual';
 
+-- 8. Create VENDORS Table
+CREATE TABLE IF NOT EXISTS public.vendors (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    phone TEXT,
+    active BOOLEAN DEFAULT TRUE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.vendors ENABLE ROW LEVEL SECURITY;
+
+-- 9. Add Vendor and Demo fields to EVENTS Table
+ALTER TABLE public.events ADD COLUMN IF NOT EXISTS vendor_id TEXT REFERENCES public.vendors(id) ON DELETE SET NULL;
+ALTER TABLE public.events ADD COLUMN IF NOT EXISTS approval_status TEXT DEFAULT 'active' NOT NULL;
+ALTER TABLE public.events ADD COLUMN IF NOT EXISTS is_demo BOOLEAN DEFAULT FALSE NOT NULL;
+ALTER TABLE public.events ADD COLUMN IF NOT EXISTS demo_expires_at TIMESTAMP WITH TIME ZONE;
+
+CREATE INDEX IF NOT EXISTS idx_events_vendor_id ON public.events(vendor_id);
+CREATE INDEX IF NOT EXISTS idx_events_approval_status ON public.events(approval_status);
+
+
