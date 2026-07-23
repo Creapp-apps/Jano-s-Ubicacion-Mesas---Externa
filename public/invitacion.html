@@ -1899,6 +1899,7 @@
           return { dateLine: dateStr, timeLine: '' };
         }
       }
+      window.formatDateStringPremium = formatDateStringPremium;
 
       function updateDayNightTexts(isNight) {
         const chestCardText = document.querySelector('#slide-5 .chest-gift-card p');
@@ -4349,10 +4350,34 @@
         let dateText = 'Fecha a confirmar';
         let timeText = 'Horario a confirmar';
         if (invitationData && invitationData.invitationEventDate) {
-          const pd = formatDateStringPremium(invitationData.invitationEventDate, invitationData.invitationEventTimeEnd);
-          if (pd) {
-            if (pd.dateLine) dateText = pd.dateLine;
-            if (pd.timeLine) timeText = pd.timeLine;
+          const getFormattedDate = (typeof window.formatDateStringPremium === 'function') 
+            ? window.formatDateStringPremium 
+            : ((typeof formatDateStringPremium === 'function') ? formatDateStringPremium : null);
+
+          if (getFormattedDate) {
+            const pd = getFormattedDate(invitationData.invitationEventDate, invitationData.invitationEventTimeEnd);
+            if (pd) {
+              if (pd.dateLine) dateText = pd.dateLine;
+              if (pd.timeLine) timeText = pd.timeLine;
+            }
+          } else {
+            try {
+              const d = new Date(invitationData.invitationEventDate);
+              if (!isNaN(d.getTime())) {
+                const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+                const weekday = cap(d.toLocaleDateString('es-AR', { weekday: 'long' }));
+                const day = d.toLocaleDateString('es-AR', { day: 'numeric' });
+                const month = cap(d.toLocaleDateString('es-AR', { month: 'long' }));
+                const year = d.toLocaleDateString('es-AR', { year: 'numeric' });
+                dateText = `${weekday}, ${day} de ${month} de ${year}`;
+                let hours = d.getHours().toString().padStart(2, '0');
+                let minutes = d.getMinutes().toString().padStart(2, '0');
+                timeText = `${hours}:${minutes} hs`;
+                if (invitationData.invitationEventTimeEnd && invitationData.invitationEventTimeEnd.trim()) {
+                  timeText = `${hours}:${minutes} a ${invitationData.invitationEventTimeEnd.trim()} hs`;
+                }
+              }
+            } catch (e) {}
           }
         } else if (invitationData && invitationData.invitationPartyDate) {
           dateText = invitationData.invitationPartyDate;
