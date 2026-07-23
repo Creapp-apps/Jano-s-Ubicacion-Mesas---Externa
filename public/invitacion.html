@@ -4402,93 +4402,75 @@
         ctx.font = 'bold 24px Montserrat, sans-serif';
         ctx.fillText('© 2026 miFiestAPP  •  Digitalizá Tu Fiesta', 540, 1460);
 
-        // Convert canvas to Data URL and Blob for cross-platform compatibility
-        const imageURI = canvas.toDataURL('image/png');
-        const cleanTitle = mainTitle.replace(/[^a-zA-Z0-9]/g, '_');
-        const filename = `Recuerdito-VIP-${cleanTitle}.png`;
+        // Convert canvas to Blob & Blob URL for client-side download
+        canvas.toBlob((blob) => {
+          if (!blob) return;
 
-        function dataURLtoBlob(dataurl) {
-          const arr = dataurl.split(',');
-          const mime = arr[0].match(/:(.*?);/)[1];
-          const bstr = atob(arr[1]);
-          let n = bstr.length;
-          const u8arr = new Uint8Array(n);
-          while (n--) {
-            u8arr[n] = bstr.charCodeAt(n);
-          }
-          return new Blob([u8arr], { type: mime });
-        }
+          const cleanTitle = mainTitle.replace(/[^a-zA-Z0-9]/g, '_');
+          const filename = `Recuerdito-VIP-${cleanTitle}.png`;
+          const blobUrl = URL.createObjectURL(blob);
+          const file = new File([blob], filename, { type: 'image/png' });
 
-        const blob = dataURLtoBlob(imageURI);
-        const file = new File([blob], filename, { type: 'image/png' });
-        const blobUrl = URL.createObjectURL(blob);
-
-        const openSouvenirModal = (url) => {
-          const souvenirModal = document.getElementById('souvenir-modal');
-          const souvenirImg = document.getElementById('souvenir-modal-img');
-          const souvenirDownloadBtn = document.getElementById('souvenir-modal-download-btn');
-          
-          if (souvenirModal && souvenirImg) {
-            souvenirImg.src = url;
-            if (souvenirDownloadBtn) {
-              souvenirDownloadBtn.href = 'javascript:void(0)';
-              souvenirDownloadBtn.onclick = (e) => {
-                e.preventDefault();
-                submitSouvenirDownloadForm(imageURI, filename);
-              };
+          const openSouvenirModal = (url) => {
+            const souvenirModal = document.getElementById('souvenir-modal');
+            const souvenirImg = document.getElementById('souvenir-modal-img');
+            const souvenirDownloadBtn = document.getElementById('souvenir-modal-download-btn');
+            
+            if (souvenirModal && souvenirImg) {
+              souvenirImg.src = url;
+              if (souvenirDownloadBtn) {
+                souvenirDownloadBtn.href = url;
+                souvenirDownloadBtn.download = filename;
+                souvenirDownloadBtn.onclick = null;
+              }
+              souvenirModal.style.display = 'flex';
             }
-            souvenirModal.style.display = 'flex';
+          };
+
+          // 1. Trigger Direct Link Download for Android and Desktop
+          try {
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = filename;
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+              if (a.parentNode) document.body.removeChild(a);
+            }, 1000);
+          } catch (e) {
+            console.warn('Direct download click error:', e);
           }
-        };
 
-        // 1. Forced Server Attachment Download (Sends Content-Disposition: attachment for 100% iOS Safari & Mobile compatibility)
-        submitSouvenirDownloadForm(imageURI, filename);
+          // 2. Open Souvenir Modal Preview on screen
+          openSouvenirModal(blobUrl);
 
-        // 2. Open Souvenir Modal Preview on screen
-        openSouvenirModal(blobUrl);
+          // 3. Trigger Native OS Share Sheet for iOS Safari / Mobile HTTPS if supported
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            navigator.share({
+              files: [file],
+              title: `Pase VIP - ${mainTitle}`,
+              text: `¡Mi pase de recuerdito para ${mainTitle}!`
+            }).catch((shareErr) => {
+              console.log('Native share dismissed or handled via modal:', shareErr);
+            });
+          }
 
-        if (typeof window.showInvitationSuccessToast === 'function') {
-          window.showInvitationSuccessToast('📸 ¡Descargando Pase VIP!');
-        }
+          if (typeof window.showInvitationSuccessToast === 'function') {
+            window.showInvitationSuccessToast('📸 ¡Pase VIP preparado!');
+          }
+        }, 'image/png');
       };
-
-      function submitSouvenirDownloadForm(imageURI, filename) {
-        try {
-          let form = document.getElementById('souvenir-download-form');
-          if (!form) {
-            form = document.createElement('form');
-            form.id = 'souvenir-download-form';
-            form.method = 'POST';
-            form.action = '/api/public/download-souvenir';
-            form.style.display = 'none';
-
-            const imgInput = document.createElement('input');
-            imgInput.type = 'hidden';
-            imgInput.name = 'image';
-            imgInput.id = 'souvenir-form-image-input';
-            form.appendChild(imgInput);
-
-            const fileInput = document.createElement('input');
-            fileInput.type = 'hidden';
-            fileInput.name = 'filename';
-            fileInput.id = 'souvenir-form-file-input';
-            form.appendChild(fileInput);
-
-            document.body.appendChild(form);
-          }
-
-          document.getElementById('souvenir-form-image-input').value = imageURI;
-          document.getElementById('souvenir-form-file-input').value = filename;
-          form.submit();
-        } catch (e) {
-          console.warn('Form download trigger error:', e);
-        }
-      }
 
       window.openSouvenirInNewTab = function() {
         const souvenirImg = document.getElementById('souvenir-modal-img');
         if (souvenirImg && souvenirImg.src) {
-          window.open(souvenirImg.src, '_blank');
+          const win = window.open();
+          if (win) {
+            win.document.write(`<body style="margin:0;background:#080809;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;"><img src="${souvenirImg.src}" style="max-width:100%;max-height:85vh;object-fit:contain;border-radius:12px;border:1px solid #d4af37;" alt="Recuerdito VIP"><p style="margin-top:20px;color:#f3e5ab;font-family:sans-serif;font-size:14px;background:rgba(22,22,25,0.9);padding:12px 20px;border-radius:25px;border:1px solid #d4af37;box-shadow:0 10px 20px rgba(0,0,0,0.5);">📸 Mantené presionada la imagen para guardarla en tu celular</p></body>`);
+          } else {
+            window.location.href = souvenirImg.src;
+          }
         }
       };
 
