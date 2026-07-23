@@ -430,9 +430,12 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const data = await response.json();
         
-        if (response.ok && data.success && data.eventId) {
-          // Success! Redirect to the event's guest portal home page using the returned slug
-          window.location.href = `/event.html?event=${encodeURIComponent(data.eventId)}`;
+        if (response.ok && data.success) {
+          if (data.isVendor || data.redirectUrl) {
+            window.location.href = data.redirectUrl || '/vendedor';
+          } else if (data.eventId) {
+            window.location.href = `/event.html?event=${encodeURIComponent(data.eventId)}`;
+          }
         } else {
           modalErrorMsg.textContent = data.error || 'Email o contraseña incorrectos';
           modalErrorMsg.classList.add('visible');

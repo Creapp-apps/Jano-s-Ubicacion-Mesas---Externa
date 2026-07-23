@@ -975,17 +975,30 @@ app.post('/api/admin/login', async (req, res) => {
   
   try {
     if (email) {
-      const event = await db.findEventByEmailAndPassword(email, password);
-      if (!event) {
-        return res.status(401).json({ error: 'Email o contraseña incorrectos.' });
+      const cleanEmail = email.trim().toLowerCase();
+      const cleanPassword = (password || '').trim();
+
+      // 1. Try client host event login
+      const event = await db.findEventByEmailAndPassword(cleanEmail, cleanPassword);
+      if (event) {
+        if (!event.active) {
+          return res.status(403).json({ error: 'El servicio está inactivo para este evento.' });
+        }
+        
+        const cookieName = `admin_session_${event.id}`;
+        res.setHeader('Set-Cookie', `${cookieName}=${ADMIN_SESSION_TOKEN}_${event.id}; Path=/; Max-Age=2592000; HttpOnly; SameSite=Strict`);
+        return res.json({ success: true, eventId: event.id });
       }
-      if (!event.active) {
-        return res.status(403).json({ error: 'El servicio está inactivo para este evento.' });
+
+      // 2. Try vendor login
+      const vendors = await db.getVendors();
+      const vendor = vendors.find(v => v.email === cleanEmail && v.active);
+      if (vendor && vendor.passwordHash === cleanPassword) {
+        res.setHeader('Set-Cookie', `vendor_session=${vendor.id}; Path=/; Max-Age=2592000; HttpOnly; SameSite=Strict`);
+        return res.json({ success: true, isVendor: true, redirectUrl: '/vendedor', vendor: { id: vendor.id, name: vendor.name, email: vendor.email } });
       }
-      
-      const cookieName = `admin_session_${event.id}`;
-      res.setHeader('Set-Cookie', `${cookieName}=${ADMIN_SESSION_TOKEN}_${event.id}; Path=/; Max-Age=2592000; HttpOnly; SameSite=Strict`);
-      return res.json({ success: true, eventId: event.id });
+
+      return res.status(401).json({ error: 'Email o contraseña incorrectos.' });
     }
 
     const targetEventId = eventId || 'default';

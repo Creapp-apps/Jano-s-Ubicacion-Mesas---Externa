@@ -200,6 +200,10 @@
         const data = await response.json();
         
         if (response.ok && data.success) {
+          if (data.isVendor || data.redirectUrl) {
+            window.location.href = data.redirectUrl || '/vendedor';
+            return;
+          }
           // Redirect to event home page
           const service = urlParams.get('service');
           const targetEventId = data.eventId || eventId;

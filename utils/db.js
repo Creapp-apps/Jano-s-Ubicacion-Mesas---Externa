@@ -1255,27 +1255,44 @@ function saveLocalVendors(vendors) {
 }
 
 async function getVendors() {
+  let dbVendors = [];
   if (isSupabaseEnabled) {
-    const { data, error } = await supabase
-      .from('vendors')
-      .select('*')
-      .order('created_at', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('vendors')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    if (error) {
-      console.warn('[miFiestAPP DB] Supabase getVendors warning, falling back to local:', error.message);
-      return getLocalVendors();
+      if (!error && data) {
+        dbVendors = data.map(v => ({
+          id: v.id,
+          name: v.name,
+          email: (v.email || '').trim().toLowerCase(),
+          passwordHash: v.password_hash,
+          phone: v.phone || '',
+          active: v.active !== false,
+          createdAt: v.created_at
+        }));
+      }
+    } catch (err) {
+      console.warn('[miFiestAPP DB] Supabase getVendors error, falling back to local:', err.message);
     }
-    return (data || []).map(v => ({
-      id: v.id,
-      name: v.name,
-      email: v.email,
-      passwordHash: v.password_hash,
-      phone: v.phone || '',
-      active: v.active !== false,
-      createdAt: v.created_at
-    }));
   }
-  return getLocalVendors();
+
+  const localVendors = getLocalVendors();
+  const mergedMap = new Map();
+
+  // Load local vendors first
+  localVendors.forEach(v => {
+    if (v.email) mergedMap.set(v.email.trim().toLowerCase(), v);
+  });
+
+  // Merge/override with Supabase vendors
+  dbVendors.forEach(v => {
+    if (v.email) mergedMap.set(v.email.trim().toLowerCase(), v);
+  });
+
+  return Array.from(mergedMap.values());
 }
 
 async function createVendor(name, email, passwordHash, phone = '') {
@@ -1291,27 +1308,32 @@ async function createVendor(name, email, passwordHash, phone = '') {
     createdAt: new Date().toISOString()
   };
 
-  if (isSupabaseEnabled) {
-    const { error } = await supabase.from('vendors').insert([{
-      id: vendor.id,
-      name: vendor.name,
-      email: vendor.email,
-      password_hash: vendor.passwordHash,
-      phone: vendor.phone,
-      active: vendor.active
-    }]);
-
-    if (error) {
-      console.warn('[miFiestAPP DB] Supabase createVendor warning, saving locally:', error.message);
-      const vendors = getLocalVendors();
-      vendors.push(vendor);
-      saveLocalVendors(vendors);
-      return vendor;
-    }
+  // Always save locally to prevent data loss across restarts or migrations
+  const localVendors = getLocalVendors();
+  const existingIdx = localVendors.findIndex(v => v.email === cleanEmail);
+  if (existingIdx >= 0) {
+    localVendors[existingIdx] = vendor;
   } else {
-    const vendors = getLocalVendors();
-    vendors.push(vendor);
-    saveLocalVendors(vendors);
+    localVendors.push(vendor);
+  }
+  saveLocalVendors(localVendors);
+
+  if (isSupabaseEnabled) {
+    try {
+      const { error } = await supabase.from('vendors').upsert([{
+        id: vendor.id,
+        name: vendor.name,
+        email: vendor.email,
+        password_hash: vendor.passwordHash,
+        phone: vendor.phone,
+        active: vendor.active
+      }]);
+      if (error) {
+        console.warn('[miFiestAPP DB] Supabase createVendor upsert warning:', error.message);
+      }
+    } catch (err) {
+      console.warn('[miFiestAPP DB] Supabase createVendor exception:', err.message);
+    }
   }
   return vendor;
 }
