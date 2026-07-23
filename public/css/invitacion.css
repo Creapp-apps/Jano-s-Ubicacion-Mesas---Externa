@@ -3349,6 +3349,21 @@ body.template-vertical-scroll .invitation-slide {
   position: relative !important;
 }
 
+body.template-vertical-scroll .luxury-detail-item,
+body.template-vertical-scroll .luxury-detail-item-slide2,
+body.template-vertical-scroll .timeline-node,
+body.template-vertical-scroll .dress-code-badge,
+body.template-vertical-scroll .dress-code-tips,
+body.template-vertical-scroll .dress-code-anim,
+body.template-vertical-scroll .slide-0-date-container,
+body.template-vertical-scroll .checklist-card,
+body.template-vertical-scroll .bank-detail-card,
+body.template-vertical-scroll .bank-detail-card-direct {
+  opacity: 1 !important;
+  transform: none !important;
+  visibility: visible !important;
+}
+
 body.template-vertical-scroll .invitation-nav-bar {
   display: none !important;
 }

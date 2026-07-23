@@ -2764,6 +2764,16 @@
           }
           isEnvelopeOpened = true;
 
+          // Force all animated inner elements to opacity 1 and normal layout
+          if (window.gsap) {
+            gsap.set('.luxury-detail-item, .luxury-detail-item-slide2, .timeline-node, .dress-code-badge, .dress-code-tips, .dress-code-anim, .slide-0-date-container, .checklist-card', {
+              opacity: 1,
+              y: 0,
+              scale: 1,
+              clearProps: 'transform'
+            });
+          }
+
           // Gifts: Hide chest slide, show direct slide
           if (slide5) slide5.style.display = 'none';
           if (slide5Directo) slide5Directo.style.display = 'block';
