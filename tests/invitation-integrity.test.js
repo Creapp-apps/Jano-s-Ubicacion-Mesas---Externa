@@ -60,4 +60,22 @@ assert(cssContent.includes('-webkit-transform-style: preserve-3d;'), 'CSS must i
 
 console.log('  ✓ Test 4 Passed: Gift Card 3D flip & Mobile WebKit styles are intact.');
 
+// --- Test 5: HTML Inline Script Syntax Validation ---
+console.log('- Test 5: Checking HTML Script Syntax Integrity...');
+['../public/event.html', '../public/invitacion.html'].forEach(relPath => {
+  const filePath = path.join(__dirname, relPath);
+  const content = fs.readFileSync(filePath, 'utf8');
+  const scriptMatches = content.match(/<script[\s\S]*?>([\s\S]*?)<\/script>/gi);
+  assert.ok(scriptMatches && scriptMatches.length > 0, `${relPath} must contain script tags`);
+  scriptMatches.forEach((scriptTag, idx) => {
+    const code = scriptTag.replace(/<script[\s\S]*?>/i, '').replace(/<\/script>/i, '');
+    if (code.trim() && !scriptTag.includes('src=')) {
+      assert.doesNotThrow(() => {
+        new Function(code);
+      }, `Syntax error in ${relPath} script block #${idx + 1}`);
+    }
+  });
+});
+console.log('  ✓ Test 5 Passed: HTML script tags have zero syntax errors.');
+
 console.log('\n✅ ALL INVITATION INTEGRITY TESTS PASSED SUCCESSFULLY! 🛡️');

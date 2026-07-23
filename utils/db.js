@@ -1256,27 +1256,47 @@ async function findEventByEmailAndPassword(email, password) {
  */
 async function getRsvps(eventId = 'default') {
   if (isSupabaseEnabled) {
-    const { data, error } = await supabase
+    let res = await supabase
       .from('rsvps')
-      .select('id, name, attending, companions_count, companions_names, dietary_restrictions, suggested_song, created_at')
+      .select('id, name, phone, source, attending, companions_count, companions_names, dietary_restrictions, suggested_song, created_at')
       .eq('event_id', eventId)
       .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('Error fetching RSVPs from Supabase:', error);
-      throw error;
+    if (res.error && (res.error.code === '42703' || res.error.message.includes('column'))) {
+      res = await supabase
+        .from('rsvps')
+        .select('id, name, attending, companions_count, companions_names, dietary_restrictions, suggested_song, created_at')
+        .eq('event_id', eventId)
+        .order('created_at', { ascending: false });
     }
 
-    return (data || []).map(r => ({
-      id: r.id,
-      name: r.name,
-      attending: r.attending,
-      companionsCount: r.companions_count,
-      companionsNames: r.companions_names,
-      dietaryRestrictions: r.dietary_restrictions,
-      suggestedSong: r.suggested_song,
-      createdAt: r.created_at
-    }));
+    if (res.error) {
+      console.error('Error fetching RSVPs from Supabase:', res.error);
+      throw res.error;
+    }
+    return (res.data || []).map(r => {
+      let extractedPhone = r.phone || '';
+      let cleanDiet = r.dietary_restrictions || '';
+      if (!extractedPhone && cleanDiet.includes('[Tel:')) {
+        const match = cleanDiet.match(/\[Tel:\s*([0-9\+\s]+)\]/);
+        if (match) {
+          extractedPhone = match[1].trim();
+          cleanDiet = cleanDiet.replace(/\[Tel:\s*[0-9\+\s]+\]/, '').trim();
+        }
+      }
+      return {
+        id: r.id,
+        name: r.name,
+        phone: extractedPhone,
+        source: r.source || 'individual',
+        attending: r.attending,
+        companionsCount: r.companions_count,
+        companionsNames: r.companions_names,
+        dietaryRestrictions: cleanDiet,
+        suggestedSong: r.suggested_song,
+        createdAt: r.created_at
+      };
+    });
   } else {
     const { configFile } = getEventFiles(eventId);
     const eventDir = path.dirname(configFile);
@@ -1290,6 +1310,8 @@ async function getRsvps(eventId = 'default') {
       return (rsvps || []).map(r => ({
         id: r.id,
         name: r.name,
+        phone: r.phone || '',
+        source: r.source || 'individual',
         attending: r.attending,
         companionsCount: r.companions_count || r.companionsCount || 0,
         companionsNames: r.companions_names || r.companionsNames || '',
@@ -1317,6 +1339,8 @@ async function addRsvp(eventId = 'default', rsvpData) {
 
   const rsvp = {
     name: (rsvpData.name || '').trim(),
+    phone: (rsvpData.phone || '').trim(),
+    source: (rsvpData.source || 'individual').trim(),
     attending: !!rsvpData.attending,
     companionsCount: parseInt(rsvpData.companionsCount, 10) || 0,
     companionsNames: companionsNamesStr,
@@ -1325,22 +1349,37 @@ async function addRsvp(eventId = 'default', rsvpData) {
     createdAt: new Date().toISOString()
   };
 
+  const newId = Date.now();
+
   if (isSupabaseEnabled) {
+    const payload = {
+      event_id: eventId,
+      name: rsvp.name,
+      phone: rsvp.phone,
+      source: rsvp.source,
+      attending: rsvp.attending,
+      companions_count: rsvp.companionsCount,
+      companions_names: rsvp.companionsNames,
+      dietary_restrictions: rsvp.dietaryRestrictions,
+      suggested_song: rsvp.suggestedSong
+    };
+
     const { error } = await supabase
       .from('rsvps')
-      .insert([{
-        event_id: eventId,
-        name: rsvp.name,
-        attending: rsvp.attending,
-        companions_count: rsvp.companionsCount,
-        companions_names: rsvp.companionsNames,
-        dietary_restrictions: rsvp.dietaryRestrictions,
-        suggested_song: rsvp.suggestedSong
-      }]);
+      .insert([payload]);
 
     if (error) {
-      console.error('Error inserting RSVP into Supabase:', error);
-      throw error;
+      console.warn('[miFiestAPP DB] Insert RSVP with phone/source failed on Supabase, retrying without optional columns:', error.message || error);
+      delete payload.phone;
+      delete payload.source;
+      if (rsvp.phone && rsvp.phone.trim()) {
+        payload.dietary_restrictions = `${payload.dietary_restrictions || ''} [Tel: ${rsvp.phone.trim()}]`.trim();
+      }
+      const { error: retryError } = await supabase.from('rsvps').insert([payload]);
+      if (retryError) {
+        console.error('Error inserting RSVP into Supabase:', retryError);
+        throw retryError;
+      }
     }
   } else {
     const { configFile } = getEventFiles(eventId);
@@ -1353,8 +1392,10 @@ async function addRsvp(eventId = 'default', rsvpData) {
       } catch (e) {}
     }
     const newRsvp = {
-      id: Date.now(),
+      id: newId,
       name: rsvp.name,
+      phone: rsvp.phone,
+      source: rsvp.source,
       attending: rsvp.attending,
       companions_count: rsvp.companionsCount,
       companions_names: rsvp.companionsNames,
@@ -1364,6 +1405,99 @@ async function addRsvp(eventId = 'default', rsvpData) {
     };
     rsvps.push(newRsvp);
     fs.writeFileSync(rsvpsFile, JSON.stringify(rsvps, null, 2), 'utf8');
+  }
+  return newId;
+}
+
+/**
+ * Add or Update a Public QR RSVP (Deduplicated strictly by Phone Number)
+ */
+async function addOrUpdatePublicRsvp(eventId = 'default', rsvpData) {
+  const cleanPhone = (rsvpData.phone || '').replace(/[^0-9]/g, '');
+  const rsvps = await getRsvps(eventId);
+
+  // Check if an existing RSVP has this exact cleanPhone (only if cleanPhone has >= 6 digits)
+  let existing = null;
+  if (cleanPhone && cleanPhone.length >= 6) {
+    existing = rsvps.find(r => (r.phone || '').replace(/[^0-9]/g, '') === cleanPhone);
+  }
+
+  // Fallback: If not found by phone, check if an existing RSVP has this exact name (case-insensitive) AND has no phone number set yet
+  if (!existing && rsvpData.name) {
+    const normName = rsvpData.name.trim().toLowerCase();
+    existing = rsvps.find(r => (r.name || '').trim().toLowerCase() === normName && !(r.phone && r.phone.trim()));
+  }
+
+  if (existing) {
+    // Update existing RSVP
+    const updatedName = (rsvpData.name || existing.name).trim();
+    const updatedAttending = !!rsvpData.attending;
+    const updatedDiet = (rsvpData.dietaryRestrictions || '').trim();
+    const updatedSong = (rsvpData.suggestedSong || existing.suggestedSong || '').trim();
+
+    if (isSupabaseEnabled) {
+      const payload = {
+        name: updatedName,
+        phone: cleanPhone,
+        source: 'public_qr',
+        attending: updatedAttending,
+        dietary_restrictions: updatedDiet,
+        suggested_song: updatedSong
+      };
+      const { error } = await supabase
+        .from('rsvps')
+        .update(payload)
+        .eq('id', existing.id)
+        .eq('event_id', eventId);
+
+      if (error) {
+        delete payload.phone;
+        delete payload.source;
+        if (cleanPhone && cleanPhone.trim()) {
+          payload.dietary_restrictions = `${payload.dietary_restrictions || ''} [Tel: ${cleanPhone.trim()}]`.trim();
+        }
+        await supabase.from('rsvps').update(payload).eq('id', existing.id).eq('event_id', eventId);
+      }
+    } else {
+      const { configFile } = getEventFiles(eventId);
+      const eventDir = path.dirname(configFile);
+      const rsvpsFile = path.join(eventDir, 'rsvps.json');
+      if (fs.existsSync(rsvpsFile)) {
+        try {
+          let list = JSON.parse(fs.readFileSync(rsvpsFile, 'utf8'));
+          const idx = list.findIndex(r => r.id === existing.id);
+          if (idx !== -1) {
+            list[idx] = {
+              ...list[idx],
+              name: updatedName,
+              phone: cleanPhone,
+              source: 'public_qr',
+              attending: updatedAttending,
+              dietary_restrictions: updatedDiet,
+              suggested_song: updatedSong,
+              updated_at: new Date().toISOString()
+            };
+            fs.writeFileSync(rsvpsFile, JSON.stringify(list, null, 2), 'utf8');
+          }
+        } catch (e) {
+          console.error('Error updating local public RSVP:', e);
+        }
+      }
+    }
+    return { success: true, rsvpId: existing.id, isExisting: true };
+  } else {
+    // Insert new RSVP
+    const newId = await addRsvp(eventId, {
+      name: (rsvpData.name || '').trim(),
+      phone: cleanPhone,
+      source: 'public_qr',
+      attending: !!rsvpData.attending,
+      companionsCount: 0,
+      companionsNames: '',
+      dietaryRestrictions: (rsvpData.dietaryRestrictions || '').trim(),
+      suggestedSong: (rsvpData.suggestedSong || '').trim()
+    });
+    return { success: true, rsvpId: newId, isExisting: false };
   }
 }
 
@@ -1561,6 +1695,7 @@ module.exports = {
   findEventByEmailAndPassword,
   getRsvps,
   addRsvp,
+  addOrUpdatePublicRsvp,
   deleteRsvp,
   saveSongSuggestion,
   getCapitanesConfig,

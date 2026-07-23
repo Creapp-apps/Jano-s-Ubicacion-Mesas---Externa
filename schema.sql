@@ -77,6 +77,8 @@ CREATE TABLE IF NOT EXISTS public.rsvps (
     attending BOOLEAN NOT NULL,
     companions_count INT DEFAULT 0,
     companions_names TEXT,
+    phone TEXT,
+    source TEXT DEFAULT 'individual',
     dietary_restrictions TEXT,
     suggested_song TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
@@ -90,4 +92,8 @@ ALTER TABLE public.rsvps ENABLE ROW LEVEL SECURITY;
 
 -- 6. Upgrade query for existing events table
 ALTER TABLE public.events ADD COLUMN IF NOT EXISTS service_trivia BOOLEAN DEFAULT TRUE NOT NULL;
+
+-- 7. Upgrade query for existing rsvps table
+ALTER TABLE public.rsvps ADD COLUMN IF NOT EXISTS phone TEXT;
+ALTER TABLE public.rsvps ADD COLUMN IF NOT EXISTS source TEXT DEFAULT 'individual';
 

@@ -508,7 +508,7 @@
             </div>
             <button type="button" class="carousel-arrow" id="carousel-next-btn">&rarr;</button>
           </div>
-                    <button class="btn-gold btn-glow-breath btn-step-advance" onclick="goToSlide(4, true)" style="width: 100%; margin-top: 15px; margin-bottom: 25px;">
+          <button class="btn-gold btn-glow-breath btn-step-advance" onclick="goToSlide(activeSlide + 1, true)" style="width: 100%; margin-top: 15px; margin-bottom: 25px;">
             <span>Siguiente Paso</span>
             <span class="gold-pointer-pill">
               <span class="gold-pointer-ring"></span>
@@ -601,6 +601,53 @@
         </div>
       </div>
 
+      <!-- Slide 5 Directo: Tarjeta de Regalo Directa (sin Cofre 3D) -->
+      <div class="invitation-slide" id="slide-5-directo" style="display: none;">
+        <div class="card" style="padding: 24px 20px;">
+          <h2 class="hero-subtitle" style="text-align: center; margin-bottom: 5px;">Regalos</h2>
+          <p style="font-size: 0.82rem; line-height: 1.6; text-align: center; color: var(--text-light); margin-bottom: 20px;">
+            Tu presencia es nuestro mejor regalo. Pero si deseas realizarnos un aporte económico, te dejamos los datos de nuestra cuenta bancaria.
+          </p>
+
+          <div class="direct-gift-card" style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-gold); border-radius: 20px; padding: 20px; box-shadow: var(--shadow-lux); margin-bottom: 5px;">
+            <div style="text-align: center; margin-bottom: 15px;">
+              <span style="font-size: 1.5rem; color: var(--gold-primary);">⚜</span>
+              <h4 style="margin: 5px 0 0 0; font-size: 1.1rem; font-weight: 700; letter-spacing: 0.5px; color: var(--gold-primary);">Datos Bancarios</h4>
+            </div>
+
+            <div class="bank-details" style="font-size: 0.8rem; text-align: left; display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
+              <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 6px;">
+                <strong style="color: var(--text-muted);">Titular:</strong>
+                <span id="bank-holder-lbl-direct" style="font-weight: 600; color: #ffffff;">-</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 6px;">
+                <strong style="color: var(--text-muted);">CBU:</strong>
+                <span id="bank-cbu-lbl-direct" style="font-weight: 600; color: #ffffff; font-family: monospace;">-</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 6px;">
+                <strong style="color: var(--text-muted);">Alias:</strong>
+                <span id="bank-alias-lbl-direct" style="font-weight: 600; color: #ffffff; font-family: monospace;">-</span>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 12px;">
+              <button type="button" class="btn-gold btn-secondary-lux" id="btn-copy-cbu-direct" style="padding: 10px 14px; font-size: 0.75rem; font-weight: 700; flex: 1; border-radius: 12px; cursor: pointer;">Copiar CBU</button>
+              <button type="button" class="btn-gold btn-secondary-lux" id="btn-copy-alias-direct" style="padding: 10px 14px; font-size: 0.75rem; font-weight: 700; flex: 1; border-radius: 12px; cursor: pointer;">Copiar Alias</button>
+            </div>
+          </div>
+
+          <button class="btn-gold btn-glow-breath btn-step-advance" onclick="goToSlide(activeSlide + 1, true)" style="width: 100%; margin-top: 24px; display: block;">
+            <span>Siguiente Paso</span>
+            <span class="gold-pointer-pill">
+              <span class="gold-pointer-ring"></span>
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12h14M13 5l7 7-7 7" />
+              </svg>
+            </span>
+          </button>
+        </div>
+      </div>
+
       <!-- Slide 6: Spotify (Sugerir Canción) -->
       <div class="invitation-slide" id="slide-6">
         <div class="card">
@@ -608,9 +655,9 @@
           <p class="instructions" id="spotify-instructions" style="margin-bottom: 20px;">Sugerí canciones para que el DJ las sume a la fiesta.</p>
           
           <div style="text-align: center; display: flex; flex-direction: column; gap: 15px;">
-            <div id="spotify-name-container">
+            <div id="spotify-name-container" style="display: none;">
               <label style="display: block; text-align: center; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Tu Nombre</label>
-              <input type="text" id="spotify-guest-name-input" class="form-control" placeholder="Ingresá tu nombre" required>
+              <input type="text" id="spotify-guest-name-input" class="form-control" placeholder="Ingresá tu nombre">
             </div>
 
             <div style="position: relative; z-index: 30;">
@@ -1712,6 +1759,13 @@
           document.getElementById('bank-holder-lbl').textContent = data.invitationBankHolder || '-';
           document.getElementById('bank-cbu-lbl').textContent = data.invitationCbu || '-';
           document.getElementById('bank-alias-lbl').textContent = data.invitationAlias || '-';
+
+          const holderDir = document.getElementById('bank-holder-lbl-direct');
+          const cbuDir = document.getElementById('bank-cbu-lbl-direct');
+          const aliasDir = document.getElementById('bank-alias-lbl-direct');
+          if (holderDir) holderDir.textContent = data.invitationBankHolder || '-';
+          if (cbuDir) cbuDir.textContent = data.invitationCbu || '-';
+          if (aliasDir) aliasDir.textContent = data.invitationAlias || '-';
           
           if (data.invitationMusicUrl) {
             const musicUrl = data.invitationMusicUrl;
@@ -1742,19 +1796,24 @@
             startCountdown(data.invitationEventDate);
           }
           
-          // Toggle Slide 5 / dot visibility depending on bank info
+          // Toggle Slide 5 / dot visibility depending on bank info and template
           const slide5 = document.getElementById('slide-5');
+          const slide5Directo = document.getElementById('slide-5-directo');
           const navDot5 = document.getElementById('nav-dot-5');
-          const hasRegistryInfo = !!(data.invitationCbu || data.invitationAlias);
-          
-          if (slide5 && navDot5) {
-            slide5.style.display = ''; // Clear inline block to allow class active display none/block logic
-            navDot5.style.display = 'inline-block';
-            
-            const btnShowTransfer = document.getElementById('btn-show-transfer');
-            if (btnShowTransfer) {
-              btnShowTransfer.style.display = 'none';
+          const invTemplate = data.invitationTemplate || 'interactivo-3d';
+
+          if (invTemplate === 'vertical-scroll' || invTemplate === 'slides-directo') {
+            if (slide5) slide5.style.display = 'none';
+            if (slide5Directo) slide5Directo.style.display = ''; // Clear inline style
+            if (invTemplate === 'vertical-scroll') {
+              if (navDot5) navDot5.style.display = 'none';
+            } else {
+              if (navDot5) navDot5.style.display = 'inline-block';
             }
+          } else { // interactivo-3d
+            if (slide5) slide5.style.display = '';
+            if (slide5Directo) slide5Directo.style.display = 'none';
+            if (navDot5) navDot5.style.display = 'inline-block';
           }
           
           initNavigation();
@@ -2504,7 +2563,8 @@
               attending,
               companionsCount,
               companionsNames,
-              dietaryRestrictions
+              dietaryRestrictions,
+              suggestedSong: window.temporarilySuggestedSong || ''
             })
           })
           .then(res => res.json())
@@ -2675,6 +2735,74 @@
       function applyInvitationStyles(data) {
         if (!data) return;
 
+        // 0. Template Selection
+        const invTemplate = data.invitationTemplate || data.invTemplate || 'interactivo-3d';
+        document.body.className = document.body.className.replace(/\btemplate-[^\s]+/g, '');
+        document.body.classList.add(`template-${invTemplate}`);
+
+        const slide5 = document.getElementById('slide-5');
+        const slide5Directo = document.getElementById('slide-5-directo');
+        const navDot5 = document.getElementById('nav-dot-5');
+        const headerElement = document.querySelector('.invitation-content header');
+        const envelopeScreen = document.getElementById('envelope-screen');
+        const invitationMain = document.getElementById('invitation-main');
+        const musicPlayerBtn = document.getElementById('music-player-btn');
+
+        if (invTemplate === 'vertical-scroll') {
+          // Hide envelope, show main content immediately
+          if (envelopeScreen) {
+            envelopeScreen.style.display = 'none';
+            envelopeScreen.style.opacity = '0';
+            envelopeScreen.style.pointerEvents = 'none';
+          }
+          if (invitationMain) {
+            invitationMain.style.display = 'flex';
+            invitationMain.style.opacity = '1';
+          }
+          if (musicPlayerBtn) {
+            musicPlayerBtn.style.display = 'flex';
+          }
+          isEnvelopeOpened = true;
+
+          // Gifts: Hide chest slide, show direct slide
+          if (slide5) slide5.style.display = 'none';
+          if (slide5Directo) slide5Directo.style.display = 'block';
+          if (navDot5) navDot5.style.display = 'none';
+
+          // Hide header on scroll template
+          if (headerElement) headerElement.style.display = 'none';
+        } else if (invTemplate === 'slides-directo') {
+          // Restore envelope display logic (envelope should be visible until opened)
+          if (!isEnvelopeOpened && envelopeScreen) {
+            envelopeScreen.style.display = 'flex';
+            envelopeScreen.style.opacity = '1';
+            envelopeScreen.style.pointerEvents = 'auto';
+          }
+
+          // Gifts: Hide chest slide, show direct slide
+          if (slide5) slide5.style.display = 'none';
+          if (slide5Directo) slide5Directo.style.display = ''; // Clear inline style
+          if (navDot5) navDot5.style.display = 'inline-block';
+
+          // Hide header
+          if (headerElement) headerElement.style.display = 'none';
+        } else { // interactivo-3d (default)
+          // Restore envelope display logic
+          if (!isEnvelopeOpened && envelopeScreen) {
+            envelopeScreen.style.display = 'flex';
+            envelopeScreen.style.opacity = '1';
+            envelopeScreen.style.pointerEvents = 'auto';
+          }
+
+          // Gifts: Show chest slide, hide direct slide
+          if (slide5) slide5.style.display = ''; // Clear inline style
+          if (slide5Directo) slide5Directo.style.display = 'none';
+          if (navDot5) navDot5.style.display = 'inline-block';
+
+          // Show header
+          if (headerElement) headerElement.style.display = 'block';
+        }
+
         // 1. Color Theme
         const themeColor = data.invitationThemeColor || data.invThemeColor || 'golden-luxury';
         document.body.className = document.body.className.replace(/\btheme-[^\s]+/g, '');
@@ -2720,6 +2848,10 @@
         } else if (bgFixedLayer) {
           bgFixedLayer.style.backgroundImage = '';
           document.body.style.backgroundImage = '';
+        }
+
+        if (typeof initNavigation === 'function') {
+          initNavigation();
         }
       }
 
@@ -2873,7 +3005,7 @@
 
       dots.forEach(dot => {
         const slideNum = parseInt(dot.getAttribute('data-slide'));
-        const targetIndex = slides.findIndex(s => s.id === `slide-${slideNum}`);
+        const targetIndex = slides.findIndex(s => s.id === `slide-${slideNum}` || (slideNum === 5 && s.id === 'slide-5-directo'));
         const currentSlideNum = parseInt(slides[activeSlide].id.replace('slide-', ''));
 
         if (slideNum === currentSlideNum) {
@@ -2903,6 +3035,9 @@
       dots = Array.from(document.querySelectorAll('#slide-nav-dots .nav-dot')).filter(dot => {
         return dot.style.display !== 'none';
       });
+      if (activeSlide >= slides.length) {
+        activeSlide = Math.max(0, slides.length - 1);
+      }
       
       const btnPrev = document.getElementById('btn-slide-prev');
       const btnNext = document.getElementById('btn-slide-next');
@@ -2941,10 +3076,15 @@
           maxUnlockedSlideIndex = slides.length - 1;
         }
         
-        // Hide event header on Slide 0 (cover page) to avoid redundancy and vertical scroll
+        // Hide event header on Slide 0 (cover page) or for templates that manage their own header
         const headerEl = document.querySelector('#invitation-main header');
         if (headerEl) {
-          headerEl.style.display = index === 0 ? 'none' : 'block';
+          const invTemplate = document.body.className.match(/template-([^\s]+)/)?.[1] || '';
+          if (invTemplate === 'slides-directo' || invTemplate === 'vertical-scroll') {
+            headerEl.style.display = 'none';
+          } else {
+            headerEl.style.display = index === 0 ? 'none' : 'block';
+          }
         }
         
         const currentSlide = slides[activeSlide];
@@ -2993,7 +3133,7 @@
       dots.forEach(dot => {
         dot.onclick = () => {
           const slideNum = parseInt(dot.getAttribute('data-slide'));
-          const targetIndex = slides.findIndex(s => s.id === `slide-${slideNum}`);
+          const targetIndex = slides.findIndex(s => s.id === `slide-${slideNum}` || (slideNum === 5 && s.id === 'slide-5-directo'));
           if (targetIndex !== -1) {
             goToSlide(targetIndex);
           }
@@ -3377,6 +3517,7 @@
       }
 
       function animate() {
+        if (!renderer) return;
         animationFrameId = requestAnimationFrame(animate);
 
         // Save performance when slide is not active
@@ -3748,8 +3889,11 @@
         }
       }
       
-      // Initialize Three.js WebGL Chest
-      init3D();
+      // Initialize Three.js WebGL Chest only if interactivo-3d is active
+      const activeTemplate = (invitationData && invitationData.invitationTemplate) || 'interactivo-3d';
+      if (activeTemplate === 'interactivo-3d') {
+        init3D();
+      }
 
       // Temporarily disabled so chest opens on every reload during testing
       // if (localStorage.getItem(storageKey)) {
@@ -3915,6 +4059,8 @@
       
       const btnCopyCbu = document.getElementById('btn-copy-cbu-new');
       const btnCopyAlias = document.getElementById('btn-copy-alias-new');
+      const btnCopyCbuDirect = document.getElementById('btn-copy-cbu-direct');
+      const btnCopyAliasDirect = document.getElementById('btn-copy-alias-direct');
       
       if (btnCopyCbu) {
         btnCopyCbu.onclick = () => {
@@ -3926,6 +4072,18 @@
         btnCopyAlias.onclick = () => {
           const alias = document.getElementById('bank-alias-lbl').textContent;
           copyToClipboard(alias, btnCopyAlias);
+        };
+      }
+      if (btnCopyCbuDirect) {
+        btnCopyCbuDirect.onclick = () => {
+          const cbu = document.getElementById('bank-cbu-lbl-direct').textContent;
+          copyToClipboard(cbu, btnCopyCbuDirect);
+        };
+      }
+      if (btnCopyAliasDirect) {
+        btnCopyAliasDirect.onclick = () => {
+          const alias = document.getElementById('bank-alias-lbl-direct').textContent;
+          copyToClipboard(alias, btnCopyAliasDirect);
         };
       }
       
@@ -4024,15 +4182,8 @@
       
       if (btnSubmitSong) {
         btnSubmitSong.addEventListener('click', () => {
-          const name = spotifyGuestNameInput.value.trim();
           const song = spotifySearchInput.value.trim();
           
-          if (!name) {
-            spotifyStatusMsg.style.display = 'block';
-            spotifyStatusMsg.style.color = '#ff3b30';
-            spotifyStatusMsg.textContent = 'Por favor, ingresá tu nombre';
-            return;
-          }
           if (!song) {
             spotifyStatusMsg.style.display = 'block';
             spotifyStatusMsg.style.color = '#ff3b30';
@@ -4040,56 +4191,30 @@
             return;
           }
           
-          spotifyStatusMsg.style.display = 'block';
-          spotifyStatusMsg.style.color = 'var(--gold-primary)';
-          spotifyStatusMsg.textContent = 'Enviando sugerencia...';
+          // Guardar temporalmente en memoria
+          window.temporarilySuggestedSong = song;
           
-          fetch(`/api/public/suggest-song?event=${encodeURIComponent(eventId)}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, song })
-          })
-          .then(res => res.json())
-          .then(data => {
-            if (data.error) {
-              spotifyStatusMsg.style.color = '#ff3b30';
-              spotifyStatusMsg.textContent = data.error;
-            } else {
-              spotifyStatusMsg.style.display = 'none';
-              
-              spotifySearchInput.disabled = true;
-              spotifyGuestNameInput.disabled = true;
-              btnSubmitSong.disabled = true;
-              btnSubmitSong.style.opacity = '0.5';
-              
-              // Pre-fill RSVP name if provided
-              const rsvpNameInput = document.getElementById('rsvp-name');
-              if (rsvpNameInput && name && !rsvpNameInput.value) {
-                rsvpNameInput.value = name;
-              }
+          spotifyStatusMsg.style.display = 'none';
+          spotifySearchInput.disabled = true;
+          if (spotifyGuestNameInput) spotifyGuestNameInput.disabled = true;
+          btnSubmitSong.disabled = true;
+          btnSubmitSong.style.opacity = '0.5';
 
-              if (btnSubmitSong) btnSubmitSong.style.display = 'none';
-              if (spotifySuccessContainer) spotifySuccessContainer.style.display = 'block';
+          if (btnSubmitSong) btnSubmitSong.style.display = 'none';
+          if (spotifySuccessContainer) spotifySuccessContainer.style.display = 'block';
 
-              const triggerAdvance = () => {
-                const targetIndex = slides.findIndex(s => s.id === 'slide-4');
-                if (targetIndex !== -1) {
-                  goToSlide(targetIndex, true);
-                }
-              };
-
-              if (typeof window.showInvitationSuccessToast === 'function') {
-                window.showInvitationSuccessToast('¡Canción enviada correctamente!', triggerAdvance);
-              } else {
-                triggerAdvance();
-              }
+          const triggerAdvance = () => {
+            const targetIndex = slides.findIndex(s => s.id === 'slide-4');
+            if (targetIndex !== -1) {
+              goToSlide(targetIndex, true);
             }
-          })
-          .catch(err => {
-            console.error('Error submitting song:', err);
-            spotifyStatusMsg.style.color = '#ff3b30';
-            spotifyStatusMsg.textContent = 'Error al enviar sugerencia.';
-          });
+          };
+
+          if (typeof window.showInvitationSuccessToast === 'function') {
+            window.showInvitationSuccessToast('🎵 ¡Canción sugerida! Se enviará con tu confirmación.', triggerAdvance);
+          } else {
+            triggerAdvance();
+          }
         });
       }
       

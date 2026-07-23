@@ -201,7 +201,7 @@ app.get(['/invitacion', '/invitacion.html'], async (req, res) => {
     html = html.replace(/<meta\s+(property|name)=["'](og|twitter):[^>]+>/gi, '');
 
     // Dynamic replacement of <title>
-    html = html.replace(/<title>.*?<\/title>/, `<title>${displayTitle}</title>`);
+    html = html.replace(/<title>.*?<\/title>/, () => `<title>${displayTitle}</title>`);
     
     // Construct dynamic image URL (absolute URL required by crawlers like WhatsApp)
     const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
@@ -240,7 +240,7 @@ app.get(['/invitacion', '/invitacion.html'], async (req, res) => {
   <meta name="twitter:description" content="${ogDescription}" />
   <meta name="twitter:image" content="${ogImageUrl}" />`;
 
-    html = html.replace('</head>', `${ogMeta}\n</head>`);
+    html = html.replace('</head>', () => `${ogMeta}\n</head>`);
     
     res.send(html);
   } catch (err) {
@@ -465,10 +465,26 @@ app.get('/api/config', async (req, res) => {
     const invitationPhoto4 = config['invitation_photo_4'] || '';
     const invitationPhoto5 = config['invitation_photo_5'] || '';
 
+    const eventSupportPhone = config['support_whatsapp_number'] || '';
+    let globalSupportPhone = eventSupportPhone;
+    if (!globalSupportPhone) {
+      const defaultSupportPhone = await db.getConfigValue('default', 'support_whatsapp_number', '');
+      globalSupportPhone = defaultSupportPhone || process.env.SUPPORT_WHATSAPP_NUMBER || '5491122334455';
+    }
+
+    const defaultTemplateStr = '¡Hola miFiestAPP! 👋 Necesito soporte técnico / ayuda con mi evento: "{EVENT_TITLE}" (ID: {EVENT_ID}).';
+    const eventSupportTemplate = config['support_whatsapp_template'] || '';
+    let globalSupportTemplate = eventSupportTemplate;
+    if (!globalSupportTemplate) {
+      const defaultTemplateVal = await db.getConfigValue('default', 'support_whatsapp_template', '');
+      globalSupportTemplate = defaultTemplateVal || defaultTemplateStr;
+    }
+
     res.json({
       eventTitle,
       googleDriveFolderUrl,
-      supportWhatsappNumber: process.env.SUPPORT_WHATSAPP_NUMBER || '5491122334455',
+      supportWhatsappNumber: globalSupportPhone,
+      supportWhatsappTemplate: globalSupportTemplate,
       clientName,
       serviceTables,
       servicePhotos,
@@ -820,6 +836,44 @@ app.post('/api/public/rsvp', async (req, res) => {
   }
 });
 
+// API: Public QR RSVP Auto-Registration submit (No Auth)
+app.post('/api/public/rsvp-qr', async (req, res) => {
+  const eventId = req.query.event || req.body.eventId || 'default';
+  
+  try {
+    const isValid = await db.isEventValid(eventId);
+    if (!isValid && eventId !== 'default') {
+      return res.status(404).json({ error: 'El evento no existe o está inactivo' });
+    }
+  } catch (err) {
+    console.error('Error validating event for Public QR RSVP:', err);
+  }
+
+  const { name, phone, attending, dietaryRestrictions, suggestedSong } = req.body;
+  if (!name || name.trim() === '') {
+    return res.status(400).json({ error: 'El Nombre y Apellido es obligatorio' });
+  }
+
+  const cleanPhone = (phone || '').replace(/[^0-9]/g, '');
+  if (!cleanPhone || cleanPhone.length < 6) {
+    return res.status(400).json({ error: 'El número de teléfono / WhatsApp es obligatorio (mínimo 6 dígitos)' });
+  }
+
+  try {
+    const result = await db.addOrUpdatePublicRsvp(eventId, {
+      name,
+      phone: cleanPhone,
+      attending,
+      dietaryRestrictions,
+      suggestedSong
+    });
+    res.json({ success: true, ...result });
+  } catch (error) {
+    console.error('Error adding/updating Public QR RSVP:', error);
+    res.status(500).json({ error: 'Error al registrar tu confirmación por QR' });
+  }
+});
+
 // API: Public Song Suggestion submit (No Auth)
 app.post('/api/public/suggest-song', async (req, res) => {
   const eventId = req.query.event || req.body.eventId || 'default';
@@ -1010,6 +1064,41 @@ app.post('/api/superadmin/events/:id/sync-drive', requireSuperAuth, async (req, 
   } catch (error) {
     console.error(`[Google Drive] Error al sincronizar carpeta para ${id}:`, error);
     res.status(500).json({ error: error.message || 'Error al conectar con Google Drive' });
+  }
+});
+
+// API: Superadmin Get Global Technical Support Settings
+app.get('/api/superadmin/support-phone', requireSuperAuth, async (req, res) => {
+  try {
+    const phone = await db.getConfigValue('default', 'support_whatsapp_number', process.env.SUPPORT_WHATSAPP_NUMBER || '5491122334455');
+    const defaultTemplate = '¡Hola miFiestAPP! 👋 Necesito soporte técnico / ayuda con mi evento: "{EVENT_TITLE}" (ID: {EVENT_ID}).';
+    const messageTemplate = await db.getConfigValue('default', 'support_whatsapp_template', defaultTemplate);
+    res.json({ phone, messageTemplate });
+  } catch (error) {
+    console.error('Error fetching support settings:', error);
+    res.status(500).json({ error: 'Error al obtener los datos de soporte' });
+  }
+});
+
+// API: Superadmin Save Global Technical Support Settings
+app.post('/api/superadmin/support-phone', requireSuperAuth, async (req, res) => {
+  const { phone, messageTemplate } = req.body;
+  if (!phone || typeof phone !== 'string') {
+    return res.status(400).json({ error: 'El número de teléfono es requerido.' });
+  }
+  const cleanPhone = phone.replace(/[^0-9]/g, '');
+  if (cleanPhone.length < 8) {
+    return res.status(400).json({ error: 'Número de teléfono no válido. Ingrese solo dígitos con código de país (ej: 5491122334455).' });
+  }
+  const cleanTemplate = (messageTemplate && typeof messageTemplate === 'string' && messageTemplate.trim()) ? messageTemplate.trim() : '¡Hola miFiestAPP! 👋 Necesito soporte técnico / ayuda con mi evento: "{EVENT_TITLE}" (ID: {EVENT_ID}).';
+  try {
+    await db.setConfigValue('default', 'support_whatsapp_number', cleanPhone);
+    await db.setConfigValue('default', 'support_whatsapp_template', cleanTemplate);
+    process.env.SUPPORT_WHATSAPP_NUMBER = cleanPhone;
+    res.json({ success: true, phone: cleanPhone, messageTemplate: cleanTemplate });
+  } catch (error) {
+    console.error('Error saving support settings:', error);
+    res.status(500).json({ error: 'Error al guardar la configuración de soporte' });
   }
 });
 

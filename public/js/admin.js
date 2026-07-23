@@ -785,6 +785,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const invBankHolderInput = document.getElementById('inv-bank-holder-input');
   const invCbuInput = document.getElementById('inv-cbu-input');
   const invAliasInput = document.getElementById('inv-alias-input');
+  const invTemplate = document.getElementById('inv-template');
   const invThemeFont = document.getElementById('inv-theme-font');
   const invThemeColor = document.getElementById('inv-theme-color');
   const invBgEffect = document.getElementById('inv-bg-effect');
@@ -1332,6 +1333,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (invBankHolderInput) invBankHolderInput.value = data.invitationBankHolder || '';
         if (invCbuInput) invCbuInput.value = data.invitationCbu || '';
         if (invAliasInput) invAliasInput.value = data.invitationAlias || '';
+        if (invTemplate) {
+          invTemplate.value = data.invitationTemplate || 'interactivo-3d';
+          invTemplate.dispatchEvent(new Event('change'));
+        }
         if (invThemeFont) {
           invThemeFont.value = data.invitationThemeFont || 'classic-editorial';
           invThemeFont.dispatchEvent(new Event('change'));
@@ -1369,7 +1374,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const supportPhone = (data && data.supportWhatsappNumber) ? data.supportWhatsappNumber : '5491122334455';
         const title = (data && data.eventTitle) ? data.eventTitle : 'miFiestAPP';
         const id = eventId || 'default';
-        const msg = `¡Hola miFiestAPP! 👋 Necesito soporte técnico / ayuda con mi evento: "${title}" (ID: ${id}).`;
+        const rawTemplate = (data && data.supportWhatsappTemplate) ? data.supportWhatsappTemplate : '¡Hola miFiestAPP! 👋 Necesito soporte técnico / ayuda con mi evento: "{EVENT_TITLE}" (ID: {EVENT_ID}).';
+        const msg = rawTemplate.replace(/\{EVENT_TITLE\}/g, title).replace(/\{EVENT_ID\}/g, id);
         const whatsappUrl = `https://wa.me/${supportPhone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(msg)}`;
 
         const adminSupportBtn = document.getElementById('btn-admin-support-header');
@@ -2258,6 +2264,7 @@ Tu presencia hará que esta celebración sea aún más significativa.
       invitationAlias: invAliasInput ? invAliasInput.value.trim() : '',
       invitationBankHolder: invBankHolderInput ? invBankHolderInput.value.trim() : '',
       invitationDressCode: invDressInput ? invDressInput.value.trim() : '',
+      invitationTemplate: invTemplate ? invTemplate.value : 'interactivo-3d',
       invitationThemeFont: invThemeFont ? invThemeFont.value : 'classic-editorial',
       invitationThemeColor: invThemeColor ? invThemeColor.value : 'golden-luxury',
       invitationBgEffect: invBgEffect ? invBgEffect.value : 'golden-dust',
@@ -2436,9 +2443,21 @@ Tu presencia hará que esta celebración sea aún más significativa.
         ? `<span style="color: #f3e5ab; font-weight: 500;">${rsvp.dietaryRestrictions}</span>`
         : `<span style="color: var(--text-muted);">-</span>`;
 
+      const isPublicQr = rsvp.source === 'public_qr';
+      const sourceBadge = isPublicQr 
+        ? `<span style="display: inline-block; font-size: 0.62rem; background: rgba(37, 211, 102, 0.15); border: 1px solid rgba(37, 211, 102, 0.4); color: #25D366; padding: 2px 6px; border-radius: 10px; margin-left: 6px; font-weight: 600;">🌐 QR Público</span>`
+        : `<span style="display: inline-block; font-size: 0.62rem; background: rgba(212, 175, 55, 0.15); border: 1px solid rgba(212, 175, 55, 0.4); color: var(--gold-light); padding: 2px 6px; border-radius: 10px; margin-left: 6px; font-weight: 600;">👤 Individual</span>`;
+
+      const phoneText = rsvp.phone 
+        ? `<div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">📱 ${rsvp.phone}</div>`
+        : '';
+
       return `
         <tr data-id="${rsvp.id}">
-          <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.03); color: white;">${rsvp.name}</td>
+          <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.03); color: white;">
+            <div><strong>${rsvp.name}</strong>${sourceBadge}</div>
+            ${phoneText}
+          </td>
           <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.03);">${attendingText}</td>
           <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.03); color: white;">${companionsText}</td>
           <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.03);">${dietText}</td>
@@ -2483,6 +2502,18 @@ Tu presencia hará que esta celebración sea aún más significativa.
       }
     );
   }
+
+    const btnCopyPublicQr = document.getElementById('btn-copy-public-qr-link');
+    if (btnCopyPublicQr) {
+      btnCopyPublicQr.addEventListener('click', () => {
+        const publicUrl = `${window.location.origin}/invitacion.html?event=${encodeURIComponent(eventId)}&mode=public`;
+        navigator.clipboard.writeText(publicUrl).then(() => {
+          showToast('📋 Enlace QR Genérico copiado al portapapeles', 'success');
+        }).catch(() => {
+          showToast('📋 Enlace: ' + publicUrl, 'info');
+        });
+      });
+    }
 
   function preparePrintPoster(serviceType) {
     const isPhotos = (serviceType === 'photos');
@@ -3072,6 +3103,7 @@ Tu presencia hará que esta celebración sea aún más significativa.
     if (!previewIframe || !isIframeLoaded) return;
 
     const configPayload = {
+      invTemplate: invTemplate ? invTemplate.value : 'interactivo-3d',
       invThemeColor: invThemeColor ? invThemeColor.value : 'golden-luxury',
       invThemeFont: invThemeFont ? invThemeFont.value : 'classic-editorial',
       invWaxSeal: invWaxSeal ? invWaxSeal.value : 'rings',
@@ -3096,7 +3128,7 @@ Tu presencia hará que esta celebración sea aún más significativa.
 
   // --- Real-time preview input listeners ---
   const inputsToListen = [
-    invThemeFont, invThemeColor, invBgEffect, invWaxSeal,
+    invTemplate, invThemeFont, invThemeColor, invBgEffect, invWaxSeal,
     invBgUrl, invTitleInput, invDateOnlyInput, invTimeOnlyInput, invTimeEndInput,
     invPhoto1, invPhoto2, invPhoto3, invPhoto4, invPhoto5
   ];
