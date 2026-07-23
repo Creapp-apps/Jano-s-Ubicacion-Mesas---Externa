@@ -4431,46 +4431,59 @@
           if (souvenirModal && souvenirImg) {
             souvenirImg.src = url;
             if (souvenirDownloadBtn) {
-              souvenirDownloadBtn.href = url;
-              souvenirDownloadBtn.download = filename;
+              souvenirDownloadBtn.href = 'javascript:void(0)';
+              souvenirDownloadBtn.onclick = (e) => {
+                e.preventDefault();
+                submitSouvenirDownloadForm(imageURI, filename);
+              };
             }
             souvenirModal.style.display = 'flex';
           }
         };
 
-        // 1. Direct Web Download Execution (Triggers native browser download popup on iOS & Android & Desktop)
-        try {
-          const downloadLink = document.createElement('a');
-          downloadLink.download = filename;
-          downloadLink.href = blobUrl;
-          downloadLink.target = '_blank';
-          document.body.appendChild(downloadLink);
-          downloadLink.click();
-          setTimeout(() => {
-            if (downloadLink.parentNode) document.body.removeChild(downloadLink);
-          }, 500);
-        } catch (e) {
-          console.warn('Direct download attempt error:', e);
-        }
+        // 1. Forced Server Attachment Download (Sends Content-Disposition: attachment for 100% iOS Safari & Mobile compatibility)
+        submitSouvenirDownloadForm(imageURI, filename);
 
-        // 2. Open Souvenir Modal Preview on screen with explicit download / view buttons
+        // 2. Open Souvenir Modal Preview on screen
         openSouvenirModal(blobUrl);
 
-        // 3. Optional Native Share Sheet for HTTPS browsers supporting File sharing
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          navigator.share({
-            files: [file],
-            title: `Pase VIP - ${mainTitle}`,
-            text: `¡Mi pase de recuerdito para ${mainTitle}!`
-          }).catch((shareErr) => {
-            console.log('Native share dismissed or handled via modal:', shareErr);
-          });
-        }
-
         if (typeof window.showInvitationSuccessToast === 'function') {
-          window.showInvitationSuccessToast('📸 ¡Pase VIP preparado para descargar!');
+          window.showInvitationSuccessToast('📸 ¡Descargando Pase VIP!');
         }
       };
+
+      function submitSouvenirDownloadForm(imageURI, filename) {
+        try {
+          let form = document.getElementById('souvenir-download-form');
+          if (!form) {
+            form = document.createElement('form');
+            form.id = 'souvenir-download-form';
+            form.method = 'POST';
+            form.action = '/api/public/download-souvenir';
+            form.style.display = 'none';
+
+            const imgInput = document.createElement('input');
+            imgInput.type = 'hidden';
+            imgInput.name = 'image';
+            imgInput.id = 'souvenir-form-image-input';
+            form.appendChild(imgInput);
+
+            const fileInput = document.createElement('input');
+            fileInput.type = 'hidden';
+            fileInput.name = 'filename';
+            fileInput.id = 'souvenir-form-file-input';
+            form.appendChild(fileInput);
+
+            document.body.appendChild(form);
+          }
+
+          document.getElementById('souvenir-form-image-input').value = imageURI;
+          document.getElementById('souvenir-form-file-input').value = filename;
+          form.submit();
+        } catch (e) {
+          console.warn('Form download trigger error:', e);
+        }
+      }
 
       window.openSouvenirInNewTab = function() {
         const souvenirImg = document.getElementById('souvenir-modal-img');

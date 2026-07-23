@@ -908,6 +908,31 @@ app.post('/api/public/suggest-song', async (req, res) => {
   }
 });
 
+// API: Download Souvenir Image (Forced attachment header for iOS Safari / Mobile browsers)
+app.post('/api/public/download-souvenir', (req, res) => {
+  try {
+    const { image, filename } = req.body;
+    if (!image) {
+      return res.status(400).send('Imagen no proporcionada');
+    }
+
+    const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
+    const buffer = Buffer.from(base64Data, 'base64');
+
+    const downloadFilename = (filename && typeof filename === 'string') 
+      ? filename.replace(/[^a-zA-Z0-9_\.-]/g, '_') 
+      : 'Recuerdito-VIP.png';
+
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Content-Disposition', `attachment; filename="${downloadFilename}"`);
+    res.setHeader('Content-Length', buffer.length);
+    return res.end(buffer);
+  } catch (err) {
+    console.error('Error handling download-souvenir endpoint:', err);
+    return res.status(500).send('Error procesando descarga');
+  }
+});
+
 // API: Admin Login
 app.post('/api/admin/login', async (req, res) => {
   const { password, email } = req.body;
