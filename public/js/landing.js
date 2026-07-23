@@ -369,12 +369,36 @@ document.addEventListener('DOMContentLoaded', () => {
   const modalLoginForm = document.getElementById('modal-login-form');
   const modalErrorMsg = document.getElementById('modal-error-message');
 
+  // --- PASSWORD TOGGLE FOR CLIENT LOGIN MODAL ---
+  const modalToggleBtn = document.getElementById('modal-toggle-password');
+  const modalPasswordInput = document.getElementById('modal-password');
+  const modalEyeIcon = document.getElementById('modal-eye-icon');
+
+  const eyeOpenPath = 'M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z';
+  const eyeClosedPath = 'M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.82l2.92 2.92c1.51-1.39 2.7-3.18 3.44-5.24-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15c.01-.06.01-.12.01-.17 0-1.66-1.34-3-3-3-.05 0-.11 0-.17.01z';
+
+  if (modalToggleBtn && modalPasswordInput && modalEyeIcon) {
+    modalToggleBtn.addEventListener('click', () => {
+      if (modalPasswordInput.type === 'password') {
+        modalPasswordInput.type = 'text';
+        modalEyeIcon.innerHTML = `<path d="${eyeClosedPath}"/>`;
+      } else {
+        modalPasswordInput.type = 'password';
+        modalEyeIcon.innerHTML = `<path d="${eyeOpenPath}"/>`;
+      }
+    });
+  }
+
   if (openClientLoginBtn && clientLoginModal) {
     openClientLoginBtn.addEventListener('click', (e) => {
       e.preventDefault();
       clientLoginModal.classList.add('active');
       modalErrorMsg.classList.remove('visible');
       modalLoginForm.reset();
+      if (modalPasswordInput) {
+        modalPasswordInput.type = 'password';
+        if (modalEyeIcon) modalEyeIcon.innerHTML = `<path d="${eyeOpenPath}"/>`;
+      }
     });
   }
 

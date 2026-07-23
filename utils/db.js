@@ -1056,7 +1056,7 @@ async function createEvent(id, clientName, password = '', clientEmail = '', serv
       .insert([{ 
         id: cleanId, 
         client_name: clientName.trim(), 
-        client_email: clientEmail.trim(), 
+        client_email: (clientEmail || '').trim().toLowerCase(), 
         active: true, 
         password: password.trim(),
         service_tables: serviceTables,
@@ -1077,7 +1077,7 @@ async function createEvent(id, clientName, password = '', clientEmail = '', serv
     events.push({
       id: cleanId,
       clientName: clientName.trim(),
-      clientEmail: clientEmail.trim(),
+      clientEmail: (clientEmail || '').trim().toLowerCase(),
       active: true,
       password: password.trim(),
       createdAt: new Date().toISOString(),
@@ -1217,14 +1217,15 @@ async function validateEventPassword(eventId, password) {
 
 async function findEventByEmailAndPassword(email, password) {
   const cleanEmail = (email || '').trim().toLowerCase();
-  if (!cleanEmail || !password) return null;
+  const cleanPassword = (password || '').trim();
+  if (!cleanEmail || !cleanPassword) return null;
 
   if (isSupabaseEnabled) {
     try {
       const { data, error } = await supabase
         .from('events')
         .select('id, password, active')
-        .eq('client_email', cleanEmail);
+        .ilike('client_email', cleanEmail);
         
       if (error) {
         console.error('Error fetching event by email from Supabase:', error);
@@ -1232,7 +1233,7 @@ async function findEventByEmailAndPassword(email, password) {
       }
       if (!data || data.length === 0) return null;
       
-      const match = data.find(e => e.password === password);
+      const match = data.find(e => (e.password || '').trim() === cleanPassword);
       if (match) {
         return { id: match.id, active: match.active };
       }
@@ -1243,7 +1244,7 @@ async function findEventByEmailAndPassword(email, password) {
     }
   } else {
     const events = getLocalEvents();
-    const match = events.find(e => (e.clientEmail || '').trim().toLowerCase() === cleanEmail && e.password === password);
+    const match = events.find(e => (e.clientEmail || '').trim().toLowerCase() === cleanEmail && (e.password || '').trim() === cleanPassword);
     if (match) {
       return { id: match.id, active: match.active };
     }
