@@ -1359,6 +1359,30 @@ async function deleteVendor(id) {
   saveLocalVendors(updated);
 }
 
+async function assignVendorToEvent(eventId, vendorId) {
+  const cleanVendorId = vendorId ? String(vendorId).trim() : null;
+  await setConfigValue(eventId, 'vendor_id', cleanVendorId || '');
+
+  if (isSupabaseEnabled) {
+    try {
+      await supabase
+        .from('events')
+        .update({ vendor_id: cleanVendorId })
+        .eq('id', eventId);
+    } catch (e) {
+      console.warn('Error updating vendor_id in Supabase events:', e.message);
+    }
+  }
+
+  const events = getLocalEvents();
+  const ev = events.find(e => e.id === eventId);
+  if (ev) {
+    ev.vendorId = cleanVendorId;
+    saveLocalEvents(events);
+  }
+  return true;
+}
+
 async function validateEventPassword(eventId, password) {
   const cleanId = (eventId || '').trim().toLowerCase();
   
@@ -1942,6 +1966,7 @@ module.exports = {
   getCapitanesConfig,
   saveCapitanesConfig,
   getCapitanesProgress,
-  saveCapitanesProgress
+  saveCapitanesProgress,
+  assignVendorToEvent
 };
 

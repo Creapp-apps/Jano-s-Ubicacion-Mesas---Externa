@@ -1267,6 +1267,19 @@ app.delete('/api/superadmin/vendors/:id', requireSuperAuth, async (req, res) => 
   }
 });
 
+// API: Superadmin Assign Vendor to Event
+app.put('/api/superadmin/events/:id/vendor', requireSuperAuth, async (req, res) => {
+  const eventId = req.params.id;
+  const { vendorId } = req.body;
+  try {
+    await db.assignVendorToEvent(eventId, vendorId);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error assigning vendor to event:', error);
+    res.status(500).json({ error: 'Error al asignar vendedor al evento' });
+  }
+});
+
 // --- VENDOR PORTAL API ROUTES ---
 
 // API: Vendor Login

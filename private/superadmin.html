@@ -621,6 +621,21 @@
                     `}
                   </div>
                 </div>
+
+                <div class="event-card-info-row" style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center;">
+                  <span class="event-card-label" style="color: var(--gold-light); font-weight: 600; display: flex; align-items: center; gap: 4px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                    Vendedor:
+                  </span>
+                  <select onchange="updateEventVendor('${event.id}', this.value)" style="background: rgba(0,0,0,0.6); border: 1px solid rgba(212,175,55,0.4); color: #fff; padding: 4px 8px; border-radius: 6px; font-size: 0.78rem; outline: none; cursor: pointer; max-width: 170px;">
+                    <option value="">-- Sin Vendedor --</option>
+                    ${allVendorsList.map(v => `
+                      <option value="${v.id}" ${event.vendorId === v.id ? 'selected' : ''}>
+                        ${escapeHtml(v.name)}
+                      </option>
+                    `).join('')}
+                  </select>
+                </div>
               </div>
               
               <div class="event-card-actions">
@@ -875,12 +890,37 @@
     }
 
     // --- VENDOR & PENDING APPROVALS LOGIC ---
+    let allVendorsList = [];
+
+    async function updateEventVendor(eventId, vendorId) {
+      try {
+        const res = await fetch(`/api/superadmin/events/${eventId}/vendor`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ vendorId })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('✅ Vendedor asignado con éxito', 'success');
+          await loadVendors();
+          await loadEvents();
+        } else {
+          showToast(data.error || 'Error al asignar vendedor', 'error');
+        }
+      } catch (err) {
+        showToast('Error al conectar con el servidor', 'error');
+      }
+    }
+
     async function loadVendors() {
       const tbody = document.getElementById('vendors-list-body');
       if (!tbody) return;
       try {
         const res = await fetch('/api/superadmin/vendors');
         const vendors = await res.json();
+        if (Array.isArray(vendors)) {
+          allVendorsList = vendors;
+        }
         if (!Array.isArray(vendors) || vendors.length === 0) {
           tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 15px;">No hay vendedores registrados aún.</td></tr>`;
           return;
@@ -1069,9 +1109,12 @@
     };
 
     // Initial load
-    loadEvents();
-    loadVendors();
-    loadSupportPhone();
+    async function initSuperadminDashboard() {
+      await loadVendors();
+      await loadEvents();
+      loadSupportPhone();
+    }
+    initSuperadminDashboard();
   </script>
 </body>
 </html>
