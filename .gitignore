@@ -1,6 +1,7 @@
 node_modules/
 .env
 data/*.json
+data/test_*
 uploads/*
 !uploads/.gitkeep
 .DS_Store

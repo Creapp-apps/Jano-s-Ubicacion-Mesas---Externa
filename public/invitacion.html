@@ -658,49 +658,7 @@
         </div>
       </div>
 
-      <!-- Slide 6: Spotify (Sugerir Canción) -->
-      <div class="invitation-slide" id="slide-6">
-        <div class="card">
-          <h2 class="hero-subtitle">¿Qué música no puede faltar?</h2>
-          <p class="instructions" id="spotify-instructions" style="margin-bottom: 20px;">Sugerí canciones para que el DJ las sume a la fiesta.</p>
-          
-          <div style="text-align: center; display: flex; flex-direction: column; gap: 15px;">
-            <div id="spotify-name-container" style="display: none;">
-              <label style="display: block; text-align: center; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Tu Nombre</label>
-              <input type="text" id="spotify-guest-name-input" class="form-control" placeholder="Ingresá tu nombre">
-            </div>
-
-            <div style="position: relative; z-index: 30;">
-              <label style="display: block; text-align: center; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Buscar Canción o Artista</label>
-              <input type="text" id="spotify-search-input" class="form-control" placeholder="Ej: Daft Punk - One More Time" autocomplete="off" required>
-              
-              <!-- Search Results Dropdown -->
-              <div id="spotify-search-results" class="autocomplete-results" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: rgba(18,18,20,0.98); border: 1px solid var(--border-gold); border-radius: 8px; max-height: 220px; overflow-y: auto; z-index: 1000; margin-top: 5px; box-shadow: 0 10px 30px rgba(0,0,0,0.9); -webkit-overflow-scrolling: touch;">
-                <!-- Autocomplete items -->
-              </div>
-            </div>
-            
-            <button type="button" class="btn-gold btn-step-advance" id="btn-submit-song" style="width: 100%; margin-top: 10px;">
-              <span>Sugerir Canción</span>
-              <span class="gold-pointer-pill">
-                <span class="gold-pointer-ring"></span>
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M5 12h14M13 5l7 7-7 7"/>
-                </svg>
-              </span>
-            </button>
-            
-            <!-- Confirmed container with continue action -->
-            <div id="spotify-success-container" style="display: none; margin-top: 15px; text-align: center;">
-              <div style="color: #4cd964; font-weight: 600; font-size: 0.9rem; margin-bottom: 5px;">✓ ¡Sugerencia enviada con éxito!</div>
-            </div>
-          </div>
-          
-          <div id="spotify-status-msg" style="margin-top: 15px; text-align: center; font-size: 0.85rem; display: none;"></div>
-        </div>
-      </div>
-
-      <!-- Slide 4: RSVP Form -->
+      <!-- Slide 4: RSVP Form (Confirmar Asistencia) -->
       <div class="invitation-slide" id="slide-4">
         <div class="card">
           <h2 class="hero-subtitle">Confirmar Asistencia</h2>
@@ -744,48 +702,106 @@
           
           <div id="rsvp-status-msg" style="margin-top: 15px; text-align: center; font-size: 0.85rem; display: none;"></div>
 
-          <!-- Success Screen Container (hidden initially) -->
-          <div id="rsvp-success-container">
-            <div class="success-seal-container">
-              <div class="success-seal gold-cheers-seal">
-                <span class="cheers-glow-aura"></span>
-                <svg width="44" height="44" viewBox="0 0 64 64" fill="none">
-                  <!-- Left Champagne Glass -->
-                  <path d="M22 12 C22 24, 29 27, 29 37 L29 50 L20 50 L20 54 L44 54 L44 50 L35 50 L35 37 C35 27, 42 24, 42 12 Z" stroke="#111" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="rgba(17,17,17,0.15)"/>
-                  <!-- Liquid Level & Bubbles -->
-                  <path d="M24 20 C28 22, 36 22, 40 20 C38 27, 34 27, 24 20 Z" fill="#111"/>
-                  <!-- Clinking Toast Sparkle -->
-                  <path d="M32 4 L33.5 8.5 L38 10 L33.5 11.5 L32 16 L30.5 11.5 L26 10 L30.5 8.5 Z" fill="#111"/>
-                  <circle cx="18" cy="8" r="2" fill="#111"/>
-                  <circle cx="46" cy="6" r="1.5" fill="#111"/>
-                </svg>
+          <div id="rsvp-success-container" style="display: none; margin-top: 15px; text-align: center;">
+            <div style="color: #4cd964; font-weight: 600; font-size: 0.95rem; margin-bottom: 10px;">✓ ¡Asistencia registrada con éxito!</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Slide 6: Spotify (Sugerir Canción) -->
+      <div class="invitation-slide" id="slide-6">
+        <div class="card">
+          <h2 class="hero-subtitle">¿Qué música no puede faltar?</h2>
+          <p class="instructions" id="spotify-instructions" style="margin-bottom: 20px;">Sugerí canciones para que el DJ las sume a la fiesta.</p>
+          
+          <div style="text-align: center; display: flex; flex-direction: column; gap: 15px;">
+            <div id="spotify-name-container" style="display: none;">
+              <label style="display: block; text-align: center; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Tu Nombre</label>
+              <input type="text" id="spotify-guest-name-input" class="form-control" placeholder="Ingresá tu nombre">
+            </div>
+
+            <div style="position: relative; z-index: 30;">
+              <label style="display: block; text-align: center; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Buscar Canción o Artista</label>
+              <input type="text" id="spotify-search-input" class="form-control" placeholder="Ej: Daft Punk - One More Time" autocomplete="off" required>
+              
+              <!-- Search Results Dropdown -->
+              <div id="spotify-search-results" class="autocomplete-results" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: rgba(18,18,20,0.98); border: 1px solid var(--border-gold); border-radius: 8px; max-height: 220px; overflow-y: auto; z-index: 1000; margin-top: 5px; box-shadow: 0 10px 30px rgba(0,0,0,0.9); -webkit-overflow-scrolling: touch;">
+                <!-- Autocomplete items -->
               </div>
             </div>
             
-            <h3 class="success-title">¡Asistencia confirmada con éxito!</h3>
-            <p class="success-subtitle">Te esperamos para pasar una noche increíble con nosotros.</p>
-
-            <div style="margin-top: 22px; display: flex; flex-direction: column; align-items: center; gap: 10px; z-index: 10; position: relative; width: 100%; max-width: 320px; margin-left: auto; margin-right: auto;">
-              <button type="button" class="btn-gold btn-glow-breath" id="btn-save-invitation-souvenir" onclick="saveInvitationSouvenir()" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.82rem; padding: 12px 18px;">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
-                  <circle cx="12" cy="13" r="4"></circle>
+            <button type="button" class="btn-gold btn-step-advance" id="btn-submit-song" style="width: 100%; margin-top: 10px;">
+              <span>Sugerir Canción</span>
+              <span class="gold-pointer-pill">
+                <span class="gold-pointer-ring"></span>
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M5 12h14M13 5l7 7-7 7"/>
                 </svg>
-                <span>📸 Guardar en Mi Galería</span>
-              </button>
-
-              <button type="button" id="btn-add-to-calendar" onclick="openCalendarModal()" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.82rem; padding: 11px 18px; border-radius: 25px; border: 1px solid var(--gold-primary); background: rgba(0,0,0,0.4); color: var(--gold-primary); font-weight: 600; cursor: pointer; transition: all 0.3s ease;">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                  <line x1="16" y1="2" x2="16" y2="6"></line>
-                  <line x1="8" y1="2" x2="8" y2="6"></line>
-                  <line x1="3" y1="10" x2="21" y2="10"></line>
-                  <line x1="12" y1="14" x2="12" y2="18"></line>
-                  <line x1="10" y1="16" x2="14" y2="16"></line>
-                </svg>
-                <span>📅 Agendar en Mi Calendario</span>
-              </button>
+              </span>
+            </button>
+            
+            <!-- Confirmed container with continue action -->
+            <div id="spotify-success-container" style="display: none; margin-top: 15px; text-align: center;">
+              <div style="color: #4cd964; font-weight: 600; font-size: 0.9rem; margin-bottom: 5px;">✓ ¡Sugerencia enviada con éxito!</div>
             </div>
+          </div>
+          
+          <div id="spotify-status-msg" style="margin-top: 15px; text-align: center; font-size: 0.85rem; display: none;"></div>
+
+          <button type="button" class="btn-gold btn-glow-breath btn-step-advance" onclick="const targetIndex = slides.findIndex(s => s.id === 'slide-farewell'); if (targetIndex !== -1) goToSlide(targetIndex, true);" style="width: 100%; margin-top: 20px;">
+            <span>Finalizar e Ir a Despedida ✨</span>
+            <span class="gold-pointer-pill">
+              <span class="gold-pointer-ring"></span>
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12h14M13 5l7 7-7 7"/>
+              </svg>
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Slide Farewell: Cierre & Despedida Final -->
+      <div class="invitation-slide" id="slide-farewell">
+        <div class="card">
+          <div class="success-seal-container">
+            <div class="success-seal gold-cheers-seal">
+              <span class="cheers-glow-aura"></span>
+              <svg width="44" height="44" viewBox="0 0 64 64" fill="none">
+                <!-- Left Champagne Glass -->
+                <path d="M22 12 C22 24, 29 27, 29 37 L29 50 L20 50 L20 54 L44 54 L44 50 L35 50 L35 37 C35 27, 42 24, 42 12 Z" stroke="#111" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="rgba(17,17,17,0.15)"/>
+                <!-- Liquid Level & Bubbles -->
+                <path d="M24 20 C28 22, 36 22, 40 20 C38 27, 34 27, 24 20 Z" fill="#111"/>
+                <!-- Clinking Toast Sparkle -->
+                <path d="M32 4 L33.5 8.5 L38 10 L33.5 11.5 L32 16 L30.5 11.5 L26 10 L30.5 8.5 Z" fill="#111"/>
+                <circle cx="18" cy="8" r="2" fill="#111"/>
+                <circle cx="46" cy="6" r="1.5" fill="#111"/>
+              </svg>
+            </div>
+          </div>
+          
+          <h3 class="success-title">¡Te Esperamos!</h3>
+          <p class="success-subtitle">Gracias por ser parte de este momento tan especial. Te esperamos para pasar una noche increíble.</p>
+
+          <div style="margin-top: 22px; display: flex; flex-direction: column; align-items: center; gap: 10px; z-index: 10; position: relative; width: 100%; max-width: 320px; margin-left: auto; margin-right: auto;">
+            <button type="button" class="btn-gold btn-glow-breath" id="btn-save-invitation-souvenir" onclick="saveInvitationSouvenir()" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.82rem; padding: 12px 18px;">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                <circle cx="12" cy="13" r="4"></circle>
+              </svg>
+              <span>📸 Guardar en Mi Galería</span>
+            </button>
+
+            <button type="button" id="btn-add-to-calendar" onclick="openCalendarModal()" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.82rem; padding: 11px 18px; border-radius: 25px; border: 1px solid var(--gold-primary); background: rgba(0,0,0,0.4); color: var(--gold-primary); font-weight: 600; cursor: pointer; transition: all 0.3s ease;">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+                <line x1="12" y1="14" x2="12" y2="18"></line>
+                <line x1="10" y1="16" x2="14" y2="16"></line>
+              </svg>
+              <span>📅 Agendar en Mi Calendario</span>
+            </button>
           </div>
         </div>
       </div>
@@ -801,8 +817,9 @@
         <span class="nav-dot" data-slide="2" id="nav-dot-2"></span>
         <span class="nav-dot" data-slide="3" id="nav-dot-3"></span>
         <span class="nav-dot" data-slide="5" id="nav-dot-5"></span>
-        <span class="nav-dot" data-slide="6" id="nav-dot-6"></span>
         <span class="nav-dot" data-slide="4" id="nav-dot-4"></span>
+        <span class="nav-dot" data-slide="6" id="nav-dot-6"></span>
+        <span class="nav-dot" data-slide="farewell" id="nav-dot-farewell"></span>
       </div>
       <button class="nav-arrow" id="btn-slide-next">Siguiente &rarr;</button>
     </div>
@@ -2560,7 +2577,23 @@
         rsvpForm.addEventListener('submit', (e) => {
           e.preventDefault();
           
-          const name = document.getElementById('rsvp-name').value.trim();
+          const nameInput = document.getElementById('rsvp-name');
+          const name = nameInput ? nameInput.value.trim() : '';
+
+          if (!name) {
+            if (nameInput) {
+              nameInput.focus();
+              if (window.gsap) {
+                gsap.fromTo(nameInput, { x: -10 }, { x: 10, duration: 0.1, repeat: 5, yoyo: true, ease: 'power2.inOut' });
+              }
+              nameInput.style.borderColor = '#ff3b30';
+            }
+            rsvpStatusMsg.style.display = 'block';
+            rsvpStatusMsg.style.color = '#ff3b30';
+            rsvpStatusMsg.textContent = 'Por favor, ingresá tu nombre completo para confirmar.';
+            return;
+          }
+
           const attendingVal = document.getElementById('rsvp-attending').value;
           const attending = attendingVal === 'yes';
           const companionsCount = parseInt(rsvpCompanionsCount.value) || 0;
@@ -2592,111 +2625,36 @@
               // Trigger Golden Dust Burst celebration
               triggerGoldBurst();
 
-              // Clean status message and hide form with elegant fade out
+              // Clean status message
               rsvpStatusMsg.style.display = 'none';
               
-              gsap.to(['#rsvp-form', '#rsvp-instructions', '.card h2.hero-subtitle'], {
-                opacity: 0,
-                y: -20,
-                filter: 'blur(10px)',
-                duration: 0.5,
-                stagger: 0.1,
-                ease: 'power2.inOut',
-                onComplete: () => {
-                  document.getElementById('rsvp-form').style.display = 'none';
-                  document.getElementById('rsvp-instructions').style.display = 'none';
-                  document.querySelector('.card h2.hero-subtitle').style.display = 'none';
-                  
-                  const successContainer = document.getElementById('rsvp-success-container');
-                  successContainer.style.display = 'block';
-                  
-                  const titleEl = successContainer.querySelector('.success-title');
-                  const subtitleEl = successContainer.querySelector('.success-subtitle');
-                  const btnSouvenir = document.getElementById('btn-save-invitation-souvenir');
-                  const btnCalendar = document.getElementById('btn-add-to-calendar');
+              const spotifyGuestNameInput = document.getElementById('spotify-guest-name-input');
+              if (spotifyGuestNameInput) {
+                spotifyGuestNameInput.value = name;
+              }
 
-                  if (attending) {
-                    if (titleEl) {
-                      titleEl.textContent = '¡Asistencia confirmada con éxito!';
-                      titleEl.dataset.originalText = '¡Asistencia confirmada con éxito!';
-                    }
-                    if (subtitleEl) {
-                      subtitleEl.textContent = 'Te esperamos para pasar una noche increíble con nosotros.';
-                    }
-                    if (btnSouvenir) {
-                      btnSouvenir.innerHTML = `
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
-                          <circle cx="12" cy="13" r="4"></circle>
-                        </svg>
-                        <span>📸 Guardar en Mi Galería</span>`;
-                      btnSouvenir.onclick = () => saveInvitationSouvenir();
-                    }
-                    if (btnCalendar) {
-                      btnCalendar.style.display = 'flex';
-                    }
-                  } else {
-                    if (titleEl) {
-                      titleEl.textContent = '¡Respuesta registrada!';
-                      titleEl.dataset.originalText = '¡Respuesta registrada!';
-                    }
-                    if (subtitleEl) {
-                      subtitleEl.textContent = '¡Qué lástima! Esperábamos contar con vos :( Muchas gracias por avisarnos.';
-                    }
-                    if (btnSouvenir) {
-                      btnSouvenir.innerHTML = `
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                          <line x1="18" y1="6" x2="6" y2="18"></line>
-                          <line x1="6" y1="6" x2="18" y2="18"></line>
-                        </svg>
-                        <span>Cerrar invitación</span>`;
-                      btnSouvenir.onclick = () => closeInvitation();
-                    }
-                    if (btnCalendar) {
-                      btnCalendar.style.display = 'none';
-                    }
-                  }
-                  
-                  // Prepare title text for stagger animation
-                  const words = (titleEl.dataset.originalText || titleEl.textContent).split(' ');
-                  titleEl.innerHTML = words.map(w => `<span class="success-word">${w}</span>`).join(' ');
-                  
-                  // Reset success container animations
-                  gsap.set(successContainer, { opacity: 1 });
-                  gsap.set('.success-seal', { rotationY: 180, scale: 0.3, opacity: 0 });
-                  gsap.set('.success-word', { y: 25, opacity: 0, filter: 'blur(8px)' });
-                  gsap.set('.success-subtitle', { y: 15, opacity: 0 });
-                  
-                  // Animate elements sequentially
-                  const tl = gsap.timeline();
-                  tl.to('.success-seal', {
-                    rotationY: 0,
-                    scale: 1,
-                    opacity: 1,
-                    duration: 0.8,
-                    ease: 'back.out(1.7)'
-                  })
-                  .to('.success-word', {
-                    y: 0,
-                    opacity: 1,
-                    filter: 'blur(0px)',
-                    duration: 0.5,
-                    stagger: 0.08,
-                    ease: 'power2.out'
-                  }, '-=0.3')
-                  .to('.success-subtitle', {
-                    y: 0,
-                    opacity: 1,
-                    duration: 0.6,
-                    ease: 'power2.out'
-                  }, '-=0.2');
+              const successContainer = document.getElementById('rsvp-success-container');
+              if (successContainer) {
+                successContainer.style.display = 'block';
+              }
 
-                  // Reset form fields
-                  rsvpForm.reset();
-                  rsvpCompanionsNamesContainer.style.display = 'none';
-                  rsvpCompanionsNamesContainer.innerHTML = '';
+              if (typeof window.showInvitationSuccessToast === 'function') {
+                window.showInvitationSuccessToast('✅ ¡Asistencia confirmada! Ahora podés sugerir tu canción 🎵');
+              }
+
+              setTimeout(() => {
+                const targetIndex = slides.findIndex(s => s.id === 'slide-6');
+                if (targetIndex !== -1) {
+                  goToSlide(targetIndex, true);
                 }
-              });
+              }, 1200);
+
+              // Reset form fields
+              rsvpForm.reset();
+              if (rsvpCompanionsNamesContainer) {
+                rsvpCompanionsNamesContainer.style.display = 'none';
+                rsvpCompanionsNamesContainer.innerHTML = '';
+              }
             }
           })
           .catch(err => {
@@ -3030,11 +2988,12 @@
       }
 
       dots.forEach(dot => {
-        const slideNum = parseInt(dot.getAttribute('data-slide'));
-        const targetIndex = slides.findIndex(s => s.id === `slide-${slideNum}` || (slideNum === 5 && s.id === 'slide-5-directo'));
-        const currentSlideNum = parseInt(slides[activeSlide].id.replace('slide-', ''));
+        const slideAttr = dot.getAttribute('data-slide');
+        const slideNum = parseInt(slideAttr);
+        const targetIndex = slides.findIndex(s => s.id === `slide-${slideNum}` || (slideNum === 5 && s.id === 'slide-5-directo') || (slideAttr === 'farewell' && s.id === 'slide-farewell'));
+        const currentSlideId = slides[activeSlide] ? slides[activeSlide].id : '';
 
-        if (slideNum === currentSlideNum) {
+        if ((slideAttr === 'farewell' && currentSlideId === 'slide-farewell') || (`slide-${slideNum}` === currentSlideId) || (slideNum === 5 && currentSlideId === 'slide-5-directo')) {
           dot.classList.add('active');
           dot.classList.remove('locked');
           dot.style.opacity = '1';
@@ -3087,6 +3046,20 @@
               if (typeof window.showInvitationSuccessToast === 'function') {
                 window.showInvitationSuccessToast('🔑 ¡Tocá la llave para abrir el cofre y continuar!');
               }
+            } else if (currentCard.id === 'slide-4') {
+              const rsvpNameInput = document.getElementById('rsvp-name');
+              const rsvpSubmitBtn = document.querySelector('#rsvp-form button[type="submit"]');
+              if (rsvpSubmitBtn) {
+                gsap.fromTo(rsvpSubmitBtn, { scale: 1 }, { scale: 1.08, duration: 0.2, yoyo: true, repeat: 3, ease: 'power2.inOut' });
+              }
+              if (rsvpNameInput && !rsvpNameInput.value.trim()) {
+                rsvpNameInput.focus();
+                gsap.fromTo(rsvpNameInput, { x: -10 }, { x: 10, duration: 0.1, repeat: 5, yoyo: true, ease: 'power2.inOut' });
+                rsvpNameInput.style.borderColor = '#ff3b30';
+              }
+              if (typeof window.showInvitationSuccessToast === 'function') {
+                window.showInvitationSuccessToast('✍️ Por favor, completá y enviá tu confirmación de asistencia');
+              }
             }
           }
           return;
@@ -3116,16 +3089,30 @@
         const currentSlide = slides[activeSlide];
         const nextSlide = slides[index];
         
-        const tl = gsap.timeline()
-          .to(currentSlide, { opacity: 0, y: -20, duration: 0.4, onComplete: () => {
-            currentSlide.classList.remove('active');
-            nextSlide.classList.add('active');
-            
-            if (nextSlide.id === 'slide-3') {
-              updateCarousel();
+        if (nextSlide) {
+          nextSlide.classList.add('active');
+          gsap.set(nextSlide, { opacity: 0, y: 20 });
+        }
+        
+        const tl = gsap.timeline();
+        if (currentSlide) {
+          tl.to(currentSlide, { 
+            opacity: 0, 
+            y: -20, 
+            duration: 0.4, 
+            onComplete: () => {
+              currentSlide.classList.remove('active');
+              gsap.set(currentSlide, { opacity: 1, y: 0 });
+              if (nextSlide && nextSlide.id === 'slide-3') {
+                updateCarousel();
+              }
             }
-          }})
-          .fromTo(nextSlide, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6 });
+          });
+        }
+
+        if (nextSlide) {
+          tl.to(nextSlide, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }, "-=0.2");
+        }
 
         if (nextSlide.id === 'slide-1') {
           tl.fromTo('#slide-1 .luxury-detail-item', 
@@ -3158,8 +3145,9 @@
       
       dots.forEach(dot => {
         dot.onclick = () => {
-          const slideNum = parseInt(dot.getAttribute('data-slide'));
-          const targetIndex = slides.findIndex(s => s.id === `slide-${slideNum}` || (slideNum === 5 && s.id === 'slide-5-directo'));
+          const slideAttr = dot.getAttribute('data-slide');
+          const slideNum = parseInt(slideAttr);
+          const targetIndex = slides.findIndex(s => s.id === `slide-${slideNum}` || (slideNum === 5 && s.id === 'slide-5-directo') || (slideAttr === 'farewell' && s.id === 'slide-farewell'));
           if (targetIndex !== -1) {
             goToSlide(targetIndex);
           }
@@ -4050,9 +4038,11 @@
           e.preventDefault();
           e.stopPropagation();
         }
-        const targetIndex = slides.findIndex(s => s.id === 'slide-6');
+        const targetIndex = slides.findIndex(s => s.id === 'slide-4');
         if (targetIndex !== -1) {
           goToSlide(targetIndex, true);
+        } else {
+          goToSlide(activeSlide + 1, true);
         }
       };
       
@@ -4124,13 +4114,11 @@
       
       const guestName = urlParams.get('n') || urlParams.get('guest') || '';
       const spotifyNameContainer = document.getElementById('spotify-name-container');
+      if (spotifyNameContainer) {
+        spotifyNameContainer.style.display = 'none';
+      }
       if (guestName && spotifyGuestNameInput) {
         spotifyGuestNameInput.value = guestName;
-        if (spotifyNameContainer) {
-          spotifyNameContainer.style.display = 'none';
-        }
-      } else if (spotifyNameContainer) {
-        spotifyNameContainer.style.display = 'block';
       }
       
       let debounceTimeout = null;
@@ -4217,7 +4205,14 @@
             return;
           }
           
-          // Guardar temporalmente en memoria
+          const guestName = (spotifyGuestNameInput && spotifyGuestNameInput.value.trim()) || document.getElementById('rsvp-name').value.trim() || 'Invitado';
+          
+          fetch(`/api/public/suggest-song?event=${encodeURIComponent(eventId)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: guestName, song })
+          }).catch(err => console.error('Error saving song suggestion:', err));
+
           window.temporarilySuggestedSong = song;
           
           spotifyStatusMsg.style.display = 'none';
@@ -4230,16 +4225,16 @@
           if (spotifySuccessContainer) spotifySuccessContainer.style.display = 'block';
 
           const triggerAdvance = () => {
-            const targetIndex = slides.findIndex(s => s.id === 'slide-4');
+            const targetIndex = slides.findIndex(s => s.id === 'slide-farewell');
             if (targetIndex !== -1) {
               goToSlide(targetIndex, true);
             }
           };
 
           if (typeof window.showInvitationSuccessToast === 'function') {
-            window.showInvitationSuccessToast('🎵 ¡Canción sugerida! Se enviará con tu confirmación.', triggerAdvance);
+            window.showInvitationSuccessToast('🎵 ¡Canción sugerida enviada con éxito al DJ!', triggerAdvance);
           } else {
-            triggerAdvance();
+            setTimeout(triggerAdvance, 1000);
           }
         });
       }

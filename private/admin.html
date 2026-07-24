@@ -104,24 +104,54 @@
         </div>
 
         <!-- Hall Layout Canvas Panel -->
-        <div class="panel">
-          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; border-bottom: 1px dashed rgba(255,255,255,0.08); padding-bottom: 15px;">
+        <div class="panel" style="margin-bottom: 30px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 15px; border-bottom: 1px dashed rgba(255,255,255,0.08); padding-bottom: 12px;">
             <div>
               <h2 style="margin: 0; display: flex; align-items: center; gap: 8px;">
-                <span>🏛️</span> Mapa & Distribución del Salón
+                <span>🎨</span> Plano Interactivo & Distribución Real del Salón
               </h2>
               <p style="color: var(--text-muted); font-size: 0.82rem; margin-top: 4px; margin-bottom: 0;">
-                Plano en tiempo real del evento. Haz clic en cualquier mesa para ver sus integrantes o ubicar invitados.
+                Arrastrá las mesas y los puntos de referencia (DJ, Barra, Baños, Entrada) para representar la ubicación real en el salón.
               </p>
             </div>
-            <div style="display: flex; gap: 10px; align-items: center;">
-              <button class="btn btn-primary" onclick="openCreateTableModal()" style="padding: 10px 18px; font-size: 0.8rem; border-radius: 18px;">
-                + Crear Nueva Mesa
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+              <button class="btn btn-primary" onclick="openCreateTableModal()" style="padding: 9px 16px; font-size: 0.8rem; border-radius: 18px;">
+                + Crear Mesa
+              </button>
+              <button class="btn btn-header-action" onclick="saveHallLayoutPositions()" style="padding: 9px 16px; font-size: 0.8rem; border-radius: 18px; border: 1px solid var(--gold-primary); color: var(--gold-primary);">
+                💾 Guardar Posiciones
               </button>
             </div>
           </div>
 
-          <!-- Hall Canvas Grid -->
+          <!-- Canvas Elements Palette Toolbar -->
+          <div id="canvas-palette-toolbar" class="canvas-toolbar" style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 12px; margin-bottom: 15px; scrollbar-width: thin; align-items: center;">
+            <span style="font-size: 0.78rem; color: var(--gold-light); font-weight: 600; display: flex; align-items: center; white-space: nowrap; margin-right: 4px;">Añadir al Plano:</span>
+            <button class="palette-btn" onclick="addLandmarkToCanvas('mesa_principal', 'Mesa Principal', '👑')" style="border-color: rgba(212, 175, 55, 0.4); color: var(--gold-primary);">👑 Mesa Principal</button>
+            <button class="palette-btn" onclick="addLandmarkToCanvas('dj', 'Cabina DJ', '🎧')">🎧 DJ</button>
+            <button class="palette-btn" onclick="addLandmarkToCanvas('barra', 'Barra de Tragos', '🍷')">🍷 Barra</button>
+            <button class="palette-btn" onclick="addLandmarkToCanvas('banos', 'Sanitarios / Baños', '🚻')">🚻 Baños</button>
+            <button class="palette-btn" onclick="addLandmarkToCanvas('entrada', 'Entrada Principal', '🚪')">🚪 Entrada</button>
+            <button class="palette-btn" onclick="addLandmarkToCanvas('candy', 'Mesa Dulce', '🍰')">🍰 Candy Bar</button>
+            <button class="palette-btn" onclick="addLandmarkToCanvas('pista', 'Pista de Baile', '🪩')">🪩 Pista</button>
+          </div>
+
+          <!-- Interactive Board Container -->
+          <div id="hall-canvas-board" class="hall-canvas-board">
+            <!-- Canvas Items rendered dynamically by JavaScript -->
+          </div>
+
+          <!-- Vertical Resizer Handle Bar -->
+          <div id="canvas-resize-bar" class="canvas-resize-bar" title="Arrastrá hacia abajo para estirar la altura del plano">
+            <span>↕️ Arrastrar para estirar / ajustar altura del plano ↕️</span>
+          </div>
+        </div>
+
+        <!-- Hall Cards Grid -->
+        <div class="panel">
+          <h3 style="margin-top: 0; color: white; font-size: 1rem; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
+            <span>📋</span> Listado de Mesas & Integrantes
+          </h3>
           <div id="hall-tables-grid" class="hall-tables-grid">
             <!-- Rendered dynamically by JavaScript -->
           </div>
@@ -2314,11 +2344,19 @@
       <h3 id="assign-modal-title" style="margin-top: 0; color: var(--gold-primary); font-family: 'Cinzel', serif;">Ubicar Invitado en Mesa</h3>
       <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;">Seleccioná una persona confirmada sin mesa para ubicarla en esta mesa.</p>
       
-      <div style="margin-bottom: 20px;">
-        <label style="display: block; font-size: 0.8rem; color: var(--gold-light); margin-bottom: 6px; font-weight: 600;">Invitado Confirmado</label>
-        <select id="assign-guest-select" class="form-control-admin" style="width: 100%; padding: 12px; border-radius: 12px; background: rgba(0,0,0,0.6); color: white; border: 1px solid var(--card-border); outline: none;">
+      <div style="margin-bottom: 24px; position: relative;">
+        <label style="display: block; font-size: 0.8rem; color: var(--gold-light); margin-bottom: 8px; font-weight: 600;">Invitado Confirmado</label>
+        
+        <input type="hidden" id="assign-guest-value" value="">
+
+        <div id="assign-guest-trigger" class="custom-select-trigger" onclick="toggleAssignGuestDropdown(event)">
+          <span id="assign-guest-selected-text" style="color: var(--text-muted); font-size: 0.88rem; font-weight: 500;">Seleccionar invitado...</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="custom-select-arrow" style="transition: transform 0.2s; color: var(--gold-primary);"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+
+        <div id="assign-guest-dropdown-menu" class="custom-select-dropdown-menu">
           <!-- Populated dynamically -->
-        </select>
+        </div>
       </div>
 
       <div style="display: flex; gap: 10px; justify-content: flex-end;">

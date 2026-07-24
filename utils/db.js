@@ -145,22 +145,82 @@ if (isSupabaseEnabled) {
 /**
  * Get all guests as an array of { firstName, lastName, table, id? }
 /**
- * Normalizes table number/name to prevent duplicate prefixes like "Mesa"
+ * Normalizes table number/name to a standard format (e.g. "Mesa 1", "Mesa Principal", "Sin Mesa")
  */
 function normalizeTable(table) {
   if (!table) return 'Sin Mesa';
   let t = String(table).trim();
   if (!t || t.toLowerCase() === 'sin mesa') return 'Sin Mesa';
   
-  // Strip "Mesa " or "Mesa" (case-insensitive) from the start
-  t = t.replace(/^(mesa\s*)/i, '');
-  return t || 'Sin Mesa';
+  if (/^\d+$/.test(t)) return `Mesa ${t}`;
+  if (/^mesa\b/i.test(t)) {
+    return t.replace(/^mesa\s*/i, 'Mesa ');
+  }
+  if (t.toLowerCase() === 'mesa principal' || t.toLowerCase() === 'principal') {
+    return 'Mesa Principal';
+  }
+  return `Mesa ${t}`;
 }
 
 /**
- * Get all guests for an event
+ * Normalizes a guest full name to strip accents/diacritics, trim, lowercase and collapse spaces
  */
-async function getGuests(eventId = 'default') {
+function normalizeName(name) {
+  if (!name) return '';
+  return String(name)
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ');
+}
+
+/**
+ * Deduplicates a list of guests by normalized full name or phone number
+ */
+function deduplicateGuests(guestsList) {
+  if (!Array.isArray(guestsList)) return [];
+  const seenMap = new Map();
+  const result = [];
+
+  for (const g of guestsList) {
+    const fullName = `${g.firstName || ''} ${g.lastName || ''}`.trim();
+    const normKey = normalizeName(fullName);
+    const cleanPhone = (g.phone || '').replace(/[^0-9]/g, '');
+
+    let primaryKey = normKey;
+    if (!primaryKey && cleanPhone && cleanPhone.length >= 6) {
+      primaryKey = `phone_${cleanPhone}`;
+    }
+
+    if (!primaryKey) continue;
+
+    if (seenMap.has(primaryKey)) {
+      const existing = seenMap.get(primaryKey);
+      if ((!existing.table || existing.table === 'Sin Mesa') && g.table && g.table !== 'Sin Mesa') {
+        existing.table = g.table;
+      }
+      if (!existing.phone && g.phone) {
+        existing.phone = g.phone;
+      }
+    } else {
+      const copy = { ...g };
+      seenMap.set(primaryKey, copy);
+      if (cleanPhone && cleanPhone.length >= 6) {
+        seenMap.set(`phone_${cleanPhone}`, copy);
+      }
+      result.push(copy);
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Raw internal fetch for guests (without sync trigger to prevent recursion)
+ */
+async function fetchGuestsRaw(eventId = 'default') {
+  let list = [];
   if (isSupabaseEnabled) {
     const { data, error } = await supabase
       .from('guests')
@@ -181,10 +241,9 @@ async function getGuests(eventId = 'default') {
       } catch (e) {}
     }
     
-    return (data || []).map(g => {
+    list = (data || []).map(g => {
       const localMatch = localGuests.find(lg => 
-        (lg.firstName || '').trim().toLowerCase() === (g.first_name || '').trim().toLowerCase() &&
-        (lg.lastName || '').trim().toLowerCase() === (g.last_name || '').trim().toLowerCase()
+        normalizeName(`${lg.firstName} ${lg.lastName}`) === normalizeName(`${g.first_name} ${g.last_name}`)
       );
       return {
         id: g.id,
@@ -202,7 +261,7 @@ async function getGuests(eventId = 'default') {
     try {
       const fileData = fs.readFileSync(guestsFile, 'utf8');
       const parsed = JSON.parse(fileData);
-      return (parsed || []).map(g => ({
+      list = (parsed || []).map(g => ({
         ...g,
         table: normalizeTable(g.table),
         phone: g.phone || ''
@@ -212,6 +271,98 @@ async function getGuests(eventId = 'default') {
       return [];
     }
   }
+
+  return deduplicateGuests(list);
+}
+
+/**
+ * Synchronize confirmed RSVPs into guests list so all confirmed attendees are present for table assignment
+ */
+async function syncConfirmedRsvpsToGuests(eventId = 'default') {
+  try {
+    const rsvps = await getRsvps(eventId);
+    const confirmedRsvps = rsvps.filter(r => r.attending === true || String(r.attending).toUpperCase() === 'SI');
+    if (confirmedRsvps.length === 0) return;
+
+    let currentGuests = await fetchGuestsRaw(eventId);
+    const existingNames = new Set(
+      currentGuests.map(g => normalizeName(`${g.firstName} ${g.lastName}`))
+    );
+    const existingPhones = new Set(
+      currentGuests
+        .map(g => (g.phone || '').replace(/[^0-9]/g, ''))
+        .filter(p => p.length >= 6)
+    );
+
+    let addedAny = false;
+
+    for (const rsvp of confirmedRsvps) {
+      const fullName = (rsvp.name || '').trim();
+      if (fullName) {
+        const normFullName = normalizeName(fullName);
+        const cleanPhone = (rsvp.phone || '').replace(/[^0-9]/g, '');
+        const existsByPhone = cleanPhone && cleanPhone.length >= 6 && existingPhones.has(cleanPhone);
+        const existsByName = existingNames.has(normFullName);
+
+        if (!existsByName && !existsByPhone) {
+          const parts = fullName.split(/\s+/);
+          const fName = parts[0] || '';
+          const lName = parts.slice(1).join(' ') || '';
+          currentGuests.push({
+            firstName: fName,
+            lastName: lName,
+            table: 'Sin Mesa',
+            phone: cleanPhone || ''
+          });
+          existingNames.add(normFullName);
+          if (cleanPhone && cleanPhone.length >= 6) existingPhones.add(cleanPhone);
+          addedAny = true;
+        }
+      }
+
+      let compList = [];
+      if (Array.isArray(rsvp.companionsNames)) {
+        compList = rsvp.companionsNames;
+      } else if (typeof rsvp.companionsNames === 'string' && rsvp.companionsNames.trim()) {
+        compList = rsvp.companionsNames.split(',').map(s => s.trim());
+      }
+
+      for (const compName of compList) {
+        const trimmedComp = (compName || '').trim();
+        if (trimmedComp) {
+          const normComp = normalizeName(trimmedComp);
+          if (!existingNames.has(normComp)) {
+            const parts = trimmedComp.split(/\s+/);
+            const fName = parts[0] || '';
+            const lName = parts.slice(1).join(' ') || '';
+            currentGuests.push({
+              firstName: fName,
+              lastName: lName,
+              table: 'Sin Mesa',
+              phone: ''
+            });
+            existingNames.add(normComp);
+            addedAny = true;
+          }
+        }
+      }
+    }
+
+    const deduped = deduplicateGuests(currentGuests);
+    if (addedAny || deduped.length !== currentGuests.length) {
+      await saveGuests(eventId, deduped);
+    }
+  } catch (err) {
+    console.error('Error syncing confirmed RSVPs to guests:', err);
+  }
+}
+
+/**
+ * Get all guests for an event (syncs confirmed RSVPs automatically)
+ */
+async function getGuests(eventId = 'default') {
+  await syncConfirmedRsvpsToGuests(eventId);
+  return await fetchGuestsRaw(eventId);
 }
 
 /**

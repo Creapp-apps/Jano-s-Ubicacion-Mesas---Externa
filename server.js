@@ -351,6 +351,17 @@ app.get('/api/stats', requireAuth, async (req, res) => {
       return confirmedNames.has(fullName);
     });
 
+    // Helper to format table name consistently
+    function formatTableName(name) {
+      if (!name) return 'Sin Mesa';
+      let t = String(name).trim();
+      if (!t || t.toLowerCase() === 'sin mesa') return 'Sin Mesa';
+      if (/^\d+$/.test(t)) return `Mesa ${t}`;
+      if (/^mesa\b/i.test(t)) return t.replace(/^mesa\s*/i, 'Mesa ');
+      if (t.toLowerCase() === 'mesa principal' || t.toLowerCase() === 'principal') return 'Mesa Principal';
+      return `Mesa ${t}`;
+    }
+
     // Read custom defined tables from event config
     const customTablesRaw = await db.getConfigValue(eventId, 'custom_tables', '[]');
     let customTables = [];
@@ -360,29 +371,44 @@ app.get('/api/stats', requireAuth, async (req, res) => {
 
     if (Array.isArray(customTables)) {
       customTables.forEach(ct => {
-        tablesMap[ct.name] = { name: ct.name, capacity: ct.capacity || 10, count: 0, totalCount: 0 };
+        const formatted = formatTableName(ct.name);
+        tablesMap[formatted] = { name: formatted, capacity: ct.capacity || 10, count: 0, totalCount: 0 };
       });
     }
 
     // Count unique tables from all guests, and track confirmed counts
     guests.forEach(g => {
       if (g.table) {
-        const tableName = g.table.trim();
+        const tableName = formatTableName(g.table);
         if (tableName && tableName.toLowerCase() !== 'sin mesa') {
-          if (!tablesMap[tableName]) {
-            tablesMap[tableName] = { name: tableName, capacity: 10, count: 0, totalCount: 0 };
+          const existingKey = Object.keys(tablesMap).find(k => k.toLowerCase() === tableName.toLowerCase()) || tableName;
+          if (!tablesMap[existingKey]) {
+            tablesMap[existingKey] = { name: existingKey, capacity: 10, count: 0, totalCount: 0 };
           }
-          tablesMap[tableName].totalCount += 1;
+          tablesMap[existingKey].totalCount += 1;
           
           const fullName = `${g.firstName} ${g.lastName}`.trim().toLowerCase();
           if (confirmedNames.has(fullName)) {
-            tablesMap[tableName].count += 1;
+            tablesMap[existingKey].count += 1;
           }
         }
       }
     });
     
+    // Also check if custom_hall_layout has mesa_principal placed on canvas
+    const layoutRaw = await db.getConfigValue(eventId, 'custom_hall_layout', '{}');
+    let layout = {};
+    try { layout = JSON.parse(layoutRaw); } catch(e){}
+    const layoutItems = Array.isArray(layout.items) ? layout.items : [];
+    const hasMesaPrincipalLandmark = layoutItems.some(item => item.type === 'mesa_principal' || item.name === 'Mesa Principal');
+
+    if (hasMesaPrincipalLandmark && !tablesMap['Mesa Principal']) {
+      tablesMap['Mesa Principal'] = { name: 'Mesa Principal', capacity: 10, count: 0, totalCount: 0 };
+    }
+
     const tables = Object.values(tablesMap).sort((a, b) => {
+      if (a.name.toLowerCase().includes('principal')) return -1;
+      if (b.name.toLowerCase().includes('principal')) return 1;
       const numA = parseInt(a.name.replace(/\D/g, ''), 10);
       const numB = parseInt(b.name.replace(/\D/g, ''), 10);
       if (!isNaN(numA) && !isNaN(numB)) {
@@ -430,6 +456,38 @@ app.post('/api/admin/tables', requireAuth, async (req, res) => {
   } catch (error) {
     console.error('Error creating table:', error);
     res.status(500).json({ error: 'Error al crear la mesa' });
+  }
+});
+
+// API: Get Hall Layout Positions & Landmarks
+app.get('/api/admin/hall-layout', requireAuth, async (req, res) => {
+  try {
+    const eventId = req.query.event || 'default';
+    const layoutRaw = await db.getConfigValue(eventId, 'custom_hall_layout', '{}');
+    let layout = {};
+    try { layout = JSON.parse(layoutRaw); } catch(e){}
+    res.json(layout);
+  } catch (error) {
+    console.error('Error getting hall layout:', error);
+    res.status(500).json({ error: 'Error al obtener distribución del salón' });
+  }
+});
+
+// API: Save Hall Layout Positions & Landmarks
+app.post('/api/admin/hall-layout', requireAuth, async (req, res) => {
+  try {
+    const eventId = req.query.event || 'default';
+    const { items, tablePositions, boardHeight } = req.body;
+    const layoutData = {
+      items: items || [],
+      tablePositions: tablePositions || {},
+      boardHeight: boardHeight || null
+    };
+    await db.setConfigValue(eventId, 'custom_hall_layout', JSON.stringify(layoutData));
+    res.json({ success: true, layout: layoutData });
+  } catch (error) {
+    console.error('Error saving hall layout:', error);
+    res.status(500).json({ error: 'Error al guardar distribución del salón' });
   }
 });
 
@@ -1585,7 +1643,8 @@ app.get('/api/admin/guests', requireAuth, async (req, res) => {
 });
 
 // API: Add Guest (Admin)
-app.post('/api/guests', requireAuth, async (req, res) => {
+// API: Add Guest (Admin)
+app.post(['/api/guests', '/api/admin/guests'], requireAuth, async (req, res) => {
   const { firstName, lastName, table, phone } = req.body;
   const eventId = req.query.event || 'default';
   if (!firstName && !lastName) {
@@ -1601,7 +1660,7 @@ app.post('/api/guests', requireAuth, async (req, res) => {
 });
 
 // API: Edit Guest (Admin)
-app.put('/api/guests/:index', requireAuth, async (req, res) => {
+app.put(['/api/guests/:index', '/api/admin/guests/:index'], requireAuth, async (req, res) => {
   const index = parseInt(req.params.index, 10);
   const { firstName, lastName, table, phone } = req.body;
   const eventId = req.query.event || 'default';
@@ -1618,7 +1677,7 @@ app.put('/api/guests/:index', requireAuth, async (req, res) => {
 });
 
 // API: Delete Guest (Admin)
-app.delete('/api/guests/:index', requireAuth, async (req, res) => {
+app.delete(['/api/guests/:index', '/api/admin/guests/:index'], requireAuth, async (req, res) => {
   const index = parseInt(req.params.index, 10);
   const eventId = req.query.event || 'default';
   try {

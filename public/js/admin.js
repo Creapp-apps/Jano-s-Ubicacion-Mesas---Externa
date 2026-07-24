@@ -539,10 +539,470 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (subtabId === 'plano') {
       renderHallTablesGrid();
+      loadHallLayout();
     } else if (subtabId === 'invitados') {
       renderGuestsTable();
     }
   };
+
+  // --- INTERACTIVE HALL CANVAS BOARD ENGINE ---
+  let hallCanvasItems = [];
+  let tablePositionsMap = {};
+  let currentBoardHeight = 540;
+
+  function loadHallLayout() {
+    fetch(`/api/admin/hall-layout?event=${encodeURIComponent(eventId)}`)
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then(data => {
+        if (data) {
+          hallCanvasItems = Array.isArray(data.items) ? data.items : [];
+          tablePositionsMap = data.tablePositions || {};
+          if (data.boardHeight && typeof data.boardHeight === 'number') {
+            currentBoardHeight = data.boardHeight;
+          }
+        }
+        renderHallCanvasBoard();
+      })
+      .catch(err => {
+        console.error('Error loading hall layout:', err);
+        renderHallCanvasBoard();
+      });
+  }
+
+  window.addTableToCanvas = function(tableName) {
+    const count = Object.keys(tablePositionsMap).length + hallCanvasItems.length;
+    const defaultX = 20 + ((count * 15) % 55);
+    const defaultY = 20 + ((count * 12) % 45);
+    tablePositionsMap[tableName] = { x: defaultX, y: defaultY, rotation: 0 };
+    renderHallCanvasBoard();
+    saveHallLayoutPositions(true);
+  };
+
+  window.removeTableFromCanvas = function(tableName, event) {
+    if (event) event.stopPropagation();
+    delete tablePositionsMap[tableName];
+    renderHallCanvasBoard();
+    saveHallLayoutPositions(true);
+  };
+
+  const LANDMARK_PALETTE_TYPES = [
+    { type: 'mesa_principal', name: 'Mesa Principal', icon: '👑', isGold: true },
+    { type: 'dj', name: 'Cabina DJ', icon: '🎧' },
+    { type: 'barra', name: 'Barra de Tragos', icon: '🍷' },
+    { type: 'banos', name: 'Sanitarios / Baños', icon: '🚻' },
+    { type: 'entrada', name: 'Entrada Principal', icon: '🚪' },
+    { type: 'candy', name: 'Mesa Dulce', icon: '🍰' },
+    { type: 'pista', name: 'Pista de Baile', icon: '🪩' }
+  ];
+
+  window.addLandmarkToCanvas = function(type, name, icon) {
+    const exists = hallCanvasItems.some(i => i.type === type);
+    if (exists) {
+      showToast(`⚠️ "${name}" ya se encuentra ubicado en el plano`, 'warning');
+      return;
+    }
+
+    const newId = 'lm_' + Date.now();
+    const count = hallCanvasItems.length + Object.keys(tablePositionsMap).length;
+    const defaultX = 15 + ((count * 12) % 65);
+    const defaultY = 15 + ((count * 10) % 55);
+
+    hallCanvasItems.push({
+      id: newId,
+      type: type,
+      name: name,
+      icon: icon,
+      x: defaultX,
+      y: defaultY,
+      rotation: 0
+    });
+
+    renderHallCanvasBoard();
+    saveHallLayoutPositions(true);
+  };
+
+  window.removeLandmarkFromCanvas = function(itemId, event) {
+    if (event) event.stopPropagation();
+    hallCanvasItems = hallCanvasItems.filter(i => i.id !== itemId);
+    renderHallCanvasBoard();
+    saveHallLayoutPositions(true);
+  };
+
+  window.saveHallLayoutPositions = function(silent = false) {
+    fetch(`/api/admin/hall-layout?event=${encodeURIComponent(eventId)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        items: hallCanvasItems,
+        tablePositions: tablePositionsMap,
+        boardHeight: currentBoardHeight
+      })
+    })
+    .then(res => {
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
+    })
+    .then(data => {
+      if (!silent) {
+        showToast('✅ Posiciones del salón guardadas con éxito', 'success');
+      }
+      loadStats();
+    })
+    .catch(err => console.error('Error saving hall layout:', err));
+  };
+
+  window.rotateItemOnCanvas = function(targetIdOrName, targetType, event) {
+    if (event) event.stopPropagation();
+
+    if (targetType === 'table') {
+      const pos = tablePositionsMap[targetIdOrName] || { x: 20, y: 20, rotation: 0 };
+      const currentRot = pos.rotation || 0;
+      pos.rotation = (currentRot + 45) % 360;
+      tablePositionsMap[targetIdOrName] = pos;
+    } else if (targetType === 'landmark') {
+      const item = hallCanvasItems.find(i => i.id === targetIdOrName);
+      if (item) {
+        const currentRot = item.rotation || 0;
+        item.rotation = (currentRot + 45) % 360;
+      }
+    }
+
+    renderHallCanvasBoard();
+    saveHallLayoutPositions(true);
+  };
+
+  let isResizerInitialized = false;
+  function initCanvasBoardResizer(board, resizeBar) {
+    if (!board || !resizeBar || isResizerInitialized) return;
+    isResizerInitialized = true;
+
+    let isResizing = false;
+    let startY = 0;
+    let startHeight = 0;
+
+    resizeBar.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      isResizing = true;
+      startY = e.clientY;
+      startHeight = board.offsetHeight;
+      resizeBar.classList.add('resizing');
+
+      try { resizeBar.setPointerCapture(e.pointerId); } catch(err){}
+
+      const onMove = (moveEvt) => {
+        if (!isResizing) return;
+        const dy = moveEvt.clientY - startY;
+        const newHeight = Math.max(380, Math.min(1400, startHeight + dy));
+        board.style.height = `${newHeight}px`;
+        currentBoardHeight = newHeight;
+      };
+
+      const onUp = (upEvt) => {
+        if (isResizing) {
+          isResizing = false;
+          resizeBar.classList.remove('resizing');
+          window.removeEventListener('pointermove', onMove);
+          window.removeEventListener('pointerup', onUp);
+          try { resizeBar.releasePointerCapture(upEvt.pointerId); } catch(err){}
+          saveHallLayoutPositions(true);
+        }
+      };
+
+      window.addEventListener('pointermove', onMove);
+      window.addEventListener('pointerup', onUp);
+    });
+  }
+
+  function renderHallCanvasBoard() {
+    const board = document.getElementById('hall-canvas-board');
+    if (!board) return;
+    board.style.height = `${currentBoardHeight}px`;
+
+    const resizeBar = document.getElementById('canvas-resize-bar');
+    initCanvasBoardResizer(board, resizeBar);
+
+    // Render palette toolbar dynamically (only show unplaced items and tables)
+    const paletteContainer = document.getElementById('canvas-palette-toolbar');
+    if (paletteContainer) {
+      let toolbarHtml = `<span style="font-size: 0.78rem; color: var(--gold-light); font-weight: 600; display: flex; align-items: center; white-space: nowrap; margin-right: 4px;">Añadir al Plano:</span>`;
+      let countAvailable = 0;
+
+      LANDMARK_PALETTE_TYPES.forEach(item => {
+        const isPlaced = hallCanvasItems.some(i => i.type === item.type);
+        if (!isPlaced) {
+          countAvailable++;
+          const style = item.isGold ? 'border-color: rgba(212, 175, 55, 0.4); color: var(--gold-primary);' : '';
+          toolbarHtml += `<button class="palette-btn" onclick="addLandmarkToCanvas('${item.type}', '${escapeHtml(item.name)}', '${item.icon}')" style="${style}">${item.icon} ${escapeHtml(item.name)}</button>`;
+        }
+      });
+
+      if (allTables && Array.isArray(allTables)) {
+        allTables.forEach(t => {
+          if (!tablePositionsMap[t.name]) {
+            countAvailable++;
+            toolbarHtml += `<button class="palette-btn" onclick="addTableToCanvas('${escapeHtml(t.name)}')" style="border-color: rgba(212, 175, 55, 0.4); color: var(--gold-light);">🍽️ ${escapeHtml(t.name)}</button>`;
+          }
+        });
+      }
+
+      if (countAvailable === 0) {
+        toolbarHtml += `<span style="font-size: 0.78rem; color: rgba(255,255,255,0.4); font-style: italic; display: flex; align-items: center;">✨ Todos los componentes y mesas están ubicados en el plano</span>`;
+      }
+
+      paletteContainer.innerHTML = toolbarHtml;
+    }
+
+    let html = '';
+
+    // Render tables placed on board
+    if (allTables && Array.isArray(allTables)) {
+      allTables.forEach((t) => {
+        const pos = tablePositionsMap[t.name];
+        if (!pos) return; // Only render tables explicitly placed on board
+
+        const isPresidencial = /principal|presidencial\b/i.test(t.name);
+        const guestsInTable = allGuests.filter(g => formatTableDisplay(g.table).trim().toLowerCase() === formatTableDisplay(t.name).trim().toLowerCase());
+        const count = guestsInTable.length;
+        const capacity = t.capacity || 10;
+        const rot = pos.rotation || 0;
+
+        if (isPresidencial) {
+          html += `
+            <div class="canvas-item canvas-item-presidencial" data-type="table" data-name="${escapeHtml(t.name)}" style="left: ${pos.x}%; top: ${pos.y}%; transform: rotate(${rot}deg);">
+              <span class="canvas-item-rotate" title="Mantener apretado y arrastrar para rotar 360°">🔄</span>
+              <span style="font-size: 1.1rem; margin-top: -2px;">👑</span>
+              <div class="canvas-item-title">${escapeHtml(formatTableDisplay(t.name))}</div>
+              <div class="canvas-item-count">${count}/${capacity} pers.</div>
+              <span class="canvas-item-remove" onclick="removeTableFromCanvas('${escapeHtml(t.name)}', event)">✕</span>
+            </div>
+          `;
+        } else {
+          html += `
+            <div class="canvas-item canvas-item-table" data-type="table" data-name="${escapeHtml(t.name)}" style="left: ${pos.x}%; top: ${pos.y}%; transform: rotate(${rot}deg);">
+              <span class="canvas-item-rotate" title="Mantener apretado y arrastrar para rotar 360°">🔄</span>
+              <span style="font-size: 1.1rem;">🍽️</span>
+              <div class="canvas-item-title">${escapeHtml(formatTableDisplay(t.name))}</div>
+              <div class="canvas-item-count">${count}/${capacity}</div>
+              <span class="canvas-item-remove" onclick="removeTableFromCanvas('${escapeHtml(t.name)}', event)">✕</span>
+            </div>
+          `;
+        }
+      });
+    }
+
+    // Render landmarks
+    hallCanvasItems.forEach(item => {
+      const rot = item.rotation || 0;
+      if (item.type === 'mesa_principal') {
+        html += `
+          <div class="canvas-item canvas-item-presidencial" data-type="landmark" data-id="${item.id}" style="left: ${item.x}%; top: ${item.y}%; transform: rotate(${rot}deg);">
+            <span class="canvas-item-rotate" title="Mantener apretado y arrastrar para rotar 360°">🔄</span>
+            <span style="font-size: 1.1rem; margin-top: -2px;">👑</span>
+            <div class="canvas-item-title">${escapeHtml(item.name)}</div>
+            <div class="canvas-item-count">Homenajeados</div>
+            <span class="canvas-item-remove" onclick="removeLandmarkFromCanvas('${item.id}', event)">✕</span>
+          </div>
+        `;
+      } else {
+        html += `
+          <div class="canvas-item canvas-item-landmark" data-type="landmark" data-id="${item.id}" style="left: ${item.x}%; top: ${item.y}%; transform: rotate(${rot}deg);">
+            <span class="canvas-item-rotate" title="Mantener apretado y arrastrar para rotar 360°">🔄</span>
+            <span>${item.icon}</span>
+            <span>${escapeHtml(item.name)}</span>
+            <span class="canvas-item-remove" onclick="removeLandmarkFromCanvas('${item.id}', event)">✕</span>
+          </div>
+        `;
+      }
+    });
+
+    board.innerHTML = html;
+    initBoardDragEngine(board);
+  }
+
+  function initBoardDragEngine(board) {
+    const items = board.querySelectorAll('.canvas-item');
+    items.forEach(item => {
+      let isDragging = false;
+      let startX, startY;
+      let startLeft, startTop;
+
+      // Photoshop / Figma Style 360-degree Rotation Drag Engine
+      const rotateBtn = item.querySelector('.canvas-item-rotate');
+      if (rotateBtn) {
+        let isRotating = false;
+        let rotStartX, rotStartY;
+        let itemCenterX, itemCenterY;
+        let initialAngle = 0;
+        let initialRot = 0;
+        let rotHasMoved = false;
+
+        rotateBtn.addEventListener('pointerdown', (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          isRotating = true;
+          rotHasMoved = false;
+          rotStartX = e.clientX;
+          rotStartY = e.clientY;
+
+          try { rotateBtn.setPointerCapture(e.pointerId); } catch(err){}
+
+          const itemRect = item.getBoundingClientRect();
+          itemCenterX = itemRect.left + itemRect.width / 2;
+          itemCenterY = itemRect.top + itemRect.height / 2;
+
+          initialAngle = Math.atan2(e.clientY - itemCenterY, e.clientX - itemCenterX) * (180 / Math.PI);
+
+          const targetType = item.dataset.type;
+          if (targetType === 'table') {
+            const name = item.dataset.name;
+            const pos = tablePositionsMap[name] || {};
+            initialRot = pos.rotation || 0;
+          } else {
+            const id = item.dataset.id;
+            const found = hallCanvasItems.find(i => i.id === id);
+            initialRot = found ? (found.rotation || 0) : 0;
+          }
+
+          const onRotateMove = (moveEvt) => {
+            if (!isRotating) return;
+            const dist = Math.hypot(moveEvt.clientX - rotStartX, moveEvt.clientY - rotStartY);
+            if (dist > 3) rotHasMoved = true;
+
+            const currentAngle = Math.atan2(moveEvt.clientY - itemCenterY, moveEvt.clientX - itemCenterX) * (180 / Math.PI);
+            let angleDiff = currentAngle - initialAngle;
+            let newRotation = Math.round((initialRot + angleDiff) % 360);
+            if (newRotation < 0) newRotation += 360;
+
+            item.style.transform = `rotate(${newRotation}deg)`;
+
+            const targetType = item.dataset.type;
+            if (targetType === 'table') {
+              const name = item.dataset.name;
+              if (!tablePositionsMap[name]) tablePositionsMap[name] = { x: 20, y: 20 };
+              tablePositionsMap[name].rotation = newRotation;
+            } else {
+              const id = item.dataset.id;
+              const found = hallCanvasItems.find(i => i.id === id);
+              if (found) found.rotation = newRotation;
+            }
+          };
+
+          const onRotateUp = (upEvt) => {
+            if (isRotating) {
+              isRotating = false;
+              window.removeEventListener('pointermove', onRotateMove);
+              window.removeEventListener('pointerup', onRotateUp);
+              try { rotateBtn.releasePointerCapture(upEvt.pointerId); } catch(err){}
+
+              if (!rotHasMoved) {
+                // Quick click step (+45deg)
+                let stepRot = (initialRot + 45) % 360;
+                item.style.transform = `rotate(${stepRot}deg)`;
+                const targetType = item.dataset.type;
+                if (targetType === 'table') {
+                  const name = item.dataset.name;
+                  if (!tablePositionsMap[name]) tablePositionsMap[name] = { x: 20, y: 20 };
+                  tablePositionsMap[name].rotation = stepRot;
+                } else {
+                  const id = item.dataset.id;
+                  const found = hallCanvasItems.find(i => i.id === id);
+                  if (found) found.rotation = stepRot;
+                }
+              }
+
+              saveHallLayoutPositions(true);
+            }
+          };
+
+          window.addEventListener('pointermove', onRotateMove);
+          window.addEventListener('pointerup', onRotateUp);
+        });
+      }
+
+      // Position Dragging
+      let didDragInSession = false;
+
+      item.addEventListener('pointerdown', (e) => {
+        if (e.target.classList.contains('canvas-item-remove') || e.target.classList.contains('canvas-item-rotate')) return;
+        isDragging = false;
+        didDragInSession = false;
+        startX = e.clientX;
+        startY = e.clientY;
+
+        const boardRect = board.getBoundingClientRect();
+        const itemRect = item.getBoundingClientRect();
+
+        startLeft = ((itemRect.left - boardRect.left) / boardRect.width) * 100;
+        startTop = ((itemRect.top - boardRect.top) / boardRect.height) * 100;
+
+        const onPointerMove = (moveEvt) => {
+          const dist = Math.hypot(moveEvt.clientX - startX, moveEvt.clientY - startY);
+          if (dist > 5) {
+            isDragging = true;
+            didDragInSession = true;
+            item.classList.add('dragging');
+            try { item.setPointerCapture(moveEvt.pointerId); } catch(err){}
+          }
+
+          if (isDragging) {
+            const dx = ((moveEvt.clientX - startX) / boardRect.width) * 100;
+            const dy = ((moveEvt.clientY - startY) / boardRect.height) * 100;
+
+            let newLeft = Math.max(0, Math.min(88, startLeft + dx));
+            let newTop = Math.max(0, Math.min(88, startTop + dy));
+
+            item.style.left = `${newLeft}%`;
+            item.style.top = `${newTop}%`;
+
+            const type = item.dataset.type;
+            if (type === 'table') {
+              const name = item.dataset.name;
+              if (!tablePositionsMap[name]) tablePositionsMap[name] = { x: 20, y: 20 };
+              tablePositionsMap[name].x = Math.round(newLeft * 10) / 10;
+              tablePositionsMap[name].y = Math.round(newTop * 10) / 10;
+            } else if (type === 'landmark') {
+              const id = item.dataset.id;
+              const found = hallCanvasItems.find(i => i.id === id);
+              if (found) {
+                found.x = Math.round(newLeft * 10) / 10;
+                found.y = Math.round(newTop * 10) / 10;
+              }
+            }
+          }
+        };
+
+        const onPointerUp = (upEvt) => {
+          window.removeEventListener('pointermove', onPointerMove);
+          window.removeEventListener('pointerup', onPointerUp);
+          if (isDragging) {
+            isDragging = false;
+            item.classList.remove('dragging');
+            try { item.releasePointerCapture(upEvt.pointerId); } catch(err){}
+            saveHallLayoutPositions(true);
+          }
+        };
+
+        window.addEventListener('pointermove', onPointerMove);
+        window.addEventListener('pointerup', onPointerUp);
+      });
+
+      item.addEventListener('click', (e) => {
+        if (e.target.classList.contains('canvas-item-remove') || e.target.classList.contains('canvas-item-rotate')) return;
+        if (didDragInSession) {
+          didDragInSession = false;
+          return;
+        }
+        if (item.dataset.type === 'table') {
+          const tableName = item.dataset.name;
+          openAssignGuestToTableModal(tableName);
+        }
+      });
+    });
+  }
 
   function renderHallTablesGrid() {
     const gridContainer = document.getElementById('hall-tables-grid');
@@ -587,8 +1047,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     gridContainer.innerHTML = allTables.map(t => {
-      const guestsInTable = allGuests.filter(g => String(g.table).trim().toLowerCase() === String(t.name).trim().toLowerCase());
-      const isPresidencial = /principal|presidencial|mesa 1\b/i.test(t.name);
+      const guestsInTable = allGuests.filter(g => formatTableDisplay(g.table).trim().toLowerCase() === formatTableDisplay(t.name).trim().toLowerCase());
+      const isPresidencial = /principal|presidencial\b/i.test(t.name);
 
       const count = guestsInTable.length;
       const capacity = t.capacity || 10;
@@ -641,7 +1101,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const guestIdx = guest.originalIndex !== undefined ? guest.originalIndex : allGuests.indexOf(guest);
 
-    fetch(`/api/admin/guests/${guestIdx}?event=${encodeURIComponent(eventId)}`, {
+    fetch(`/api/guests/${guestIdx}?event=${encodeURIComponent(eventId)}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -650,7 +1110,10 @@ document.addEventListener('DOMContentLoaded', () => {
         table: 'Sin Mesa'
       })
     })
-    .then(res => res.json())
+    .then(res => {
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
+    })
     .then(data => {
       if (data.success) {
         showToast('Invitado removido de la mesa', 'success');
@@ -661,25 +1124,77 @@ document.addEventListener('DOMContentLoaded', () => {
     .catch(err => console.error('Error unassigning guest:', err));
   };
 
+  window.toggleAssignGuestDropdown = function(event) {
+    if (event) event.stopPropagation();
+    const dropdown = document.getElementById('assign-guest-dropdown-menu');
+    const trigger = document.getElementById('assign-guest-trigger');
+    if (!dropdown) return;
+    const isOpening = !dropdown.classList.contains('active');
+    dropdown.classList.toggle('active', isOpening);
+    if (trigger) trigger.classList.toggle('active', isOpening);
+  };
+
+  window.selectAssignGuestOption = function(guestIdx, guestName) {
+    const valInput = document.getElementById('assign-guest-value');
+    const textSpan = document.getElementById('assign-guest-selected-text');
+    const dropdown = document.getElementById('assign-guest-dropdown-menu');
+    const trigger = document.getElementById('assign-guest-trigger');
+
+    if (valInput) valInput.value = guestIdx;
+    if (textSpan) {
+      textSpan.textContent = `👤 ${guestName}`;
+      textSpan.style.color = '#ffffff';
+    }
+
+    if (dropdown) {
+      dropdown.querySelectorAll('.custom-select-option').forEach(opt => {
+        opt.classList.toggle('selected', opt.dataset.value === String(guestIdx));
+      });
+      dropdown.classList.remove('active');
+    }
+    if (trigger) trigger.classList.remove('active');
+  };
+
   window.openAssignGuestToTableModal = function(tableName) {
     activeAssignTableTarget = tableName;
     const modal = document.getElementById('assign-guest-modal');
     const title = document.getElementById('assign-modal-title');
-    const select = document.getElementById('assign-guest-select');
-    if (!modal || !select) return;
+    const valInput = document.getElementById('assign-guest-value');
+    const textSpan = document.getElementById('assign-guest-selected-text');
+    const dropdown = document.getElementById('assign-guest-dropdown-menu');
+    const submitBtn = document.getElementById('btn-submit-assign-guest');
+    if (!modal || !dropdown) return;
 
     if (title) title.textContent = `Ubicar Invitado en ${formatTableDisplay(tableName)}`;
+
+    if (valInput) valInput.value = '';
+    if (textSpan) {
+      textSpan.textContent = 'Seleccionar invitado...';
+      textSpan.style.color = 'var(--text-muted)';
+    }
 
     const unassignedGuests = allGuests.filter(g => !g.table || String(g.table).trim() === '' || String(g.table).toLowerCase() === 'sin mesa');
 
     if (unassignedGuests.length === 0) {
-      select.innerHTML = '<option value="">No hay invitados sin mesa asignada</option>';
+      dropdown.innerHTML = '<div class="custom-select-empty">⚠️ No hay invitados sin mesa asignada</div>';
+      if (submitBtn) submitBtn.disabled = true;
     } else {
-      select.innerHTML = unassignedGuests.map(g => `
-        <option value="${g.originalIndex !== undefined ? g.originalIndex : allGuests.indexOf(g)}">
-          ${escapeHtml(g.firstName)} ${escapeHtml(g.lastName)}
-        </option>
-      `).join('');
+      if (submitBtn) submitBtn.disabled = false;
+      dropdown.innerHTML = unassignedGuests.map(g => {
+        const idx = g.originalIndex !== undefined ? g.originalIndex : allGuests.indexOf(g);
+        const name = `${g.firstName} ${g.lastName}`.trim();
+        return `
+          <div class="custom-select-option" data-value="${idx}" onclick="selectAssignGuestOption(${idx}, '${escapeHtml(name)}')">
+            <span>👤</span> <span>${escapeHtml(name)}</span>
+          </div>
+        `;
+      }).join('');
+
+      // Auto select first option by default
+      const firstGuest = unassignedGuests[0];
+      const firstIdx = firstGuest.originalIndex !== undefined ? firstGuest.originalIndex : allGuests.indexOf(firstGuest);
+      const firstName = `${firstGuest.firstName} ${firstGuest.lastName}`.trim();
+      selectAssignGuestOption(firstIdx, firstName);
     }
 
     modal.style.display = 'flex';
@@ -687,21 +1202,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
   window.closeAssignGuestModal = function() {
     const modal = document.getElementById('assign-guest-modal');
+    const dropdown = document.getElementById('assign-guest-dropdown-menu');
+    const trigger = document.getElementById('assign-guest-trigger');
     if (modal) modal.style.display = 'none';
+    if (dropdown) dropdown.classList.remove('active');
+    if (trigger) trigger.classList.remove('active');
     activeAssignTableTarget = null;
   };
+
+  document.addEventListener('click', (e) => {
+    const dropdown = document.getElementById('assign-guest-dropdown-menu');
+    const trigger = document.getElementById('assign-guest-trigger');
+    if (dropdown && dropdown.classList.contains('active')) {
+      if (!dropdown.contains(e.target) && !trigger.contains(e.target)) {
+        dropdown.classList.remove('active');
+        if (trigger) trigger.classList.remove('active');
+      }
+    }
+  });
 
   const btnSubmitAssignGuest = document.getElementById('btn-submit-assign-guest');
   if (btnSubmitAssignGuest) {
     btnSubmitAssignGuest.addEventListener('click', () => {
-      const select = document.getElementById('assign-guest-select');
-      if (!select || !select.value || !activeAssignTableTarget) return;
+      const valInput = document.getElementById('assign-guest-value');
+      if (!valInput || valInput.value === '' || !activeAssignTableTarget) {
+        showToast('Seleccioná un invitado para ubicar en la mesa', 'warning');
+        return;
+      }
 
-      const guestIdx = parseInt(select.value, 10);
+      const guestIdx = parseInt(valInput.value, 10);
       const guest = allGuests[guestIdx];
       if (!guest) return;
 
-      fetch(`/api/admin/guests/${guestIdx}?event=${encodeURIComponent(eventId)}`, {
+      fetch(`/api/guests/${guestIdx}?event=${encodeURIComponent(eventId)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -710,7 +1243,10 @@ document.addEventListener('DOMContentLoaded', () => {
           table: activeAssignTableTarget
         })
       })
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
       .then(data => {
         if (data.success) {
           showToast(`✅ ${guest.firstName} fue ubicado en ${formatTableDisplay(activeAssignTableTarget)}`, 'success');
@@ -748,6 +1284,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const tableName = nameInput.value.trim();
     const capacity = parseInt(capInput.value, 10) || 10;
 
+    // Check if table limit (50) is reached
+    if (allTables && Array.isArray(allTables) && allTables.length >= 50) {
+      showToast('⚠️ Se ha alcanzado el límite máximo de 50 mesas para este evento', 'warning');
+      return;
+    }
+
     // Check if table already exists in allTables
     if (allTables && Array.isArray(allTables)) {
       const exists = allTables.find(t => String(t.name).toLowerCase() === tableName.toLowerCase());
@@ -767,6 +1309,13 @@ document.addEventListener('DOMContentLoaded', () => {
       if (data.success) {
         showToast(`✅ Mesa "${tableName}" creada con éxito`, 'success');
         closeCreateTableModal();
+        if (!tablePositionsMap[tableName]) {
+          const count = Object.keys(tablePositionsMap).length + hallCanvasItems.length;
+          const defaultX = 20 + ((count * 15) % 55);
+          const defaultY = 20 + ((count * 12) % 45);
+          tablePositionsMap[tableName] = { x: defaultX, y: defaultY, rotation: 0 };
+          saveHallLayoutPositions(true);
+        }
         loadStats();
         loadGuests();
       } else {
@@ -1735,12 +2284,40 @@ document.addEventListener('DOMContentLoaded', () => {
     fetch(`/api/stats?event=${encodeURIComponent(eventId)}`)
       .then(res => res.json())
       .then(data => {
-        statGuests.textContent = data.guestCount || 0;
-        statTables.textContent = data.tableCount || 0;
-        allTables = data.tables || [];
+        if (statGuests) statGuests.textContent = data.guestCount || 0;
+        if (statTables) statTables.textContent = data.tableCount || 0;
+        
+        // Deduplicate tables by formatted name to prevent duplicates
+        const uniqueTablesMap = {};
+        (data.tables || []).forEach(t => {
+          const formattedName = formatTableDisplay(t.name);
+          if (!uniqueTablesMap[formattedName]) {
+            uniqueTablesMap[formattedName] = { ...t, name: formattedName };
+          } else {
+            uniqueTablesMap[formattedName].count = Math.max(uniqueTablesMap[formattedName].count || 0, t.count || 0);
+            uniqueTablesMap[formattedName].totalCount = Math.max(uniqueTablesMap[formattedName].totalCount || 0, t.totalCount || 0);
+          }
+        });
+
+        // Also ensure Mesa Principal is included if placed on canvas
+        const hasMesaPrincipalLandmark = (hallCanvasItems || []).some(i => i.type === 'mesa_principal' || i.name === 'Mesa Principal');
+        if (hasMesaPrincipalLandmark && !uniqueTablesMap['Mesa Principal']) {
+          uniqueTablesMap['Mesa Principal'] = { name: 'Mesa Principal', capacity: 10, count: 0, totalCount: 0 };
+        }
+
+        allTables = Object.values(uniqueTablesMap).sort((a, b) => {
+          if (a.name.toLowerCase().includes('principal')) return -1;
+          if (b.name.toLowerCase().includes('principal')) return 1;
+          const numA = parseInt(a.name.replace(/\D/g, ''), 10);
+          const numB = parseInt(b.name.replace(/\D/g, ''), 10);
+          if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+          return a.name.localeCompare(b.name);
+        });
+
         renderTablesList(allTables);
         renderHallTablesGrid();
         updateTablesDatalist();
+        loadHallLayout();
 
         // Re-render capitanes quests to sync tables data
         if (tabCapitanes && tabCapitanes.classList.contains('active')) {
@@ -1884,8 +2461,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!table) return 'Sin Mesa';
     const t = String(table).trim();
     if (t.toLowerCase() === 'sin mesa') return 'Sin Mesa';
+    if (t.toLowerCase() === 'mesa principal' || t.toLowerCase() === 'principal') return 'Mesa Principal';
     if (/^mesa\b/i.test(t)) {
-      return t.charAt(0).toUpperCase() + t.slice(1);
+      return t.replace(/^mesa\s*/i, 'Mesa ');
     }
     return `Mesa ${t}`;
   }
@@ -1894,19 +2472,10 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderGuestsTable() {
     if (!guestsTableBody) return;
     const filter = adminGuestSearch ? adminGuestSearch.value.trim().toLowerCase() : '';
-    
-    // Find confirmed guests (RSVPs with attending = true)
-    const confirmedNames = new Set(
-      allRsvps
-        .filter(r => r.attending === true)
-        .map(r => r.name.trim().toLowerCase())
-    );
 
     const filteredGuests = allGuests.map((g, index) => ({ ...g, originalIndex: index }))
       .filter(g => {
         const fullName = `${g.firstName} ${g.lastName}`.trim().toLowerCase();
-        if (!confirmedNames.has(fullName)) return false;
-
         const table = String(g.table).toLowerCase();
         return fullName.includes(filter) || table.includes(filter);
       });
@@ -2119,8 +2688,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Render list of tables and guest counts
   function renderTablesList(tables) {
-    if (tables.length === 0) {
-      tablesBreakdownList.innerHTML = `
+    const listEl = document.getElementById('tables-breakdown-list') || tablesBreakdownList;
+    if (!listEl) return;
+    if (!tables || !Array.isArray(tables) || tables.length === 0) {
+      listEl.innerHTML = `
         <div style="padding: 20px; text-align: center; color: var(--text-muted); font-size: 0.85rem;">
           No hay datos de mesas disponibles.
         </div>
@@ -2128,9 +2699,9 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    tablesBreakdownList.innerHTML = tables.map(t => {
+    listEl.innerHTML = tables.map(t => {
       // Find all guests assigned to this table
-      const guestsInTable = allGuests.filter(g => g.table === t.name);
+      const guestsInTable = allGuests.filter(g => formatTableDisplay(g.table).trim().toLowerCase() === formatTableDisplay(t.name).trim().toLowerCase());
       
       const guestsHtml = guestsInTable.map(g => {
         const fullName = `${g.firstName} ${g.lastName}`.trim().toLowerCase();
@@ -2782,6 +3353,9 @@ Tu presencia hará que esta celebración sea aún más significativa.
     }
 
   function preparePrintPoster(serviceType) {
+    document.body.classList.add('print-mode-single');
+    document.body.classList.remove('print-mode-multi-tables');
+
     const isPhotos = (serviceType === 'photos');
     const isInvitation = (serviceType === 'invitation');
     const isCapitanes = (serviceType === 'capitanes');
@@ -2798,15 +3372,20 @@ Tu presencia hará que esta celebración sea aún más significativa.
       printQrImg.src = printQrUrl;
     }
 
+    const titleInput = document.getElementById('event-title-input');
+    const subtitleInput = document.getElementById('qr-poster-subtitle-input');
+    const customTitle = titleInput ? titleInput.value.trim() : '';
+    const customSubtitle = subtitleInput ? subtitleInput.value.trim() : '';
+
     const printTitle = document.getElementById('print-event-title');
     const printSubtitle = document.querySelector('.print-subtitle');
     const printInstructions = document.querySelector('.print-instructions');
 
     if (printTitle) {
-      printTitle.textContent = isPhotos ? 'Muro de Fotos' : (isInvitation ? 'Invitación Interactiva' : (isCapitanes ? 'Capitanes de Mesa' : 'Ubicación de Mesas'));
+      printTitle.textContent = customTitle || (isPhotos ? 'Muro de Fotos' : (isInvitation ? 'Invitación Interactiva' : (isCapitanes ? 'Capitanes de Mesa' : 'Ubicación de Mesas')));
     }
     if (printSubtitle) {
-      printSubtitle.textContent = isPhotos ? 'Comparte tus Momentos' : (isInvitation ? 'Accede a la Invitación' : (isCapitanes ? 'Competencia de Mesas' : 'Encuentra tu Mesa'));
+      printSubtitle.textContent = customSubtitle || (isPhotos ? 'Comparte tus Momentos' : (isInvitation ? 'Accede a la Invitación' : (isCapitanes ? 'Competencia de Mesas' : 'Encuentra tu Mesa')));
     }
     if (printInstructions) {
       printInstructions.innerHTML = isPhotos 
