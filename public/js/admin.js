@@ -723,6 +723,67 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // --- CREATE NEW TABLE MODAL HANDLERS ---
+  window.openCreateTableModal = function() {
+    const modal = document.getElementById('create-table-modal');
+    const inputName = document.getElementById('create-table-name');
+    const inputCapacity = document.getElementById('create-table-capacity');
+    if (!modal) return;
+
+    if (inputName) inputName.value = '';
+    if (inputCapacity) inputCapacity.value = '10';
+    modal.style.display = 'flex';
+  };
+
+  window.closeCreateTableModal = function() {
+    const modal = document.getElementById('create-table-modal');
+    if (modal) modal.style.display = 'none';
+  };
+
+  window.submitCreateTableForm = function() {
+    const nameInput = document.getElementById('create-table-name');
+    const capInput = document.getElementById('create-table-capacity');
+    if (!nameInput || !nameInput.value.trim()) return;
+
+    const tableName = nameInput.value.trim();
+    const capacity = parseInt(capInput.value, 10) || 10;
+
+    // Check if table already exists in allTables
+    if (allTables && Array.isArray(allTables)) {
+      const exists = allTables.find(t => String(t.name).toLowerCase() === tableName.toLowerCase());
+      if (exists) {
+        showToast(`La mesa "${tableName}" ya existe`, 'error');
+        return;
+      }
+    }
+
+    fetch(`/api/admin/tables?event=${encodeURIComponent(eventId)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: tableName, capacity: capacity })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        showToast(`✅ Mesa "${tableName}" creada con éxito`, 'success');
+        closeCreateTableModal();
+        loadStats();
+        loadGuests();
+      } else {
+        throw new Error(data.error || 'Error al crear la mesa');
+      }
+    })
+    .catch(err => {
+      console.error('Error creating table:', err);
+      // Fallback local addition
+      if (!allTables) allTables = [];
+      allTables.push({ name: tableName, count: 0, totalCount: 0, capacity: capacity });
+      renderHallTablesGrid();
+      closeCreateTableModal();
+      showToast(`✅ Mesa "${tableName}" creada`, 'success');
+    });
+  };
+
   function performSwitchSubTab(subTabId) {
     const subtabs = ['informacion', 'diseno', 'fotos-inv', 'regalos', 'confirmaciones', 'respuestas', 'invitados'];
     subtabs.forEach(t => {

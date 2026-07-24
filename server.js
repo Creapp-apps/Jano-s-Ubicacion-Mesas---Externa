@@ -351,14 +351,26 @@ app.get('/api/stats', requireAuth, async (req, res) => {
       return confirmedNames.has(fullName);
     });
 
-    // Count unique tables from all guests, and track confirmed counts
+    // Read custom defined tables from event config
+    const customTablesRaw = await db.getConfigValue(eventId, 'custom_tables', '[]');
+    let customTables = [];
+    try { customTables = JSON.parse(customTablesRaw); } catch(e){}
+
     const tablesMap = {};
+
+    if (Array.isArray(customTables)) {
+      customTables.forEach(ct => {
+        tablesMap[ct.name] = { name: ct.name, capacity: ct.capacity || 10, count: 0, totalCount: 0 };
+      });
+    }
+
+    // Count unique tables from all guests, and track confirmed counts
     guests.forEach(g => {
       if (g.table) {
         const tableName = g.table.trim();
         if (tableName && tableName.toLowerCase() !== 'sin mesa') {
           if (!tablesMap[tableName]) {
-            tablesMap[tableName] = { name: tableName, count: 0, totalCount: 0 };
+            tablesMap[tableName] = { name: tableName, capacity: 10, count: 0, totalCount: 0 };
           }
           tablesMap[tableName].totalCount += 1;
           
@@ -371,7 +383,6 @@ app.get('/api/stats', requireAuth, async (req, res) => {
     });
     
     const tables = Object.values(tablesMap).sort((a, b) => {
-      // Numerical sort if possible, otherwise alphabetical
       const numA = parseInt(a.name.replace(/\D/g, ''), 10);
       const numB = parseInt(b.name.replace(/\D/g, ''), 10);
       if (!isNaN(numA) && !isNaN(numB)) {
@@ -388,6 +399,37 @@ app.get('/api/stats', requireAuth, async (req, res) => {
   } catch (error) {
     console.error('Error fetching stats:', error);
     res.status(500).json({ error: 'Error al obtener estadísticas' });
+  }
+});
+
+// API: Create new table
+app.post('/api/admin/tables', requireAuth, async (req, res) => {
+  try {
+    const eventId = req.query.event || 'default';
+    const { name, capacity } = req.body;
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: 'Nombre de mesa es requerido' });
+    }
+
+    const tableName = name.trim();
+    const tableCap = parseInt(capacity, 10) || 10;
+
+    const customTablesRaw = await db.getConfigValue(eventId, 'custom_tables', '[]');
+    let customTables = [];
+    try { customTables = JSON.parse(customTablesRaw); } catch(e){}
+
+    const existingIdx = customTables.findIndex(t => t.name.toLowerCase() === tableName.toLowerCase());
+    if (existingIdx >= 0) {
+      customTables[existingIdx].capacity = tableCap;
+    } else {
+      customTables.push({ name: tableName, capacity: tableCap });
+    }
+
+    await db.setConfigValue(eventId, 'custom_tables', JSON.stringify(customTables));
+    res.json({ success: true, table: { name: tableName, capacity: tableCap } });
+  } catch (error) {
+    console.error('Error creating table:', error);
+    res.status(500).json({ error: 'Error al crear la mesa' });
   }
 });
 
