@@ -389,17 +389,27 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  if (openClientLoginBtn && clientLoginModal) {
-    openClientLoginBtn.addEventListener('click', (e) => {
-      e.preventDefault();
+  const navAdminLink = document.getElementById('nav-admin-link');
+
+  const openLoginModalHandler = (e) => {
+    if (e) e.preventDefault();
+    if (clientLoginModal) {
       clientLoginModal.classList.add('active');
-      modalErrorMsg.classList.remove('visible');
-      modalLoginForm.reset();
+      if (modalErrorMsg) modalErrorMsg.classList.remove('visible');
+      if (modalLoginForm) modalLoginForm.reset();
       if (modalPasswordInput) {
         modalPasswordInput.type = 'password';
         if (modalEyeIcon) modalEyeIcon.innerHTML = `<path d="${eyeOpenPath}"/>`;
       }
-    });
+    }
+  };
+
+  if (openClientLoginBtn) {
+    openClientLoginBtn.addEventListener('click', openLoginModalHandler);
+  }
+
+  if (navAdminLink) {
+    navAdminLink.addEventListener('click', openLoginModalHandler);
   }
 
   if (closeClientLoginBtn && clientLoginModal) {
