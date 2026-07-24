@@ -640,7 +640,7 @@
               
               <div class="event-card-actions">
                 <a href="/?event=${encodeURIComponent(event.id)}" target="_blank" class="event-card-btn event-card-btn-view">Landing</a>
-                <a href="/admin?event=${encodeURIComponent(event.id)}" target="_blank" class="event-card-btn event-card-btn-view">Admin</a>
+                <a href="/event.html?event=${encodeURIComponent(event.id)}" target="_blank" class="event-card-btn event-card-btn-view">Admin</a>
                 <button onclick="toggleEventStatus('${event.id}', ${event.active})" class="event-card-btn event-card-btn-toggle">
                   ${event.active ? 'Desactivar' : 'Activar'}
                 </button>
