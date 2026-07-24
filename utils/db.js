@@ -159,7 +159,7 @@ function normalizeTable(table) {
   if (t.toLowerCase() === 'mesa principal' || t.toLowerCase() === 'principal') {
     return 'Mesa Principal';
   }
-  return `Mesa ${t}`;
+  return t;
 }
 
 /**
@@ -501,11 +501,19 @@ async function addGuest(eventId = 'default', guest) {
  */
 async function updateGuest(eventId = 'default', index, updatedGuest) {
   const guests = await getGuests(eventId);
-  if (index < 0 || index >= guests.length) {
+  let targetIdx = -1;
+
+  if (typeof index === 'number' && index >= 0 && index < guests.length) {
+    targetIdx = index;
+  } else {
+    targetIdx = guests.findIndex(g => g.id === index || String(g.id) === String(index));
+  }
+
+  if (targetIdx < 0 || targetIdx >= guests.length) {
     throw new Error('Invitado no encontrado.');
   }
 
-  const target = guests[index];
+  const target = guests[targetIdx];
   const newFields = {
     firstName: (updatedGuest.firstName || '').trim(),
     lastName: (updatedGuest.lastName || '').trim(),
@@ -1838,6 +1846,14 @@ async function addOrUpdatePublicRsvp(eventId = 'default', rsvpData) {
     existing = rsvps.find(r => (r.name || '').trim().toLowerCase() === normName && !(r.phone && r.phone.trim()));
   }
 
+  let companionsNamesStr = '';
+  if (Array.isArray(rsvpData.companionsNames)) {
+    companionsNamesStr = rsvpData.companionsNames.filter(name => name && typeof name === 'string' && name.trim()).map(name => name.trim()).join(', ');
+  } else if (typeof rsvpData.companionsNames === 'string') {
+    companionsNamesStr = rsvpData.companionsNames.trim();
+  }
+  const companionsCountNum = parseInt(rsvpData.companionsCount, 10) || 0;
+
   if (existing) {
     // Update existing RSVP
     const updatedName = (rsvpData.name || existing.name).trim();
@@ -1851,6 +1867,8 @@ async function addOrUpdatePublicRsvp(eventId = 'default', rsvpData) {
         phone: cleanPhone,
         source: 'public_qr',
         attending: updatedAttending,
+        companions_count: companionsCountNum,
+        companions_names: companionsNamesStr,
         dietary_restrictions: updatedDiet,
         suggested_song: updatedSong
       };
@@ -1883,6 +1901,8 @@ async function addOrUpdatePublicRsvp(eventId = 'default', rsvpData) {
               phone: cleanPhone,
               source: 'public_qr',
               attending: updatedAttending,
+              companions_count: companionsCountNum,
+              companions_names: companionsNamesStr,
               dietary_restrictions: updatedDiet,
               suggested_song: updatedSong,
               updated_at: new Date().toISOString()
@@ -1902,8 +1922,8 @@ async function addOrUpdatePublicRsvp(eventId = 'default', rsvpData) {
       phone: cleanPhone,
       source: 'public_qr',
       attending: !!rsvpData.attending,
-      companionsCount: 0,
-      companionsNames: '',
+      companionsCount: companionsCountNum,
+      companionsNames: companionsNamesStr,
       dietaryRestrictions: (rsvpData.dietaryRestrictions || '').trim(),
       suggestedSong: (rsvpData.suggestedSong || '').trim()
     });

@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/hall-map.css">
   <style>
     /* Premium layout for single onboarding card */
     .onboarding-container {
@@ -133,9 +134,11 @@
         </div>
         <div class="ticket-body">
           <div class="ticket-label">Tu mesa asignada es</div>
-          <div class="ticket-table-number" id="result-table">Mesa 12</div>
+          <div class="ticket-table-number" id="result-table">Mesa 1</div>
+          <div id="result-table-alias" style="font-size: 0.88rem; font-weight: 600; color: #d4af37; margin-top: 4px; display: none;"></div>
         </div>
-        <div class="ticket-footer">
+        <div class="ticket-footer" style="display: flex; flex-direction: column; gap: 10px;">
+          <button class="btn-search" id="btn-open-hall-map" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; width: 100%; border: none; box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);">🗺️ Ver mi Mesa en el Mapa del Salón</button>
           <button class="btn-back" id="btn-search-again">Buscar Otro</button>
         </div>
       </div>
@@ -148,10 +151,12 @@
   </footer>
 
   <script src="/js/app.js"></script>
+  <script src="/js/hall-map-client.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const mainEl = document.querySelector('main');
       const startSearchBtn = document.getElementById('btn-start-search');
+      const openMapBtn = document.getElementById('btn-open-hall-map');
       
       // Reduce layout width when transition to guest search screen starts
       if (startSearchBtn && mainEl) {
@@ -159,6 +164,17 @@
           setTimeout(() => {
             mainEl.classList.remove('wide-layout');
           }, 500);
+        });
+      }
+
+      if (openMapBtn) {
+        openMapBtn.addEventListener('click', () => {
+          const guestName = document.getElementById('result-name')?.textContent || 'Invitado';
+          const tableName = openMapBtn.dataset.rawTable || document.getElementById('result-table')?.dataset.rawTable || document.getElementById('result-table')?.textContent || 'Sin Mesa';
+          const eventId = new URLSearchParams(window.location.search).get('event') || 'default';
+          if (window.HallMapClient) {
+            window.HallMapClient.open({ eventId, guestName, tableName });
+          }
         });
       }
     });

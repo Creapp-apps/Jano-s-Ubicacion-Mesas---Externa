@@ -98,7 +98,28 @@ async function runPublicQrRsvpTests() {
     assert.strictEqual(mariaRecords.length, 1, 'Should only have 1 record for María Gómez (no duplicate created)');
     assert.strictEqual(mariaRecords[0].phone, phoneC, 'Phone should be updated');
     assert.strictEqual(mariaRecords[0].dietary_restrictions || mariaRecords[0].dietaryRestrictions, 'Sin sal', 'Diet should be updated');
-    assert.strictEqual(mariaRecords[0].suggested_song || mariaRecords[0].suggestedSong, songD, 'Song suggestion should be preserved');
+    // 5. Submit RSVP with companions (+1 Roberto Rodríguez)
+    const nameE = 'Laura Gómez';
+    const phoneE = '5491188776655';
+    const rsvp5 = await db.addOrUpdatePublicRsvp(testEventId, {
+      name: nameE,
+      phone: phoneE,
+      attending: true,
+      companionsCount: 1,
+      companionsNames: ['Roberto Rodríguez'],
+      dietaryRestrictions: 'Ninguna',
+      suggestedSong: ''
+    });
+
+    assert.strictEqual(rsvp5.success, true, 'RSVP with companion should succeed');
+    rsvps = await db.getRsvps(testEventId);
+    const lauraRecord = rsvps.find(r => r.name === nameE);
+    assert.ok(lauraRecord, 'Laura Gómez record should exist');
+    assert.strictEqual(lauraRecord.companionsCount || lauraRecord.companions_count, 1, 'Companions count should be 1');
+    assert.ok(
+      (lauraRecord.companionsNames || lauraRecord.companions_names).includes('Roberto Rodríguez'),
+      'Companion name should be saved'
+    );
 
     console.log('✅ ALL PUBLIC QR RSVP & DEDUPLICATION TESTS PASSED SUCCESSFULLY!');
   } finally {

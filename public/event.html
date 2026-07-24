@@ -1086,6 +1086,7 @@
         <p class="service-desc">Explorá la invitación interactiva con itinerario y mapas del evento.</p>
         <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; z-index: 5; position: relative;">
           <a id="btn-service-invitation-personalize" href="/admin" class="service-btn" style="text-decoration: none; text-align: center; display: block;">Personalizar Invitación</a>
+          <a id="btn-service-invitation-responses" href="/admin" class="service-btn secondary-btn" style="text-decoration: none; text-align: center; display: block; margin-top: 0;">Ver Respuestas</a>
           <a id="btn-service-invitation-view" href="/invitacion" class="service-btn secondary-btn" style="text-decoration: none; text-align: center; display: block; margin-top: 0;">Ver Invitación</a>
         </div>
       </div>
@@ -1200,6 +1201,13 @@
       const cardParams = new URLSearchParams(window.location.search);
       cardParams.set('service', 'invitacion');
       personalizeLink.setAttribute('href', `/admin?${cardParams.toString()}`);
+    }
+    const responsesLink = document.getElementById('btn-service-invitation-responses');
+    if (responsesLink) {
+      const cardParams = new URLSearchParams(window.location.search);
+      cardParams.set('service', 'invitacion');
+      cardParams.set('subtab', 'respuestas');
+      responsesLink.setAttribute('href', `/admin?${cardParams.toString()}`);
     }
     const viewLink = document.getElementById('btn-service-invitation-view');
     if (viewLink) {

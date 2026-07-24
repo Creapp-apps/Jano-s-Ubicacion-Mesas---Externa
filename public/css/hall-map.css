@@ -1,0 +1,461 @@
+/* ==========================================================================
+   Hall Map Client - Interactive 2D Map & GPS Experience for Guests
+   ========================================================================== */
+
+/* Fullscreen Modal Overlay */
+.hall-map-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  background: rgba(8, 9, 14, 0.96);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  color: #fff;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.hall-map-modal.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Modal Header */
+.hall-map-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  background: rgba(20, 22, 34, 0.8);
+  border-bottom: 1px solid rgba(212, 175, 55, 0.18);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  z-index: 10;
+}
+
+.hall-map-header-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.hall-map-title {
+  font-family: 'Cinzel', serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #d4af37;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hall-map-subtitle {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.hall-map-close-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.hall-map-close-btn:hover {
+  background: rgba(212, 175, 55, 0.2);
+  border-color: #d4af37;
+  color: #d4af37;
+}
+
+/* Map Viewport Area */
+.hall-map-viewport {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 50%, #121422 0%, #08090e 100%);
+  touch-action: none;
+  user-select: none;
+  cursor: grab;
+}
+
+.hall-map-viewport:active {
+  cursor: grabbing;
+}
+
+/* Grid Pattern Background */
+.hall-map-viewport::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: linear-gradient(rgba(212, 175, 55, 0.03) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(212, 175, 55, 0.03) 1px, transparent 1px);
+  background-size: 30px 30px;
+  pointer-events: none;
+}
+
+/* SVG Map World Container */
+.hall-map-world {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  transition: transform 0.05s linear;
+}
+
+/* SVG Elements Styling */
+.hall-svg-canvas {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* Route Trail Animation */
+.hall-route-line-bg {
+  stroke: rgba(212, 175, 55, 0.2);
+  stroke-width: 6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
+.hall-route-line-animated {
+  stroke: url(#gold-emerald-gradient);
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 12, 8;
+  animation: marching-ants 1.2s linear infinite;
+  fill: none;
+  filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.8));
+}
+
+@keyframes marching-ants {
+  from {
+    stroke-dashoffset: 40;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Radar Beacon Animation on Target Table */
+.radar-beacon {
+  transform-origin: center;
+  animation: pulse-radar 2s ease-out infinite;
+}
+
+.radar-beacon-delayed {
+  transform-origin: center;
+  animation: pulse-radar 2s ease-out 0.8s infinite;
+}
+
+@keyframes pulse-radar {
+  0% {
+    r: 25;
+    opacity: 0.95;
+    stroke-width: 3;
+  }
+  100% {
+    r: 85;
+    opacity: 0;
+    stroke-width: 1;
+  }
+}
+
+/* Floating Badge ABOVE Assigned Table */
+.target-table-badge {
+  animation: float-badge 2s ease-in-out infinite alternate;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.6));
+}
+
+@keyframes float-badge {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-6px);
+  }
+}
+
+/* Table Item Graphics */
+.map-table-group {
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.map-table-group:hover {
+  transform: scale(1.05);
+}
+
+.map-table-circle {
+  fill: rgba(30, 34, 52, 0.85);
+  stroke: rgba(212, 175, 55, 0.4);
+  stroke-width: 2;
+  transition: all 0.3s ease;
+}
+
+.map-table-group.target .map-table-circle {
+  fill: rgba(16, 185, 129, 0.25);
+  stroke: #10b981;
+  stroke-width: 3.5;
+  filter: drop-shadow(0 0 16px rgba(16, 185, 129, 0.8));
+}
+
+.map-table-text {
+  font-size: 13px;
+  font-weight: 700;
+  fill: #fff;
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+}
+
+.map-table-group.target .map-table-text {
+  fill: #6ee7b7;
+  font-weight: 800;
+}
+
+/* Unified Floating Glassmorphism Toolbar at Bottom */
+.hall-map-unified-toolbar {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  z-index: 20;
+  width: calc(100% - 32px);
+  max-width: 480px;
+  pointer-events: none;
+}
+
+.hall-map-unified-toolbar > * {
+  pointer-events: auto;
+}
+
+.toolbar-legend-group {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: rgba(14, 16, 26, 0.85);
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  border-radius: 20px;
+  padding: 6px 16px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
+}
+
+.legend-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.legend-dot-entry {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #3b82f6;
+  box-shadow: 0 0 8px #3b82f6;
+}
+
+.legend-dot-target {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+}
+
+.toolbar-actions-group {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 10px;
+}
+
+.zoom-buttons-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hall-ctrl-btn {
+  background: rgba(18, 20, 32, 0.9);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 25px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: 'Montserrat', sans-serif;
+}
+
+.hall-ctrl-btn:hover, .hall-ctrl-btn:active {
+  background: rgba(212, 175, 55, 0.25);
+  border-color: var(--gold-primary, #d4af37);
+  color: var(--gold-primary, #d4af37);
+  transform: translateY(-1px);
+}
+
+.hall-ctrl-btn-icon {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 50%;
+  justify-content: center;
+  font-size: 1.15rem;
+}
+
+/* Bottom Sheet Drawer for Tablemates */
+.tablemates-drawer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  max-height: 70vh;
+  background: rgba(16, 18, 28, 0.97);
+  border-top: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.7);
+  z-index: 100;
+  transform: translateY(100%);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  padding: 16px 20px 24px;
+}
+
+.tablemates-drawer.open {
+  transform: translateY(0);
+}
+
+.drawer-drag-handle {
+  width: 40px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 2px;
+  align-self: center;
+  margin-bottom: 12px;
+}
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.drawer-title {
+  font-family: 'Cinzel', serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #d4af37;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.drawer-table-badge {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.drawer-close {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 1.3rem;
+  cursor: pointer;
+}
+
+.drawer-guests-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  max-height: 45vh;
+  padding-right: 4px;
+}
+
+.drawer-guest-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  transition: background 0.2s ease;
+}
+
+.drawer-guest-card:hover {
+  background: rgba(212, 175, 55, 0.08);
+  border-color: rgba(212, 175, 55, 0.2);
+}
+
+.drawer-guest-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #f3f4f6;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.drawer-guest-status {
+  font-size: 0.72rem;
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.drawer-guest-status.confirmed {
+  background: rgba(16, 185, 129, 0.15);
+  color: #6ee7b7;
+}
+
+.drawer-guest-status.pending {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fcd34d;
+}

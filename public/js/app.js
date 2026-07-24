@@ -197,6 +197,71 @@ document.addEventListener('DOMContentLoaded', () => {
     }, { once: true });
   }
 
+  function buildTableNumberMapping(tableList = []) {
+    const mapping = {};
+    const usedNumbers = new Set();
+    const customAliasTables = [];
+
+    tableList.forEach(tName => {
+      const raw = String(tName || '').trim();
+      if (!raw || raw.toLowerCase() === 'sin mesa') return;
+
+      if (/principal|presidencial\b/i.test(raw)) {
+        mapping[raw] = { number: 0, numberStr: 'Mesa Principal', numOnly: '👑', alias: 'Mesa Principal' };
+        return;
+      }
+
+      const match = raw.match(/^mesa\s*(\d+)$/i);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        usedNumbers.add(num);
+        mapping[raw] = { number: num, numberStr: `Mesa ${num}`, numOnly: String(num), alias: '' };
+      } else {
+        customAliasTables.push(raw);
+      }
+    });
+
+    let nextNum = 1;
+    customAliasTables.forEach(raw => {
+      while (usedNumbers.has(nextNum)) {
+        nextNum++;
+      }
+      usedNumbers.add(nextNum);
+      mapping[raw] = {
+        number: nextNum,
+        numberStr: `Mesa ${nextNum}`,
+        numOnly: String(nextNum),
+        alias: raw
+      };
+    });
+
+    return mapping;
+  }
+
+  async function resolveGuestTableNumber(guestTable) {
+    if (!guestTable) return { numberStr: 'Sin Mesa', alias: '' };
+    const raw = String(guestTable).trim();
+    if (raw.toLowerCase() === 'sin mesa') return { numberStr: 'Sin Mesa', alias: '' };
+    if (/principal|presidencial\b/i.test(raw)) return { numberStr: 'Mesa Principal', alias: '' };
+
+    if (!cachedHallLayout) {
+      try {
+        const res = await fetch(`/api/public/hall-layout?event=${encodeURIComponent(eventId)}`);
+        const data = await res.json();
+        cachedHallLayout = data || {};
+      } catch(e) {}
+    }
+
+    const tablePositions = cachedHallLayout?.tablePositions || {};
+    const tableMapping = buildTableNumberMapping(Object.keys(tablePositions));
+    const info = tableMapping[raw] || { numberStr: formatTableDisplay(raw), alias: raw };
+
+    return {
+      numberStr: info.numberStr,
+      alias: info.alias
+    };
+  }
+
   function formatTableDisplay(table) {
     if (!table) return 'Sin Mesa';
     const t = String(table).trim();
@@ -215,7 +280,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Set details
     resultName.textContent = `${guest.firstName} ${guest.lastName}`;
-    resultTable.textContent = formatTableDisplay(guest.table);
+    
+    const openMapBtn = document.getElementById('btn-open-hall-map');
+    if (openMapBtn) {
+      openMapBtn.dataset.rawTable = guest.table || '';
+    }
+    if (resultTable) {
+      resultTable.dataset.rawTable = guest.table || '';
+    }
+
+    resolveGuestTableNumber(guest.table).then(({ numberStr, alias }) => {
+      resultTable.textContent = numberStr;
+      const aliasEl = document.getElementById('result-table-alias');
+      if (aliasEl) {
+        if (alias && !/^mesa\s*\d+$/i.test(alias)) {
+          aliasEl.textContent = `(${alias})`;
+          aliasEl.style.display = 'block';
+        } else {
+          aliasEl.style.display = 'none';
+        }
+      }
+    });
 
     // Transition out search card and reveal ticket
     searchCard.style.opacity = '0';

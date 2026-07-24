@@ -1376,7 +1376,7 @@
       </div>
       
       <div class="print-footer">
-        Jano's Eventos &copy; Todos los derechos reservados
+        miFiestAPP 2026 &copy; Todos los derechos reservados.
       </div>
     </div>
   </div>
@@ -2338,30 +2338,33 @@
     </div>
   </div>
 
-  <!-- Modal: Assign Guest to Table -->
+  <!-- Modal: Assign Guests to Table (Batch Multi-Select with Live Search) -->
   <div id="assign-guest-modal" class="modal-overlay" style="display: none;">
-    <div class="modal-card" style="max-width: 440px; background: rgba(18,18,22,0.95); border: 1px solid var(--gold-primary); border-radius: 24px; padding: 30px;">
-      <h3 id="assign-modal-title" style="margin-top: 0; color: var(--gold-primary); font-family: 'Cinzel', serif;">Ubicar Invitado en Mesa</h3>
-      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;">Seleccioná una persona confirmada sin mesa para ubicarla en esta mesa.</p>
+    <div class="modal-card" style="max-width: 500px; width: 92%; background: linear-gradient(145deg, rgba(24,24,32,0.96) 0%, rgba(14,14,20,0.98) 100%); border: 1.5px solid var(--gold-primary); border-radius: 24px; padding: 26px 28px; box-shadow: 0 15px 50px rgba(0,0,0,0.8), 0 0 30px rgba(212,175,55,0.15);">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+        <h3 id="assign-modal-title" style="margin: 0; color: var(--gold-primary); font-family: 'Cinzel', serif; font-size: 1.25rem; font-weight: 700;">Ubicar Invitados en Mesa</h3>
+        <span id="assign-selected-badge" style="background: rgba(212, 175, 55, 0.15); border: 1px solid rgba(212, 175, 55, 0.4); color: var(--gold-light); font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 12px;">0 / 10 Seleccionados</span>
+      </div>
+      <p style="font-size: 0.84rem; color: var(--text-muted); margin: 0 0 16px 0; line-height: 1.4;">Seleccioná hasta 10 personas confirmadas sin mesa para ubicarlas en lote.</p>
       
-      <div style="margin-bottom: 24px; position: relative;">
-        <label style="display: block; font-size: 0.8rem; color: var(--gold-light); margin-bottom: 8px; font-weight: 600;">Invitado Confirmado</label>
-        
-        <input type="hidden" id="assign-guest-value" value="">
-
-        <div id="assign-guest-trigger" class="custom-select-trigger" onclick="toggleAssignGuestDropdown(event)">
-          <span id="assign-guest-selected-text" style="color: var(--text-muted); font-size: 0.88rem; font-weight: 500;">Seleccionar invitado...</span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="custom-select-arrow" style="transition: transform 0.2s; color: var(--gold-primary);"><path d="m6 9 6 6 6-6"/></svg>
-        </div>
-
-        <div id="assign-guest-dropdown-menu" class="custom-select-dropdown-menu">
-          <!-- Populated dynamically -->
-        </div>
+      <!-- Live Search Input -->
+      <div style="margin-bottom: 14px; position: relative;">
+        <input type="text" id="assign-guest-search-input" placeholder="🔍 Buscar por nombre o apellido en tiempo real..." style="width: 100%; padding: 11px 16px; background: rgba(10, 10, 15, 0.8); border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 12px; color: #fff; font-size: 0.88rem; outline: none; box-sizing: border-box; font-family: 'Montserrat', sans-serif; transition: all 0.2s;">
       </div>
 
-      <div style="display: flex; gap: 10px; justify-content: flex-end;">
-        <button class="btn btn-header-action" onclick="closeAssignGuestModal()">Cancelar</button>
-        <button class="btn btn-primary" id="btn-submit-assign-guest" style="padding: 10px 20px; font-size: 0.82rem; border-radius: 18px;">Asignar AHORA</button>
+      <!-- Multi-select list container -->
+      <div id="assign-guest-multiselect-container" style="max-height: 250px; overflow-y: auto; background: rgba(8,8,12,0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 6px; margin-bottom: 16px;">
+        <!-- Populated dynamically -->
+      </div>
+
+      <!-- Pulsing Breath Scroll Indicator -->
+      <div id="assign-guest-scroll-indicator" class="scroll-breath-indicator" style="display: none;">
+        <span>✨ Deslizá hacia abajo para ver más invitados ⬇️</span>
+      </div>
+
+      <div style="display: flex; gap: 10px; justify-content: flex-end; align-items: center;">
+        <button class="btn btn-header-action" onclick="closeAssignGuestModal()" style="border-radius: 14px; padding: 10px 18px;">Cancelar</button>
+        <button class="btn btn-primary" id="btn-submit-assign-guest" style="padding: 10px 22px; font-size: 0.84rem; border-radius: 14px; font-weight: 700;">Ubicar Invitados</button>
       </div>
     </div>
   </div>

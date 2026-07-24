@@ -10,6 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Great+Vibes&family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Montserrat:wght@300;400;500;600;700&family=Open+Sans:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/invitacion.css">
+  <link rel="stylesheet" href="/css/hall-map.css">
   
   <!-- Leaflet CSS & JS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
@@ -2535,9 +2536,41 @@
       // Initialize dropdown components
       initCustomSelects();
 
-      // RSVP Form Companions dynamic inputs
+      // RSVP Form Attending & Companions dynamic handling
+      const rsvpAttending = document.getElementById('rsvp-attending');
+      const rsvpCompanionsGroup = document.getElementById('rsvp-companions-group');
       const rsvpCompanionsCount = document.getElementById('rsvp-companions-count');
       const rsvpCompanionsNamesContainer = document.getElementById('rsvp-companions-names-container');
+
+      function updateCompanionsVisibility() {
+        if (!rsvpAttending || !rsvpCompanionsGroup) return;
+        if (rsvpAttending.value === 'yes') {
+          rsvpCompanionsGroup.style.display = 'block';
+        } else {
+          rsvpCompanionsGroup.style.display = 'none';
+          if (rsvpCompanionsCount) {
+            rsvpCompanionsCount.value = '0';
+            const customSelect = rsvpCompanionsCount.nextElementSibling;
+            if (customSelect && customSelect.classList.contains('select-lux-wrapper')) {
+              const textSpan = customSelect.querySelector('.select-lux-text');
+              if (textSpan) textSpan.textContent = 'Sin acompañantes';
+              customSelect.querySelectorAll('.select-lux-option').forEach(o => {
+                if (o.dataset.value === '0') o.classList.add('selected');
+                else o.classList.remove('selected');
+              });
+            }
+          }
+          if (rsvpCompanionsNamesContainer) {
+            rsvpCompanionsNamesContainer.innerHTML = '';
+            rsvpCompanionsNamesContainer.style.display = 'none';
+          }
+        }
+      }
+
+      if (rsvpAttending) {
+        rsvpAttending.addEventListener('change', updateCompanionsVisibility);
+        updateCompanionsVisibility();
+      }
       
       if (rsvpCompanionsCount) {
         rsvpCompanionsCount.addEventListener('change', (e) => {
@@ -2551,13 +2584,14 @@
               label.style.color = 'var(--text-muted)';
               label.style.textAlign = 'center';
               label.style.display = 'block';
-              label.style.marginBottom = '8px';
+              label.style.marginBottom = '4px';
+              label.style.marginTop = i > 1 ? '8px' : '0px';
               label.textContent = `Acompañante ${i}`;
               
               const input = document.createElement('input');
               input.type = 'text';
               input.className = 'form-control rsvp-companion-name-input';
-              input.placeholder = `Nombre del Acompañante ${i}`;
+              input.placeholder = `Nombre completo del Acompañante ${i}`;
               input.required = true;
               
               rsvpCompanionsNamesContainer.appendChild(label);
@@ -2596,8 +2630,27 @@
 
           const attendingVal = document.getElementById('rsvp-attending').value;
           const attending = attendingVal === 'yes';
-          const companionsCount = parseInt(rsvpCompanionsCount.value) || 0;
-          const companionsNames = Array.from(document.querySelectorAll('.rsvp-companion-name-input')).map(input => input.value.trim());
+          const companionsCount = attending ? (parseInt(rsvpCompanionsCount ? rsvpCompanionsCount.value : 0) || 0) : 0;
+          const companionInputs = Array.from(document.querySelectorAll('.rsvp-companion-name-input'));
+          const companionsNames = attending ? companionInputs.map(input => input.value.trim()).filter(Boolean) : [];
+
+          if (attending && companionsCount > 0) {
+            let hasError = false;
+            companionInputs.forEach(inp => {
+              if (!inp.value.trim()) {
+                inp.style.borderColor = '#ff3b30';
+                hasError = true;
+              } else {
+                inp.style.borderColor = '';
+              }
+            });
+            if (hasError || companionsNames.length < companionsCount) {
+              rsvpStatusMsg.style.display = 'block';
+              rsvpStatusMsg.style.color = '#ff3b30';
+              rsvpStatusMsg.textContent = 'Por favor, ingresá el nombre y apellido de cada acompañante.';
+              return;
+            }
+          }
           const dietaryRestrictions = document.getElementById('rsvp-dietary').value.trim();
           
           rsvpStatusMsg.style.display = 'block';
@@ -4663,5 +4716,6 @@
       };
     }
   </script>
+  <script src="/js/hall-map-client.js"></script>
 </body>
 </html>

@@ -359,7 +359,7 @@ app.get('/api/stats', requireAuth, async (req, res) => {
       if (/^\d+$/.test(t)) return `Mesa ${t}`;
       if (/^mesa\b/i.test(t)) return t.replace(/^mesa\s*/i, 'Mesa ');
       if (t.toLowerCase() === 'mesa principal' || t.toLowerCase() === 'principal') return 'Mesa Principal';
-      return `Mesa ${t}`;
+      return t;
     }
 
     // Read custom defined tables from event config
@@ -459,6 +459,80 @@ app.post('/api/admin/tables', requireAuth, async (req, res) => {
   }
 });
 
+// API: Rename table
+app.post('/api/admin/rename-table', requireAuth, async (req, res) => {
+  try {
+    const eventId = req.query.event || 'default';
+    const { oldName, newName } = req.body;
+    if (!oldName || !newName || !oldName.trim() || !newName.trim()) {
+      return res.status(400).json({ error: 'Nombres de mesa requeridos' });
+    }
+
+    const trimmedOld = oldName.trim();
+    const trimmedNew = newName.trim();
+
+    if (trimmedOld.toLowerCase() === trimmedNew.toLowerCase()) {
+      return res.json({ success: true, message: 'Nombres idénticos' });
+    }
+
+    // 1. Update custom_tables in config
+    const customTablesRaw = await db.getConfigValue(eventId, 'custom_tables', '[]');
+    let customTables = [];
+    try { customTables = JSON.parse(customTablesRaw); } catch(e){}
+
+    const existingIdx = customTables.findIndex(t => t.name.toLowerCase() === trimmedOld.toLowerCase());
+    if (existingIdx >= 0) {
+      customTables[existingIdx].name = trimmedNew;
+    } else {
+      customTables.push({ name: trimmedNew, capacity: 10 });
+    }
+    await db.setConfigValue(eventId, 'custom_tables', JSON.stringify(customTables));
+
+    // 2. Update custom_hall_layout in config
+    const layoutRaw = await db.getConfigValue(eventId, 'custom_hall_layout', '{}');
+    let layout = {};
+    try { layout = JSON.parse(layoutRaw); } catch(e){}
+    if (layout.tablePositions) {
+      const oldClean = trimmedOld.toLowerCase().replace(/^mesa\s*/i, '');
+      const matchingKeys = Object.keys(layout.tablePositions).filter(k => {
+        const kClean = k.trim().toLowerCase().replace(/^mesa\s*/i, '');
+        return kClean === oldClean || k.trim().toLowerCase() === trimmedOld.toLowerCase();
+      });
+
+      let posToKeep = { x: 20, y: 20, rotation: 0 };
+      matchingKeys.forEach(key => {
+        if (layout.tablePositions[key]) posToKeep = layout.tablePositions[key];
+        delete layout.tablePositions[key];
+      });
+
+      layout.tablePositions[trimmedNew] = posToKeep;
+      await db.setConfigValue(eventId, 'custom_hall_layout', JSON.stringify(layout));
+    }
+
+    // 3. Migrate assigned guests from oldName to newName
+    const guests = await db.getGuests(eventId);
+    let updatedGuestsCount = 0;
+    for (let i = 0; i < guests.length; i++) {
+      const g = guests[i];
+      if (g.table && g.table.trim().toLowerCase() === trimmedOld.toLowerCase()) {
+        const targetId = g.id !== undefined ? g.id : i;
+        await db.updateGuest(eventId, targetId, { ...g, table: trimmedNew });
+        updatedGuestsCount++;
+      }
+    }
+
+    res.json({
+      success: true,
+      oldName: trimmedOld,
+      newName: trimmedNew,
+      updatedGuestsCount
+    });
+  } catch (error) {
+    console.error('Error renaming table:', error);
+    res.status(500).json({ error: 'Error al renombrar la mesa' });
+  }
+});
+
 // API: Get Hall Layout Positions & Landmarks
 app.get('/api/admin/hall-layout', requireAuth, async (req, res) => {
   try {
@@ -490,6 +564,45 @@ app.post('/api/admin/hall-layout', requireAuth, async (req, res) => {
     res.status(500).json({ error: 'Error al guardar distribución del salón' });
   }
 });
+
+// API: Public Get Hall Layout Positions & Landmarks (Read-only for guests)
+app.get('/api/public/hall-layout', async (req, res) => {
+  try {
+    const eventId = req.query.event || 'default';
+    const layoutRaw = await db.getConfigValue(eventId, 'custom_hall_layout', '{}');
+    let layout = {};
+    try { layout = JSON.parse(layoutRaw); } catch(e){}
+    res.json(layout);
+  } catch (error) {
+    console.error('Error getting public hall layout:', error);
+    res.status(500).json({ error: 'Error al obtener distribución del salón' });
+  }
+});
+
+// API: Public Get Tablemates / Guests for a specific table
+app.get('/api/public/table-guests', async (req, res) => {
+  try {
+    const eventId = req.query.event || 'default';
+    const tableName = (req.query.table || '').trim();
+    if (!tableName) {
+      return res.status(400).json({ error: 'Mesa no especificada' });
+    }
+    const allGuests = await db.getGuests(eventId);
+    const normTarget = tableName.toLowerCase();
+    const tablemates = allGuests
+      .filter(g => g.table && String(g.table).trim().toLowerCase() === normTarget)
+      .map(g => ({
+        firstName: g.firstName,
+        lastName: g.lastName,
+        rsvp: g.rsvp || null
+      }));
+    res.json({ table: tableName, guests: tablemates });
+  } catch (error) {
+    console.error('Error getting table guests:', error);
+    res.status(500).json({ error: 'Error al obtener invitados de la mesa' });
+  }
+});
+
 
 // API: Clear database
 app.post('/api/clear', requireAuth, async (req, res) => {

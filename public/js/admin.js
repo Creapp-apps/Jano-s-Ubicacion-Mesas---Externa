@@ -550,6 +550,13 @@ document.addEventListener('DOMContentLoaded', () => {
   let tablePositionsMap = {};
   let currentBoardHeight = 540;
 
+  function getTablePos(name) {
+    if (!name || !tablePositionsMap) return null;
+    if (tablePositionsMap[name]) return tablePositionsMap[name];
+    const key = Object.keys(tablePositionsMap).find(k => k.trim().toLowerCase() === String(name).trim().toLowerCase());
+    return key ? tablePositionsMap[key] : null;
+  }
+
   function loadHallLayout() {
     fetch(`/api/admin/hall-layout?event=${encodeURIComponent(eventId)}`)
       .then(res => {
@@ -588,6 +595,202 @@ document.addEventListener('DOMContentLoaded', () => {
     saveHallLayoutPositions(true);
   };
 
+  window.renameTable = function(oldName, event) {
+    if (event) event.stopPropagation();
+
+    const currentFormatted = formatTableDisplay(oldName);
+
+    // Remove any existing rename modal
+    const existingModal = document.getElementById('rename-table-modal-overlay');
+    if (existingModal) existingModal.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'rename-table-modal-overlay';
+    overlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(8, 8, 12, 0.8);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      z-index: 999999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: modalFadeIn 0.25s ease-out forwards;
+    `;
+
+    overlay.innerHTML = `
+      <div class="rename-modal-card" style="
+        width: 90%;
+        max-width: 420px;
+        background: linear-gradient(145deg, rgba(26, 26, 36, 0.96) 0%, rgba(16, 16, 22, 0.98) 100%);
+        border: 1.5px solid rgba(212, 175, 55, 0.5);
+        border-radius: 20px;
+        padding: 26px 28px;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.8), 0 0 25px rgba(212, 175, 55, 0.15);
+        text-align: center;
+        font-family: 'Montserrat', sans-serif;
+        color: #ffffff;
+        box-sizing: border-box;
+      ">
+        <div style="font-size: 2.2rem; margin-bottom: 8px;">✏️</div>
+        <h3 style="font-family: 'Cinzel', serif; color: var(--gold-primary, #d4af37); font-size: 1.25rem; margin: 0 0 6px 0; font-weight: 700; letter-spacing: 0.5px;">
+          Renombrar Mesa
+        </h3>
+        <p style="font-size: 0.84rem; color: rgba(255, 255, 255, 0.7); margin: 0 0 18px 0; line-height: 1.4;">
+          Ingresá el nuevo nombre identificatorio para <strong style="color: #fff;">"${escapeHtml(currentFormatted)}"</strong>:
+        </p>
+
+        <div style="position: relative; margin-bottom: 22px;">
+          <input type="text" id="rename-table-input" value="${escapeHtml(currentFormatted)}" placeholder="Ej: PRIMOS, ABUELOS, VIP..." style="
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(10, 10, 15, 0.8);
+            border: 1px solid rgba(212, 175, 55, 0.4);
+            border-radius: 12px;
+            color: #ffffff;
+            font-size: 1rem;
+            font-weight: 600;
+            outline: none;
+            box-sizing: border-box;
+            text-align: center;
+            font-family: 'Montserrat', sans-serif;
+            transition: all 0.2s ease;
+          " onfocus="this.style.borderColor='#d4af37'; this.style.boxShadow='0 0 12px rgba(212,175,55,0.3)';" onblur="this.style.borderColor='rgba(212,175,55,0.4)'; this.style.boxShadow='none';" />
+        </div>
+
+        <div style="display: flex; gap: 12px; justify-content: center;">
+          <button id="rename-cancel-btn" style="
+            flex: 1;
+            padding: 11px 18px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+          ">Cancelar</button>
+
+          <button id="rename-confirm-btn" style="
+            flex: 1;
+            padding: 11px 18px;
+            background: linear-gradient(135deg, #d4af37 0%, #f59e0b 100%);
+            border: none;
+            border-radius: 12px;
+            color: #0f111a;
+            font-size: 0.88rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.35);
+            transition: all 0.2s ease;
+          ">Guardar Nombre</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const input = document.getElementById('rename-table-input');
+    const confirmBtn = document.getElementById('rename-confirm-btn');
+    const cancelBtn = document.getElementById('rename-cancel-btn');
+
+    if (input) {
+      setTimeout(() => {
+        input.focus();
+        input.select();
+      }, 50);
+    }
+
+    const closeModal = () => {
+      overlay.style.animation = 'modalFadeOut 0.2s ease-in forwards';
+      setTimeout(() => overlay.remove(), 200);
+    };
+
+    cancelBtn.addEventListener('click', closeModal);
+
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) closeModal();
+    });
+
+    const submitRename = async () => {
+      const newName = input.value ? input.value.trim() : '';
+      if (!newName) {
+        showToast('Por favor ingresá un nombre válido', 'warning');
+        return;
+      }
+
+      if (newName.toLowerCase() === currentFormatted.toLowerCase()) {
+        closeModal();
+        return;
+      }
+
+      confirmBtn.disabled = true;
+      confirmBtn.style.opacity = '0.6';
+      confirmBtn.textContent = 'Guardando...';
+
+      try {
+        const res = await fetch(`/api/admin/rename-table?event=${encodeURIComponent(eventId)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ oldName, newName })
+        });
+        
+        let data = {};
+        try {
+          data = await res.json();
+        } catch (e) {
+          console.warn('Could not parse JSON response:', e);
+        }
+
+        if (!res.ok || !data.success) {
+          showToast(data.error || 'Servidor no actualizado. Por favor reiniciá npm start', 'error');
+          confirmBtn.disabled = false;
+          confirmBtn.style.opacity = '1';
+          confirmBtn.textContent = 'Guardar Nombre';
+          return;
+        }
+
+        showToast(`✅ Mesa renombrada a "${newName}"`, 'success');
+
+        // Update local tablePositionsMap
+        const matchKey = Object.keys(tablePositionsMap).find(k => k.trim().toLowerCase() === oldName.toLowerCase());
+        if (matchKey) {
+          tablePositionsMap[newName] = tablePositionsMap[matchKey];
+          if (matchKey !== newName) {
+            delete tablePositionsMap[matchKey];
+          }
+        }
+
+        // Update local allGuests table fields
+        allGuests.forEach(g => {
+          if (g.table && g.table.trim().toLowerCase() === oldName.toLowerCase()) {
+            g.table = newName;
+          }
+        });
+
+        closeModal();
+        loadStats(false);
+      } catch (err) {
+        console.error('Error renaming table:', err);
+        showToast('Error al renombrar la mesa', 'error');
+        confirmBtn.disabled = false;
+        confirmBtn.style.opacity = '1';
+        confirmBtn.textContent = 'Guardar Nombre';
+      }
+    };
+
+    confirmBtn.addEventListener('click', submitRename);
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') submitRename();
+      if (e.key === 'Escape') closeModal();
+    });
+  };
+
   const LANDMARK_PALETTE_TYPES = [
     { type: 'mesa_principal', name: 'Mesa Principal', icon: '👑', isGold: true },
     { type: 'dj', name: 'Cabina DJ', icon: '🎧' },
@@ -595,16 +798,22 @@ document.addEventListener('DOMContentLoaded', () => {
     { type: 'banos', name: 'Sanitarios / Baños', icon: '🚻' },
     { type: 'entrada', name: 'Entrada Principal', icon: '🚪' },
     { type: 'candy', name: 'Mesa Dulce', icon: '🍰' },
-    { type: 'pista', name: 'Pista de Baile', icon: '🪩' }
+    { type: 'pista', name: 'Pista de Baile', icon: '🪩' },
+    { type: 'escaleras', name: 'Escaleras / Acceso', icon: '🪜' },
+    { type: 'salida', name: 'Salida / Emergencia', icon: '🚨' },
+    { type: 'camino', name: 'Camino Guiado', icon: '🛣️' }
   ];
 
   window.addLandmarkToCanvas = function(type, name, icon) {
-    const exists = hallCanvasItems.some(i => i.type === type);
-    if (exists) {
+    const allowMultiple = ['camino', 'escaleras', 'salida'].includes(type);
+    const existingCount = hallCanvasItems.filter(i => i.type === type).length;
+    
+    if (existingCount > 0 && !allowMultiple) {
       showToast(`⚠️ "${name}" ya se encuentra ubicado en el plano`, 'warning');
       return;
     }
 
+    const itemName = allowMultiple && existingCount > 0 ? `${name} ${existingCount + 1}` : name;
     const newId = 'lm_' + Date.now();
     const count = hallCanvasItems.length + Object.keys(tablePositionsMap).length;
     const defaultX = 15 + ((count * 12) % 65);
@@ -613,7 +822,7 @@ document.addEventListener('DOMContentLoaded', () => {
     hallCanvasItems.push({
       id: newId,
       type: type,
-      name: name,
+      name: itemName,
       icon: icon,
       x: defaultX,
       y: defaultY,
@@ -649,7 +858,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!silent) {
         showToast('✅ Posiciones del salón guardadas con éxito', 'success');
       }
-      loadStats();
+      loadStats(true);
     })
     .catch(err => console.error('Error saving hall layout:', err));
   };
@@ -717,6 +926,47 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  function buildTableNumberMapping(tableList = []) {
+    const mapping = {};
+    const usedNumbers = new Set();
+    const customAliasTables = [];
+
+    tableList.forEach(tName => {
+      const raw = String(tName || '').trim();
+      if (!raw || raw.toLowerCase() === 'sin mesa') return;
+
+      if (/principal|presidencial\b/i.test(raw)) {
+        mapping[raw] = { number: 0, numberStr: 'Mesa Principal', numOnly: '👑', alias: 'Mesa Principal' };
+        return;
+      }
+
+      const match = raw.match(/^mesa\s*(\d+)$/i);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        usedNumbers.add(num);
+        mapping[raw] = { number: num, numberStr: `Mesa ${num}`, numOnly: String(num), alias: '' };
+      } else {
+        customAliasTables.push(raw);
+      }
+    });
+
+    let nextNum = 1;
+    customAliasTables.forEach(raw => {
+      while (usedNumbers.has(nextNum)) {
+        nextNum++;
+      }
+      usedNumbers.add(nextNum);
+      mapping[raw] = {
+        number: nextNum,
+        numberStr: `Mesa ${nextNum}`,
+        numOnly: String(nextNum),
+        alias: raw
+      };
+    });
+
+    return mapping;
+  }
+
   function renderHallCanvasBoard() {
     const board = document.getElementById('hall-canvas-board');
     if (!board) return;
@@ -742,9 +992,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (allTables && Array.isArray(allTables)) {
         allTables.forEach(t => {
-          if (!tablePositionsMap[t.name]) {
+          if (!getTablePos(t.name)) {
             countAvailable++;
-            toolbarHtml += `<button class="palette-btn" onclick="addTableToCanvas('${escapeHtml(t.name)}')" style="border-color: rgba(212, 175, 55, 0.4); color: var(--gold-light);">🍽️ ${escapeHtml(t.name)}</button>`;
+            toolbarHtml += `<button class="palette-btn" onclick="addTableToCanvas('${escapeHtml(t.name)}')" style="border-color: rgba(212, 175, 55, 0.4); color: var(--gold-light);">🍽️ ${escapeHtml(formatTableDisplay(t.name))}</button>`;
           }
         });
       }
@@ -758,10 +1008,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let html = '';
 
-    // Render tables placed on board
+    // Render tables placed on board with buildTableNumberMapping
     if (allTables && Array.isArray(allTables)) {
+      const allTableNames = allTables.map(t => t.name);
+      const tableMapping = buildTableNumberMapping(allTableNames);
+
       allTables.forEach((t) => {
-        const pos = tablePositionsMap[t.name];
+        const pos = getTablePos(t.name);
         if (!pos) return; // Only render tables explicitly placed on board
 
         const isPresidencial = /principal|presidencial\b/i.test(t.name);
@@ -769,25 +1022,37 @@ document.addEventListener('DOMContentLoaded', () => {
         const count = guestsInTable.length;
         const capacity = t.capacity || 10;
         const rot = pos.rotation || 0;
+        const scale = pos.scale || 1.0;
+
+        const info = tableMapping[t.name] || { numberStr: `Mesa 1`, alias: t.name };
 
         if (isPresidencial) {
           html += `
-            <div class="canvas-item canvas-item-presidencial" data-type="table" data-name="${escapeHtml(t.name)}" style="left: ${pos.x}%; top: ${pos.y}%; transform: rotate(${rot}deg);">
+            <div class="canvas-item canvas-item-presidencial" data-type="table" data-name="${escapeHtml(t.name)}" style="left: ${pos.x}%; top: ${pos.y}%; transform: rotate(${rot}deg) scale(${scale});">
               <span class="canvas-item-rotate" title="Mantener apretado y arrastrar para rotar 360°">🔄</span>
               <span style="font-size: 1.1rem; margin-top: -2px;">👑</span>
-              <div class="canvas-item-title">${escapeHtml(formatTableDisplay(t.name))}</div>
+              <div class="canvas-item-title" title="Doble clic para renombrar" ondblclick="renameTable('${escapeHtml(t.name)}', event)">${escapeHtml(formatTableDisplay(t.name))}</div>
               <div class="canvas-item-count">${count}/${capacity} pers.</div>
               <span class="canvas-item-remove" onclick="removeTableFromCanvas('${escapeHtml(t.name)}', event)">✕</span>
+              <span class="canvas-item-edit" title="Editar nombre de mesa" onclick="renameTable('${escapeHtml(t.name)}', event)">✏️</span>
+              <span class="canvas-item-resize" title="Mantener apretado y arrastrar para redimensionar">↔️</span>
             </div>
           `;
         } else {
+          const isCustomAlias = Boolean(info.alias && !/^mesa\s*\d+$/i.test(info.alias));
+          const mainTitle = isCustomAlias ? escapeHtml(String(info.alias).trim().toUpperCase()) : escapeHtml(info.numberStr);
+          const subNumHtml = isCustomAlias ? `<div class="canvas-item-number">(${info.numberStr})</div>` : '';
+
           html += `
-            <div class="canvas-item canvas-item-table" data-type="table" data-name="${escapeHtml(t.name)}" style="left: ${pos.x}%; top: ${pos.y}%; transform: rotate(${rot}deg);">
+            <div class="canvas-item canvas-item-table" data-type="table" data-name="${escapeHtml(t.name)}" style="left: ${pos.x}%; top: ${pos.y}%; transform: rotate(${rot}deg) scale(${scale});">
               <span class="canvas-item-rotate" title="Mantener apretado y arrastrar para rotar 360°">🔄</span>
               <span style="font-size: 1.1rem;">🍽️</span>
-              <div class="canvas-item-title">${escapeHtml(formatTableDisplay(t.name))}</div>
+              <div class="canvas-item-title" title="Doble clic para renombrar" ondblclick="renameTable('${escapeHtml(t.name)}', event)">${mainTitle}</div>
+              ${subNumHtml}
               <div class="canvas-item-count">${count}/${capacity}</div>
               <span class="canvas-item-remove" onclick="removeTableFromCanvas('${escapeHtml(t.name)}', event)">✕</span>
+              <span class="canvas-item-edit" title="Editar nombre de mesa" onclick="renameTable('${escapeHtml(t.name)}', event)">✏️</span>
+              <span class="canvas-item-resize" title="Mantener apretado y arrastrar para redimensionar">↔️</span>
             </div>
           `;
         }
@@ -797,23 +1062,26 @@ document.addEventListener('DOMContentLoaded', () => {
     // Render landmarks
     hallCanvasItems.forEach(item => {
       const rot = item.rotation || 0;
+      const scale = item.scale || 1.0;
       if (item.type === 'mesa_principal') {
         html += `
-          <div class="canvas-item canvas-item-presidencial" data-type="landmark" data-id="${item.id}" style="left: ${item.x}%; top: ${item.y}%; transform: rotate(${rot}deg);">
+          <div class="canvas-item canvas-item-presidencial" data-type="landmark" data-id="${item.id}" style="left: ${item.x}%; top: ${item.y}%; transform: rotate(${rot}deg) scale(${scale});">
             <span class="canvas-item-rotate" title="Mantener apretado y arrastrar para rotar 360°">🔄</span>
             <span style="font-size: 1.1rem; margin-top: -2px;">👑</span>
             <div class="canvas-item-title">${escapeHtml(item.name)}</div>
             <div class="canvas-item-count">Homenajeados</div>
             <span class="canvas-item-remove" onclick="removeLandmarkFromCanvas('${item.id}', event)">✕</span>
+            <span class="canvas-item-resize" title="Mantener apretado y arrastrar para redimensionar">↔️</span>
           </div>
         `;
       } else {
         html += `
-          <div class="canvas-item canvas-item-landmark" data-type="landmark" data-id="${item.id}" style="left: ${item.x}%; top: ${item.y}%; transform: rotate(${rot}deg);">
+          <div class="canvas-item canvas-item-landmark" data-type="landmark" data-id="${item.id}" style="left: ${item.x}%; top: ${item.y}%; transform: rotate(${rot}deg) scale(${scale});">
             <span class="canvas-item-rotate" title="Mantener apretado y arrastrar para rotar 360°">🔄</span>
             <span>${item.icon}</span>
             <span>${escapeHtml(item.name)}</span>
             <span class="canvas-item-remove" onclick="removeLandmarkFromCanvas('${item.id}', event)">✕</span>
+            <span class="canvas-item-resize" title="Mantener apretado y arrastrar para redimensionar">↔️</span>
           </div>
         `;
       }
@@ -834,19 +1102,15 @@ document.addEventListener('DOMContentLoaded', () => {
       const rotateBtn = item.querySelector('.canvas-item-rotate');
       if (rotateBtn) {
         let isRotating = false;
-        let rotStartX, rotStartY;
         let itemCenterX, itemCenterY;
         let initialAngle = 0;
         let initialRot = 0;
-        let rotHasMoved = false;
 
         rotateBtn.addEventListener('pointerdown', (e) => {
           e.stopPropagation();
           e.preventDefault();
           isRotating = true;
-          rotHasMoved = false;
-          rotStartX = e.clientX;
-          rotStartY = e.clientY;
+          item.classList.add('rotating');
 
           try { rotateBtn.setPointerCapture(e.pointerId); } catch(err){}
 
@@ -867,52 +1131,98 @@ document.addEventListener('DOMContentLoaded', () => {
             initialRot = found ? (found.rotation || 0) : 0;
           }
 
+          // Create or select floating angle badge
+          let angleBadge = document.getElementById('canvas-rotation-badge');
+          if (!angleBadge) {
+            angleBadge = document.createElement('div');
+            angleBadge.id = 'canvas-rotation-badge';
+            angleBadge.style.cssText = `
+              position: fixed;
+              z-index: 100000;
+              background: rgba(16, 185, 129, 0.95);
+              color: #ffffff;
+              padding: 5px 12px;
+              border-radius: 14px;
+              font-size: 0.8rem;
+              font-weight: 700;
+              box-shadow: 0 4px 18px rgba(0,0,0,0.6);
+              pointer-events: none;
+              font-family: 'Montserrat', sans-serif;
+              display: none;
+              backdrop-filter: blur(8px);
+              letter-spacing: 0.5px;
+            `;
+            document.body.appendChild(angleBadge);
+          }
+
           const onRotateMove = (moveEvt) => {
             if (!isRotating) return;
-            const dist = Math.hypot(moveEvt.clientX - rotStartX, moveEvt.clientY - rotStartY);
-            if (dist > 3) rotHasMoved = true;
+
+            // 1. Anti-Giros Locos: Deadzone safety filter (ignore erratic movements near item center)
+            const distFromCenter = Math.hypot(moveEvt.clientX - itemCenterX, moveEvt.clientY - itemCenterY);
+            if (distFromCenter < 25) {
+              return;
+            }
 
             const currentAngle = Math.atan2(moveEvt.clientY - itemCenterY, moveEvt.clientX - itemCenterX) * (180 / Math.PI);
             let angleDiff = currentAngle - initialAngle;
-            let newRotation = Math.round((initialRot + angleDiff) % 360);
-            if (newRotation < 0) newRotation += 360;
+            let rawRotation = Math.round((initialRot + angleDiff) % 360);
+            if (rawRotation < 0) rawRotation += 360;
 
-            item.style.transform = `rotate(${newRotation}deg)`;
+            let finalRotation = rawRotation;
+            let isSnapped = false;
 
-            const targetType = item.dataset.type;
-            if (targetType === 'table') {
+            // 2. Magnetic Angle Snap with True Circular Distance
+            const cardinalAngles = [0, 45, 90, 135, 180, 225, 270, 315];
+            const snapThreshold = moveEvt.shiftKey ? 8 : 4;
+
+            for (const cardAngle of cardinalAngles) {
+              let diff = Math.abs(rawRotation - cardAngle);
+              if (diff > 180) diff = 360 - diff;
+              if (diff <= snapThreshold) {
+                finalRotation = cardAngle;
+                isSnapped = true;
+                break;
+              }
+            }
+
+            let currentScale = 1.0;
+            const itemType = item.dataset.type;
+            if (itemType === 'table') {
               const name = item.dataset.name;
+              const pos = tablePositionsMap[name] || {};
+              currentScale = pos.scale || 1.0;
               if (!tablePositionsMap[name]) tablePositionsMap[name] = { x: 20, y: 20 };
-              tablePositionsMap[name].rotation = newRotation;
+              tablePositionsMap[name].rotation = finalRotation;
             } else {
               const id = item.dataset.id;
               const found = hallCanvasItems.find(i => i.id === id);
-              if (found) found.rotation = newRotation;
+              currentScale = found ? (found.scale || 1.0) : 1.0;
+              if (found) found.rotation = finalRotation;
+            }
+
+            item.style.transform = `rotate(${finalRotation}deg) scale(${currentScale})`;
+
+            // 3. Floating Tooltip Badge Update
+            if (angleBadge) {
+              angleBadge.style.display = 'block';
+              angleBadge.style.left = `${moveEvt.clientX + 16}px`;
+              angleBadge.style.top = `${moveEvt.clientY - 28}px`;
+              angleBadge.innerHTML = `${finalRotation}° ${isSnapped ? '🧲' : '📐'}`;
+              angleBadge.style.background = isSnapped ? 'rgba(16, 185, 129, 0.95)' : 'rgba(20, 22, 34, 0.92)';
+              angleBadge.style.border = isSnapped ? '1px solid #34d399' : '1px solid rgba(212, 175, 55, 0.4)';
+              angleBadge.style.color = isSnapped ? '#ffffff' : '#d4af37';
             }
           };
 
           const onRotateUp = (upEvt) => {
             if (isRotating) {
               isRotating = false;
+              item.classList.remove('rotating');
+              if (angleBadge) angleBadge.style.display = 'none';
               window.removeEventListener('pointermove', onRotateMove);
               window.removeEventListener('pointerup', onRotateUp);
               try { rotateBtn.releasePointerCapture(upEvt.pointerId); } catch(err){}
-
-              if (!rotHasMoved) {
-                // Quick click step (+45deg)
-                let stepRot = (initialRot + 45) % 360;
-                item.style.transform = `rotate(${stepRot}deg)`;
-                const targetType = item.dataset.type;
-                if (targetType === 'table') {
-                  const name = item.dataset.name;
-                  if (!tablePositionsMap[name]) tablePositionsMap[name] = { x: 20, y: 20 };
-                  tablePositionsMap[name].rotation = stepRot;
-                } else {
-                  const id = item.dataset.id;
-                  const found = hallCanvasItems.find(i => i.id === id);
-                  if (found) found.rotation = stepRot;
-                }
-              }
 
               saveHallLayoutPositions(true);
             }
@@ -923,29 +1233,170 @@ document.addEventListener('DOMContentLoaded', () => {
         });
       }
 
+      // Photoshop / Figma Style Scale / Resizing Drag Engine
+      const resizeBtn = item.querySelector('.canvas-item-resize');
+      if (resizeBtn) {
+        let isScaling = false;
+        let itemCenterX, itemCenterY;
+        let initialDist = 0;
+        let initialScale = 1.0;
+
+        resizeBtn.addEventListener('pointerdown', (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          isScaling = true;
+          item.classList.add('scaling');
+
+          try { resizeBtn.setPointerCapture(e.pointerId); } catch(err){}
+
+          const itemRect = item.getBoundingClientRect();
+          itemCenterX = itemRect.left + itemRect.width / 2;
+          itemCenterY = itemRect.top + itemRect.height / 2;
+
+          initialDist = Math.hypot(e.clientX - itemCenterX, e.clientY - itemCenterY);
+          if (initialDist < 5) initialDist = 5;
+
+          const targetType = item.dataset.type;
+          if (targetType === 'table') {
+            const name = item.dataset.name;
+            const pos = tablePositionsMap[name] || {};
+            initialScale = pos.scale || 1.0;
+          } else {
+            const id = item.dataset.id;
+            const found = hallCanvasItems.find(i => i.id === id);
+            initialScale = found ? (found.scale || 1.0) : 1.0;
+          }
+
+          // Create or select floating scale badge
+          let scaleBadge = document.getElementById('canvas-scale-badge');
+          if (!scaleBadge) {
+            scaleBadge = document.createElement('div');
+            scaleBadge.id = 'canvas-scale-badge';
+            scaleBadge.style.cssText = `
+              position: fixed;
+              z-index: 100000;
+              background: rgba(59, 130, 246, 0.95);
+              color: #ffffff;
+              padding: 5px 12px;
+              border-radius: 14px;
+              font-size: 0.8rem;
+              font-weight: 700;
+              box-shadow: 0 4px 18px rgba(0,0,0,0.6);
+              pointer-events: none;
+              font-family: 'Montserrat', sans-serif;
+              display: none;
+              backdrop-filter: blur(8px);
+              letter-spacing: 0.5px;
+              border: 1px solid #60a5fa;
+            `;
+            document.body.appendChild(scaleBadge);
+          }
+
+          const onScaleMove = (moveEvt) => {
+            if (!isScaling) return;
+
+            const currentDist = Math.hypot(moveEvt.clientX - itemCenterX, moveEvt.clientY - itemCenterY);
+            const scaleRatio = currentDist / initialDist;
+            let rawScale = initialScale * scaleRatio;
+
+            // Clamp scale between 0.5x and 3.0x
+            let finalScale = Math.max(0.5, Math.min(3.0, Math.round(rawScale * 100) / 100));
+
+            // Get rotation
+            let currentRot = 0;
+            const targetType = item.dataset.type;
+            if (targetType === 'table') {
+              const name = item.dataset.name;
+              const pos = tablePositionsMap[name] || {};
+              currentRot = pos.rotation || 0;
+            } else {
+              const id = item.dataset.id;
+              const found = hallCanvasItems.find(i => i.id === id);
+              currentRot = found ? (found.rotation || 0) : 0;
+            }
+
+            item.style.transform = `rotate(${currentRot}deg) scale(${finalScale})`;
+
+            // Floating Tooltip Badge Update
+            if (scaleBadge) {
+              scaleBadge.style.display = 'block';
+              scaleBadge.style.left = `${moveEvt.clientX + 16}px`;
+              scaleBadge.style.top = `${moveEvt.clientY - 28}px`;
+              const percentage = Math.round(finalScale * 100);
+              scaleBadge.innerHTML = `${percentage}% 📏`;
+            }
+
+            if (targetType === 'table') {
+              const name = item.dataset.name;
+              if (!tablePositionsMap[name]) tablePositionsMap[name] = { x: 20, y: 20 };
+              tablePositionsMap[name].scale = finalScale;
+            } else {
+              const id = item.dataset.id;
+              const found = hallCanvasItems.find(i => i.id === id);
+              if (found) found.scale = finalScale;
+            }
+          };
+
+          const onScaleUp = (upEvt) => {
+            if (isScaling) {
+              isScaling = false;
+              item.classList.remove('scaling');
+              if (scaleBadge) scaleBadge.style.display = 'none';
+              window.removeEventListener('pointermove', onScaleMove);
+              window.removeEventListener('pointerup', onScaleUp);
+              try { resizeBtn.releasePointerCapture(upEvt.pointerId); } catch(err){}
+              saveHallLayoutPositions(true);
+            }
+          };
+
+          window.addEventListener('pointermove', onScaleMove);
+          window.addEventListener('pointerup', onScaleUp);
+        });
+      }
+
       // Position Dragging
       let didDragInSession = false;
 
       item.addEventListener('pointerdown', (e) => {
-        if (e.target.classList.contains('canvas-item-remove') || e.target.classList.contains('canvas-item-rotate')) return;
+        if (e.target.classList.contains('canvas-item-remove') || e.target.classList.contains('canvas-item-rotate') || e.target.classList.contains('canvas-item-resize') || e.target.classList.contains('canvas-item-edit')) return;
+        
+        // Prevent native text selection or HTML5 drag interference
+        e.preventDefault();
+
         isDragging = false;
         didDragInSession = false;
         startX = e.clientX;
         startY = e.clientY;
 
-        const boardRect = board.getBoundingClientRect();
-        const itemRect = item.getBoundingClientRect();
+        try { item.setPointerCapture(e.pointerId); } catch(err){}
 
-        startLeft = ((itemRect.left - boardRect.left) / boardRect.width) * 100;
-        startTop = ((itemRect.top - boardRect.top) / boardRect.height) * 100;
+        const boardRect = board.getBoundingClientRect();
+        
+        // Read exact CSS percentage position from data model to avoid bounding box rotation distortion
+        const type = item.dataset.type;
+        if (type === 'table') {
+          const name = item.dataset.name;
+          const pos = tablePositionsMap[name] || {};
+          startLeft = pos.x !== undefined ? pos.x : parseFloat(item.style.left) || 20;
+          startTop = pos.y !== undefined ? pos.y : parseFloat(item.style.top) || 20;
+        } else if (type === 'landmark') {
+          const id = item.dataset.id;
+          const found = hallCanvasItems.find(i => i.id === id);
+          startLeft = found ? (found.x !== undefined ? found.x : parseFloat(item.style.left) || 20) : parseFloat(item.style.left) || 20;
+          startTop = found ? (found.y !== undefined ? found.y : parseFloat(item.style.top) || 20) : parseFloat(item.style.top) || 20;
+        } else {
+          startLeft = parseFloat(item.style.left) || 0;
+          startTop = parseFloat(item.style.top) || 0;
+        }
 
         const onPointerMove = (moveEvt) => {
           const dist = Math.hypot(moveEvt.clientX - startX, moveEvt.clientY - startY);
-          if (dist > 5) {
-            isDragging = true;
-            didDragInSession = true;
-            item.classList.add('dragging');
-            try { item.setPointerCapture(moveEvt.pointerId); } catch(err){}
+          if (dist > 3) {
+            if (!isDragging) {
+              isDragging = true;
+              didDragInSession = true;
+              item.classList.add('dragging');
+            }
           }
 
           if (isDragging) {
@@ -955,6 +1406,10 @@ document.addEventListener('DOMContentLoaded', () => {
             let newLeft = Math.max(0, Math.min(88, startLeft + dx));
             let newTop = Math.max(0, Math.min(88, startTop + dy));
 
+            // Use 2-decimal precision to match DOM style and data model, avoiding micro-snaps on release
+            newLeft = Math.round(newLeft * 100) / 100;
+            newTop = Math.round(newTop * 100) / 100;
+
             item.style.left = `${newLeft}%`;
             item.style.top = `${newTop}%`;
 
@@ -962,14 +1417,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (type === 'table') {
               const name = item.dataset.name;
               if (!tablePositionsMap[name]) tablePositionsMap[name] = { x: 20, y: 20 };
-              tablePositionsMap[name].x = Math.round(newLeft * 10) / 10;
-              tablePositionsMap[name].y = Math.round(newTop * 10) / 10;
+              tablePositionsMap[name].x = newLeft;
+              tablePositionsMap[name].y = newTop;
             } else if (type === 'landmark') {
               const id = item.dataset.id;
               const found = hallCanvasItems.find(i => i.id === id);
               if (found) {
-                found.x = Math.round(newLeft * 10) / 10;
-                found.y = Math.round(newTop * 10) / 10;
+                found.x = newLeft;
+                found.y = newTop;
               }
             }
           }
@@ -978,16 +1433,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const onPointerUp = (upEvt) => {
           window.removeEventListener('pointermove', onPointerMove);
           window.removeEventListener('pointerup', onPointerUp);
+          window.removeEventListener('pointercancel', onPointerUp);
+
+          try { item.releasePointerCapture(upEvt.pointerId); } catch(err){}
+
           if (isDragging) {
             isDragging = false;
             item.classList.remove('dragging');
-            try { item.releasePointerCapture(upEvt.pointerId); } catch(err){}
             saveHallLayoutPositions(true);
           }
         };
 
         window.addEventListener('pointermove', onPointerMove);
         window.addEventListener('pointerup', onPointerUp);
+        window.addEventListener('pointercancel', onPointerUp);
       });
 
       item.addEventListener('click', (e) => {
@@ -1155,107 +1614,156 @@ document.addEventListener('DOMContentLoaded', () => {
     if (trigger) trigger.classList.remove('active');
   };
 
-  window.openAssignGuestToTableModal = function(tableName) {
-    activeAssignTableTarget = tableName;
-    const modal = document.getElementById('assign-guest-modal');
-    const title = document.getElementById('assign-modal-title');
-    const valInput = document.getElementById('assign-guest-value');
-    const textSpan = document.getElementById('assign-guest-selected-text');
-    const dropdown = document.getElementById('assign-guest-dropdown-menu');
+  let selectedAssignGuestIndices = new Set();
+
+  function updateAssignScrollIndicator() {
+    const container = document.getElementById('assign-guest-multiselect-container');
+    const indicator = document.getElementById('assign-guest-scroll-indicator');
+    if (!container || !indicator) return;
+
+    const hasMore = container.scrollHeight > container.clientHeight + 10 &&
+                    (container.scrollTop + container.clientHeight) < (container.scrollHeight - 15);
+    indicator.style.display = hasMore ? 'flex' : 'none';
+  }
+
+  function renderAssignGuestMultiselectList() {
+    const container = document.getElementById('assign-guest-multiselect-container');
+    const badge = document.getElementById('assign-selected-badge');
+    const searchInput = document.getElementById('assign-guest-search-input');
     const submitBtn = document.getElementById('btn-submit-assign-guest');
-    if (!modal || !dropdown) return;
+    if (!container) return;
 
-    if (title) title.textContent = `Ubicar Invitado en ${formatTableDisplay(tableName)}`;
+    container.onscroll = updateAssignScrollIndicator;
 
-    if (valInput) valInput.value = '';
-    if (textSpan) {
-      textSpan.textContent = 'Seleccionar invitado...';
-      textSpan.style.color = 'var(--text-muted)';
+    const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+    const unassignedGuests = allGuests.map((g, idx) => ({ ...g, originalIndex: idx }))
+      .filter(g => !g.table || String(g.table).trim() === '' || String(g.table).toLowerCase() === 'sin mesa')
+      .filter(g => {
+        if (!query) return true;
+        const fullName = `${g.firstName} ${g.lastName}`.toLowerCase();
+        return fullName.includes(query);
+      });
+
+    if (badge) {
+      badge.textContent = `${selectedAssignGuestIndices.size} / 10 Seleccionados`;
+      badge.style.borderColor = selectedAssignGuestIndices.size > 0 ? 'var(--gold-primary)' : 'rgba(212, 175, 55, 0.4)';
     }
 
-    const unassignedGuests = allGuests.filter(g => !g.table || String(g.table).trim() === '' || String(g.table).toLowerCase() === 'sin mesa');
+    if (submitBtn) {
+      if (selectedAssignGuestIndices.size > 0) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = `Ubicar ${selectedAssignGuestIndices.size} Invitado${selectedAssignGuestIndices.size > 1 ? 's' : ''}`;
+      } else {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Ubicar Invitados';
+      }
+    }
 
     if (unassignedGuests.length === 0) {
-      dropdown.innerHTML = '<div class="custom-select-empty">⚠️ No hay invitados sin mesa asignada</div>';
-      if (submitBtn) submitBtn.disabled = true;
-    } else {
-      if (submitBtn) submitBtn.disabled = false;
-      dropdown.innerHTML = unassignedGuests.map(g => {
-        const idx = g.originalIndex !== undefined ? g.originalIndex : allGuests.indexOf(g);
-        const name = `${g.firstName} ${g.lastName}`.trim();
-        return `
-          <div class="custom-select-option" data-value="${idx}" onclick="selectAssignGuestOption(${idx}, '${escapeHtml(name)}')">
-            <span>👤</span> <span>${escapeHtml(name)}</span>
-          </div>
-        `;
-      }).join('');
-
-      // Auto select first option by default
-      const firstGuest = unassignedGuests[0];
-      const firstIdx = firstGuest.originalIndex !== undefined ? firstGuest.originalIndex : allGuests.indexOf(firstGuest);
-      const firstName = `${firstGuest.firstName} ${firstGuest.lastName}`.trim();
-      selectAssignGuestOption(firstIdx, firstName);
+      container.innerHTML = query 
+        ? '<div style="padding: 16px; text-align: center; color: var(--text-muted); font-size: 0.82rem;">🔍 No se encontraron invitados que coincidan.</div>'
+        : '<div style="padding: 16px; text-align: center; color: var(--text-muted); font-size: 0.82rem;">✨ ¡Todos los invitados ya tienen mesa asignada!</div>';
+      updateAssignScrollIndicator();
+      return;
     }
 
+    container.innerHTML = unassignedGuests.map(g => {
+      const idx = g.originalIndex;
+      const name = `${g.firstName} ${g.lastName}`.trim();
+      const isSelected = selectedAssignGuestIndices.has(idx);
+      return `
+        <div class="assign-guest-row ${isSelected ? 'selected' : ''}" onclick="toggleAssignGuestSelection(${idx}, event)">
+          <div class="custom-gold-checkbox">
+            <svg class="checkmark-svg" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5"/></svg>
+          </div>
+          <span style="font-size: 0.95rem;">👤</span>
+          <span style="font-size: 0.84rem; font-weight: 600; flex: 1; color: #fff;">${escapeHtml(name)}</span>
+          ${g.phone ? `<span style="font-size: 0.72rem; color: var(--text-muted);">${escapeHtml(g.phone)}</span>` : ''}
+        </div>
+      `;
+    }).join('');
+
+    setTimeout(updateAssignScrollIndicator, 50);
+  }
+
+  window.toggleAssignGuestSelection = function(idx, event) {
+    if (event) event.stopPropagation();
+    if (selectedAssignGuestIndices.has(idx)) {
+      selectedAssignGuestIndices.delete(idx);
+    } else {
+      if (selectedAssignGuestIndices.size >= 10) {
+        showToast('Podés seleccionar hasta un máximo de 10 invitados por lote', 'warning');
+        return;
+      }
+      selectedAssignGuestIndices.add(idx);
+    }
+    renderAssignGuestMultiselectList();
+  };
+
+  window.openAssignGuestToTableModal = function(tableName) {
+    activeAssignTableTarget = tableName;
+    selectedAssignGuestIndices.clear();
+    const modal = document.getElementById('assign-guest-modal');
+    const title = document.getElementById('assign-modal-title');
+    const searchInput = document.getElementById('assign-guest-search-input');
+    if (!modal) return;
+
+    if (title) title.textContent = `Ubicar Invitados en ${formatTableDisplay(tableName)}`;
+    if (searchInput) {
+      searchInput.value = '';
+      searchInput.oninput = () => renderAssignGuestMultiselectList();
+    }
+
+    renderAssignGuestMultiselectList();
     modal.style.display = 'flex';
+    if (searchInput) setTimeout(() => searchInput.focus(), 50);
   };
 
   window.closeAssignGuestModal = function() {
     const modal = document.getElementById('assign-guest-modal');
-    const dropdown = document.getElementById('assign-guest-dropdown-menu');
-    const trigger = document.getElementById('assign-guest-trigger');
     if (modal) modal.style.display = 'none';
-    if (dropdown) dropdown.classList.remove('active');
-    if (trigger) trigger.classList.remove('active');
+    selectedAssignGuestIndices.clear();
     activeAssignTableTarget = null;
   };
 
-  document.addEventListener('click', (e) => {
-    const dropdown = document.getElementById('assign-guest-dropdown-menu');
-    const trigger = document.getElementById('assign-guest-trigger');
-    if (dropdown && dropdown.classList.contains('active')) {
-      if (!dropdown.contains(e.target) && !trigger.contains(e.target)) {
-        dropdown.classList.remove('active');
-        if (trigger) trigger.classList.remove('active');
-      }
-    }
-  });
-
   const btnSubmitAssignGuest = document.getElementById('btn-submit-assign-guest');
   if (btnSubmitAssignGuest) {
-    btnSubmitAssignGuest.addEventListener('click', () => {
-      const valInput = document.getElementById('assign-guest-value');
-      if (!valInput || valInput.value === '' || !activeAssignTableTarget) {
-        showToast('Seleccioná un invitado para ubicar en la mesa', 'warning');
+    btnSubmitAssignGuest.addEventListener('click', async () => {
+      if (selectedAssignGuestIndices.size === 0 || !activeAssignTableTarget) {
+        showToast('Seleccioná al menos un invitado para ubicar en la mesa', 'warning');
         return;
       }
 
-      const guestIdx = parseInt(valInput.value, 10);
-      const guest = allGuests[guestIdx];
-      if (!guest) return;
+      btnSubmitAssignGuest.disabled = true;
+      btnSubmitAssignGuest.textContent = `Guardando (${selectedAssignGuestIndices.size})...`;
 
-      fetch(`/api/guests/${guestIdx}?event=${encodeURIComponent(eventId)}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          firstName: guest.firstName,
-          lastName: guest.lastName,
-          table: activeAssignTableTarget
-        })
-      })
-      .then(res => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      })
-      .then(data => {
-        if (data.success) {
-          showToast(`✅ ${guest.firstName} fue ubicado en ${formatTableDisplay(activeAssignTableTarget)}`, 'success');
-          closeAssignGuestModal();
-          loadGuests();
-          loadStats();
+      const indices = Array.from(selectedAssignGuestIndices);
+      let successCount = 0;
+
+      for (const guestIdx of indices) {
+        const guest = allGuests[guestIdx];
+        if (!guest) continue;
+
+        try {
+          const res = await fetch(`/api/guests/${guestIdx}?event=${encodeURIComponent(eventId)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              firstName: guest.firstName,
+              lastName: guest.lastName,
+              table: activeAssignTableTarget
+            })
+          });
+          if (res.ok) successCount++;
+        } catch (err) {
+          console.error(`Error updating guest at index ${guestIdx}:`, err);
         }
-      })
-      .catch(err => console.error('Error assigning guest to table:', err));
+      }
+
+      showToast(`✅ ${successCount} invitado(s) ubicado(s) en ${formatTableDisplay(activeAssignTableTarget)}`, 'success');
+      closeAssignGuestModal();
+      loadGuests();
+      loadStats();
     });
   }
 
@@ -1660,6 +2168,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const rsvpTableBody = document.getElementById('rsvp-table-body');
 
   const activeService = urlParams.get('service');
+  const activeSubtab = urlParams.get('subtab');
 
   function updateQR() {
     const isPhotos = (activeService === 'photos');
@@ -1769,12 +2278,18 @@ document.addEventListener('DOMContentLoaded', () => {
     switchTab('fotos');
   } else if (activeService === 'invitacion' || activeService === 'invitation') {
     switchTab('invitacion');
+    if (activeSubtab) {
+      switchSubTab(activeSubtab);
+    }
   } else if (activeService === 'trivia') {
     switchTab('trivia');
   } else if (activeService === 'capitanes') {
     switchTab('capitanes');
   } else {
     switchTab('mesas');
+    if (activeSubtab) {
+      switchSubTab(activeSubtab);
+    }
   }
 
   function openGuestListModal() {
@@ -2280,7 +2795,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Load Stats from API
-  function loadStats() {
+  function loadStats(skipLayoutReload = false) {
     fetch(`/api/stats?event=${encodeURIComponent(eventId)}`)
       .then(res => res.json())
       .then(data => {
@@ -2317,7 +2832,9 @@ document.addEventListener('DOMContentLoaded', () => {
         renderTablesList(allTables);
         renderHallTablesGrid();
         updateTablesDatalist();
-        loadHallLayout();
+        if (!skipLayoutReload) {
+          loadHallLayout();
+        }
 
         // Re-render capitanes quests to sync tables data
         if (tabCapitanes && tabCapitanes.classList.contains('active')) {
@@ -2465,7 +2982,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (/^mesa\b/i.test(t)) {
       return t.replace(/^mesa\s*/i, 'Mesa ');
     }
-    return `Mesa ${t}`;
+    return t;
   }
 
   // Render guest list table (with search filtering)
@@ -3272,18 +3789,43 @@ Tu presencia hará que esta celebración sea aún más significativa.
         ? `<span style="color: #2ec4b6; font-weight: bold;">Sí, asiste</span>` 
         : `<span style="color: var(--error); font-weight: bold;">No asiste</span>`;
       
-      const companionsText = rsvp.companionsCount > 0 
-        ? `<span>${rsvp.companionsCount} (${rsvp.companionsNames || ''})</span>` 
-        : `<span style="color: var(--text-muted);">-</span>`;
+      const countComp = parseInt(rsvp.companionsCount, 10) || 0;
+      let compNamesList = [];
+      if (Array.isArray(rsvp.companionsNames)) {
+        compNamesList = rsvp.companionsNames.filter(n => n && typeof n === 'string' && n.trim());
+      } else if (typeof rsvp.companionsNames === 'string' && rsvp.companionsNames.trim()) {
+        compNamesList = rsvp.companionsNames.split(',').map(n => n.trim()).filter(Boolean);
+      }
+
+      let companionsText = `<span style="color: var(--text-muted);">-</span>`;
+      if (countComp > 0) {
+        if (compNamesList.length > 0) {
+          const subitems = compNamesList.map((cName, idx) => {
+            const connector = (idx === compNamesList.length - 1) ? '└─' : '├─';
+            return `
+              <div class="rsvp-companion-subitem" style="display: flex; align-items: center; gap: 6px; font-size: 0.76rem; color: #d4af37; margin-top: 4px; font-weight: 500;">
+                <span style="opacity: 0.5; font-family: monospace; font-size: 0.85rem; color: var(--gold-primary);">${connector}</span>
+                <span>👤 ${cName}</span>
+              </div>
+            `;
+          }).join('');
+          companionsText = `<div><span style="font-size: 0.72rem; color: var(--gold-primary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">${countComp} ${countComp === 1 ? 'Acompañante' : 'Acompañantes'}</span>${subitems}</div>`;
+        } else {
+          companionsText = `<span style="color: #d4af37; font-weight: 600; font-size: 0.78rem;">${countComp} ${countComp === 1 ? 'Acompañante' : 'Acompañantes'}</span>`;
+        }
+      }
       
       const dietText = rsvp.dietaryRestrictions && rsvp.dietaryRestrictions !== 'Ninguno'
         ? `<span style="color: #f3e5ab; font-weight: 500;">${rsvp.dietaryRestrictions}</span>`
         : `<span style="color: var(--text-muted);">-</span>`;
 
       const isPublicQr = rsvp.source === 'public_qr';
-      const sourceBadge = isPublicQr 
-        ? `<span style="display: inline-block; font-size: 0.62rem; background: rgba(37, 211, 102, 0.15); border: 1px solid rgba(37, 211, 102, 0.4); color: #25D366; padding: 2px 6px; border-radius: 10px; margin-left: 6px; font-weight: 600;">🌐 QR Público</span>`
-        : `<span style="display: inline-block; font-size: 0.62rem; background: rgba(212, 175, 55, 0.15); border: 1px solid rgba(212, 175, 55, 0.4); color: var(--gold-light); padding: 2px 6px; border-radius: 10px; margin-left: 6px; font-weight: 600;">👤 Individual</span>`;
+      let sourceBadge = `<span style="display: inline-block; font-size: 0.62rem; background: rgba(212, 175, 55, 0.15); border: 1px solid rgba(212, 175, 55, 0.4); color: var(--gold-light); padding: 2px 6px; border-radius: 10px; margin-left: 6px; font-weight: 600;">👤 Individual</span>`;
+      if (countComp > 0) {
+        sourceBadge = `<span style="display: inline-block; font-size: 0.62rem; background: rgba(212, 175, 55, 0.2); border: 1px solid rgba(212, 175, 55, 0.5); color: #ffd700; padding: 2px 6px; border-radius: 10px; margin-left: 6px; font-weight: 600;">👥 +${countComp} ${countComp === 1 ? 'Acompañante' : 'Acompañantes'}</span>`;
+      } else if (isPublicQr) {
+        sourceBadge = `<span style="display: inline-block; font-size: 0.62rem; background: rgba(37, 211, 102, 0.15); border: 1px solid rgba(37, 211, 102, 0.4); color: #25D366; padding: 2px 6px; border-radius: 10px; margin-left: 6px; font-weight: 600;">🌐 QR Público</span>`;
+      }
 
       const phoneText = rsvp.phone 
         ? `<div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">📱 ${rsvp.phone}</div>`
