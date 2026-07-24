@@ -520,6 +520,209 @@ document.addEventListener('DOMContentLoaded', () => {
     performSwitchSubTab(subTabId);
   };
 
+  // --- SUBTABS FOR MESAS & INVITADOS PANEL ---
+  let activeAssignTableTarget = null;
+
+  window.switchMesasSubtab = function(subtabId) {
+    const subtabs = ['plano', 'invitados', 'qr'];
+    subtabs.forEach(s => {
+      const btn = document.getElementById(`subtab-btn-${s}`);
+      const content = document.getElementById(`mesas-subtab-${s}`);
+      if (s === subtabId) {
+        if (btn) btn.classList.add('active');
+        if (content) content.style.display = 'block';
+      } else {
+        if (btn) btn.classList.remove('active');
+        if (content) content.style.display = 'none';
+      }
+    });
+
+    if (subtabId === 'plano') {
+      renderHallTablesGrid();
+    } else if (subtabId === 'invitados') {
+      renderGuestsTable();
+    }
+  };
+
+  function renderHallTablesGrid() {
+    const gridContainer = document.getElementById('hall-tables-grid');
+    if (!gridContainer) return;
+
+    // Confirmed guest names set
+    const confirmedNames = new Set(
+      allRsvps.filter(r => r.attending === true).map(r => r.name.trim().toLowerCase())
+    );
+
+    const confirmedGuests = allGuests.filter(g => {
+      const fullName = `${g.firstName} ${g.lastName}`.trim().toLowerCase();
+      return confirmedNames.has(fullName) || allRsvps.length === 0;
+    });
+
+    let seatedCount = 0;
+    let unassignedCount = 0;
+
+    confirmedGuests.forEach(g => {
+      if (g.table && String(g.table).trim() !== '' && String(g.table).toLowerCase() !== 'sin mesa') {
+        seatedCount++;
+      } else {
+        unassignedCount++;
+      }
+    });
+
+    const statSeated = document.getElementById('stat-seated-guests');
+    const statUnassigned = document.getElementById('stat-unassigned-guests');
+    if (statSeated) statSeated.textContent = seatedCount;
+    if (statUnassigned) statUnassigned.textContent = unassignedCount;
+
+    if (!allTables || allTables.length === 0) {
+      gridContainer.innerHTML = `
+        <div style="grid-column: 1 / -1; padding: 40px; text-align: center; color: var(--text-muted); background: rgba(0,0,0,0.2); border-radius: 20px; border: 1px dashed rgba(255,255,255,0.1);">
+          <div style="font-size: 2rem; margin-bottom: 10px;">🏛️</div>
+          <h3 style="color: white; margin-bottom: 6px;">No hay mesas creadas aún</h3>
+          <p style="font-size: 0.85rem; margin-bottom: 20px;">Crea la primera mesa del salón para comenzar la organización.</p>
+          <button class="btn btn-primary" onclick="openCreateTableModal()" style="padding: 10px 24px; border-radius: 20px; font-size: 0.85rem;">+ Crear Mesa</button>
+        </div>
+      `;
+      return;
+    }
+
+    gridContainer.innerHTML = allTables.map(t => {
+      const guestsInTable = allGuests.filter(g => String(g.table).trim().toLowerCase() === String(t.name).trim().toLowerCase());
+      const isPresidencial = /principal|presidencial|mesa 1\b/i.test(t.name);
+
+      const count = guestsInTable.length;
+      const capacity = t.capacity || 10;
+      const pct = Math.min(100, Math.round((count / capacity) * 100));
+      const isFull = count >= capacity;
+
+      const guestsTagsHtml = guestsInTable.map(g => `
+        <span class="seated-guest-tag">
+          👤 ${escapeHtml(g.firstName)} ${escapeHtml(g.lastName)}
+          <span class="remove-btn" onclick="unassignGuestFromTable('${escapeHtml(g.firstName)}', '${escapeHtml(g.lastName)}')" title="Quitar de esta mesa">✕</span>
+        </span>
+      `).join('');
+
+      return `
+        <div class="table-card ${isPresidencial ? 'table-card-presidencial' : ''}">
+          <div class="table-card-header">
+            <div class="table-card-title-group">
+              <span style="font-size: 1.2rem;">${isPresidencial ? '👑' : '🍽️'}</span>
+              <h3 class="table-card-title">${escapeHtml(formatTableDisplay(t.name))}</h3>
+            </div>
+            <span class="table-capacity-pill ${isFull ? 'full' : 'available'}">
+              ${count} / ${capacity} pers.
+            </span>
+          </div>
+
+          <div class="table-progress-bar">
+            <div class="table-progress-fill" style="width: ${pct}%;"></div>
+          </div>
+
+          <div class="seated-guests-container">
+            ${guestsTagsHtml || '<span style="color: var(--text-muted); font-size: 0.75rem; font-style: italic;">Sin invitados asignados aún</span>'}
+          </div>
+
+          <div class="table-card-actions">
+            <button class="table-action-btn" onclick="openAssignGuestToTableModal('${escapeHtml(t.name)}')">
+              ➕ Ubicar Invitado
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  window.unassignGuestFromTable = function(firstName, lastName) {
+    const guest = allGuests.find(g => 
+      g.firstName.trim().toLowerCase() === firstName.trim().toLowerCase() &&
+      g.lastName.trim().toLowerCase() === lastName.trim().toLowerCase()
+    );
+    if (!guest) return;
+
+    const guestIdx = guest.originalIndex !== undefined ? guest.originalIndex : allGuests.indexOf(guest);
+
+    fetch(`/api/admin/guests/${guestIdx}?event=${encodeURIComponent(eventId)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        firstName: guest.firstName,
+        lastName: guest.lastName,
+        table: 'Sin Mesa'
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        showToast('Invitado removido de la mesa', 'success');
+        loadGuests();
+        loadStats();
+      }
+    })
+    .catch(err => console.error('Error unassigning guest:', err));
+  };
+
+  window.openAssignGuestToTableModal = function(tableName) {
+    activeAssignTableTarget = tableName;
+    const modal = document.getElementById('assign-guest-modal');
+    const title = document.getElementById('assign-modal-title');
+    const select = document.getElementById('assign-guest-select');
+    if (!modal || !select) return;
+
+    if (title) title.textContent = `Ubicar Invitado en ${formatTableDisplay(tableName)}`;
+
+    const unassignedGuests = allGuests.filter(g => !g.table || String(g.table).trim() === '' || String(g.table).toLowerCase() === 'sin mesa');
+
+    if (unassignedGuests.length === 0) {
+      select.innerHTML = '<option value="">No hay invitados sin mesa asignada</option>';
+    } else {
+      select.innerHTML = unassignedGuests.map(g => `
+        <option value="${g.originalIndex !== undefined ? g.originalIndex : allGuests.indexOf(g)}">
+          ${escapeHtml(g.firstName)} ${escapeHtml(g.lastName)}
+        </option>
+      `).join('');
+    }
+
+    modal.style.display = 'flex';
+  };
+
+  window.closeAssignGuestModal = function() {
+    const modal = document.getElementById('assign-guest-modal');
+    if (modal) modal.style.display = 'none';
+    activeAssignTableTarget = null;
+  };
+
+  const btnSubmitAssignGuest = document.getElementById('btn-submit-assign-guest');
+  if (btnSubmitAssignGuest) {
+    btnSubmitAssignGuest.addEventListener('click', () => {
+      const select = document.getElementById('assign-guest-select');
+      if (!select || !select.value || !activeAssignTableTarget) return;
+
+      const guestIdx = parseInt(select.value, 10);
+      const guest = allGuests[guestIdx];
+      if (!guest) return;
+
+      fetch(`/api/admin/guests/${guestIdx}?event=${encodeURIComponent(eventId)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          firstName: guest.firstName,
+          lastName: guest.lastName,
+          table: activeAssignTableTarget
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          showToast(`✅ ${guest.firstName} fue ubicado en ${formatTableDisplay(activeAssignTableTarget)}`, 'success');
+          closeAssignGuestModal();
+          loadGuests();
+          loadStats();
+        }
+      })
+      .catch(err => console.error('Error assigning guest to table:', err));
+    });
+  }
+
   function performSwitchSubTab(subTabId) {
     const subtabs = ['informacion', 'diseno', 'fotos-inv', 'regalos', 'confirmaciones', 'respuestas', 'invitados'];
     subtabs.forEach(t => {
@@ -1475,6 +1678,7 @@ document.addEventListener('DOMContentLoaded', () => {
         statTables.textContent = data.tableCount || 0;
         allTables = data.tables || [];
         renderTablesList(allTables);
+        renderHallTablesGrid();
         updateTablesDatalist();
 
         // Re-render capitanes quests to sync tables data
@@ -1508,6 +1712,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderGuestsTable();
         renderModalGuestList();
         renderInvitadosTable();
+        renderHallTablesGrid();
 
         // Re-render capitanes quests to sync guest data
         if (tabCapitanes && tabCapitanes.classList.contains('active')) {

@@ -67,111 +67,155 @@
 
     <!-- TABLES & GUESTS TAB -->
     <div id="tab-mesas" class="tab-content active">
-      <div class="admin-grid">
-      <!-- Left Column: Settings & QR Poster -->
-      <div>
-        <!-- Event Configuration panel -->
-        <div class="panel">
-          <h2>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            Personalización del Evento
-          </h2>
-          <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; margin-bottom: 20px;">
-            Define el nombre del evento que se mostrará en el buscador de los invitados y en el póster del QR.
-          </p>
-          <div class="form-group-inline" style="display: flex; gap: 10px; margin-bottom: 10px;">
-            <input type="text" id="event-title-input" class="form-control-admin" placeholder="Ej. Boda de Laura & Martín" style="flex: 1; padding: 12px 18px; border-radius: 20px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif;">
-            <button class="btn btn-primary" id="btn-save-title" style="flex: none; padding: 12px 25px; border-radius: 20px; font-size: 0.8rem;">Guardar</button>
+      
+      <!-- Sub-tabs Bar Navigation -->
+      <div class="subtabs-bar" style="display: flex; gap: 10px; margin-bottom: 24px; border-bottom: 1px solid rgba(212,175,55,0.15); padding-bottom: 12px; overflow-x: auto;">
+        <button class="subtab-btn active" id="subtab-btn-plano" onclick="switchMesasSubtab('plano')">
+          <span>🗺️ Plano de Mesas</span>
+        </button>
+        <button class="subtab-btn" id="subtab-btn-invitados" onclick="switchMesasSubtab('invitados')">
+          <span>👥 Invitados Confirmados</span>
+        </button>
+        <button class="subtab-btn" id="subtab-btn-qr" onclick="switchMesasSubtab('qr')">
+          <span>🖼️ QR y Cartel Imprimible</span>
+        </button>
+      </div>
+
+      <!-- SUBTAB 1: PLANO DE MESAS INTERACTIVO -->
+      <div id="mesas-subtab-plano" class="mesas-subtab-content active">
+        <!-- Top Stats Summary Bar -->
+        <div class="stats-container" style="margin-bottom: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
+          <div class="stat-card">
+            <div class="stat-value" id="stat-guests">0</div>
+            <div class="stat-label">Invitados Confirmados</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="stat-tables">0</div>
+            <div class="stat-label">Mesas Creadas</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="stat-seated-guests" style="color: var(--gold-light);">0</div>
+            <div class="stat-label">Personas Sentadas</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="stat-unassigned-guests" style="color: #ff6b6b;">0</div>
+            <div class="stat-label">Sin Mesa Asignada</div>
           </div>
         </div>
 
-        <!-- QR Generator panel -->
+        <!-- Hall Layout Canvas Panel -->
         <div class="panel">
-          <h2>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-            Código QR del Localizador
-          </h2>
-          
-          <div class="qr-preview-box" style="margin-top: 15px;">
-            <div class="qr-code-wrapper" id="qr-code-container">
-              <div style="width: 150px; height: 150px; background: #eee; display: flex; align-items: center; justify-content: center; color: #666; font-size: 0.8rem;">Cargando...</div>
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; border-bottom: 1px dashed rgba(255,255,255,0.08); padding-bottom: 15px;">
+            <div>
+              <h2 style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                <span>🏛️</span> Mapa & Distribución del Salón
+              </h2>
+              <p style="color: var(--text-muted); font-size: 0.82rem; margin-top: 4px; margin-bottom: 0;">
+                Plano en tiempo real del evento. Haz clic en cualquier mesa para ver sus integrantes o ubicar invitados.
+              </p>
             </div>
-            <p class="qr-instructions" id="qr-instructions-text">
-              Imprime el cartel con el QR oficial para ubicarlo en la recepción del salón. Los invitados podrán escanearlo al llegar para encontrar su mesa asignada.
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <button class="btn btn-primary" onclick="openCreateTableModal()" style="padding: 10px 18px; font-size: 0.8rem; border-radius: 18px;">
+                + Crear Nueva Mesa
+              </button>
+            </div>
+          </div>
+
+          <!-- Hall Canvas Grid -->
+          <div id="hall-tables-grid" class="hall-tables-grid">
+            <!-- Rendered dynamically by JavaScript -->
+          </div>
+        </div>
+      </div>
+
+      <!-- SUBTAB 2: LISTADO DE INVITADOS CONFIRMADOS -->
+      <div id="mesas-subtab-invitados" class="mesas-subtab-content" style="display: none;">
+        <div class="panel">
+          <div class="panel-header-flex" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+            <div>
+              <h2 style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                Gestión de Invitados
+              </h2>
+              <p style="color: var(--text-muted); font-size: 0.82rem; margin-top: 4px; margin-bottom: 0;">
+                Listado completo de personas confirmadas para asignar ubicación y consultar preferencias.
+              </p>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-left: auto;">
+              <input type="text" id="admin-guest-search" class="form-control-admin" placeholder="Buscar por nombre o mesa..." style="padding: 10px 15px; font-size: 0.85rem; border-radius: 15px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif; width: 220px;">
+              <button class="btn btn-primary" id="btn-add-guest" style="padding: 10px 20px; font-size: 0.8rem; border-radius: 20px; flex: none;">+ Agregar Invitado</button>
+              <button class="btn btn-header-action" id="btn-export-excel" style="padding: 10px 20px; font-size: 0.8rem; border-radius: 20px; flex: none; text-transform: uppercase;">Exportar Excel</button>
+            </div>
+          </div>
+
+          <div style="position: relative;">
+            <div class="table-wrapper" id="guests-table-wrapper" style="margin-top: 20px; overflow-x: auto; max-height: 480px; overflow-y: auto;">
+              <table class="guests-table">
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Apellido</th>
+                    <th>Mesa Asignada</th>
+                    <th style="width: 150px; text-align: center;">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="guests-table-body">
+                  <tr>
+                    <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 30px;">Cargando listado de invitados...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SUBTAB 3: QR Y CARTEL IMPRIMIBLE -->
+      <div id="mesas-subtab-qr" class="mesas-subtab-content" style="display: none;">
+        <div class="admin-grid">
+          <!-- Left Column: Customizer Form -->
+          <div class="panel">
+            <h2>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+              Personalización del Cartel
+            </h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; margin-bottom: 20px;">
+              Configurá el título y mensaje de bienvenida que se mostrarán en la lámina oficial impreso.
             </p>
-            <button class="btn btn-primary" id="btn-print-qr" style="width: auto; padding-left: 30px; padding-right: 30px;">Imprimir Cartel QR</button>
+            
+            <div style="margin-bottom: 16px;">
+              <label style="display: block; font-size: 0.8rem; color: var(--gold-light); margin-bottom: 6px; font-weight: 600;">Título del Evento (Cartel)</label>
+              <input type="text" id="event-title-input" class="form-control-admin" placeholder="Ej. Boda de Laura & Martín" style="width: 100%; padding: 12px 18px; border-radius: 16px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none;">
+            </div>
+
+            <div style="margin-bottom: 20px;">
+              <label style="display: block; font-size: 0.8rem; color: var(--gold-light); margin-bottom: 6px; font-weight: 600;">Mensaje de Bienvenida / Subtítulo</label>
+              <textarea id="qr-poster-subtitle-input" class="form-control-admin" rows="3" placeholder="Ej. ¡Bienvenidos a nuestra fiesta! Escaneá el QR para encontrar tu mesa asignada." style="width: 100%; padding: 12px 18px; border-radius: 16px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif; resize: vertical;"></textarea>
+            </div>
+
+            <button class="btn btn-primary" id="btn-save-title" style="width: 100%; padding: 12px; border-radius: 18px;">💾 Guardar Cambios</button>
+          </div>
+
+          <!-- Right Column: Live Poster Preview -->
+          <div class="panel">
+            <h2>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+              Vista Previa del Cartel Imprimible
+            </h2>
+
+            <div class="qr-preview-box" style="margin-top: 15px; text-align: center;">
+              <div class="qr-code-wrapper" id="qr-code-container">
+                <div style="width: 150px; height: 150px; background: #eee; display: flex; align-items: center; justify-content: center; color: #666; font-size: 0.8rem;">Cargando...</div>
+              </div>
+              <p class="qr-instructions" id="qr-instructions-text" style="margin-top: 15px; color: var(--text-muted); font-size: 0.85rem;">
+                Imprime el cartel con el QR oficial para ubicarlo en la recepción del salón. Los invitados podrán escanearlo al llegar para encontrar su mesa asignada.
+              </p>
+              <button class="btn btn-primary" id="btn-print-qr" style="width: auto; padding: 12px 35px; border-radius: 20px; font-size: 0.9rem; margin-top: 10px;">⚡ Imprimir Cartel QR (HD)</button>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Right Column: Stats -->
-      <div>
-        <!-- Stats panel -->
-        <div class="panel">
-          <h2>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
-            Estadísticas del Evento
-          </h2>
-          
-          <div class="stats-container">
-            <div class="stat-card">
-              <div class="stat-value" id="stat-guests">0</div>
-              <div class="stat-label">Invitados Confirmados</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-value" id="stat-tables">0</div>
-              <div class="stat-label">Mesas</div>
-            </div>
-          </div>
-
-          <h3 style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: var(--gold-primary); margin-bottom: 12px;">Capacidad por Mesa</h3>
-          <div class="tables-list-container" id="tables-breakdown-list">
-            <div style="padding: 20px; text-align: center; color: var(--text-muted); font-size: 0.85rem;">
-              No hay datos de mesas disponibles.
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Full Width: Interactive Guest List CRUD -->
-    <div class="panel" style="margin-top: 10px;">
-      <div class="panel-header-flex" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
-        <h2>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          Listado de Invitados
-        </h2>
-        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-left: auto;">
-          <input type="text" id="admin-guest-search" class="form-control-admin" placeholder="Buscar por nombre o mesa..." style="padding: 10px 15px; font-size: 0.85rem; border-radius: 15px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif; width: 220px;">
-          <button class="btn btn-primary" id="btn-add-guest" style="padding: 10px 20px; font-size: 0.8rem; border-radius: 20px; flex: none;">+ Agregar Invitado</button>
-          <button class="btn btn-header-action" id="btn-export-excel" style="padding: 10px 20px; font-size: 0.8rem; border-radius: 20px; flex: none; text-transform: uppercase;">Exportar Excel</button>
-        </div>
-      </div>
-
-      <div style="position: relative;">
-        <div class="table-wrapper" id="guests-table-wrapper" style="margin-top: 25px; overflow-x: auto; max-height: 400px; overflow-y: auto;">
-          <table class="guests-table">
-            <thead>
-              <tr>
-                <th>Nombre</th>
-                <th>Apellido</th>
-                <th>Mesa</th>
-                <th style="width: 150px; text-align: center;">Acciones</th>
-              </tr>
-            </thead>
-            <tbody id="guests-table-body">
-              <tr>
-                <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 30px;">Cargando listado de invitados...</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div id="guests-scroll-hint" class="scroll-more-hint">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="bounce-arrow"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
-          <span>Deslizá hacia abajo para ver todos los invitados</span>
-        </div>
-      </div>
-    </div>
     </div> <!-- Close tab-mesas -->
 
     <!-- PHOTOS MODERATION TAB -->
@@ -2260,6 +2304,26 @@
           <span class="indicator" data-slide="5"></span>
         </div>
         <button type="button" id="btn-onboarding-next" class="btn btn-primary">Siguiente</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Assign Guest to Table -->
+  <div id="assign-guest-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-card" style="max-width: 440px; background: rgba(18,18,22,0.95); border: 1px solid var(--gold-primary); border-radius: 24px; padding: 30px;">
+      <h3 id="assign-modal-title" style="margin-top: 0; color: var(--gold-primary); font-family: 'Cinzel', serif;">Ubicar Invitado en Mesa</h3>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;">Seleccioná una persona confirmada sin mesa para ubicarla en esta mesa.</p>
+      
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; font-size: 0.8rem; color: var(--gold-light); margin-bottom: 6px; font-weight: 600;">Invitado Confirmado</label>
+        <select id="assign-guest-select" class="form-control-admin" style="width: 100%; padding: 12px; border-radius: 12px; background: rgba(0,0,0,0.6); color: white; border: 1px solid var(--card-border); outline: none;">
+          <!-- Populated dynamically -->
+        </select>
+      </div>
+
+      <div style="display: flex; gap: 10px; justify-content: flex-end;">
+        <button class="btn btn-header-action" onclick="closeAssignGuestModal()">Cancelar</button>
+        <button class="btn btn-primary" id="btn-submit-assign-guest" style="padding: 10px 20px; font-size: 0.82rem; border-radius: 18px;">Asignar AHORA</button>
       </div>
     </div>
   </div>
