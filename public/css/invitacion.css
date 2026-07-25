@@ -1109,6 +1109,8 @@ body.font-romantic-charms .hero-title {
   display: block;
   opacity: 1;
   transform: translateY(0) scale(1);
+  position: relative;
+  z-index: 10;
 }
 
 .invitation-nav-bar {
@@ -2898,17 +2900,29 @@ footer a:hover {
   padding-right: 48px;
 }
 
-/* Custom premium select styling with gold arrows */
+/* Custom premium select styling with solid background and gold arrows */
 select.form-control {
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
+  background-color: #0b0b0e !important;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='rgba(212, 175, 55, 0.6)' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 16px center;
   background-size: 16px 16px;
   padding-right: 40px;
+  color: #ffffff !important;
+  opacity: 1 !important;
 }
+
+select.form-control option {
+  background-color: #0b0b0e !important;
+  color: #ffffff !important;
+  padding: 12px;
+  font-size: 0.9rem;
+}
+
+
 
 /* Autocomplete search results dropdown */
 .autocomplete-results {
@@ -2928,18 +2942,21 @@ select.form-control {
   box-sizing: border-box;
 }
 
+.select-lux-wrapper.open {
+  z-index: 100000 !important;
+}
+
 .select-lux-trigger {
   width: 100%;
   padding: 14px 20px;
   border-radius: 12px;
-  background: rgba(11, 11, 12, 0.6);
+  background: #0b0b0e !important;
   border: 1px solid rgba(212, 175, 55, 0.15);
   color: var(--text-light);
   font-family: inherit;
   font-size: 0.9rem;
   box-sizing: border-box;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  opacity: 1 !important;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -2953,7 +2970,7 @@ select.form-control {
   outline: none;
   border-color: var(--gold-primary);
   box-shadow: 0 0 10px rgba(212, 175, 55, 0.2);
-  background: rgba(11, 11, 12, 0.85);
+  background: #0b0b0e !important;
 }
 
 .select-lux-text {
@@ -2978,19 +2995,19 @@ select.form-control {
   top: calc(100% + 6px);
   left: 0;
   width: 100%;
-  background: rgba(15, 15, 17, 0.95);
-  border: 1px solid rgba(212, 175, 55, 0.3);
+  background: #0b0b0e !important;
+  border: 1px solid rgba(212, 175, 55, 0.4);
   border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  z-index: 1000;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.98);
+  z-index: 100000 !important;
   overflow: hidden;
   opacity: 0;
   visibility: hidden;
   transform: translateY(-10px) scaleY(0.95);
   transform-origin: top;
   transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.3s;
-  backdrop-filter: blur(15px);
-  -webkit-backdrop-filter: blur(15px);
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 .select-lux-wrapper.open .select-lux-options {
@@ -3002,11 +3019,13 @@ select.form-control {
 .select-lux-option {
   padding: 14px 20px;
   text-align: center;
-  color: var(--text-light);
+  color: #ffffff !important;
   font-size: 0.9rem;
   cursor: pointer;
   transition: all 0.2s ease;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background-color: #0b0b0e !important;
+  opacity: 1 !important;
 }
 
 .select-lux-option:last-child {
@@ -3014,13 +3033,13 @@ select.form-control {
 }
 
 .select-lux-option:hover {
-  background: rgba(212, 175, 55, 0.15);
-  color: #fff;
+  background-color: #1a1914 !important;
+  color: #ffd700 !important;
 }
 
 .select-lux-option.selected {
-  color: var(--gold-primary);
-  background: rgba(212, 175, 55, 0.08);
+  color: var(--gold-primary) !important;
+  background-color: #1c1a0e !important;
   font-weight: 600;
 }
 

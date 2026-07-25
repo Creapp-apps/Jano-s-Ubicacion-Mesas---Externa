@@ -118,8 +118,14 @@
               <button class="btn btn-primary" onclick="openCreateTableModal()" style="padding: 9px 16px; font-size: 0.8rem; border-radius: 18px;">
                 + Crear Mesa
               </button>
-              <button class="btn btn-header-action" onclick="saveHallLayoutPositions()" style="padding: 9px 16px; font-size: 0.8rem; border-radius: 18px; border: 1px solid var(--gold-primary); color: var(--gold-primary);">
+              <button id="save-hall-layout-btn" class="btn btn-header-action" onclick="saveHallLayoutPositions()" style="padding: 9px 16px; font-size: 0.8rem; border-radius: 18px; border: 1px solid var(--gold-primary); color: var(--gold-primary); transition: all 0.25s ease;">
                 💾 Guardar Posiciones
+              </button>
+              <button class="btn btn-header-action" onclick="openExportMapModal()" style="padding: 9px 16px; font-size: 0.8rem; border-radius: 18px; border: 1px solid rgba(212, 175, 55, 0.6); color: var(--gold-light); background: rgba(212, 175, 55, 0.1); cursor: pointer;">
+                📥 Exportar Mapa
+              </button>
+              <button class="btn btn-danger" onclick="resetHallLayout()" style="padding: 9px 16px; font-size: 0.8rem; border-radius: 18px; background: rgba(255, 77, 77, 0.15); color: #ff4d4d; border: 1px solid rgba(255, 77, 77, 0.4); cursor: pointer;">
+                🔄 Restablecer Plano
               </button>
             </div>
           </div>
@@ -2395,7 +2401,9 @@
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="/js/alerts.js"></script>
-  <script src="/js/admin.js?v=1.0.1"></script>
+  <script src="/js/admin.js?v=1.0.6"></script>
 </body>
 </html>

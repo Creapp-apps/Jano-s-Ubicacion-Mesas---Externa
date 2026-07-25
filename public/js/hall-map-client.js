@@ -314,7 +314,7 @@
     const items = currentLayout.items || [];
     const tablePositions = currentLayout.tablePositions || {};
     const boardHeight = currentLayout.boardHeight || 600;
-    const boardWidth = 900; // standard width scale
+    const boardWidth = 900;
 
     svgEl.setAttribute('viewBox', `0 0 ${boardWidth} ${boardHeight}`);
     svgEl.setAttribute('width', boardWidth);
@@ -323,22 +323,51 @@
     let targetCoords = null;
     let entryCoords = null;
 
-    // Build defs
+    // SVG Definitions & Gradients
     let svgContent = `
       <defs>
+        <!-- Gradients -->
         <linearGradient id="gold-emerald-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stop-color="#34d399" />
-          <stop offset="100%" stop-color="#10b981" />
+          <stop offset="50%" stop-color="#10b981" />
+          <stop offset="100%" stop-color="#d4af37" />
         </linearGradient>
+
+        <radialGradient id="table-bg-target" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="rgba(16, 185, 129, 0.45)" />
+          <stop offset="70%" stop-color="rgba(16, 185, 129, 0.25)" />
+          <stop offset="100%" stop-color="rgba(10, 25, 18, 0.9)" />
+        </radialGradient>
+
+        <radialGradient id="table-bg-normal" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="rgba(35, 40, 60, 0.95)" />
+          <stop offset="100%" stop-color="rgba(18, 20, 32, 0.95)" />
+        </radialGradient>
+
+        <radialGradient id="table-bg-presidencial" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="rgba(212, 175, 55, 0.45)" />
+          <stop offset="100%" stop-color="rgba(30, 26, 12, 0.95)" />
+        </radialGradient>
+
+        <!-- Filters -->
         <filter id="glow-gold" x="-30%" y="-30%" width="160%" height="160%">
-          <feGaussianBlur stdDeviation="6" result="blur" />
+          <feGaussianBlur stdDeviation="5" result="blur" />
           <feComposite in="SourceGraphic" in2="blur" operator="over" />
         </filter>
-        <filter id="glow-emerald" x="-30%" y="-30%" width="160%" height="160%">
+
+        <filter id="glow-emerald" x="-40%" y="-40%" width="180%" height="180%">
           <feGaussianBlur stdDeviation="8" result="blur" />
           <feComposite in="SourceGraphic" in2="blur" operator="over" />
         </filter>
+
+        <filter id="drop-shadow-soft" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.6" />
+        </filter>
       </defs>
+
+      <!-- Hall Floor Ambient Lighting & Outer Boundary -->
+      <rect width="${boardWidth}" height="${boardHeight}" rx="24" fill="#0c0e18" stroke="rgba(212, 175, 55, 0.25)" stroke-width="2" />
+      <rect x="12" y="12" width="${boardWidth - 24}" height="${boardHeight - 24}" rx="18" fill="none" stroke="rgba(255, 255, 255, 0.05)" stroke-width="1.5" stroke-dasharray="8 6" />
     `;
 
     // 1. Find Entry point coordinates if available
@@ -348,7 +377,6 @@
       const ePxY = toPixelY(entryItem.y, boardHeight);
       entryCoords = { x: ePxX + 50, y: ePxY + 25 };
     } else {
-      // Default entry point at bottom center if not explicitly placed
       entryCoords = { x: boardWidth / 2, y: boardHeight - 40 };
     }
 
@@ -363,8 +391,8 @@
       const pxX = toPixelX(item.x, boardWidth);
       const pxY = toPixelY(item.y, boardHeight);
 
-      const itemWidth = isMesaPrincipal ? 140 : 100;
-      const itemHeight = isMesaPrincipal ? 60 : 50;
+      const itemWidth = isMesaPrincipal ? 140 : 110;
+      const itemHeight = isMesaPrincipal ? 60 : 48;
 
       if (isTargetMesa) {
         targetCoords = { x: pxX + itemWidth / 2, y: pxY + itemHeight / 2 };
@@ -374,17 +402,16 @@
         entryCoords = { x: pxX + itemWidth / 2, y: pxY + itemHeight / 2 };
       }
 
-      const isEntry = item.type === 'entrada' || (item.name && (item.name.toLowerCase().includes('entrada') || item.name.toLowerCase().includes('ingreso')));
-
       svgContent += `
         <g class="landmark-group ${isTargetMesa ? 'target-landmark' : ''}" 
            transform="translate(${pxX}, ${pxY}) rotate(${rot}, ${itemWidth / 2}, ${itemHeight / 2}) scale(${scale})" 
            onclick="window.__hallMapSelectTable('${escapeHtml(item.name)}')">
-          <rect width="${itemWidth}" height="${itemHeight}" rx="12" 
-                fill="${isMesaPrincipal ? 'rgba(212, 175, 55, 0.25)' : 'rgba(30, 34, 52, 0.85)'}" 
+          <rect width="${itemWidth}" height="${itemHeight}" rx="14" 
+                fill="${isMesaPrincipal ? 'url(#table-bg-presidencial)' : 'rgba(24, 28, 44, 0.9)'}" 
                 stroke="${isMesaPrincipal ? '#d4af37' : 'rgba(212, 175, 55, 0.35)'}" 
-                stroke-width="${isMesaPrincipal ? '2.5' : '1.5'}" />
-          <text x="${itemWidth / 2}" y="${itemHeight / 2}" text-anchor="middle" dominant-baseline="central" fill="#fff" font-size="12" font-weight="600">
+                stroke-width="${isMesaPrincipal ? '2.5' : '1.5'}" 
+                filter="url(#drop-shadow-soft)" />
+          <text x="${itemWidth / 2}" y="${itemHeight / 2}" text-anchor="middle" dominant-baseline="central" fill="#ffffff" font-size="12" font-weight="700" letter-spacing="0.3px">
             ${icon} ${escapeHtml(item.name || 'Hito')}
           </text>
         </g>
@@ -438,11 +465,33 @@
            transform="translate(${cx}, ${cy}) rotate(${rot}) scale(${scale})" 
            onclick="window.__hallMapSelectTable('${escapeHtml(tName)}')">
           ${isTarget ? `
-            <circle class="radar-beacon" cx="0" cy="0" r="38" fill="none" stroke="#10b981" stroke-width="3" />
-            <circle class="radar-beacon-delayed" cx="0" cy="0" r="38" fill="none" stroke="#34d399" stroke-width="2" />
+            <!-- Dual Radar Radar Beacon Waves -->
+            <circle class="radar-beacon" cx="0" cy="0" r="38" fill="none" stroke="#10b981" stroke-width="3.5" filter="url(#glow-emerald)" />
+            <circle class="radar-beacon-delayed" cx="0" cy="0" r="38" fill="none" stroke="#34d399" stroke-width="2.5" />
           ` : ''}
-          <circle class="map-table-circle" cx="0" cy="0" r="${radius}" />
-          <text class="map-table-text" x="0" y="0" text-anchor="middle" dominant-baseline="central" font-size="${isPresidencial ? '16' : '15'}" font-weight="800">${displayName}</text>
+          
+          <!-- Base Outer Ring -->
+          <circle cx="0" cy="0" r="${radius + 3}" fill="none" stroke="${isTarget ? 'rgba(16, 185, 129, 0.5)' : (isPresidencial ? 'rgba(212, 175, 55, 0.4)' : 'rgba(255, 255, 255, 0.08)')}" stroke-width="1.5" />
+
+          <!-- Table Surface Circle -->
+          <circle class="map-table-circle" cx="0" cy="0" r="${radius}" 
+                  fill="${isTarget ? 'url(#table-bg-target)' : (isPresidencial ? 'url(#table-bg-presidencial)' : 'url(#table-bg-normal)')}"
+                  stroke="${isTarget ? '#10b981' : (isPresidencial ? '#d4af37' : 'rgba(212, 175, 55, 0.4)')}"
+                  stroke-width="${isTarget ? '3.5' : (isPresidencial ? '2.5' : '2')}"
+                  filter="url(#drop-shadow-soft)" />
+
+          <!-- Table Label Number -->
+          <text class="map-table-text" x="0" y="0" text-anchor="middle" dominant-baseline="central" font-size="${isPresidencial ? '17' : '15'}" font-weight="800" fill="${isTarget ? '#6ee7b7' : (isPresidencial ? '#fef08a' : '#ffffff')}">
+            ${displayName}
+          </text>
+
+          ${isTarget ? `
+            <!-- Target Floating Badge Pointer -->
+            <g transform="translate(0, -${radius + 22})" class="target-table-badge">
+              <rect x="-42" y="-14" width="84" height="24" rx="12" fill="rgba(16, 185, 129, 0.95)" stroke="#6ee7b7" stroke-width="1.5" filter="url(#glow-emerald)" />
+              <text x="0" y="-1" text-anchor="middle" dominant-baseline="central" fill="#ffffff" font-size="11" font-weight="800">📍 Tu Mesa</text>
+            </g>
+          ` : ''}
         </g>
       `;
     });
@@ -450,14 +499,15 @@
     // 4. Render Animated Path Trail from Entry to Target Table
     if (entryCoords && targetCoords) {
       const midX = (entryCoords.x + targetCoords.x) / 2;
-      const midY = (entryCoords.y + targetCoords.y) / 2 - 40;
+      const midY = (entryCoords.y + targetCoords.y) / 2 - 35;
       const pathD = `M ${entryCoords.x} ${entryCoords.y} Q ${midX} ${midY} ${targetCoords.x} ${targetCoords.y}`;
 
       svgContent += `
         <!-- Entry Point Marker -->
         <g transform="translate(${entryCoords.x}, ${entryCoords.y})">
-          <circle r="14" fill="rgba(59, 130, 246, 0.25)" stroke="#3b82f6" stroke-width="2" />
-          <text text-anchor="middle" dominant-baseline="central" fill="#fff" font-size="10">🚪</text>
+          <circle r="18" fill="rgba(59, 130, 246, 0.3)" stroke="#3b82f6" stroke-width="2.5" filter="url(#glow-emerald)" />
+          <circle r="12" fill="#1e3a8a" />
+          <text text-anchor="middle" dominant-baseline="central" fill="#fff" font-size="11" font-weight="700">🚪</text>
         </g>
 
         <!-- Route Trail Line -->

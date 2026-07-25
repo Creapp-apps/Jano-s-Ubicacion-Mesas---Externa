@@ -673,19 +673,19 @@
 
             <div>
               <label style="display: block; text-align: center; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">¿Asistirás?</label>
-              <select id="rsvp-attending" class="form-control" style="background: #111; color: white;">
-                <option value="yes">Sí, asistiré con gusto</option>
-                <option value="no">No, lamentablemente no puedo ir</option>
+              <select id="rsvp-attending" class="form-control" style="background-color: #0b0b0e !important; color: white !important;">
+                <option value="yes" style="background-color: #0b0b0e; color: #ffffff;">Sí, asistiré con gusto</option>
+                <option value="no" style="background-color: #0b0b0e; color: #ffffff;">No, lamentablemente no puedo ir</option>
               </select>
             </div>
 
             <div id="rsvp-companions-group" style="display: none;">
               <label style="display: block; text-align: center; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Acompañantes</label>
-              <select id="rsvp-companions-count" class="form-control" style="background: #111; color: white; margin-bottom: 10px;">
-                <option value="0">Sin acompañantes</option>
-                <option value="1">1 Acompañante</option>
-                <option value="2">2 Acompañantes</option>
-                <option value="3">3 Acompañantes</option>
+              <select id="rsvp-companions-count" class="form-control" style="background-color: #0b0b0e !important; color: white !important; margin-bottom: 10px;">
+                <option value="0" style="background-color: #0b0b0e; color: #ffffff;">Sin acompañantes</option>
+                <option value="1" style="background-color: #0b0b0e; color: #ffffff;">1 Acompañante</option>
+                <option value="2" style="background-color: #0b0b0e; color: #ffffff;">2 Acompañantes</option>
+                <option value="3" style="background-color: #0b0b0e; color: #ffffff;">3 Acompañantes</option>
               </select>
               
               <div id="rsvp-companions-names-container" style="display: none; flex-direction: column; gap: 10px; margin-top: 10px;">
@@ -694,8 +694,15 @@
             </div>
 
             <div>
-              <label style="display: block; text-align: center; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Restricciones Alimenticias</label>
-              <input type="text" id="rsvp-dietary" class="form-control" placeholder="Ninguna (Ej: Celíaco, Vegetariano)">
+              <label style="display: block; text-align: center; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Restricción Alimentaria (Titular)</label>
+              <select id="rsvp-dietary-select" class="form-control">
+                <option value="none">Restricción: Ninguna</option>
+                <option value="Celiaquía">Celiaquía</option>
+                <option value="Vegetariano">Vegetariano</option>
+                <option value="Hipertensión">Hipertensión</option>
+                <option value="otro">Otro (especificar...)</option>
+              </select>
+              <input type="text" id="rsvp-dietary-other" class="form-control" placeholder="Especificar restricción alimentaria..." style="display: none; margin-top: 8px;">
             </div>
             
             <button type="submit" class="btn-gold" style="width: 100%; margin-top: 10px;">Enviar Confirmación</button>
@@ -2397,8 +2404,12 @@
       }
 
       // Initialize premium custom select dropdown components
-      function initCustomSelects() {
-        document.querySelectorAll('#rsvp-form select').forEach(select => {
+      function initCustomSelects(parent = document) {
+        parent.querySelectorAll('#rsvp-form select, .rsvp-companion-dietary-select').forEach(select => {
+          if (select.dataset.customLuxInit === 'true' || (select.nextElementSibling && select.nextElementSibling.classList.contains('select-lux-wrapper'))) {
+            return;
+          }
+          select.dataset.customLuxInit = 'true';
           // Hide native select element
           select.style.display = 'none';
           
@@ -2528,9 +2539,12 @@
         });
         
         // Global document click to close any open dropdowns
-        document.addEventListener('click', () => {
-          document.querySelectorAll('.select-lux-wrapper').forEach(w => w.classList.remove('open'));
-        });
+        if (!window._selectLuxGlobalClickBound) {
+          window._selectLuxGlobalClickBound = true;
+          document.addEventListener('click', () => {
+            document.querySelectorAll('.select-lux-wrapper').forEach(w => w.classList.remove('open'));
+          });
+        }
       }
 
       // Initialize dropdown components
@@ -2567,6 +2581,20 @@
         }
       }
 
+      const rsvpDietarySelect = document.getElementById('rsvp-dietary-select');
+      const rsvpDietaryOther = document.getElementById('rsvp-dietary-other');
+      if (rsvpDietarySelect && rsvpDietaryOther) {
+        rsvpDietarySelect.addEventListener('change', (e) => {
+          if (e.target.value === 'otro') {
+            rsvpDietaryOther.style.display = 'block';
+            rsvpDietaryOther.focus();
+          } else {
+            rsvpDietaryOther.style.display = 'none';
+            rsvpDietaryOther.value = '';
+          }
+        });
+      }
+
       if (rsvpAttending) {
         rsvpAttending.addEventListener('change', updateCompanionsVisibility);
         updateCompanionsVisibility();
@@ -2579,24 +2607,59 @@
           if (count > 0) {
             rsvpCompanionsNamesContainer.style.display = 'flex';
             for (let i = 1; i <= count; i++) {
+              const card = document.createElement('div');
+              card.className = 'companion-input-card';
+              card.style.cssText = 'background: rgba(255,255,255,0.03); border: 1px dashed rgba(212,175,55,0.3); border-radius: 12px; padding: 10px 12px; margin-top: 6px; text-align: left;';
+              
               const label = document.createElement('label');
-              label.style.fontSize = '0.7rem';
-              label.style.color = 'var(--text-muted)';
-              label.style.textAlign = 'center';
+              label.style.fontSize = '0.72rem';
+              label.style.color = 'var(--gold-primary)';
               label.style.display = 'block';
-              label.style.marginBottom = '4px';
-              label.style.marginTop = i > 1 ? '8px' : '0px';
-              label.textContent = `Acompañante ${i}`;
+              label.style.marginBottom = '6px';
+              label.style.fontWeight = '600';
+              label.textContent = `👤 Acompañante ${i}`;
               
-              const input = document.createElement('input');
-              input.type = 'text';
-              input.className = 'form-control rsvp-companion-name-input';
-              input.placeholder = `Nombre completo del Acompañante ${i}`;
-              input.required = true;
-              
-              rsvpCompanionsNamesContainer.appendChild(label);
-              rsvpCompanionsNamesContainer.appendChild(input);
+              const nameInput = document.createElement('input');
+              nameInput.type = 'text';
+              nameInput.className = 'form-control rsvp-companion-name-input';
+              nameInput.placeholder = `Nombre completo del Acompañante ${i}`;
+              nameInput.required = true;
+              nameInput.style.marginBottom = '6px';
+
+              const dietarySelect = document.createElement('select');
+              dietarySelect.className = 'form-control rsvp-companion-dietary-select';
+              dietarySelect.style.cssText = 'background-color: #0b0b0e !important; color: white !important; margin-bottom: 4px; font-size: 0.8rem;';
+              dietarySelect.innerHTML = `
+                <option value="none" style="background-color: #0b0b0e; color: #ffffff;">Restricción Alimentaria: Ninguna</option>
+                <option value="Celiaquía" style="background-color: #0b0b0e; color: #ffffff;">Celiaquía</option>
+                <option value="Vegetariano" style="background-color: #0b0b0e; color: #ffffff;">Vegetariano</option>
+                <option value="Hipertensión" style="background-color: #0b0b0e; color: #ffffff;">Hipertensión</option>
+                <option value="otro" style="background-color: #0b0b0e; color: #ffffff;">Otro (especificar...)</option>
+              `;
+
+              const dietaryOther = document.createElement('input');
+              dietaryOther.type = 'text';
+              dietaryOther.className = 'form-control rsvp-companion-dietary-other';
+              dietaryOther.placeholder = `Especificar restricción alimentaria...`;
+              dietaryOther.style.cssText = 'display: none; margin-top: 4px; font-size: 0.8rem;';
+
+              dietarySelect.addEventListener('change', (ev) => {
+                if (ev.target.value === 'otro') {
+                  dietaryOther.style.display = 'block';
+                  dietaryOther.focus();
+                } else {
+                  dietaryOther.style.display = 'none';
+                  dietaryOther.value = '';
+                }
+              });
+
+              card.appendChild(label);
+              card.appendChild(nameInput);
+              card.appendChild(dietarySelect);
+              card.appendChild(dietaryOther);
+              rsvpCompanionsNamesContainer.appendChild(card);
             }
+            initCustomSelects(rsvpCompanionsNamesContainer);
           } else {
             rsvpCompanionsNamesContainer.style.display = 'none';
           }
@@ -2631,17 +2694,34 @@
           const attendingVal = document.getElementById('rsvp-attending').value;
           const attending = attendingVal === 'yes';
           const companionsCount = attending ? (parseInt(rsvpCompanionsCount ? rsvpCompanionsCount.value : 0) || 0) : 0;
-          const companionInputs = Array.from(document.querySelectorAll('.rsvp-companion-name-input'));
-          const companionsNames = attending ? companionInputs.map(input => input.value.trim()).filter(Boolean) : [];
+          const companionCards = Array.from(document.querySelectorAll('.companion-input-card'));
+          const companionsNames = [];
+          const companionsDetails = [];
 
           if (attending && companionsCount > 0) {
             let hasError = false;
-            companionInputs.forEach(inp => {
-              if (!inp.value.trim()) {
-                inp.style.borderColor = '#ff3b30';
+            companionCards.forEach(card => {
+              const nameInp = card.querySelector('.rsvp-companion-name-input');
+              const selectInp = card.querySelector('.rsvp-companion-dietary-select');
+              const otherInp = card.querySelector('.rsvp-companion-dietary-other');
+              
+              const cName = nameInp ? nameInp.value.trim() : '';
+              const sVal = selectInp ? selectInp.value : 'none';
+              let cDietary = '';
+              if (sVal === 'otro') {
+                cDietary = otherInp ? otherInp.value.trim() : '';
+              } else if (sVal !== 'none') {
+                cDietary = sVal;
+              }
+
+              if (!cName) {
+                if (nameInp) nameInp.style.borderColor = '#ff3b30';
                 hasError = true;
               } else {
-                inp.style.borderColor = '';
+                if (nameInp) nameInp.style.borderColor = '';
+                companionsDetails.push({ name: cName, dietary: cDietary });
+                const formattedName = cDietary ? `${cName} (${cDietary})` : cName;
+                companionsNames.push(formattedName);
               }
             });
             if (hasError || companionsNames.length < companionsCount) {
@@ -2651,7 +2731,16 @@
               return;
             }
           }
-          const dietaryRestrictions = document.getElementById('rsvp-dietary').value.trim();
+          
+          let dietaryRestrictions = '';
+          if (rsvpDietarySelect) {
+            const selVal = rsvpDietarySelect.value;
+            if (selVal === 'otro') {
+              dietaryRestrictions = rsvpDietaryOther ? rsvpDietaryOther.value.trim() : '';
+            } else if (selVal !== 'none') {
+              dietaryRestrictions = selVal;
+            }
+          }
           
           rsvpStatusMsg.style.display = 'block';
           rsvpStatusMsg.style.color = 'var(--gold-primary)';
@@ -2665,6 +2754,7 @@
               attending,
               companionsCount,
               companionsNames,
+              companionsDetails,
               dietaryRestrictions,
               suggestedSong: window.temporarilySuggestedSong || ''
             })

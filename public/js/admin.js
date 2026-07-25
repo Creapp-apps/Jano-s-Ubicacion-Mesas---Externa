@@ -1,4 +1,15 @@
 document.addEventListener('DOMContentLoaded', () => {
+  // Cleanup orphaned Service Workers from localhost to prevent fetch interception issues
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(registrations => {
+      for (let registration of registrations) {
+        registration.unregister().then(unregistered => {
+          if (unregistered) console.log('[miFiestAPP] Unregistered legacy ServiceWorker:', registration.scope);
+        });
+      }
+    }).catch(e => {});
+  }
+
   const urlParams = new URLSearchParams(window.location.search);
   const eventId = urlParams.get('event') || 'default';
   let isFormDirty = false;
@@ -400,6 +411,25 @@ document.addEventListener('DOMContentLoaded', () => {
   let activeCustomSelection = 'global'; // 'global' or table name (string)
 
   function switchTab(tabId) {
+    if (hasUnsavedHallLayoutChanges && tabId !== 'mesas') {
+      showConfirm(
+        '⚠️ Cambios Sin Guardar en el Plano',
+        'Tenés cambios realizados en la distribución del salón sin guardar. ¿Estás seguro de salir hacia otra sección sin guardar las posiciones?',
+        () => {
+          markUnsavedHallLayoutChanges(false);
+          if (isFormDirty) {
+            showUnsavedChangesModal(
+              () => { saveInvitationConfig(); performSwitchTab(tabId); },
+              () => { restoreFormState(); performSwitchTab(tabId); },
+              null
+            );
+          } else {
+            performSwitchTab(tabId);
+          }
+        }
+      );
+      return;
+    }
     if (isFormDirty) {
       showUnsavedChangesModal(
         () => {
@@ -524,6 +554,21 @@ document.addEventListener('DOMContentLoaded', () => {
   let activeAssignTableTarget = null;
 
   window.switchMesasSubtab = function(subtabId) {
+    if (hasUnsavedHallLayoutChanges && subtabId !== 'plano') {
+      showConfirm(
+        '⚠️ Cambios Sin Guardar en el Plano',
+        'Tenés cambios realizados en el plano del salón sin guardar. ¿Estás seguro de cambiar de subpestaña sin guardar las posiciones?',
+        () => {
+          markUnsavedHallLayoutChanges(false);
+          performSwitchMesasSubtab(subtabId);
+        }
+      );
+      return;
+    }
+    performSwitchMesasSubtab(subtabId);
+  };
+
+  function performSwitchMesasSubtab(subtabId) {
     const subtabs = ['plano', 'invitados', 'qr'];
     subtabs.forEach(s => {
       const btn = document.getElementById(`subtab-btn-${s}`);
@@ -543,12 +588,39 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (subtabId === 'invitados') {
       renderGuestsTable();
     }
-  };
+  }
 
   // --- INTERACTIVE HALL CANVAS BOARD ENGINE ---
   let hallCanvasItems = [];
   let tablePositionsMap = {};
   let currentBoardHeight = 540;
+  let hasUnsavedHallLayoutChanges = false;
+
+  window.markUnsavedHallLayoutChanges = function(hasChanges = true) {
+    hasUnsavedHallLayoutChanges = hasChanges;
+    const saveBtn = document.getElementById('save-hall-layout-btn');
+    if (saveBtn) {
+      if (hasChanges) {
+        saveBtn.innerHTML = '⚠️ Guardar Posiciones <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #f59e0b; margin-left: 4px; box-shadow: 0 0 10px #f59e0b;"></span>';
+        saveBtn.style.borderColor = '#f59e0b';
+        saveBtn.style.color = '#f59e0b';
+        saveBtn.style.background = 'rgba(245, 158, 11, 0.15)';
+      } else {
+        saveBtn.innerHTML = '💾 Guardar Posiciones';
+        saveBtn.style.borderColor = 'var(--gold-primary)';
+        saveBtn.style.color = 'var(--gold-primary)';
+        saveBtn.style.background = 'transparent';
+      }
+    }
+  };
+
+  window.addEventListener('beforeunload', function(e) {
+    if (hasUnsavedHallLayoutChanges) {
+      e.preventDefault();
+      e.returnValue = 'Tenés cambios sin guardar en el plano del salón.';
+      return e.returnValue;
+    }
+  });
 
   function getTablePos(name) {
     if (!name || !tablePositionsMap) return null;
@@ -571,10 +643,12 @@ document.addEventListener('DOMContentLoaded', () => {
             currentBoardHeight = data.boardHeight;
           }
         }
+        markUnsavedHallLayoutChanges(false);
         renderHallCanvasBoard();
       })
       .catch(err => {
         console.error('Error loading hall layout:', err);
+        markUnsavedHallLayoutChanges(false);
         renderHallCanvasBoard();
       });
   }
@@ -585,6 +659,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const defaultY = 20 + ((count * 12) % 45);
     tablePositionsMap[tableName] = { x: defaultX, y: defaultY, rotation: 0 };
     renderHallCanvasBoard();
+    markUnsavedHallLayoutChanges(true);
     saveHallLayoutPositions(true);
   };
 
@@ -592,7 +667,58 @@ document.addEventListener('DOMContentLoaded', () => {
     if (event) event.stopPropagation();
     delete tablePositionsMap[tableName];
     renderHallCanvasBoard();
+    markUnsavedHallLayoutChanges(true);
     saveHallLayoutPositions(true);
+  };
+
+  window.deleteTable = function(tableName, event) {
+    if (event) event.stopPropagation();
+
+    const cleanName = formatTableDisplay(tableName);
+
+    showConfirm(
+      '🗑️ Eliminar Mesa',
+      `¿Estás seguro de que deseas eliminar la mesa "${escapeHtml(cleanName)}"? Los invitados asignados a esta mesa pasarán a "Sin Mesa".`,
+      () => {
+        fetch(`/api/admin/delete-table?event=${encodeURIComponent(eventId)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tableName })
+        })
+        .then(res => {
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          return res.json();
+        })
+        .then(data => {
+          if (data.success) {
+            showToast(`✅ Mesa "${cleanName}" eliminada correctamente`, 'success');
+
+            // 1. Remove table from local state
+            allTables = (allTables || []).filter(t => t.name.trim().toLowerCase() !== tableName.trim().toLowerCase());
+            delete tablePositionsMap[tableName];
+
+            // 2. Update local guest table assignments
+            if (allGuests) {
+              allGuests.forEach(g => {
+                if (g.table && g.table.trim().toLowerCase() === tableName.trim().toLowerCase()) {
+                  g.table = 'Sin Mesa';
+                }
+              });
+            }
+
+            // 3. Re-render UI & reload
+            renderHallCanvasBoard();
+            renderHallTablesGrid();
+            loadGuests();
+            loadStats();
+          }
+        })
+        .catch(err => {
+          console.error('Error deleting table:', err);
+          showToast('❌ Error al eliminar la mesa', 'error');
+        });
+      }
+    );
   };
 
   window.renameTable = function(oldName, event) {
@@ -830,6 +956,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     renderHallCanvasBoard();
+    markUnsavedHallLayoutChanges(true);
     saveHallLayoutPositions(true);
   };
 
@@ -837,6 +964,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (event) event.stopPropagation();
     hallCanvasItems = hallCanvasItems.filter(i => i.id !== itemId);
     renderHallCanvasBoard();
+    markUnsavedHallLayoutChanges(true);
     saveHallLayoutPositions(true);
   };
 
@@ -856,11 +984,328 @@ document.addEventListener('DOMContentLoaded', () => {
     })
     .then(data => {
       if (!silent) {
+        markUnsavedHallLayoutChanges(false);
         showToast('✅ Posiciones del salón guardadas con éxito', 'success');
       }
       loadStats(true);
     })
     .catch(err => console.error('Error saving hall layout:', err));
+  };
+
+  window.resetHallLayout = function() {
+    showConfirm(
+      '⚠️ Restablecer Plano del Salón',
+      '¿Estás seguro de restablecer el plano? Se borrarán todas las mesas creadas y la ubicación de todos los elementos visuales del plano, devolviéndolos a la barra de herramientas para comenzar a armar el salón desde cero.',
+      () => {
+        fetch(`/api/admin/tables/reset?event=${encodeURIComponent(eventId)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ event: eventId })
+        })
+        .then(res => {
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          return res.json();
+        })
+        .then(data => {
+          if (data.success) {
+            markUnsavedHallLayoutChanges(false);
+            showToast('✅ Plano de salón restablecido correctamente', 'success');
+            allTables = [];
+            hallCanvasItems = [];
+            tablePositionsMap = {};
+            if (data.layout && data.layout.boardHeight) {
+              currentBoardHeight = data.layout.boardHeight;
+            }
+            if (allGuests && Array.isArray(allGuests)) {
+              allGuests.forEach(g => { g.table = 'Sin Mesa'; });
+            }
+            renderHallCanvasBoard();
+            renderHallTablesGrid();
+            loadStats(true);
+            loadGuests();
+          }
+        })
+        .catch(err => {
+          console.error('Error resetting hall layout:', err);
+          showToast('❌ Error al restablecer el plano del salón', 'error');
+        });
+      }
+    );
+  };
+
+  window.openExportMapModal = function() {
+    const existingModal = document.getElementById('export-map-modal-overlay');
+    if (existingModal) existingModal.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'export-map-modal-overlay';
+    overlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(8, 8, 12, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      z-index: 999999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: modalFadeIn 0.25s ease-out forwards;
+    `;
+
+    overlay.innerHTML = `
+      <div style="
+        width: 90%;
+        max-width: 480px;
+        background: linear-gradient(145deg, rgba(26, 26, 36, 0.96) 0%, rgba(16, 16, 22, 0.98) 100%);
+        border: 1.5px solid rgba(212, 175, 55, 0.5);
+        border-radius: 24px;
+        padding: 30px;
+        box-shadow: 0 15px 45px rgba(0, 0, 0, 0.8), 0 0 30px rgba(212, 175, 55, 0.15);
+        text-align: center;
+        font-family: 'Montserrat', sans-serif;
+        color: #ffffff;
+        box-sizing: border-box;
+      ">
+        <div style="font-size: 2.5rem; margin-bottom: 8px;">📥</div>
+        <h3 style="font-family: 'Cinzel', serif; color: var(--gold-primary, #d4af37); font-size: 1.35rem; margin: 0 0 8px 0; font-weight: 700;">
+          Exportar Plano del Salón
+        </h3>
+        <p style="font-size: 0.85rem; color: rgba(255, 255, 255, 0.7); margin: 0 0 24px 0; line-height: 1.5;">
+          Seleccioná el formato deseado para exportar la distribución organizada del salón:
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 14px; margin-bottom: 24px;">
+          <button onclick="exportHallMap('png')" style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            background: rgba(212, 175, 55, 0.12);
+            border: 1px solid rgba(212, 175, 55, 0.4);
+            border-radius: 16px;
+            color: #ffffff;
+            font-size: 0.92rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+          " onmouseover="this.style.background='rgba(212, 175, 55, 0.25)'; this.style.borderColor='#d4af37';" onmouseout="this.style.background='rgba(212, 175, 55, 0.12)'; this.style.borderColor='rgba(212, 175, 55, 0.4)';">
+            <span style="display: flex; align-items: center; gap: 12px;">
+              <span style="font-size: 1.4rem;">🖼️</span>
+              <span style="text-align: left;">
+                <div>Exportar PNG (Imagen HD)</div>
+                <div style="font-size: 0.75rem; color: rgba(255,255,255,0.6); font-weight: 400;">Ideal para enviar por WhatsApp o guardar rápido</div>
+              </span>
+            </span>
+            <span style="color: var(--gold-primary);">➔</span>
+          </button>
+
+          <button onclick="exportHallMap('pdf')" style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 16px;
+            color: #ffffff;
+            font-size: 0.92rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+          " onmouseover="this.style.background='rgba(255, 255, 255, 0.12)'; this.style.borderColor='rgba(255, 255, 255, 0.4)';" onmouseout="this.style.background='rgba(255, 255, 255, 0.06)'; this.style.borderColor='rgba(255, 255, 255, 0.18)';">
+            <span style="display: flex; align-items: center; gap: 12px;">
+              <span style="font-size: 1.4rem;">📄</span>
+              <span style="text-align: left;">
+                <div>Exportar PDF Técnico Imprimible</div>
+                <div style="font-size: 0.75rem; color: rgba(255,255,255,0.6); font-weight: 400;">Documento técnico A4 con desglose de mesas e invitados</div>
+              </span>
+            </span>
+            <span style="color: var(--gold-primary);">➔</span>
+          </button>
+        </div>
+
+        <button onclick="closeExportMapModal()" style="
+          padding: 10px 24px;
+          background: transparent;
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          border-radius: 16px;
+          color: rgba(255, 255, 255, 0.7);
+          font-size: 0.85rem;
+          cursor: pointer;
+        ">Cancelar</button>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+  };
+
+  window.closeExportMapModal = function() {
+    const modal = document.getElementById('export-map-modal-overlay');
+    if (modal) modal.remove();
+  };
+
+  window.exportHallMap = async function(format = 'png') {
+    closeExportMapModal();
+    const board = document.getElementById('hall-canvas-board');
+    if (!board) {
+      showToast('❌ No se encontró el lienzo del salón para exportar', 'error');
+      return;
+    }
+
+    showToast('⌛ Generando exportación del plano...', 'info');
+
+    try {
+      const exportContainer = document.createElement('div');
+      exportContainer.style.cssText = `
+        position: fixed;
+        left: -9999px;
+        top: -9999px;
+        width: 1200px;
+        background: #0d0d14;
+        color: #ffffff;
+        padding: 35px;
+        font-family: 'Montserrat', sans-serif;
+        box-sizing: border-box;
+        border: 2px solid #d4af37;
+        border-radius: 20px;
+      `;
+
+      const eventTitleVal = document.getElementById('inv-title-input')?.value || 'Mi Gran Fiesta';
+      const totalTablesCount = (allTables || []).length;
+      const seatedCount = (allGuests || []).filter(g => g.table && String(g.table).toLowerCase() !== 'sin mesa').length;
+      const totalGuestsCount = (allGuests || []).length;
+
+      exportContainer.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid rgba(212,175,55,0.4); padding-bottom: 20px; margin-bottom: 25px;">
+          <div>
+            <h1 style="font-family: 'Cinzel', serif; color: #d4af37; font-size: 1.8rem; margin: 0 0 6px 0;">${escapeHtml(eventTitleVal)}</h1>
+            <p style="margin: 0; color: rgba(255,255,255,0.7); font-size: 0.9rem;">📍 Distribución Real y Organización de Salón</p>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-family: 'Cinzel', serif; font-size: 1.15rem; color: #d4af37; font-weight: 700;">miFiestAPP</div>
+            <div style="font-size: 0.78rem; color: rgba(255,255,255,0.5); margin-top: 4px;">Organización de Eventos</div>
+          </div>
+        </div>
+
+        <div id="export-board-clone" style="position: relative; width: 100%; height: ${board.offsetHeight}px; background: radial-gradient(circle, rgba(20, 22, 34, 0.95) 0%, rgba(10, 10, 16, 1) 100%); border-radius: 16px; border: 1px solid rgba(212,175,55,0.3); overflow: hidden;">
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 25px; background: rgba(255,255,255,0.04); padding: 18px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.08); text-align: center;">
+          <div>
+            <div style="font-size: 0.75rem; color: rgba(255,255,255,0.6); text-transform: uppercase;">Total de Mesas</div>
+            <div style="font-size: 1.4rem; font-weight: 700; color: #d4af37;">${totalTablesCount}</div>
+          </div>
+          <div>
+            <div style="font-size: 0.75rem; color: rgba(255,255,255,0.6); text-transform: uppercase;">Personas Ubicadas</div>
+            <div style="font-size: 1.4rem; font-weight: 700; color: #10b981;">${seatedCount}</div>
+          </div>
+          <div>
+            <div style="font-size: 0.75rem; color: rgba(255,255,255,0.6); text-transform: uppercase;">Total de Invitados</div>
+            <div style="font-size: 1.4rem; font-weight: 700; color: #ffffff;">${totalGuestsCount}</div>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(exportContainer);
+
+      const cloneTarget = exportContainer.querySelector('#export-board-clone');
+      cloneTarget.innerHTML = board.innerHTML;
+
+      cloneTarget.querySelectorAll('.canvas-item-rotate, .canvas-item-resize, .canvas-item-delete, #canvas-resize-bar').forEach(el => el.remove());
+
+      const canvas = await html2canvas(exportContainer, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#0d0d14',
+        logging: false
+      });
+
+      document.body.removeChild(exportContainer);
+
+      const fileNameClean = eventTitleVal.toLowerCase().replace(/[^a-z0-9]/gi, '_');
+
+      if (format === 'png') {
+        const image = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.href = image;
+        link.download = `plano_salon_${fileNameClean}.png`;
+        link.click();
+        showToast('✅ Mapa exportado en PNG HD con éxito', 'success');
+      } else if (format === 'pdf') {
+        const jsPDF = (window.jspdf && window.jspdf.jsPDF) ? window.jspdf.jsPDF : window.jsPDF;
+        if (!jsPDF) throw new Error('Librería jsPDF no disponible');
+
+        const pdf = new jsPDF('landscape', 'mm', 'a4');
+        const imgData = canvas.toDataURL('image/png');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+
+        if (allTables && allTables.length > 0) {
+          pdf.addPage('landscape', 'a4');
+          pdf.setFillColor(13, 13, 20);
+          pdf.rect(0, 0, 297, 210, 'F');
+
+          pdf.setTextColor(212, 175, 55);
+          pdf.setFontSize(16);
+          pdf.setFont('helvetica', 'bold');
+          pdf.text('DESGLOSE TÉCNICO DE MESAS E INVITADOS', 14, 20);
+
+          pdf.setFontSize(10);
+          pdf.setTextColor(200, 200, 200);
+          pdf.setFont('helvetica', 'normal');
+          pdf.text(`Evento: ${eventTitleVal} | Fecha de Emisión: ${new Date().toLocaleDateString('es-AR')}`, 14, 27);
+
+          let startY = 38;
+          pdf.setFillColor(26, 26, 36);
+          pdf.rect(14, startY, 269, 10, 'F');
+          pdf.setTextColor(212, 175, 55);
+          pdf.setFont('helvetica', 'bold');
+          pdf.text('#', 18, startY + 7);
+          pdf.text('Nombre de Mesa', 35, startY + 7);
+          pdf.text('Capacidad', 130, startY + 7);
+          pdf.text('Invitados Ubicados', 180, startY + 7);
+          pdf.text('Estado', 240, startY + 7);
+
+          startY += 12;
+          pdf.setFont('helvetica', 'normal');
+
+          allTables.forEach((t, idx) => {
+            if (startY > 185) {
+              pdf.addPage('landscape', 'a4');
+              pdf.setFillColor(13, 13, 20);
+              pdf.rect(0, 0, 297, 210, 'F');
+              startY = 20;
+            }
+
+            pdf.setFillColor(20, 20, 28);
+            pdf.rect(14, startY, 269, 8, 'F');
+
+            pdf.setTextColor(255, 255, 255);
+            pdf.text(String(idx + 1), 18, startY + 5.5);
+            pdf.text(formatTableDisplay(t.name), 35, startY + 5.5);
+            pdf.text(`${t.capacity || 10} pers.`, 130, startY + 5.5);
+            pdf.text(`${t.totalCount || 0} personas`, 180, startY + 5.5);
+
+            const isFull = (t.totalCount || 0) >= (t.capacity || 10);
+            pdf.setTextColor(isFull ? 239 : 16, isFull ? 68 : 185, isFull ? 68 : 129);
+            pdf.text(isFull ? 'COMPLETA' : 'DISPONIBLE', 240, startY + 5.5);
+
+            startY += 9;
+          });
+        }
+
+        pdf.save(`plano_tecnico_salon_${fileNameClean}.pdf`);
+        showToast('✅ Documento PDF Técnico exportado con éxito', 'success');
+      }
+    } catch (err) {
+      console.error('Error exporting map:', err);
+      showToast('❌ Error al generar la exportación del plano', 'error');
+    }
   };
 
   window.rotateItemOnCanvas = function(targetIdOrName, targetType, event) {
@@ -1224,6 +1669,7 @@ document.addEventListener('DOMContentLoaded', () => {
               window.removeEventListener('pointerup', onRotateUp);
               try { rotateBtn.releasePointerCapture(upEvt.pointerId); } catch(err){}
 
+              markUnsavedHallLayoutChanges(true);
               saveHallLayoutPositions(true);
             }
           };
@@ -1345,6 +1791,7 @@ document.addEventListener('DOMContentLoaded', () => {
               window.removeEventListener('pointermove', onScaleMove);
               window.removeEventListener('pointerup', onScaleUp);
               try { resizeBtn.releasePointerCapture(upEvt.pointerId); } catch(err){}
+              markUnsavedHallLayoutChanges(true);
               saveHallLayoutPositions(true);
             }
           };
@@ -1440,6 +1887,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (isDragging) {
             isDragging = false;
             item.classList.remove('dragging');
+            markUnsavedHallLayoutChanges(true);
             saveHallLayoutPositions(true);
           }
         };
@@ -1527,10 +1975,16 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="table-card-title-group">
               <span style="font-size: 1.2rem;">${isPresidencial ? '👑' : '🍽️'}</span>
               <h3 class="table-card-title">${escapeHtml(formatTableDisplay(t.name))}</h3>
+              <span style="font-size: 0.85rem; cursor: pointer; opacity: 0.7; transition: opacity 0.2s;" title="Renombrar mesa" onclick="renameTable('${escapeHtml(t.name)}', event)" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'">✏️</span>
             </div>
-            <span class="table-capacity-pill ${isFull ? 'full' : 'available'}">
-              ${count} / ${capacity} pers.
-            </span>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="table-capacity-pill ${isFull ? 'full' : 'available'}">
+                ${count} / ${capacity} pers.
+              </span>
+              <button onclick="deleteTable('${escapeHtml(t.name)}', event)" style="background: rgba(255, 77, 77, 0.12); color: #ff4d4d; border: 1px solid rgba(255, 77, 77, 0.3); width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; cursor: pointer; transition: all 0.2s;" title="Eliminar mesa" onmouseover="this.style.background='rgba(255, 77, 77, 0.3)'; this.style.borderColor='#ff4d4d';" onmouseout="this.style.background='rgba(255, 77, 77, 0.12)'; this.style.borderColor='rgba(255, 77, 77, 0.3)';">
+                🗑️
+              </button>
+            </div>
           </div>
 
           <div class="table-progress-bar">
@@ -1541,9 +1995,12 @@ document.addEventListener('DOMContentLoaded', () => {
             ${guestsTagsHtml || '<span style="color: var(--text-muted); font-size: 0.75rem; font-style: italic;">Sin invitados asignados aún</span>'}
           </div>
 
-          <div class="table-card-actions">
-            <button class="table-action-btn" onclick="openAssignGuestToTableModal('${escapeHtml(t.name)}')">
+          <div class="table-card-actions" style="display: flex; gap: 10px;">
+            <button class="table-action-btn" onclick="openAssignGuestToTableModal('${escapeHtml(t.name)}')" style="flex: 1;">
               ➕ Ubicar Invitado
+            </button>
+            <button class="table-action-btn" onclick="deleteTable('${escapeHtml(t.name)}', event)" style="background: rgba(255, 77, 77, 0.1); color: #ff4d4d; border: 1px solid rgba(255, 77, 77, 0.3); padding: 8px 14px; border-radius: 12px; font-size: 0.82rem;" title="Eliminar Mesa">
+              🗑️ Eliminar
             </button>
           </div>
         </div>
@@ -3791,7 +4248,9 @@ Tu presencia hará que esta celebración sea aún más significativa.
       
       const countComp = parseInt(rsvp.companionsCount, 10) || 0;
       let compNamesList = [];
-      if (Array.isArray(rsvp.companionsNames)) {
+      if (Array.isArray(rsvp.companionsDetails) && rsvp.companionsDetails.length > 0) {
+        compNamesList = rsvp.companionsDetails;
+      } else if (Array.isArray(rsvp.companionsNames)) {
         compNamesList = rsvp.companionsNames.filter(n => n && typeof n === 'string' && n.trim());
       } else if (typeof rsvp.companionsNames === 'string' && rsvp.companionsNames.trim()) {
         compNamesList = rsvp.companionsNames.split(',').map(n => n.trim()).filter(Boolean);
@@ -3800,12 +4259,25 @@ Tu presencia hará que esta celebración sea aún más significativa.
       let companionsText = `<span style="color: var(--text-muted);">-</span>`;
       if (countComp > 0) {
         if (compNamesList.length > 0) {
-          const subitems = compNamesList.map((cName, idx) => {
+          const subitems = compNamesList.map((item, idx) => {
             const connector = (idx === compNamesList.length - 1) ? '└─' : '├─';
+            let cName = typeof item === 'object' && item ? (item.name || '') : String(item || '');
+            let cDietary = typeof item === 'object' && item ? (item.dietary || '') : '';
+
+            if (!cDietary && cName.includes('(') && cName.endsWith(')')) {
+              const match = cName.match(/^(.*?)\((.*?)\)$/);
+              if (match) {
+                cName = match[1].trim();
+                cDietary = match[2].trim();
+              }
+            }
+
+            const dietBadge = cDietary ? ` <span style="font-size: 0.65rem; background: rgba(52, 211, 153, 0.15); border: 1px solid rgba(52, 211, 153, 0.4); color: #34d399; padding: 1px 6px; border-radius: 8px; font-weight: 600; margin-left: 4px;">🌱 ${escapeHtml(cDietary)}</span>` : '';
+
             return `
-              <div class="rsvp-companion-subitem" style="display: flex; align-items: center; gap: 6px; font-size: 0.76rem; color: #d4af37; margin-top: 4px; font-weight: 500;">
+              <div class="rsvp-companion-subitem" style="display: flex; align-items: center; gap: 4px; font-size: 0.76rem; color: #d4af37; margin-top: 4px; font-weight: 500; flex-wrap: wrap;">
                 <span style="opacity: 0.5; font-family: monospace; font-size: 0.85rem; color: var(--gold-primary);">${connector}</span>
-                <span>👤 ${cName}</span>
+                <span>👤 ${escapeHtml(cName)}</span>${dietBadge}
               </div>
             `;
           }).join('');

@@ -106,9 +106,10 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background-image: linear-gradient(rgba(212, 175, 55, 0.03) 1px, transparent 1px),
+  background-image: radial-gradient(rgba(212, 175, 55, 0.08) 1px, transparent 1px),
+                    linear-gradient(rgba(212, 175, 55, 0.03) 1px, transparent 1px),
                     linear-gradient(90deg, rgba(212, 175, 55, 0.03) 1px, transparent 1px);
-  background-size: 30px 30px;
+  background-size: 40px 40px, 20px 20px, 20px 20px;
   pointer-events: none;
 }
 
@@ -118,7 +119,7 @@
   top: 0;
   left: 0;
   transform-origin: 0 0;
-  transition: transform 0.05s linear;
+  transition: transform 0.08s ease-out;
 }
 
 /* SVG Elements Styling */
@@ -130,8 +131,8 @@
 
 /* Route Trail Animation */
 .hall-route-line-bg {
-  stroke: rgba(212, 175, 55, 0.2);
-  stroke-width: 6;
+  stroke: rgba(212, 175, 55, 0.25);
+  stroke-width: 7;
   stroke-linecap: round;
   stroke-linejoin: round;
   fill: none;
@@ -139,18 +140,18 @@
 
 .hall-route-line-animated {
   stroke: url(#gold-emerald-gradient);
-  stroke-width: 5;
+  stroke-width: 5.5;
   stroke-linecap: round;
   stroke-linejoin: round;
-  stroke-dasharray: 12, 8;
-  animation: marching-ants 1.2s linear infinite;
+  stroke-dasharray: 14, 8;
+  animation: marching-ants 1s linear infinite;
   fill: none;
-  filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.8));
+  filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.9));
 }
 
 @keyframes marching-ants {
   from {
-    stroke-dashoffset: 40;
+    stroke-dashoffset: 44;
   }
   to {
     stroke-dashoffset: 0;
@@ -160,22 +161,22 @@
 /* Radar Beacon Animation on Target Table */
 .radar-beacon {
   transform-origin: center;
-  animation: pulse-radar 2s ease-out infinite;
+  animation: pulse-radar 2.2s cubic-bezier(0.1, 0.8, 0.3, 1) infinite;
 }
 
 .radar-beacon-delayed {
   transform-origin: center;
-  animation: pulse-radar 2s ease-out 0.8s infinite;
+  animation: pulse-radar 2.2s cubic-bezier(0.1, 0.8, 0.3, 1) 0.9s infinite;
 }
 
 @keyframes pulse-radar {
   0% {
-    r: 25;
+    r: 28;
     opacity: 0.95;
-    stroke-width: 3;
+    stroke-width: 4;
   }
   100% {
-    r: 85;
+    r: 95;
     opacity: 0;
     stroke-width: 1;
   }
@@ -183,8 +184,8 @@
 
 /* Floating Badge ABOVE Assigned Table */
 .target-table-badge {
-  animation: float-badge 2s ease-in-out infinite alternate;
-  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.6));
+  animation: float-badge 1.8s ease-in-out infinite alternate;
+  filter: drop-shadow(0 6px 16px rgba(16, 185, 129, 0.6));
 }
 
 @keyframes float-badge {
@@ -192,18 +193,18 @@
     transform: translateY(0);
   }
   100% {
-    transform: translateY(-6px);
+    transform: translateY(-7px);
   }
 }
 
 /* Table Item Graphics */
 .map-table-group {
   cursor: pointer;
-  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .map-table-group:hover {
-  transform: scale(1.05);
+  transform: scale(1.12);
 }
 
 .map-table-circle {

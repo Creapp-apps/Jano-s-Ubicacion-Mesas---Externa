@@ -29,13 +29,29 @@ body {
 }
 
 @keyframes modalFadeIn {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
+  0% {
+    opacity: 0;
+    transform: translateY(24px) scale(0.94);
+    filter: blur(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
 }
 
 @keyframes modalFadeOut {
-  from { opacity: 1; transform: scale(1); }
-  to { opacity: 0; transform: scale(0.95); }
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.95);
+    filter: blur(4px);
+  }
 }
 
 /* Multi-guest selection modal styles */
@@ -2906,11 +2922,20 @@ input.input-highlight-pulse {
   border: 1px solid rgba(255, 255, 255, 0.08);
   color: rgba(255, 255, 255, 0.85);
   font-size: 0.74rem;
-  padding: 3px 8px;
-  border-radius: 8px;
+  padding: 4px 9px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   gap: 5px;
+  animation: tagSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.seated-guest-tag:hover {
+  background: rgba(212, 175, 55, 0.12);
+  border-color: rgba(212, 175, 55, 0.3);
+  color: #ffffff;
+  transform: translateY(-1px);
 }
 
 .seated-guest-tag .remove-btn {
@@ -2919,11 +2944,12 @@ input.input-highlight-pulse {
   font-size: 0.8rem;
   line-height: 1;
   opacity: 0.7;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
 .seated-guest-tag .remove-btn:hover {
   opacity: 1;
+  transform: scale(1.2);
 }
 
 /* Acciones en la Tarjeta */
@@ -3093,20 +3119,48 @@ input.input-highlight-pulse {
   text-transform: uppercase;
 }
 
-/* Elementos Arrastrables en el Canva */
+/* Elementos Arrastrables en el Canva con Micro-animaciones Fluidas */
+@keyframes popInSpring {
+  0% {
+    opacity: 0;
+    transform: scale(0.6) translateY(18px);
+  }
+  65% {
+    opacity: 1;
+    transform: scale(1.06) translateY(-3px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes tagSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateX(-10px) scale(0.92);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
 .canvas-item {
   position: absolute;
   cursor: grab;
   user-select: none;
   touch-action: none;
-  transition: box-shadow 0.2s ease;
+  transition: box-shadow 0.25s ease, border-color 0.25s ease;
   z-index: 10;
 }
 
 .canvas-item:active, .canvas-item.dragging, .canvas-item.rotating, .canvas-item.scaling {
   cursor: grabbing !important;
   transition: none !important;
+  animation: none !important;
   z-index: 100 !important;
+  box-shadow: 0 12px 35px rgba(212, 175, 55, 0.4), 0 0 25px rgba(212, 175, 55, 0.25) !important;
 }
 
 /* Estilo para Mesas Redondas */
@@ -3128,8 +3182,7 @@ input.input-highlight-pulse {
 
 .canvas-item-table:hover {
   border-color: var(--gold-primary);
-  box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
-  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(212, 175, 55, 0.5), 0 0 15px rgba(212, 175, 55, 0.3);
 }
 
 .canvas-item-title {
@@ -3198,7 +3251,7 @@ input.input-highlight-pulse {
 .canvas-item-landmark:hover {
   border-color: var(--gold-light);
   color: #fff;
-  transform: scale(1.04);
+  box-shadow: 0 6px 20px rgba(212, 175, 55, 0.35);
 }
 
 .canvas-item-remove {

@@ -600,9 +600,10 @@ async function getConfigValue(eventId = 'default', key, defaultValue = '') {
         .select('value')
         .eq('event_id', eventId)
         .eq('key', key)
-        .single();
-      if (error || !data) return defaultValue;
-      return data.value;
+        .order('updated_at', { ascending: false })
+        .limit(1);
+      if (error || !data || data.length === 0) return defaultValue;
+      return data[0].value;
     } catch (e) {
       return defaultValue;
     }
@@ -658,18 +659,18 @@ async function setConfigValue(eventId = 'default', key, value) {
       .from('config')
       .select('id')
       .eq('event_id', eventId)
-      .eq('key', key)
-      .maybeSingle();
+      .eq('key', key);
 
     let error;
-    if (existing) {
+    if (existing && existing.length > 0) {
       const res = await supabase
         .from('config')
         .update({
           value: value,
           updated_at: new Date().toISOString()
         })
-        .eq('id', existing.id);
+        .eq('event_id', eventId)
+        .eq('key', key);
       error = res.error;
     } else {
       const res = await supabase
@@ -1705,6 +1706,8 @@ async function addRsvp(eventId = 'default', rsvpData) {
     companionsNamesStr = rsvpData.companionsNames.trim();
   }
 
+  const companionsDetails = Array.isArray(rsvpData.companionsDetails) ? rsvpData.companionsDetails : [];
+
   const cleanPhone = (rsvpData.phone || '').replace(/[^0-9]/g, '');
   const rsvp = {
     name: (rsvpData.name || '').trim(),
@@ -1713,6 +1716,7 @@ async function addRsvp(eventId = 'default', rsvpData) {
     attending: !!rsvpData.attending,
     companionsCount: parseInt(rsvpData.companionsCount, 10) || 0,
     companionsNames: companionsNamesStr,
+    companionsDetails: companionsDetails,
     dietaryRestrictions: (rsvpData.dietaryRestrictions || '').trim(),
     suggestedSong: (rsvpData.suggestedSong || '').trim(),
     createdAt: new Date().toISOString()

@@ -533,6 +533,62 @@ app.post('/api/admin/rename-table', requireAuth, async (req, res) => {
   }
 });
 
+// API: Delete individual table
+app.post('/api/admin/delete-table', requireAuth, async (req, res) => {
+  try {
+    const eventId = req.query.event || (req.body && req.body.event) || 'default';
+    const { tableName } = req.body;
+    if (!tableName || !tableName.trim()) {
+      return res.status(400).json({ error: 'Nombre de mesa es requerido' });
+    }
+
+    const targetTable = tableName.trim();
+
+    // 1. Remove from custom_tables in config
+    const customTablesRaw = await db.getConfigValue(eventId, 'custom_tables', '[]');
+    let customTables = [];
+    try { customTables = JSON.parse(customTablesRaw); } catch(e){}
+    customTables = customTables.filter(t => t.name.trim().toLowerCase() !== targetTable.toLowerCase());
+    await db.setConfigValue(eventId, 'custom_tables', JSON.stringify(customTables));
+
+    // 2. Remove position from custom_hall_layout in config
+    const layoutRaw = await db.getConfigValue(eventId, 'custom_hall_layout', '{}');
+    let layout = {};
+    try { layout = JSON.parse(layoutRaw); } catch(e){}
+    if (layout.tablePositions) {
+      const targetClean = targetTable.toLowerCase().replace(/^mesa\s*/i, '');
+      Object.keys(layout.tablePositions).forEach(key => {
+        const kClean = key.trim().toLowerCase().replace(/^mesa\s*/i, '');
+        if (kClean === targetClean || key.trim().toLowerCase() === targetTable.toLowerCase()) {
+          delete layout.tablePositions[key];
+        }
+      });
+      await db.setConfigValue(eventId, 'custom_hall_layout', JSON.stringify(layout));
+    }
+
+    // 3. Unassign guests from this table
+    const guests = await db.getGuests(eventId);
+    let unassignedCount = 0;
+    for (let i = 0; i < guests.length; i++) {
+      const g = guests[i];
+      if (g.table && g.table.trim().toLowerCase() === targetTable.toLowerCase()) {
+        const targetId = g.id !== undefined ? g.id : i;
+        await db.updateGuest(eventId, targetId, { ...g, table: 'Sin Mesa' });
+        unassignedCount++;
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Mesa "${targetTable}" eliminada correctamente`,
+      unassignedGuests: unassignedCount
+    });
+  } catch (error) {
+    console.error('Error deleting table:', error);
+    res.status(500).json({ error: 'Error al eliminar la mesa' });
+  }
+});
+
 // API: Get Hall Layout Positions & Landmarks
 app.get('/api/admin/hall-layout', requireAuth, async (req, res) => {
   try {
@@ -562,6 +618,43 @@ app.post('/api/admin/hall-layout', requireAuth, async (req, res) => {
   } catch (error) {
     console.error('Error saving hall layout:', error);
     res.status(500).json({ error: 'Error al guardar distribución del salón' });
+  }
+});
+
+// API: Reset Hall Layout & Clear Tables
+app.post('/api/admin/tables/reset', requireAuth, async (req, res) => {
+  try {
+    const eventId = req.query.event || (req.body && req.body.event) || 'default';
+
+    // 1. Reset custom_tables in config to empty array
+    await db.setConfigValue(eventId, 'custom_tables', JSON.stringify([]));
+
+    // 2. Unassign table for all guests of this event
+    const guests = await db.getGuests(eventId);
+    for (let i = 0; i < guests.length; i++) {
+      const g = guests[i];
+      if (g.table && String(g.table).toLowerCase() !== 'sin mesa') {
+        const targetId = g.id !== undefined ? g.id : i;
+        await db.updateGuest(eventId, targetId, { ...g, table: 'Sin Mesa' });
+      }
+    }
+
+    // 3. Save completely cleared reset layout (no placed items, no table positions)
+    const resetLayout = {
+      items: [],
+      tablePositions: {},
+      boardHeight: 540
+    };
+    await db.setConfigValue(eventId, 'custom_hall_layout', JSON.stringify(resetLayout));
+
+    res.json({
+      success: true,
+      message: 'Plano del salón restablecido correctamente',
+      layout: resetLayout
+    });
+  } catch (error) {
+    console.error('Error resetting hall layout:', error);
+    res.status(500).json({ error: 'Error al restablecer el plano del salón' });
   }
 });
 
@@ -1067,7 +1160,7 @@ app.post('/api/public/rsvp', async (req, res) => {
     console.error('Error validating event for RSVP:', err);
   }
 
-  const { name, attending, companionsCount, companionsNames, dietaryRestrictions, suggestedSong } = req.body;
+  const { name, attending, companionsCount, companionsNames, companionsDetails, dietaryRestrictions, suggestedSong } = req.body;
   if (!name || name.trim() === '') {
     return res.status(400).json({ error: 'El nombre es obligatorio' });
   }
@@ -1078,6 +1171,7 @@ app.post('/api/public/rsvp', async (req, res) => {
       attending,
       companionsCount,
       companionsNames,
+      companionsDetails,
       dietaryRestrictions,
       suggestedSong
     });
