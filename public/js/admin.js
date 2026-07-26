@@ -513,6 +513,7 @@ document.addEventListener('DOMContentLoaded', () => {
       loadTriviaConfig();
       startTriviaPolling();
     } else if (tabId === 'capitanes') {
+      const tabMusic = document.getElementById('tab-music');
       if (tabBtnMesas) tabBtnMesas.classList.remove('active');
       if (tabBtnFotos) tabBtnFotos.classList.remove('active');
       if (tabBtnInvitacion) tabBtnInvitacion.classList.remove('active');
@@ -523,12 +524,25 @@ document.addEventListener('DOMContentLoaded', () => {
       if (tabInvitacion) tabInvitacion.classList.remove('active');
       if (tabTrivia) tabTrivia.classList.remove('active');
       if (tabCapitanes) tabCapitanes.classList.add('active');
+      if (tabMusic) tabMusic.classList.remove('active');
       stopPhotoPolling();
       stopTriviaPolling();
       loadCapitanesConfig();
       startCapitanesPolling();
       loadStats();
       loadGuests();
+    } else if (tabId === 'music' || tabId === 'dj') {
+      const tabMusic = document.getElementById('tab-music');
+      if (tabMesas) tabMesas.classList.remove('active');
+      if (tabFotos) tabFotos.classList.remove('active');
+      if (tabInvitacion) tabInvitacion.classList.remove('active');
+      if (tabTrivia) tabTrivia.classList.remove('active');
+      if (tabCapitanes) tabCapitanes.classList.remove('active');
+      if (tabMusic) tabMusic.classList.add('active');
+      stopPhotoPolling();
+      stopTriviaPolling();
+      stopCapitanesPolling();
+      loadAdminMusicConfig();
     }
   }
 
@@ -3118,6 +3132,8 @@ document.addEventListener('DOMContentLoaded', () => {
     switchTab('trivia');
   } else if (activeService === 'capitanes') {
     switchTab('capitanes');
+  } else if (activeService === 'music' || activeService === 'dj') {
+    switchTab('music');
   } else {
     switchTab('mesas');
     if (activeSubtab) {
@@ -3654,11 +3670,13 @@ document.addEventListener('DOMContentLoaded', () => {
           const isInvitation = (activeService === 'invitacion' || activeService === 'invitation');
           const isTrivia = (activeService === 'trivia');
           const isCapitanes = (activeService === 'capitanes');
+          const isMusic = (activeService === 'music' || activeService === 'dj');
           let serviceName = 'Control de Mesas';
           if (isPhotos) serviceName = 'Control de Fotos';
           if (isInvitation) serviceName = 'Invitación & RSVPs';
           if (isTrivia) serviceName = 'Control de Trivia';
           if (isCapitanes) serviceName = 'Capitanes de Mesa';
+          if (isMusic) serviceName = 'Control DJ & Batalla Musical';
           
           if (headerTitle) {
             headerTitle.textContent = `${serviceName} • ${data.clientName}`;
@@ -3668,6 +3686,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (isInvitation) pageTitle = 'Invitación & RSVPs';
           if (isTrivia) pageTitle = 'Control de Trivia';
           if (isCapitanes) pageTitle = 'Capitanes de Mesa';
+          if (isMusic) pageTitle = 'Control DJ & Batalla Musical';
           document.title = `${pageTitle} | ${data.clientName}`;
         }
       })
@@ -9169,4 +9188,266 @@ Tu presencia hará que esta celebración sea aún más significativa.
     document.body.classList.remove('print-mode-single', 'print-mode-multi-tables');
   });
 });
+
+/* ==========================================================================
+   MUSIC BATTLE & DJ CONTROL ADMIN LOGIC (Top Level Scope)
+   ========================================================================== */
+window.loadAdminMusicConfig = async function() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const activeEventId = urlParams.get('event') || 'default';
+
+  try {
+    const res = await fetch(`/api/tanda/state?event=${encodeURIComponent(activeEventId)}`);
+    const data = await res.json();
+    if (!data) return;
+
+    // Update mode button styles
+    const btnSongs = document.getElementById('btn-mode-songs');
+    const btnGenres = document.getElementById('btn-mode-genres');
+    if (btnSongs && btnGenres) {
+      if (data.mode === 'genres') {
+        btnGenres.style.background = 'rgba(212,175,55,0.15)';
+        btnGenres.style.borderColor = 'var(--gold-primary)';
+        btnGenres.style.color = '#fff';
+
+        btnSongs.style.background = 'rgba(255,255,255,0.04)';
+        btnSongs.style.borderColor = 'rgba(255,255,255,0.1)';
+        btnSongs.style.color = 'rgba(255,255,255,0.6)';
+      } else {
+        btnSongs.style.background = 'rgba(212,175,55,0.15)';
+        btnSongs.style.borderColor = 'var(--gold-primary)';
+        btnSongs.style.color = '#fff';
+
+        btnGenres.style.background = 'rgba(255,255,255,0.04)';
+        btnGenres.style.borderColor = 'rgba(255,255,255,0.1)';
+        btnGenres.style.color = 'rgba(255,255,255,0.6)';
+      }
+    }
+
+    // Update direct links with eventId
+    const mobileLink = document.getElementById('btn-admin-link-mobile');
+    const screenLink = document.getElementById('btn-admin-link-screen');
+    if (mobileLink) mobileLink.href = `/pedir-cancion.html?event=${encodeURIComponent(activeEventId)}`;
+    if (screenLink) screenLink.href = `/tanda-battle-screen.html?event=${encodeURIComponent(activeEventId)}`;
+
+    // Render Genres Config List
+    const container = document.getElementById('admin-genres-list-container');
+    if (container && data.genres) {
+      if (data.genres.length === 0) {
+        container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 20px;">No hay géneros cargados.</div>';
+        return;
+      }
+
+      container.innerHTML = data.genres.map(g => {
+        const isActive = (g.active !== false);
+        return `
+          <div style="display: flex; align-items: center; justify-content: space-between; background: ${isActive ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.02)'}; border: 1px ${isActive ? 'solid var(--card-border)' : 'dashed rgba(255,255,255,0.12)'}; padding: 14px 18px; border-radius: 16px; opacity: ${isActive ? '1' : '0.6'}; transition: all 0.3s ease;">
+            <div style="display: flex; align-items: center; gap: 14px;">
+              <span style="font-size: 1.5rem; background: ${isActive ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.3)'}; padding: 6px 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); filter: ${isActive ? 'none' : 'grayscale(100%)'};">${g.icon}</span>
+              <div>
+                <div style="font-weight: 700; color: ${isActive ? '#fff' : 'rgba(255,255,255,0.5)'}; font-size: 0.95rem; margin-bottom: 2px;">${g.name}</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">${g.votesCount || 0} votos registrados ${isActive ? '• <span style="color: #2ecc71; font-weight:600;">🟢 ACTIVO / EN VIVO</span>' : '• <span style="color: #95a5a6; font-weight:600;">⚪ APAGADO</span>'}</div>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <label class="custom-switch-toggle" title="${isActive ? 'Apagar género (Ocultar en votación)' : 'Encender género (Mostrar en votación)'}">
+                <input type="checkbox" role="switch" aria-checked="${isActive}" ${isActive ? 'checked' : ''} onchange="toggleAdminGenre('${g.id}', this.checked)">
+                <span class="custom-switch-track">
+                  <span class="custom-switch-thumb"></span>
+                </span>
+              </label>
+              <button type="button" onclick="editAdminGenre('${g.id}', '${g.name.replace(/'/g, "\\'")}', '${g.icon}')" class="btn" style="width: 36px; height: 36px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 12px; background: rgba(212,175,55,0.12); border: 1px solid rgba(212,175,55,0.4); color: var(--gold-light); cursor: pointer; transition: all 0.2s;" title="Editar género">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+              </button>
+              <button type="button" onclick="deleteAdminGenre('${g.id}', '${g.name.replace(/'/g, "\\'")}')" class="btn" style="width: 36px; height: 36px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 12px; background: rgba(231,76,60,0.12); border: 1px solid rgba(231,76,60,0.4); color: #ff6b6b; cursor: pointer; transition: all 0.2s;" title="Eliminar género de la lista">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  } catch (err) {
+    console.error('Error loading admin music config:', err);
+  }
+};
+
+window.setAdminBattleMode = async function(mode) {
+  const urlParams = new URLSearchParams(window.location.search);
+  const activeEventId = urlParams.get('event') || 'default';
+  try {
+    const res = await fetch('/api/tanda/mode', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ eventId: activeEventId, mode })
+    });
+    const data = await res.json();
+    if (data.success) {
+      window.loadAdminMusicConfig();
+    }
+  } catch (err) {
+    alert('Error al cambiar modo de batalla');
+  }
+};
+
+window.setAdminTandaStatus = async function(status) {
+  const urlParams = new URLSearchParams(window.location.search);
+  const activeEventId = urlParams.get('event') || 'default';
+  try {
+    const res = await fetch('/api/tanda/control', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ eventId: activeEventId, status, durationMinutes: 15 })
+    });
+    const data = await res.json();
+    if (data.success) {
+      alert(status === 'voting' ? '▶️ ¡Votación Iniciada por 15 minutos!' : '⏹️ Votación Cerrada.');
+      window.loadAdminMusicConfig();
+    }
+  } catch (err) {
+    alert('Error al cambiar estado de tanda');
+  }
+};
+
+window.toggleAdminGenre = async function(genreId, active) {
+  const urlParams = new URLSearchParams(window.location.search);
+  const activeEventId = urlParams.get('event') || 'default';
+  try {
+    const res = await fetch('/api/tanda/genre', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ eventId: activeEventId, genreId, active })
+    });
+    const data = await res.json();
+    if (data.success) {
+      window.loadAdminMusicConfig();
+    }
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+window.selectNewGenreEmoji = function(emoji) {
+  const input = document.getElementById('admin-new-genre-icon');
+  if (input) input.value = emoji;
+};
+
+window.selectEditGenreEmoji = function(emoji) {
+  const input = document.getElementById('edit-genre-icon-input');
+  if (input) input.value = emoji;
+};
+
+window.editAdminGenre = function(genreId, currentName, currentIcon) {
+  const modal = document.getElementById('edit-genre-modal');
+  const idInput = document.getElementById('edit-genre-id');
+  const nameInput = document.getElementById('edit-genre-name-input');
+  const iconInput = document.getElementById('edit-genre-icon-input');
+
+  if (idInput) idInput.value = genreId;
+  if (nameInput) nameInput.value = currentName;
+  if (iconInput) iconInput.value = currentIcon || '🎵';
+
+  if (modal) {
+    modal.style.display = 'flex';
+  }
+};
+
+window.closeEditGenreModal = function() {
+  const modal = document.getElementById('edit-genre-modal');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+};
+
+window.submitEditGenreForm = async function() {
+  const genreId = document.getElementById('edit-genre-id')?.value;
+  const name = document.getElementById('edit-genre-name-input')?.value?.trim();
+  const icon = document.getElementById('edit-genre-icon-input')?.value?.trim() || '🎵';
+
+  if (!genreId || !name) {
+    alert('Por favor ingresá un nombre válido para el género.');
+    return;
+  }
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const activeEventId = urlParams.get('event') || 'default';
+
+  try {
+    const res = await fetch('/api/tanda/genre', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        eventId: activeEventId,
+        action: 'edit',
+        genreId,
+        name,
+        icon
+      })
+    });
+    const data = await res.json();
+    if (data.success) {
+      window.closeEditGenreModal();
+      window.loadAdminMusicConfig();
+    }
+  } catch (err) {
+    alert('Error al editar género');
+  }
+};
+
+window.deleteAdminGenre = async function(genreId, genreName) {
+  if (!confirm(`¿Estás seguro de eliminar el género "${genreName}" de este evento?`)) {
+    return;
+  }
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const activeEventId = urlParams.get('event') || 'default';
+
+  try {
+    const res = await fetch('/api/tanda/genre', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        eventId: activeEventId,
+        action: 'delete',
+        genreId
+      })
+    });
+    const data = await res.json();
+    if (data.success) {
+      window.loadAdminMusicConfig();
+    }
+  } catch (err) {
+    alert('Error al eliminar género');
+  }
+};
+
+window.addAdminCustomGenre = async function() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const activeEventId = urlParams.get('event') || 'default';
+  const iconInput = document.getElementById('admin-new-genre-icon');
+  const nameInput = document.getElementById('admin-new-genre-name');
+  const icon = iconInput ? iconInput.value.trim() : '🎵';
+  const name = nameInput ? nameInput.value.trim() : '';
+
+  if (!name) {
+    alert('Por favor ingresá el nombre del género musical.');
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/tanda/genre', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ eventId: activeEventId, name, icon: icon || '🎵' })
+    });
+    const data = await res.json();
+    if (data.success) {
+      if (iconInput) iconInput.value = '';
+      if (nameInput) nameInput.value = '';
+      window.loadAdminMusicConfig();
+    }
+  } catch (err) {
+    alert('Error al agregar género');
+  }
+};
 

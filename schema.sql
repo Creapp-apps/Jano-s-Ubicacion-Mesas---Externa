@@ -121,4 +121,52 @@ ALTER TABLE public.events ADD COLUMN IF NOT EXISTS demo_expires_at TIMESTAMP WIT
 CREATE INDEX IF NOT EXISTS idx_events_vendor_id ON public.events(vendor_id);
 CREATE INDEX IF NOT EXISTS idx_events_approval_status ON public.events(approval_status);
 
+-- 10. Batalla Musical & Control DJ Schema
+ALTER TABLE public.events ADD COLUMN IF NOT EXISTS service_music BOOLEAN DEFAULT TRUE NOT NULL;
+
+CREATE TABLE IF NOT EXISTS public.tanda_battles (
+    event_id TEXT PRIMARY KEY REFERENCES public.events(id) ON DELETE CASCADE,
+    mode TEXT DEFAULT 'songs' NOT NULL,
+    status TEXT DEFAULT 'voting' NOT NULL,
+    title TEXT DEFAULT 'Tanda Participativa',
+    category TEXT DEFAULT 'Cumbia & Reggaeton',
+    timer_ends_at BIGINT,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.tanda_genres (
+    id TEXT NOT NULL,
+    event_id TEXT NOT NULL REFERENCES public.events(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    icon TEXT DEFAULT '🎵',
+    active BOOLEAN DEFAULT TRUE NOT NULL,
+    votes_count INT DEFAULT 0 NOT NULL,
+    voters JSONB DEFAULT '{}'::jsonb NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    PRIMARY KEY (event_id, id)
+);
+
+CREATE TABLE IF NOT EXISTS public.tanda_nominations (
+    track_id TEXT NOT NULL,
+    event_id TEXT NOT NULL REFERENCES public.events(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    artist TEXT NOT NULL,
+    album_cover TEXT,
+    preview_url TEXT,
+    upvotes INT DEFAULT 1 NOT NULL,
+    downvotes INT DEFAULT 0 NOT NULL,
+    nominations_count INT DEFAULT 1 NOT NULL,
+    nominated_by TEXT DEFAULT 'Invitado',
+    voters JSONB DEFAULT '{}'::jsonb NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    PRIMARY KEY (event_id, track_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_tanda_genres_event_id ON public.tanda_genres(event_id);
+CREATE INDEX IF NOT EXISTS idx_tanda_nominations_event_id ON public.tanda_nominations(event_id);
+
+ALTER TABLE public.tanda_battles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.tanda_genres ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.tanda_nominations ENABLE ROW LEVEL SECURITY;
+
 

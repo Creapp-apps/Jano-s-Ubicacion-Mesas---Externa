@@ -146,6 +146,14 @@
       gap: 25px;
       width: 100%;
       max-width: 1100px;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 0.4s cubic-bezier(0.165, 0.84, 0.44, 1), transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+    }
+
+    .grid-container.config-loaded {
+      opacity: 1;
+      transform: translateY(0);
     }
 
     @media (max-width: 1120px) and (min-width: 851px) {
@@ -1151,6 +1159,22 @@
           <a id="btn-service-capitanes-personalize" href="/admin" class="service-btn secondary-btn" style="text-decoration: none; text-align: center; display: block; margin-top: 0;">Configurar</a>
         </div>
       </div>
+
+      <!-- Service 6: Batalla Musical -->
+      <div class="service-card" id="card-service-music" style="cursor: default;">
+        <div class="icon-wrapper">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12 0c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
+          </svg>
+        </div>
+        <h2 class="service-title">Batalla Musical</h2>
+        <p class="service-desc">Votá canciones canónicas y los 3 géneros de la tanda para dominar la pista de baile.</p>
+        <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; z-index: 5; position: relative;">
+          <a id="btn-service-music-play" href="/pedir-cancion.html" class="service-btn" style="text-decoration: none; text-align: center; display: block;">Pedir Canción / Votar</a>
+          <a id="btn-service-music-screen" href="/tanda-battle-screen.html" class="service-btn secondary-btn" style="text-decoration: none; text-align: center; display: block; margin-top: 0;">Pantalla Gigante</a>
+          <a id="btn-service-music-personalize" href="/admin" class="service-btn secondary-btn" style="text-decoration: none; text-align: center; display: block; margin-top: 0;">Configurar DJ</a>
+        </div>
+      </div>
     </div>
   </main>
  
@@ -1237,6 +1261,23 @@
       const cardParams = new URLSearchParams(window.location.search);
       cardParams.set('service', 'capitanes');
       configCapitanesLink.setAttribute('href', `/admin?${cardParams.toString()}`);
+    }
+
+    const playMusicLink = document.getElementById('btn-service-music-play');
+    if (playMusicLink) {
+      const cardParams = new URLSearchParams(window.location.search);
+      playMusicLink.setAttribute('href', `/pedir-cancion.html?${cardParams.toString()}`);
+    }
+    const screenMusicLink = document.getElementById('btn-service-music-screen');
+    if (screenMusicLink) {
+      const cardParams = new URLSearchParams(window.location.search);
+      screenMusicLink.setAttribute('href', `/tanda-battle-screen.html?${cardParams.toString()}`);
+    }
+    const configMusicLink = document.getElementById('btn-service-music-personalize');
+    if (configMusicLink) {
+      const cardParams = new URLSearchParams(window.location.search);
+      cardParams.set('service', 'music');
+      configMusicLink.setAttribute('href', `/admin?${cardParams.toString()}`);
     }
 
     function getGreeting(name) {
@@ -1329,6 +1370,12 @@
         const floatingSupportBtn = document.getElementById('floating-whatsapp-support');
         if (floatingSupportBtn) floatingSupportBtn.href = whatsappUrl;
 
+        // Function to smoothly reveal the grid once states are locked/unlocked
+        const revealGrid = () => {
+          const grid = document.querySelector('.grid-container');
+          if (grid) grid.classList.add('config-loaded');
+        };
+
         // Dynamic service locking based on tenant config
         if (data) {
           if (data.serviceTables === false) {
@@ -1344,11 +1391,23 @@
             lockServiceCard('card-service-trivia');
             lockServiceCard('card-service-capitanes');
           }
+          if (data.serviceMusic === false) {
+            lockServiceCard('card-service-music');
+          }
         }
+        revealGrid();
       })
       .catch(() => {
         document.getElementById('event-title').textContent = "Mi Fiesta";
+        const grid = document.querySelector('.grid-container');
+        if (grid) grid.classList.add('config-loaded');
       });
+
+    // Safety fallback: reveal grid even if network is delayed
+    setTimeout(() => {
+      const grid = document.querySelector('.grid-container');
+      if (grid) grid.classList.add('config-loaded');
+    }, 1000);
 
     // Elegant Mouse Hover Effect for Radial Glow Background on Cards
     const cards = document.querySelectorAll('.service-card:not(.disabled)');

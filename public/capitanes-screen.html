@@ -630,14 +630,18 @@
     <div class="countdown-number" id="countdown-num">10</div>
   </div>
 
+  <script src="/js/qr-smart-router.js"></script>
   <script>
     // Extract parameters
     const urlParams = new URLSearchParams(window.location.search);
     const eventId = urlParams.get('event') || 'default';
 
-    // Set QR code link
-    const joinUrl = `${window.location.origin}/capitanes-client.html?event=${encodeURIComponent(eventId)}`;
-    document.getElementById('display-qr-img').src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(joinUrl)}`;
+    // Set Smart QR code link (resolves LAN IP in local dev for seamless iPhone testing)
+    async function initSmartQR() {
+      const qrUrl = await window.generateSmartQRUrl(`/capitanes-client.html?event=${encodeURIComponent(eventId)}`, { size: '300x300' });
+      document.getElementById('display-qr-img').src = qrUrl;
+    }
+    initSmartQR();
 
     // Elements
     const viewLobby = document.getElementById('view-lobby');

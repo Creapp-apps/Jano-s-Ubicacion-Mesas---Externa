@@ -11,6 +11,7 @@ const { sendWelcomeEmail } = require('./utils/email');
 const { exec } = require('child_process');
 const { triviaCoordinator } = require('./utils/trivia');
 const { capitanesCoordinator } = require('./utils/capitanes');
+const tandaBattle = require('./utils/tanda-battle');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -3727,6 +3728,124 @@ app.use((err, req, res, next) => {
     success: false,
     error: err.message || 'Ha ocurrido un error en el servidor.'
   });
+});
+
+// ============================================================================
+// LA BATALLA DEL PLAYLIST / PEDÍ TU CANCIÓN API ENDPOINTS
+// ============================================================================
+
+// Search canonical music (iTunes Search API default)
+app.get('/api/music/search', async (req, res) => {
+  try {
+    const query = req.query.q || '';
+    const tracks = await tandaBattle.searchCanonicalMusic(query);
+    res.json(tracks);
+  } catch (err) {
+    res.status(500).json({ error: 'Error al buscar canciones' });
+  }
+});
+
+// Get active tanda battle state for event
+app.get('/api/tanda/state', (req, res) => {
+  try {
+    const eventId = req.query.event || 'default';
+    const state = tandaBattle.getTandaState(eventId);
+    res.json(state);
+  } catch (err) {
+    res.status(500).json({ error: 'Error al obtener estado de la tanda' });
+  }
+});
+
+// Nominate / add track to tanda ranking
+app.post('/api/tanda/nominate', express.json(), (req, res) => {
+  try {
+    const { eventId, track, guestName, voterId } = req.body;
+    if (!track || !track.trackId) {
+      return res.status(400).json({ error: 'Canción canónica requerida' });
+    }
+    const result = tandaBattle.nominateTrack(eventId || 'default', track, guestName || 'Invitado', voterId || req.ip);
+    res.json({ success: true, alreadyVoted: result.alreadyVoted, optionName: result.optionName, state: result.state });
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Error al postular canción' });
+  }
+});
+
+// Cast vote (up / down) on nominated track
+app.post('/api/tanda/vote', express.json(), (req, res) => {
+  try {
+    const { eventId, trackId, voteType, voterId } = req.body;
+    if (!trackId || !['up', 'down'].includes(voteType)) {
+      return res.status(400).json({ error: 'Parámetros de voto inválidos' });
+    }
+    const result = tandaBattle.voteTrack(eventId || 'default', trackId, voteType, voterId || req.ip);
+    res.json({ success: true, alreadyVoted: result.alreadyVoted, optionName: result.optionName, state: result.state });
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Error al votar canción' });
+  }
+});
+
+// DJ Control to change battle status
+app.post('/api/tanda/control', express.json(), (req, res) => {
+  try {
+    const { eventId, status, durationMinutes } = req.body;
+    if (!['idle', 'nominating', 'voting', 'closed'].includes(status)) {
+      return res.status(400).json({ error: 'Estado de tanda inválido' });
+    }
+    const updatedState = tandaBattle.setTandaStatus(eventId || 'default', status, durationMinutes || 15);
+    res.json({ success: true, state: updatedState });
+  } catch (err) {
+    res.status(500).json({ error: 'Error al actualizar control de tanda' });
+  }
+});
+
+// Cast vote on a musical genre
+app.post('/api/tanda/vote-genre', express.json(), (req, res) => {
+  try {
+    const { eventId, genreId, voterId } = req.body;
+    if (!genreId) {
+      return res.status(400).json({ error: 'Género musical requerido' });
+    }
+    const result = tandaBattle.voteGenre(eventId || 'default', genreId, voterId || req.ip);
+    res.json({ success: true, alreadyVoted: result.alreadyVoted, optionName: result.optionName, state: result.state });
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Error al votar género musical' });
+  }
+});
+
+// Add, edit, delete, or toggle custom genre (Admin control)
+app.post('/api/tanda/genre', express.json(), (req, res) => {
+  try {
+    const { eventId, action, name, icon, genreId, active } = req.body;
+    let updatedState;
+    if (action === 'edit' || (genreId && name && active === undefined)) {
+      updatedState = tandaBattle.editCustomGenre(eventId || 'default', genreId, name, icon);
+    } else if (action === 'delete') {
+      updatedState = tandaBattle.deleteCustomGenre(eventId || 'default', genreId);
+    } else if (genreId !== undefined && active !== undefined) {
+      updatedState = tandaBattle.toggleGenreActive(eventId || 'default', genreId, active);
+    } else if (name) {
+      updatedState = tandaBattle.addCustomGenre(eventId || 'default', name, icon || '🎵');
+    } else {
+      return res.status(400).json({ error: 'Parámetros de género inválidos' });
+    }
+    res.json({ success: true, state: updatedState });
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Error al gestionar género' });
+  }
+});
+
+// Set battle mode ('songs' | 'genres') (Admin control)
+app.post('/api/tanda/mode', express.json(), (req, res) => {
+  try {
+    const { eventId, mode } = req.body;
+    if (!['songs', 'genres'].includes(mode)) {
+      return res.status(400).json({ error: 'Modo de batalla inválido' });
+    }
+    const updatedState = tandaBattle.setBattleMode(eventId || 'default', mode);
+    res.json({ success: true, state: updatedState });
+  } catch (err) {
+    res.status(500).json({ error: 'Error al cambiar modo de batalla' });
+  }
 });
 
 // Handle 404

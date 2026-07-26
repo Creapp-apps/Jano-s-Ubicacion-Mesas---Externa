@@ -1116,7 +1116,8 @@ async function getEvent(eventId) {
       serviceTables: data.service_tables !== false,
       servicePhotos: data.service_photos !== false,
       serviceInvitation: data.service_invitation !== false,
-      serviceTrivia: data.service_trivia !== false
+      serviceTrivia: data.service_trivia !== false,
+      serviceMusic: data.service_music !== false
     };
   } else {
     const events = getLocalEvents();
@@ -1134,7 +1135,8 @@ async function getEvent(eventId) {
       serviceTables: e.serviceTables !== false,
       servicePhotos: e.servicePhotos !== false,
       serviceInvitation: e.serviceInvitation !== false,
-      serviceTrivia: e.serviceTrivia !== false
+      serviceTrivia: e.serviceTrivia !== false,
+      serviceMusic: e.serviceMusic !== false
     };
   }
 }
@@ -1190,6 +1192,7 @@ async function getEvents() {
       servicePhotos: e.service_photos !== false,
       serviceInvitation: e.service_invitation !== false,
       serviceTrivia: e.service_trivia !== false,
+      serviceMusic: e.service_music !== false,
       vendorId: e.vendor_id || e.vendorId || vendorIdMap[e.id] || null,
       approvalStatus: e.approval_status || e.approvalStatus || approvalStatusMap[e.id] || 'active',
       isDemo: !!(e.is_demo || e.isDemo || isDemoMap[e.id]),
@@ -1221,6 +1224,7 @@ async function getEvents() {
         servicePhotos: e.servicePhotos !== false,
         serviceInvitation: e.serviceInvitation !== false,
         serviceTrivia: e.serviceTrivia !== false,
+        serviceMusic: e.serviceMusic !== false,
         vendorId: e.vendorId || null,
         approvalStatus: e.approvalStatus || 'active',
         isDemo: !!e.isDemo,

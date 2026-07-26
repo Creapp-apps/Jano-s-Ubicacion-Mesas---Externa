@@ -8,3 +8,5 @@ uploads/*
 .DS_Store
 client_secret_*.json
 scratch/
+.gemini/
+graphify-out/
