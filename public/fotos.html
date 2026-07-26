@@ -142,16 +142,30 @@
       <p class="instructions">Sube una foto y déjales un mensaje a los agasajados para que aparezca proyectado en tiempo real en la pantalla del salón.</p>
       
       <form id="photo-upload-form">
-        <!-- Guest Name -->
-        <div class="input-group">
-          <label for="guest-name-input">Tu Nombre</label>
-          <input 
-            type="text" 
-            id="guest-name-input" 
-            placeholder="Ej. Familia Gómez" 
-            required
-            autocomplete="off"
-          >
+        <!-- Guest Name with Autocomplete & Attendance Badge -->
+        <div class="input-group" style="position: relative;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <label for="guest-name-input" style="margin-bottom: 0;">Ingresa tu nombre completo</label>
+            <span id="name-validation-badge" class="name-status-badge" style="display: none;">
+              ✓ Asistencia Confirmada
+            </span>
+          </div>
+          <div class="input-autocomplete-wrapper" style="position: relative; width: 100%;">
+            <input 
+              type="text" 
+              id="guest-name-input" 
+              placeholder="Escribe tu nombre y apellido..." 
+              required
+              autocomplete="off"
+            >
+            <div id="guest-autocomplete-dropdown" class="autocomplete-dropdown" style="display: none;"></div>
+          </div>
+          <div class="field-hint-subtext" style="font-size: 0.76rem; color: var(--gold-light, #fef08a); opacity: 0.85; margin-top: 6px; font-family: 'Montserrat', sans-serif;">
+            Tranqui, cuando subas la foto solo mostraremos tu primer nombre, sin tu apellido 😉
+          </div>
+          <div id="name-error-msg" class="field-error-message" style="display: none;">
+            ⚠️ Para subir fotos debes haber confirmado tu asistencia o ser un acompañante registrado.
+          </div>
         </div>
 
         <!-- Dedicatoria -->
@@ -174,7 +188,8 @@
           </button>
           
           <button type="button" class="btn-select-gallery" id="btn-trigger-gallery-fallback">
-            o seleccionar desde tu galería
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="gallery-icon"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+            <span>Seleccionar de mi Galería</span>
           </button>
           
           <input 
@@ -254,6 +269,22 @@
               <div class="filter-preview-circle" style="background: linear-gradient(45deg, #333, #888);"></div>
               <span>Normal</span>
             </button>
+            <button type="button" class="filter-btn" data-filter="jirafa">
+              <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🦒</div>
+              <span>Jirafa</span>
+            </button>
+            <button type="button" class="filter-btn" data-filter="gato">
+              <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🐱</div>
+              <span>Gatito</span>
+            </button>
+            <button type="button" class="filter-btn" data-filter="makeup">
+              <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">✨</div>
+              <span>Soft Blush</span>
+            </button>
+            <button type="button" class="filter-btn" data-filter="payaso">
+              <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🤡</div>
+              <span>Payaso</span>
+            </button>
             <button type="button" class="filter-btn" data-filter="vintage">
               <div class="filter-preview-circle" style="background: linear-gradient(45deg, #5c4308, #b59410); filter: sepia(0.6);"></div>
               <span>Retro</span>
@@ -261,6 +292,10 @@
             <button type="button" class="filter-btn" data-filter="cyberpunk">
               <div class="filter-preview-circle" style="background: linear-gradient(45deg, #7b085c, #0ea3b5); filter: hue-rotate(280deg) saturate(1.8);"></div>
               <span>Cyberpunk</span>
+            </button>
+            <button type="button" class="filter-btn" data-filter="mono">
+              <div class="filter-preview-circle" style="background: linear-gradient(45deg, #222, #aaa); filter: grayscale(1);"></div>
+              <span>B&N</span>
             </button>
             <button type="button" class="filter-btn" data-filter="perrito">
               <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🐶</div>
@@ -270,10 +305,6 @@
               <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🥳</div>
               <span>Cotillón</span>
             </button>
-            <button type="button" class="filter-btn" data-filter="makeup">
-              <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">💄</div>
-              <span>Glam</span>
-            </button>
             <button type="button" class="filter-btn" data-filter="angel">
               <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">😇</div>
               <span>Ángel</span>
@@ -281,10 +312,6 @@
             <button type="button" class="filter-btn" data-filter="demonio">
               <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">😈</div>
               <span>Demonio</span>
-            </button>
-            <button type="button" class="filter-btn" data-filter="payaso">
-              <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🤡</div>
-              <span>Payaso</span>
             </button>
             <button type="button" class="filter-btn" data-filter="pirata">
               <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🏴‍☠️</div>
@@ -294,21 +321,9 @@
               <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🕶️</div>
               <span>Cyber-Visor</span>
             </button>
-            <button type="button" class="filter-btn" data-filter="gato">
-              <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🐱</div>
-              <span>Gatito</span>
-            </button>
-            <button type="button" class="filter-btn" data-filter="corona">
-              <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">👑</div>
-              <span>Corona</span>
-            </button>
             <button type="button" class="filter-btn" data-filter="vampiro">
               <div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🧛</div>
               <span>Vampiro</span>
-            </button>
-            <button type="button" class="filter-btn" data-filter="mono">
-              <div class="filter-preview-circle" style="background: linear-gradient(45deg, #222, #aaa); filter: grayscale(1);"></div>
-              <span>B&N</span>
             </button>
           </div>
 

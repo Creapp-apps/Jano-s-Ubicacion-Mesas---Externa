@@ -590,6 +590,385 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // --- SUBTABS & SHOWROOM FOR CONTROL DE FOTOS PANEL ---
+  const MASTER_FILTERS_CATALOG = [
+    { id: 'normal', name: 'Normal', emoji: '📷', category: 'estilos', desc: 'Foto natural sin filtros AR' },
+    { id: 'jirafa', name: 'Jirafa 3D', emoji: '🦒', category: 'snapchat', desc: 'Máscara 3D Cartoon Giraffe' },
+    { id: 'gato', name: 'Gatito Kawaii', emoji: '🐱', category: 'snapchat', desc: 'Orejas y hocico de gato tierno' },
+    { id: 'makeup', name: 'Soft Blush', emoji: '✨', category: 'belleza', desc: 'Suavizado de piel y luz rosada' },
+    { id: 'payaso', name: 'Payaso Fun', emoji: '🤡', category: 'snapchat', desc: 'Cara divertida de payaso 3D' },
+    { id: 'lentes_bigote_1', name: 'Lentes y Bigote 1', emoji: '🥸', category: 'divertidos', desc: 'Anteojos hipster y bigote' },
+    { id: 'gigolo_face', name: 'Gigolo Face', emoji: '😏', category: 'divertidos', desc: 'Deformación cómica de rostro' },
+    { id: 'lentes_bigote', name: 'Lentes y Bigote 2', emoji: '👓', category: 'divertidos', desc: 'Gafas clásicas con mostacho' },
+    { id: 'sombrero_sonrisas', name: 'Sombrero Sonrisas', emoji: '🧙‍♂️', category: 'snapchat', desc: 'Gorro mágico con sonrisas' },
+    { id: 'sombrero_barba', name: 'Sombrero y Barba', emoji: '🎅', category: 'snapchat', desc: 'Sombrero y barba de fiesta' },
+    { id: 'bulldog_frances', name: 'Bulldog Francés', emoji: '🐶', category: 'snapchat', desc: 'Hocico y orejitas de bulldog' },
+    { id: 'vaca', name: 'Vaca', emoji: '🐮', category: 'snapchat', desc: 'Máscara animada de vaquita' },
+    { id: 'narizota', name: 'Narizota', emoji: '😜', category: 'divertidos', desc: 'Efecto cómico con gran nariz' },
+    { id: 'cachetes_kiko', name: 'Cachetes Kiko', emoji: '👦', category: 'divertidos', desc: 'Cachetes inflados gigantes' },
+    { id: 'barba_lentes', name: 'Barba y Lentes', emoji: '🧔', category: 'divertidos', desc: 'Barba tupida de hípster' },
+    { id: 'cara_gato', name: 'Cara de Gato', emoji: '😺', category: 'snapchat', desc: 'Transformación felina completa' },
+    { id: 'ruleta_filtros', name: 'Ruleta de Filtros', emoji: '🎲', category: 'snapchat', desc: 'Juego de ruleta de rostros' },
+    { id: 'sombrero_pollo', name: 'Sombrero Pollo', emoji: '🐔', category: 'divertidos', desc: 'Gorro de pollito animado' },
+    { id: 'sombrero_raton', name: 'Sombrero Ratón', emoji: '🐭', category: 'divertidos', desc: 'Orejitas de ratón festivo' },
+    { id: 'baby_face_2', name: 'Baby Face 2', emoji: '👶', category: 'belleza', desc: 'Efecto rostro de bebé tierno' },
+    { id: 'zebra', name: 'Zebra', emoji: '🦓', category: 'snapchat', desc: 'Líneas y orejas de cebra' },
+    { id: 'jumanji', name: 'Jumanji', emoji: '🌿', category: 'snapchat', desc: 'Pintura salvaje de jungla' },
+    { id: 'pelado', name: 'Pelado Cómico', emoji: '👨‍🦲', category: 'divertidos', desc: 'Calvicie animada con brillo' },
+    { id: 'pirata_1', name: 'Pirata', emoji: '🏴‍☠️', category: 'divertidos', desc: 'Parche y sombrero de pirata' },
+    { id: 'words', name: 'WORDS', emoji: '🔤', category: 'snapchat', desc: 'Texto flotante interactivo' },
+    { id: 'baby_face', name: 'Baby Face 1', emoji: '👶', category: 'belleza', desc: 'Rostro infantil y mejillas' },
+    { id: 'filtro_viejo', name: 'Filtro Viejo', emoji: '👴', category: 'divertidos', desc: 'Efecto de abuelito gracioso' },
+    { id: 'vintage', name: 'Retro', emoji: '🎞️', category: 'estilos', desc: 'Tono cálido sepia vintage' },
+    { id: 'cyberpunk', name: 'Cyberpunk', emoji: '🌌', category: 'estilos', desc: 'Luces neón cian y magenta' },
+    { id: 'mono', name: 'Blanco & Negro', emoji: '🖤', category: 'estilos', desc: 'Fotografía en escala de grises' }
+  ];
+
+  const FILTER_ID_ALIASES = {
+    perrito: 'bulldog_frances',
+    cotillon: 'sombrero_sonrisas',
+    corona: 'jirafa'
+  };
+
+  window.sanitizeSelectedEventFilters = function(filters) {
+    if (!Array.isArray(filters)) return ['normal', 'jirafa', 'gato', 'makeup', 'payaso', 'vintage', 'cyberpunk', 'mono', 'bulldog_frances', 'sombrero_sonrisas'];
+    const validCatalogIds = MASTER_FILTERS_CATALOG.map(f => f.id);
+    const sanitized = filters.map(id => FILTER_ID_ALIASES[id] || id)
+                             .filter(id => validCatalogIds.includes(id));
+    return Array.from(new Set(sanitized));
+  };
+
+  window.selectedEventFilters = sanitizeSelectedEventFilters(['normal', 'jirafa', 'gato', 'makeup', 'payaso', 'vintage', 'cyberpunk', 'mono', 'bulldog_frances', 'sombrero_sonrisas']);
+  let currentShowroomCategory = 'all';
+
+  window.switchFotosSubtab = function(subtabId) {
+    const subtabs = ['general', 'filtros', 'moderacion', 'qr'];
+    subtabs.forEach(id => {
+      const btn = document.getElementById(`subtab-btn-fotos-${id}`);
+      const content = document.getElementById(`fotos-subtab-${id}`);
+      if (btn) btn.classList.toggle('active', id === subtabId);
+      if (content) {
+        content.classList.toggle('active', id === subtabId);
+        content.style.display = (id === subtabId) ? 'block' : 'none';
+      }
+    });
+
+    if (subtabId === 'filtros') {
+      renderFilterShowroom();
+    }
+  };
+
+  window.filterShowroomCategory = function(category) {
+    currentShowroomCategory = category;
+    const catNav = document.getElementById('filter-category-nav');
+    if (catNav) {
+      const catButtons = catNav.querySelectorAll('.subtab-btn');
+      catButtons.forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.cat === category);
+      });
+    }
+    renderFilterShowroom();
+  };
+
+  // --- REAL-TIME SMARTPHONE FILTER TESTER ENGINE ---
+  let activeTesterFilterId = 'normal';
+  let isTesterWebcamActive = false;
+  let testerMediaStream = null;
+  let adminSnapCameraKit = null;
+  let adminSnapSession = null;
+  let adminSnapApiToken = '';
+  let adminSnapGroupId = '';
+  let adminSnapLenses = {};
+  let filterAutoSaveDebounce = null;
+
+  function triggerAutoSaveEventFilters() {
+    clearTimeout(filterAutoSaveDebounce);
+    filterAutoSaveDebounce = setTimeout(() => {
+      const eventTitleVal = (eventTitlePhotosInput && eventTitlePhotosInput.value) ? eventTitlePhotosInput.value.trim() : 'Mi Evento';
+      fetch(`/api/config?event=${encodeURIComponent(eventId)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          eventTitle: eventTitleVal,
+          selectedFilters: window.selectedEventFilters
+        })
+      }).catch(err => console.error("Auto-save filters error:", err));
+    }, 400);
+  }
+
+  window.previewFilterInTester = function(filterId, event) {
+    if (event) event.stopPropagation();
+    activeTesterFilterId = filterId;
+    updateTesterPhoneUI();
+    renderFilterShowroom();
+  };
+
+  window.toggleFilterSelection = function(filterId, event) {
+    if (event) event.stopPropagation();
+    activeTesterFilterId = filterId;
+
+    const index = window.selectedEventFilters.indexOf(filterId);
+    if (index > -1) {
+      if (window.selectedEventFilters.length === 1) {
+        showToast('warning', '⚠️ Atención', 'Debes mantener al menos 1 filtro seleccionado para el evento.', 3000);
+        updateTesterPhoneUI();
+        renderFilterShowroom();
+        return;
+      }
+      window.selectedEventFilters.splice(index, 1);
+    } else {
+      if (window.selectedEventFilters.length >= 10) {
+        showToast('warning', '⚠️ Límite Alcanzado', 'Has alcanzado el límite máximo de 10 filtros por evento.', 3000);
+        updateTesterPhoneUI();
+        renderFilterShowroom();
+        return;
+      }
+      window.selectedEventFilters.push(filterId);
+    }
+    updateTesterPhoneUI();
+    renderFilterShowroom();
+    triggerAutoSaveEventFilters();
+  };
+
+  window.toggleTesterActiveFilterSelection = function() {
+    window.toggleFilterSelection(activeTesterFilterId);
+  };
+
+  window.deselectAllFilters = function() {
+    if (!window.selectedEventFilters || window.selectedEventFilters.length === 0 || (window.selectedEventFilters.length === 1 && window.selectedEventFilters[0] === 'normal')) {
+      showToast('info', 'ℹ️ Información', 'No hay otros filtros seleccionados para deseleccionar.', 2500);
+      return;
+    }
+    window.selectedEventFilters = ['normal'];
+    activeTesterFilterId = 'normal';
+    updateTesterPhoneUI();
+    renderFilterShowroom();
+    triggerAutoSaveEventFilters();
+    showToast('info', '🧹 Selección Limpiada', 'Se han deseleccionado todos los filtros (se mantiene el filtro Normal activo).', 3000);
+  };
+
+  window.toggleTesterWebcam = async function() {
+    const video = document.getElementById('tester-webcam-video');
+    const snapCanvas = document.getElementById('tester-snap-canvas');
+    const demoAvatar = document.getElementById('tester-demo-avatar');
+    const iconSpan = document.getElementById('tester-cam-icon');
+    const textSpan = document.getElementById('tester-cam-text');
+    const camBtn = document.getElementById('btn-toggle-tester-webcam');
+
+    if (isTesterWebcamActive) {
+      if (adminSnapSession) {
+        try { adminSnapSession.pause(); } catch(e){}
+      }
+      if (testerMediaStream) {
+        testerMediaStream.getTracks().forEach(track => track.stop());
+        testerMediaStream = null;
+      }
+      if (video) {
+        video.srcObject = null;
+        video.style.display = 'none';
+      }
+      if (snapCanvas) snapCanvas.style.display = 'none';
+      if (demoAvatar) demoAvatar.style.display = 'flex';
+      isTesterWebcamActive = false;
+      if (iconSpan) iconSpan.textContent = '📷';
+      if (textSpan) textSpan.textContent = 'Probar con Mi Cámara';
+      if (camBtn) camBtn.style.background = 'rgba(255,255,255,0.08)';
+    } else {
+      try {
+        if (camBtn) setButtonLoading(camBtn, true, 'Conectando...');
+        testerMediaStream = await navigator.mediaDevices.getUserMedia({
+          video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' },
+          audio: false
+        });
+        if (video) {
+          video.srcObject = testerMediaStream;
+          video.style.display = 'block';
+        }
+        if (demoAvatar) demoAvatar.style.display = 'none';
+        isTesterWebcamActive = true;
+
+        if (adminSnapApiToken && typeof window.SnapCameraHelper !== 'undefined' && snapCanvas) {
+          try {
+            if (!adminSnapCameraKit) {
+              adminSnapCameraKit = await window.SnapCameraHelper.bootstrap({ apiToken: adminSnapApiToken });
+            }
+            if (!adminSnapSession) {
+              adminSnapSession = await adminSnapCameraKit.createSession({ liveRenderTarget: snapCanvas });
+            }
+            await adminSnapSession.setSource(testerMediaStream);
+            await adminSnapSession.play();
+            snapCanvas.style.display = 'block';
+          } catch (snapErr) {
+            console.warn("Admin Snap Camera Kit init warning:", snapErr);
+            if (snapCanvas) snapCanvas.style.display = 'none';
+          }
+        }
+
+        if (camBtn) setButtonLoading(camBtn, false);
+        if (iconSpan) iconSpan.textContent = '⏹️';
+        if (textSpan) textSpan.textContent = 'Detener Cámara';
+        if (camBtn) camBtn.style.background = 'rgba(220, 53, 69, 0.3)';
+        updateTesterPhoneUI();
+      } catch (err) {
+        if (camBtn) setButtonLoading(camBtn, false);
+        console.error("Camera access denied/unavailable:", err);
+        showToast('error', 'Cámara no disponible', 'No se pudo acceder a tu cámara web.', 3000);
+      }
+    }
+  };
+
+  function updateTesterPhoneUI() {
+    const filterItem = MASTER_FILTERS_CATALOG.find(f => f.id === activeTesterFilterId) || { name: 'Normal', emoji: '📷' };
+    const badgeEmoji = document.getElementById('tester-badge-emoji');
+    const badgeName = document.getElementById('tester-badge-name');
+    const demoEmoji = document.getElementById('tester-demo-emoji');
+    const demoLabel = document.getElementById('tester-demo-label');
+    const demoAvatar = document.getElementById('tester-demo-avatar');
+    const video = document.getElementById('tester-webcam-video');
+    const selectIcon = document.getElementById('tester-select-icon');
+    const selectText = document.getElementById('tester-select-text');
+    const selectBtn = document.getElementById('btn-toggle-tester-selection');
+
+    if (badgeEmoji) badgeEmoji.textContent = filterItem.emoji || '📷';
+    if (badgeName) badgeName.textContent = filterItem.name;
+
+    const isSelected = window.selectedEventFilters.includes(activeTesterFilterId);
+    if (selectIcon) selectIcon.textContent = isSelected ? '✓' : '➕';
+    if (selectText) selectText.textContent = isSelected ? 'Filtro Seleccionado' : 'Agregar al Evento';
+    if (selectBtn) {
+      selectBtn.style.background = isSelected ? 'var(--gold-gradient)' : 'rgba(255,255,255,0.12)';
+      selectBtn.style.color = isSelected ? '#0b0b0c' : '#ffffff';
+    }
+
+    let cssFilter = 'none';
+    let avatarEmoji = filterItem.emoji || '😀';
+    let avatarText = filterItem.name;
+
+    switch (activeTesterFilterId) {
+      case 'vintage':
+        cssFilter = 'sepia(0.85) contrast(1.15) brightness(0.95)';
+        avatarEmoji = '🎞️';
+        break;
+      case 'cyberpunk':
+        cssFilter = 'hue-rotate(270deg) saturate(2.2) contrast(1.3)';
+        avatarEmoji = '🌌';
+        break;
+      case 'mono':
+        cssFilter = 'grayscale(1) contrast(1.3)';
+        avatarEmoji = '🖤';
+        break;
+      case 'makeup':
+        cssFilter = 'brightness(1.15) saturate(1.25) contrast(0.95)';
+        avatarEmoji = '✨';
+        break;
+      case 'payaso':
+        cssFilter = 'saturate(1.8) contrast(1.1)';
+        avatarEmoji = '🤡';
+        break;
+      case 'jirafa':
+        avatarEmoji = '🦒';
+        break;
+      case 'gato':
+        avatarEmoji = '🐱';
+        break;
+      case 'lentes_bigote_1':
+        avatarEmoji = '🥸';
+        break;
+      case 'gigolo_face':
+        avatarEmoji = '😏';
+        break;
+      case 'vaca':
+        avatarEmoji = '🐮';
+        break;
+      case 'zebra':
+        avatarEmoji = '🦓';
+        break;
+      case 'jumanji':
+        avatarEmoji = '🌿';
+        break;
+      case 'pelado':
+        avatarEmoji = '👨‍🦲';
+        break;
+      case 'pirata_1':
+        avatarEmoji = '🏴‍☠️';
+        break;
+      default:
+        cssFilter = 'none';
+        break;
+    }
+
+    if (demoEmoji) demoEmoji.textContent = avatarEmoji;
+    if (demoLabel) demoLabel.textContent = `Probando: ${avatarText}`;
+    if (demoAvatar) demoAvatar.style.filter = cssFilter;
+    if (video) video.style.filter = cssFilter;
+
+    // Apply lens to Snap Camera Kit session if live camera is active
+    if (isTesterWebcamActive && adminSnapSession && adminSnapCameraKit && adminSnapLenses[activeTesterFilterId]) {
+      const lensId = adminSnapLenses[activeTesterFilterId];
+      if (lensId) {
+        adminSnapCameraKit.lensRepository.loadLens(lensId, adminSnapGroupId)
+          .then(lens => {
+            adminSnapSession.applyLens(lens);
+            const snapCanvas = document.getElementById('tester-snap-canvas');
+            if (snapCanvas) snapCanvas.style.display = 'block';
+          })
+          .catch(err => {
+            console.warn("Admin Snap lens apply warning:", err);
+            const snapCanvas = document.getElementById('tester-snap-canvas');
+            if (snapCanvas) snapCanvas.style.display = 'none';
+          });
+      }
+    }
+  }
+
+  function renderFilterShowroom() {
+    const grid = document.getElementById('filter-showroom-grid');
+    const counterBadge = document.getElementById('selected-filters-count');
+    if (!grid) return;
+
+    if (counterBadge) {
+      counterBadge.textContent = window.selectedEventFilters.length;
+    }
+
+    const filteredCatalog = MASTER_FILTERS_CATALOG.filter(item => {
+      if (currentShowroomCategory === 'all') return true;
+      return item.category === currentShowroomCategory;
+    });
+
+    grid.innerHTML = filteredCatalog.map(item => {
+      const isSelected = window.selectedEventFilters.includes(item.id);
+      const isBeingTested = (item.id === activeTesterFilterId);
+      const isMaxReached = window.selectedEventFilters.length >= 10 && !isSelected;
+
+      return `
+        <div class="showroom-card ${isSelected ? 'selected' : ''} ${isBeingTested ? 'testing' : ''} ${isMaxReached ? 'disabled' : ''}" 
+             onclick="toggleFilterSelection('${item.id}', event)"
+             style="background: ${isSelected ? 'rgba(212, 175, 55, 0.08)' : 'rgba(255,255,255,0.03)'}; border: 2px solid ${isBeingTested ? '#25D366' : (isSelected ? 'var(--gold-primary)' : 'rgba(255,255,255,0.1)')}; border-radius: 18px; padding: 14px 10px; text-align: center; cursor: ${isMaxReached ? 'not-allowed' : 'pointer'}; transition: all 0.25s ease; position: relative; opacity: ${isMaxReached ? '0.45' : '1'}; box-shadow: ${isBeingTested ? '0 0 15px rgba(37,211,102,0.4)' : (isSelected ? '0 0 12px rgba(212,175,55,0.2)' : 'none')};">
+          
+          ${isBeingTested ? `
+            <div style="position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: #25D366; color: #000; font-size: 0.65rem; font-weight: bold; padding: 2px 8px; border-radius: 10px; z-index: 10; letter-spacing: 0.5px; box-shadow: 0 2px 6px rgba(0,0,0,0.4);">
+              👁️ PROBANDO
+            </div>
+          ` : ''}
+
+          <div style="position: absolute; top: 10px; right: 10px; width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid ${isSelected ? 'var(--gold-primary)' : 'rgba(255,255,255,0.3)'}; background: ${isSelected ? 'var(--gold-primary)' : 'transparent'}; display: flex; align-items: center; justify-content: center; color: #000; font-weight: bold; font-size: 0.75rem;">
+            ${isSelected ? '✓' : ''}
+          </div>
+          <div style="font-size: 2.2rem; margin-bottom: 6px;">${item.emoji}</div>
+          <div style="font-weight: 700; color: white; font-size: 0.88rem; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.name}</div>
+          <div style="font-size: 0.72rem; color: var(--text-muted); line-height: 1.2; margin-bottom: 10px; height: 28px; overflow: hidden;">${item.desc}</div>
+          
+          <button type="button" onclick="previewFilterInTester('${item.id}', event)" 
+                  style="width: 100%; padding: 5px 0; border-radius: 10px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: ${isBeingTested ? '#25D366' : 'white'}; font-size: 0.68rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease;">
+            ${isBeingTested ? '👁️ Viendo en Celular' : '🔍 Probar Filtro'}
+          </button>
+        </div>
+      `;
+    }).join('');
+
+    updateTesterPhoneUI();
+  }
+
   // --- INTERACTIVE HALL CANVAS BOARD ENGINE ---
   let hallCanvasItems = [];
   let tablePositionsMap = {};
@@ -1995,12 +2374,9 @@ document.addEventListener('DOMContentLoaded', () => {
             ${guestsTagsHtml || '<span style="color: var(--text-muted); font-size: 0.75rem; font-style: italic;">Sin invitados asignados aún</span>'}
           </div>
 
-          <div class="table-card-actions" style="display: flex; gap: 10px;">
-            <button class="table-action-btn" onclick="openAssignGuestToTableModal('${escapeHtml(t.name)}')" style="flex: 1;">
+          <div class="table-card-actions">
+            <button class="table-action-btn" onclick="openAssignGuestToTableModal('${escapeHtml(t.name)}')" style="width: 100%;">
               ➕ Ubicar Invitado
-            </button>
-            <button class="table-action-btn" onclick="deleteTable('${escapeHtml(t.name)}', event)" style="background: rgba(255, 77, 77, 0.1); color: #ff4d4d; border: 1px solid rgba(255, 77, 77, 0.3); padding: 8px 14px; border-radius: 12px; font-size: 0.82rem;" title="Eliminar Mesa">
-              🗑️ Eliminar
             </button>
           </div>
         </div>
@@ -2860,6 +3236,41 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  const btnSaveEventFilters = document.getElementById('btn-save-event-filters');
+  if (btnSaveEventFilters) {
+    btnSaveEventFilters.addEventListener('click', () => {
+      if (!window.selectedEventFilters || window.selectedEventFilters.length === 0) {
+        showToast('warning', '⚠️ Atención', 'Debes seleccionar al menos 1 filtro para el evento.', 3000);
+        return;
+      }
+      setButtonLoading(btnSaveEventFilters, true, 'Guardando...');
+      const eventTitleVal = (eventTitlePhotosInput && eventTitlePhotosInput.value) ? eventTitlePhotosInput.value.trim() : 'Mi Evento';
+      
+      fetch(`/api/config?event=${encodeURIComponent(eventId)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          eventTitle: eventTitleVal,
+          selectedFilters: window.selectedEventFilters
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        setButtonLoading(btnSaveEventFilters, false);
+        if (data.error) {
+          showToast('error', 'Error', data.error, 4000);
+        } else {
+          showToast('success', '¡Éxito!', 'Filtros del evento guardados correctamente.', 3000);
+        }
+      })
+      .catch(err => {
+        setButtonLoading(btnSaveEventFilters, false);
+        console.error(err);
+        showToast('error', 'Error', 'Error de red al guardar filtros.', 4000);
+      });
+    });
+  }
+
 
 
   if (btnCopyDriveUrl && driveFolderUrl) {
@@ -3061,8 +3472,20 @@ document.addEventListener('DOMContentLoaded', () => {
         if (data && data.maxUploadSize) {
           maxUploadSize = data.maxUploadSize;
         }
+        if (data && data.snapApiToken) {
+          adminSnapApiToken = data.snapApiToken;
+          adminSnapGroupId = data.snapGroupId || '';
+          adminSnapLenses = data.snapLenses || {};
+        }
         if (eventTitleInput) eventTitleInput.value = data.eventTitle || '';
         if (eventTitlePhotosInput) eventTitlePhotosInput.value = data.eventTitle || '';
+        
+        if (data && data.selectedFilters && Array.isArray(data.selectedFilters) && data.selectedFilters.length > 0) {
+          window.selectedEventFilters = sanitizeSelectedEventFilters(data.selectedFilters);
+          if (typeof renderFilterShowroom === 'function') {
+            renderFilterShowroom();
+          }
+        }
         
         // Populate Phase 3 Invitation Fields
         if (invTitleInput) invTitleInput.value = data.eventTitle || '';
@@ -5672,10 +6095,18 @@ Tu presencia hará que esta celebración sea aún más significativa.
       return fullName.includes(searchFilter) || table.includes(searchFilter);
     });
 
+    const isInvitationService = (activeService === 'invitacion' || activeService === 'invitation');
+    const showMesaCol = !isInvitationService;
+
+    const thMesa = document.querySelector('#invitados-table-wrapper th.col-mesa');
+    if (thMesa) {
+      thMesa.style.display = showMesaCol ? '' : 'none';
+    }
+
     if (filteredGuests.length === 0) {
       tableBody.innerHTML = `
         <tr>
-          <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 30px;">
+          <td colspan="${showMesaCol ? 6 : 5}" style="text-align: center; color: var(--text-muted); padding: 30px;">
             ${unifiedList.length === 0 ? 'No hay invitados registrados en la base de datos.' : 'No se encontraron coincidencias.'}
           </td>
         </tr>
@@ -5719,11 +6150,13 @@ Tu presencia hará que esta celebración sea aún más significativa.
         <button class="btn-action delete" onclick="deleteRsvpById('${rsvp ? rsvp.id : ''}')">Eliminar</button>
       `;
 
+      const mesaTd = showMesaCol ? `<td class="col-mesa" style="color: var(--gold-primary); font-weight: 600;">${formatTableDisplay(g.table)}</td>` : '';
+
       return `
         <tr class="${rowClass}">
           <td style="color: var(--text-main); font-weight: 500;">${escapeHtml(g.firstName)} ${sourceBadge}</td>
           <td style="color: var(--text-main); font-weight: 500;">${escapeHtml(g.lastName)}</td>
-          <td style="color: var(--gold-primary); font-weight: 600;">${formatTableDisplay(g.table)}</td>
+          ${mesaTd}
           <td style="text-align: center; vertical-align: middle;">${rsvpStatusHtml}</td>
           <td>
             <div style="display: flex; gap: 8px; align-items: center; width: 100%; max-width: 180px;">

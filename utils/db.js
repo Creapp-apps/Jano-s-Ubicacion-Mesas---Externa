@@ -804,8 +804,16 @@ async function getPhoto(eventId = 'default', photoId) {
  * Add a photo submission
  */
 async function addPhoto(eventId = 'default', { guestName, message, photoUrl }) {
+  // Extract first name (omit surname/lastname) for informal projection mural
+  let rawName = (guestName || 'Invitado').trim();
+  const nameParts = rawName.split(/\s+/).filter(Boolean);
+  let firstNameOnly = nameParts.length > 0 ? nameParts[0] : rawName;
+  if (firstNameOnly.length > 0) {
+    firstNameOnly = firstNameOnly.charAt(0).toUpperCase() + firstNameOnly.slice(1);
+  }
+
   const photo = {
-    guestName: (guestName || 'Invitado').trim(),
+    guestName: firstNameOnly,
     message: (message || '').trim(),
     photoUrl: photoUrl,
     approved: false,

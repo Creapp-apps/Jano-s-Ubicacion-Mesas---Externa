@@ -63,28 +63,153 @@ document.addEventListener('DOMContentLoaded', () => {
   let activeAnimationId = null;
   let lastVideoTime = -1;
   
-  const arFilters = ['perrito', 'cotillon', 'makeup', 'angel', 'demonio', 'payaso', 'pirata', 'cybervisor', 'gato', 'corona', 'vampiro'];
+  const arFilters = [
+    'jirafa', 'gato', 'makeup', 'payaso', 'perrito', 'cotillon', 'angel', 'demonio', 'pirata', 'cybervisor', 'corona', 'vampiro',
+    'lentes_bigote_1', 'gigolo_face', 'lentes_bigote', 'sombrero_sonrisas', 'sombrero_barba', 'bulldog_frances', 'vaca',
+    'narizota', 'cachetes_kiko', 'barba_lentes', 'cara_gato', 'ruleta_filtros', 'sombrero_pollo', 'sombrero_raton',
+    'baby_face_2', 'zebra', 'jumanji', 'pelado', 'pirata_1', 'words', 'baby_face', 'filtro_viejo'
+  ];
   const isArFilter = (filter) => arFilters.includes(filter);
   
   // Filter settings map
   let activeFilter = 'normal';
   const filtersMap = {
     normal: 'none',
+    jirafa: 'none',
+    gato: 'none',
+    makeup: 'none',
+    payaso: 'none',
     vintage: 'sepia(0.5) contrast(1.1) brightness(0.95)',
     cyberpunk: 'hue-rotate(280deg) saturate(1.6) contrast(1.1)',
     mono: 'grayscale(1) contrast(1.2)',
     perrito: 'none',
     cotillon: 'none',
-    makeup: 'none',
     angel: 'none',
     demonio: 'none',
-    payaso: 'none',
     pirata: 'none',
     cybervisor: 'none',
-    gato: 'none',
     corona: 'none',
-    vampiro: 'none'
+    vampiro: 'none',
+    lentes_bigote_1: 'none',
+    gigolo_face: 'none',
+    lentes_bigote: 'none',
+    sombrero_sonrisas: 'none',
+    sombrero_barba: 'none',
+    bulldog_frances: 'none',
+    vaca: 'none',
+    narizota: 'none',
+    cachetes_kiko: 'none',
+    barba_lentes: 'none',
+    cara_gato: 'none',
+    ruleta_filtros: 'none',
+    sombrero_pollo: 'none',
+    sombrero_raton: 'none',
+    baby_face_2: 'none',
+    zebra: 'none',
+    jumanji: 'none',
+    pelado: 'none',
+    pirata_1: 'none',
+    words: 'none',
+    baby_face: 'none',
+    filtro_viejo: 'none'
   };
+
+  const FILTER_METADATA_MAP = {
+    normal: { name: 'Normal', emoji: '', bg: 'linear-gradient(45deg, #333, #888)' },
+    jirafa: { name: 'Jirafa', emoji: '🦒' },
+    gato: { name: 'Gatito', emoji: '🐱' },
+    makeup: { name: 'Soft Blush', emoji: '✨' },
+    payaso: { name: 'Payaso', emoji: '🤡' },
+    lentes_bigote_1: { name: 'Bigote 1', emoji: '🥸' },
+    gigolo_face: { name: 'Gigolo', emoji: '😏' },
+    lentes_bigote: { name: 'Bigote 2', emoji: '👓' },
+    sombrero_sonrisas: { name: 'Sonrisas', emoji: '🧙‍♂️' },
+    sombrero_barba: { name: 'Somb. Barba', emoji: '🎅' },
+    bulldog_frances: { name: 'Bulldog', emoji: '🐶' },
+    vaca: { name: 'Vaca', emoji: '🐮' },
+    narizota: { name: 'Narizota', emoji: '😜' },
+    cachetes_kiko: { name: 'Cachetes', emoji: '👦' },
+    barba_lentes: { name: 'Hípster', emoji: '🧔' },
+    cara_gato: { name: 'Cara Gato', emoji: '😺' },
+    ruleta_filtros: { name: 'Ruleta', emoji: '🎲' },
+    sombrero_pollo: { name: 'Pollito', emoji: '🐔' },
+    sombrero_raton: { name: 'Ratón', emoji: '🐭' },
+    baby_face_2: { name: 'Bebé 2', emoji: '👶' },
+    zebra: { name: 'Zebra', emoji: '🦓' },
+    jumanji: { name: 'Jumanji', emoji: '🌿' },
+    pelado: { name: 'Pelado', emoji: '👨‍🦲' },
+    pirata_1: { name: 'Pirata', emoji: '🏴‍☠️' },
+    words: { name: 'WORDS', emoji: '🔤' },
+    baby_face: { name: 'Bebé 1', emoji: '👶' },
+    filtro_viejo: { name: 'Viejo', emoji: '👴' },
+    vintage: { name: 'Retro', emoji: '', bg: 'linear-gradient(45deg, #5c4308, #b59410); filter: sepia(0.6)' },
+    cyberpunk: { name: 'Cyberpunk', emoji: '', bg: 'linear-gradient(45deg, #7b085c, #0ea3b5); filter: hue-rotate(280deg) saturate(1.8)' },
+    mono: { name: 'B&N', emoji: '', bg: 'linear-gradient(45deg, #222, #aaa); filter: grayscale(1)' },
+    perrito: { name: 'Perrito', emoji: '🐶' },
+    cotillon: { name: 'Cotillón', emoji: '🥳' },
+    angel: { name: 'Ángel', emoji: '😇' },
+    demonio: { name: 'Demonio', emoji: '😈' },
+    pirata: { name: 'Pirata', emoji: '🏴‍☠️' },
+    cybervisor: { name: 'Cyber-Visor', emoji: '🕶️' },
+    corona: { name: 'Corona', emoji: '👑' },
+    vampiro: { name: 'Vampiro', emoji: '🧛' }
+  };
+
+  function bindFilterButtons() {
+    const currentBtns = document.querySelectorAll('#filter-selector-bar .filter-btn');
+    currentBtns.forEach(btn => {
+      btn.onclick = async (e) => {
+        e.preventDefault();
+        if (btn.classList.contains('active')) {
+          await triggerCaptureSequence();
+        } else {
+          clearTimeout(scrollTimeout);
+          btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+          
+          currentBtns.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          
+          const filterKey = btn.dataset.filter || 'normal';
+          activeFilter = filterKey;
+          if (activeFilterBadge) {
+            activeFilterBadge.textContent = filterKey.toUpperCase();
+          }
+          await applyActiveFilter();
+        }
+      };
+    });
+  }
+
+  function buildDynamicFilterCarousel(selectedFilters) {
+    const filterTrack = document.getElementById('filter-selector-bar');
+    if (!filterTrack || !selectedFilters || !Array.isArray(selectedFilters) || selectedFilters.length === 0) return;
+
+    let filterList = [...selectedFilters];
+    if (!filterList.includes('normal')) {
+      filterList.unshift('normal');
+    }
+
+    filterTrack.innerHTML = filterList.map((fKey, index) => {
+      const meta = FILTER_METADATA_MAP[fKey] || { name: fKey, emoji: '✨' };
+      const isActive = (fKey === activeFilter) ? 'active' : (index === 0 ? 'active' : '');
+
+      let circleContent = '';
+      if (meta.bg) {
+        circleContent = `<div class="filter-preview-circle" style="background: ${meta.bg};"></div>`;
+      } else {
+        circleContent = `<div class="filter-preview-circle" style="background: #222; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">${meta.emoji}</div>`;
+      }
+
+      return `
+        <button type="button" class="filter-btn ${isActive}" data-filter="${fKey}">
+          ${circleContent}
+          <span>${meta.name}</span>
+        </button>
+      `;
+    }).join('');
+
+    bindFilterButtons();
+  }
 
   // Extract event query parameter for multi-tenancy
   const urlParams = new URLSearchParams(window.location.search);
@@ -122,6 +247,9 @@ document.addEventListener('DOMContentLoaded', () => {
         snapGroupId = data.snapGroupId || '';
         snapLenses = data.snapLenses || {};
         console.log("Snap API Token loaded successfully.");
+      }
+      if (data && data.selectedFilters && Array.isArray(data.selectedFilters) && data.selectedFilters.length > 0) {
+        buildDynamicFilterCarousel(data.selectedFilters);
       }
     })
     .catch(() => {
@@ -1537,6 +1665,67 @@ document.addEventListener('DOMContentLoaded', () => {
       ctx.fill();
       ctx.restore();
     }
+    else if (activeFilter === 'jirafa') {
+      // 3D Giraffe Ears & Ossicones (Horns)
+      ctx.save();
+      ctx.translate(forehead.x, forehead.y - headWidth * 0.25);
+      ctx.rotate(angle);
+
+      const hornHeight = headWidth * 0.42;
+      const hornDist = headWidth * 0.18;
+
+      // Left Horn Stem
+      ctx.fillStyle = '#F39C12'; // Giraffe warm yellow-orange
+      ctx.strokeStyle = '#7E5109';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.roundRect(-hornDist - 8, -hornHeight, 16, hornHeight, 8);
+      ctx.fill();
+      ctx.stroke();
+
+      // Left Horn Top Knob (Brown Ossicone Top)
+      ctx.fillStyle = '#6E2C00';
+      ctx.beginPath();
+      ctx.arc(-hornDist, -hornHeight, 13, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Right Horn Stem
+      ctx.fillStyle = '#F39C12';
+      ctx.beginPath();
+      ctx.roundRect(hornDist - 8, -hornHeight, 16, hornHeight, 8);
+      ctx.fill();
+      ctx.stroke();
+
+      // Right Horn Top Knob
+      ctx.fillStyle = '#6E2C00';
+      ctx.beginPath();
+      ctx.arc(hornDist, -hornHeight, 13, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Left Giraffe Ear
+      ctx.fillStyle = '#F5B041';
+      ctx.beginPath();
+      ctx.ellipse(-headWidth * 0.35, -headWidth * 0.05, headWidth * 0.12, headWidth * 0.26, -0.4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#E59866';
+      ctx.beginPath();
+      ctx.ellipse(-headWidth * 0.35, -headWidth * 0.05, headWidth * 0.06, headWidth * 0.18, -0.4, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Right Giraffe Ear
+      ctx.fillStyle = '#F5B041';
+      ctx.beginPath();
+      ctx.ellipse(headWidth * 0.35, -headWidth * 0.05, headWidth * 0.12, headWidth * 0.26, 0.4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#E59866';
+      ctx.beginPath();
+      ctx.ellipse(headWidth * 0.35, -headWidth * 0.05, headWidth * 0.06, headWidth * 0.18, 0.4, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.restore();
+    }
     else if (activeFilter === 'corona') {
       // 1. Golden Tiara sitting above the forehead
       ctx.save();
@@ -1805,19 +1994,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Scroll snapping auto-detection of centered active filter
   let scrollTimeout = null;
-  if (filterSelectorBar && filterBtns) {
+  if (filterSelectorBar) {
     filterSelectorBar.addEventListener('scroll', () => {
       clearTimeout(scrollTimeout);
       scrollTimeout = setTimeout(() => {
-        // Calculate the center point of the scroll view
         const containerRect = filterSelectorBar.getBoundingClientRect();
         const containerCenter = containerRect.left + containerRect.width / 2;
         
         let closestBtn = null;
         let minDistance = Infinity;
+        const currentFilterBtns = filterSelectorBar.querySelectorAll('.filter-btn');
         
-        // Find the filter button closest to the viewport horizontal center
-        filterBtns.forEach(btn => {
+        currentFilterBtns.forEach(btn => {
           const btnRect = btn.getBoundingClientRect();
           const btnCenter = btnRect.left + btnRect.width / 2;
           const distance = Math.abs(btnCenter - containerCenter);
@@ -1827,38 +2015,21 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         });
         
-        // Update active filter if settled on a different item
         if (closestBtn && !closestBtn.classList.contains('active')) {
-          filterBtns.forEach(b => b.classList.remove('active'));
+          currentFilterBtns.forEach(b => b.classList.remove('active'));
           closestBtn.classList.add('active');
           activeFilter = closestBtn.dataset.filter || 'normal';
+          if (activeFilterBadge) {
+            activeFilterBadge.textContent = activeFilter.toUpperCase();
+          }
           applyActiveFilter();
         }
-      }, 150); // settle delay to prevent loading heavy WebGL filters while swiping fast
+      }, 150);
     });
   }
 
-  // Camera Filter Selection Setup with Double-tap/Active click to snap photo
-  if (filterBtns) {
-    filterBtns.forEach(btn => {
-      btn.addEventListener('click', async () => {
-        if (btn.classList.contains('active')) {
-          // Double-tap or tap on active filter triggers instant countdown/shutter capture!
-          await triggerCaptureSequence();
-        } else {
-          // Center the clicked filter carousel item smoothly
-          clearTimeout(scrollTimeout);
-          btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-          
-          filterBtns.forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
-          
-          activeFilter = btn.dataset.filter || 'normal';
-          await applyActiveFilter();
-        }
-      });
-    });
-  }
+  // Initial binding for static or pre-rendered buttons
+  bindFilterButtons();
 
 
 
@@ -2356,16 +2527,171 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Attendance Guest Validation & Autocomplete State
+  const autocompleteDropdown = document.getElementById('guest-autocomplete-dropdown');
+  const validationBadge = document.getElementById('name-validation-badge');
+  const nameErrorMsg = document.getElementById('name-error-msg');
+  
+  let isNameValidated = false;
+  let hasEventGuests = true;
+  let searchDebounceTimer = null;
+
+  function cleanStr(str) {
+    if (!str) return '';
+    return str.trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9\s]/g, "");
+  }
+
+  // Check initial event attendance list state
+  fetch(`/api/public/search-attendance-guests?event=${encodeURIComponent(eventId)}`)
+    .then(r => r.json())
+    .then(data => {
+      if (Array.isArray(data) && data.length === 0) {
+        hasEventGuests = false;
+      } else {
+        hasEventGuests = true;
+      }
+      validateForm();
+    })
+    .catch(() => {
+      hasEventGuests = false;
+      validateForm();
+    });
+
+  function setGuestValidated(name) {
+    isNameValidated = true;
+    const firstName = name.trim().split(/\s+/)[0];
+    if (guestNameInput && guestNameInput.value.trim().toLowerCase() !== firstName.toLowerCase()) {
+      guestNameInput.value = firstName;
+    }
+    if (validationBadge) validationBadge.style.display = 'inline-block';
+    if (nameErrorMsg) nameErrorMsg.style.display = 'none';
+    validateForm();
+  }
+
+  function resetGuestValidationState() {
+    isNameValidated = false;
+    if (validationBadge) validationBadge.style.display = 'none';
+    if (nameErrorMsg) nameErrorMsg.style.display = 'none';
+    validateForm();
+  }
+
+  async function performGuestSearch(query) {
+    if (!query || query.trim().length < 2) {
+      if (autocompleteDropdown) autocompleteDropdown.style.display = 'none';
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/public/search-attendance-guests?event=${encodeURIComponent(eventId)}&q=${encodeURIComponent(query)}`);
+      const results = await res.json();
+      renderAutocompleteDropdown(results, query);
+    } catch (err) {
+      console.error('Error searching attendance guests:', err);
+    }
+  }
+
+  function renderAutocompleteDropdown(results, query) {
+    if (!autocompleteDropdown) return;
+
+    if (!results || results.length === 0) {
+      autocompleteDropdown.innerHTML = `<div class="autocomplete-no-results">No se encontraron invitados confirmados con ese nombre.</div>`;
+      autocompleteDropdown.style.display = 'block';
+      if (hasEventGuests) {
+        isNameValidated = false;
+        if (validationBadge) validationBadge.style.display = 'none';
+        if (nameErrorMsg) nameErrorMsg.style.display = 'block';
+      }
+      validateForm();
+      return;
+    }
+
+    const cleanQuery = cleanStr(query);
+
+    // Check for exact match or first name match
+    const exactMatch = results.find(item => 
+      cleanStr(item.name) === cleanQuery || 
+      cleanStr(item.name.split(/\s+/)[0]) === cleanQuery
+    );
+    if (exactMatch) {
+      setGuestValidated(exactMatch.name);
+    }
+
+    let html = '';
+    results.forEach(item => {
+      const badgeText = item.table ? `${item.type} • ${item.table}` : item.type;
+      html += `
+        <div class="autocomplete-item" data-name="${item.name.replace(/"/g, '&quot;')}">
+          <span class="autocomplete-item-name">${item.name}</span>
+          <span class="autocomplete-item-badge">${badgeText}</span>
+        </div>
+      `;
+    });
+
+    autocompleteDropdown.innerHTML = html;
+    autocompleteDropdown.style.display = 'block';
+
+    const items = autocompleteDropdown.querySelectorAll('.autocomplete-item');
+    items.forEach(el => {
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const selectedName = el.getAttribute('data-name');
+        const firstName = selectedName.trim().split(/\s+/)[0];
+        if (guestNameInput) guestNameInput.value = firstName;
+        setGuestValidated(selectedName);
+        autocompleteDropdown.style.display = 'none';
+      });
+    });
+  }
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', (e) => {
+    if (autocompleteDropdown && guestNameInput && !guestNameInput.contains(e.target) && !autocompleteDropdown.contains(e.target)) {
+      autocompleteDropdown.style.display = 'none';
+    }
+  });
+
   // Form validation
   const validateForm = () => {
     if (!guestNameInput || !submitBtn) return;
-    const isNameValid = guestNameInput.value.trim().length > 0;
+    const isNameNotEmpty = guestNameInput.value.trim().length > 0;
     const hasPhoto = selectedFile !== null;
-    submitBtn.disabled = !(isNameValid && hasPhoto);
+    const isNameAccepted = isNameNotEmpty && (isNameValidated || !hasEventGuests);
+    submitBtn.disabled = !(isNameAccepted && hasPhoto);
   };
 
   if (guestNameInput) {
-    guestNameInput.addEventListener('input', validateForm);
+    guestNameInput.addEventListener('input', (e) => {
+      const val = e.target.value;
+      resetGuestValidationState();
+
+      if (!hasEventGuests) {
+        validateForm();
+        return;
+      }
+
+      if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(() => {
+        performGuestSearch(val);
+      }, 200);
+    });
+
+    guestNameInput.addEventListener('focus', () => {
+      if (hasEventGuests && guestNameInput.value.trim().length >= 2) {
+        performGuestSearch(guestNameInput.value);
+      }
+    });
+
+    guestNameInput.addEventListener('blur', () => {
+      setTimeout(() => {
+        if (hasEventGuests && guestNameInput.value.trim().length > 0 && !isNameValidated) {
+          if (nameErrorMsg) nameErrorMsg.style.display = 'block';
+        }
+      }, 250);
+    });
   }
 
   // Helper to resize/compress image before uploading (only if uploaded via file chooser)

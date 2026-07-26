@@ -755,21 +755,44 @@
   background: rgba(255, 255, 255, 0.15);
 }
 
-/* Fallback button in primary form */
+/* Gallery selection button in primary form */
 .btn-select-gallery {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  border-radius: 20px;
+  color: var(--gold-light, #fef08a);
   font-family: 'Montserrat', sans-serif;
-  font-size: 0.85rem;
-  text-decoration: underline;
+  font-weight: 600;
+  font-size: 0.88rem;
+  letter-spacing: 0.5px;
   cursor: pointer;
-  transition: color 0.2s ease;
-  padding: 5px 10px;
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 320px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.btn-select-gallery:hover {
-  color: var(--gold-primary);
+.btn-select-gallery:hover,
+.btn-select-gallery:active {
+  background: rgba(212, 175, 55, 0.15);
+  border-color: var(--gold-primary, #d4af37);
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(212, 175, 55, 0.25);
+}
+
+.btn-select-gallery .gallery-icon {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  flex-shrink: 0;
 }
 
 /* Image preview container inside main card form */
@@ -819,5 +842,95 @@
   background: #ff3333;
   border-color: #ff3333;
   color: white;
+}
+
+/* Autocomplete Dropdown & Attendance Validation Styles */
+.name-status-badge {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  padding: 2px 8px;
+  border-radius: 12px;
+  letter-spacing: 0.5px;
+  animation: fadeInBadge 0.3s ease;
+}
+
+@keyframes fadeInBadge {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.field-error-message {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.78rem;
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-top: 8px;
+  line-height: 1.35;
+}
+
+.autocomplete-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: rgba(13, 13, 16, 0.96);
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 15px rgba(212, 175, 55, 0.15);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  max-height: 220px;
+  overflow-y: auto;
+  z-index: 100;
+  padding: 6px;
+}
+
+.autocomplete-item {
+  padding: 10px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.autocomplete-item:hover,
+.autocomplete-item.highlighted {
+  background: rgba(212, 175, 55, 0.15);
+}
+
+.autocomplete-item-name {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.autocomplete-item-badge {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.72rem;
+  color: var(--gold-light, #fef08a);
+  background: rgba(212, 175, 55, 0.12);
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  padding: 3px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.autocomplete-no-results {
+  padding: 12px;
+  font-size: 0.82rem;
+  color: var(--text-muted, #94a3b8);
+  text-align: center;
+  font-family: 'Montserrat', sans-serif;
 }
 

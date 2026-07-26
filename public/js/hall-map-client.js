@@ -168,18 +168,34 @@
    * Setup Pan & Zoom handlers for desktop mouse and mobile touch
    */
   function setupPanAndZoom() {
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let hasPanned = false;
+    let lastTapTime = 0;
+    const DRAG_THRESHOLD = 6; // px
+
     viewportEl.addEventListener('mousedown', (e) => {
       if (e.target.closest('.hall-map-unified-toolbar') || e.target.closest('.tablemates-drawer')) return;
       isDragging = true;
+      hasPanned = false;
+      touchStartX = e.clientX;
+      touchStartY = e.clientY;
       startX = e.clientX - panX;
       startY = e.clientY - panY;
     });
 
     window.addEventListener('mousemove', (e) => {
       if (!isDragging) return;
-      panX = e.clientX - startX;
-      panY = e.clientY - startY;
-      applyTransform();
+      const dx = e.clientX - touchStartX;
+      const dy = e.clientY - touchStartY;
+      if (!hasPanned && Math.hypot(dx, dy) > DRAG_THRESHOLD) {
+        hasPanned = true;
+      }
+      if (hasPanned) {
+        panX = e.clientX - startX;
+        panY = e.clientY - startY;
+        applyTransform();
+      }
     });
 
     window.addEventListener('mouseup', () => {
@@ -193,22 +209,33 @@
       if (e.target.closest('.hall-map-unified-toolbar') || e.target.closest('.tablemates-drawer')) return;
       if (e.touches.length === 1) {
         isDragging = true;
+        hasPanned = false;
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
         startX = e.touches[0].clientX - panX;
         startY = e.touches[0].clientY - panY;
       } else if (e.touches.length === 2) {
         isDragging = false;
+        hasPanned = true;
         touchStartDist = Math.hypot(
           e.touches[0].clientX - e.touches[1].clientX,
           e.touches[0].clientY - e.touches[1].clientY
         );
       }
-    });
+    }, { passive: true });
 
     viewportEl.addEventListener('touchmove', (e) => {
       if (e.touches.length === 1 && isDragging) {
-        panX = e.touches[0].clientX - startX;
-        panY = e.touches[0].clientY - startY;
-        applyTransform();
+        const dx = e.touches[0].clientX - touchStartX;
+        const dy = e.touches[0].clientY - touchStartY;
+        if (!hasPanned && Math.hypot(dx, dy) > DRAG_THRESHOLD) {
+          hasPanned = true;
+        }
+        if (hasPanned) {
+          panX = e.touches[0].clientX - startX;
+          panY = e.touches[0].clientY - startY;
+          applyTransform();
+        }
       } else if (e.touches.length === 2) {
         const dist = Math.hypot(
           e.touches[0].clientX - e.touches[1].clientX,
@@ -220,11 +247,36 @@
           touchStartDist = dist;
         }
       }
-    });
+    }, { passive: true });
 
-    viewportEl.addEventListener('touchend', () => {
+    viewportEl.addEventListener('touchend', (e) => {
+      if (!hasPanned && isDragging) {
+        const touch = e.changedTouches ? e.changedTouches[0] : null;
+        const targetEl = touch ? document.elementFromPoint(touch.clientX, touch.clientY) : e.target;
+        const tableGroup = targetEl ? targetEl.closest('.map-table-group') : null;
+        if (tableGroup) {
+          const tableName = tableGroup.getAttribute('data-table-name');
+          if (tableName) {
+            lastTapTime = Date.now();
+            openDrawerForTable(tableName);
+          }
+        }
+      }
       isDragging = false;
       touchStartDist = 0;
+    });
+
+    // Delegated click event for desktop mouse click or fallback click
+    viewportEl.addEventListener('click', (e) => {
+      if (e.target.closest('.hall-map-unified-toolbar') || e.target.closest('.tablemates-drawer')) return;
+      if (hasPanned || (Date.now() - lastTapTime < 350)) return;
+      const tableGroup = e.target.closest('.map-table-group');
+      if (tableGroup) {
+        const tableName = tableGroup.getAttribute('data-table-name');
+        if (tableName) {
+          openDrawerForTable(tableName);
+        }
+      }
     });
 
     // Mouse Wheel Zoom
@@ -402,10 +454,12 @@
         entryCoords = { x: pxX + itemWidth / 2, y: pxY + itemHeight / 2 };
       }
 
+      const isInteractiveTable = isMesaPrincipal;
+
       svgContent += `
-        <g class="landmark-group ${isTargetMesa ? 'target-landmark' : ''}" 
-           transform="translate(${pxX}, ${pxY}) rotate(${rot}, ${itemWidth / 2}, ${itemHeight / 2}) scale(${scale})" 
-           onclick="window.__hallMapSelectTable('${escapeHtml(item.name)}')">
+        <g class="landmark-group ${isInteractiveTable ? 'map-table-group' : 'non-interactive-landmark'} ${isTargetMesa ? 'target-landmark' : ''}" 
+           ${isInteractiveTable ? `data-table-name="${escapeHtml(item.name || 'Mesa Principal')}" onclick="window.__hallMapSelectTable('${escapeHtml(item.name || 'Mesa Principal')}')"` : ''}
+           transform="translate(${pxX}, ${pxY}) rotate(${rot}, ${itemWidth / 2}, ${itemHeight / 2}) scale(${scale})">
           <rect width="${itemWidth}" height="${itemHeight}" rx="14" 
                 fill="${isMesaPrincipal ? 'url(#table-bg-presidencial)' : 'rgba(24, 28, 44, 0.9)'}" 
                 stroke="${isMesaPrincipal ? '#d4af37' : 'rgba(212, 175, 55, 0.35)'}" 
@@ -462,6 +516,7 @@
 
       svgContent += `
         <g class="map-table-group ${isTarget ? 'target' : ''}" 
+           data-table-name="${escapeHtml(tName)}"
            transform="translate(${cx}, ${cy}) rotate(${rot}) scale(${scale})" 
            onclick="window.__hallMapSelectTable('${escapeHtml(tName)}')">
           ${isTarget ? `

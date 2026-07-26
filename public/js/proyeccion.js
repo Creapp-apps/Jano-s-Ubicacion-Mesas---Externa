@@ -206,8 +206,9 @@ document.addEventListener('DOMContentLoaded', () => {
           inactiveElement.classList.add('active');
           activeElement.classList.remove('active');
           
-          // Update text content
-          guestNameEl.textContent = photo.guestName;
+          // Update text content (Display first name only for informal mural experience)
+          const namePart = (photo.guestName || 'Invitado').trim().split(/\s+/)[0];
+          guestNameEl.textContent = namePart ? namePart.charAt(0).toUpperCase() + namePart.slice(1) : 'Invitado';
           
           if (photo.message && photo.message.trim().length > 0) {
             guestMessageEl.textContent = photo.message;

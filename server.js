@@ -822,6 +822,17 @@ app.get('/api/config', async (req, res) => {
       globalSupportTemplate = defaultTemplateVal || defaultTemplateStr;
     }
 
+    let selectedFilters = ['normal', 'jirafa', 'gato', 'makeup', 'payaso', 'vintage', 'cyberpunk', 'mono', 'bulldog_frances', 'sombrero_sonrisas'];
+    if (config['selected_filters']) {
+      try {
+        const parsed = JSON.parse(config['selected_filters']);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const ALIAS_MAP = { perrito: 'bulldog_frances', cotillon: 'sombrero_sonrisas', corona: 'jirafa' };
+          selectedFilters = parsed.map(id => ALIAS_MAP[id] || id);
+        }
+      } catch (e) {}
+    }
+
     res.json({
       eventTitle,
       googleDriveFolderUrl,
@@ -833,6 +844,7 @@ app.get('/api/config', async (req, res) => {
       serviceInvitation,
       serviceTrivia,
       serviceCapitanes,
+      selectedFilters,
       triviaQuestions,
       invitationEventDate,
       invitationEventTimeEnd,
@@ -859,17 +871,40 @@ app.get('/api/config', async (req, res) => {
       snapApiToken: process.env.SNAP_API_TOKEN || '',
       snapGroupId: process.env.SNAP_GROUP_ID || '',
       snapLenses: {
-        perrito: process.env.SNAP_LENS_PERRITO || '',
-        cotillon: process.env.SNAP_LENS_COTILLON || '',
-        makeup: process.env.SNAP_LENS_MAKEUP || process.env.SNAP_LENS_GLAM || '',
+        jirafa: process.env.SNAP_LENS_JIRAFA || process.env.SNAP_LENS_CORONA || '45a7db1b-a0ed-42a5-b7f9-b7dd419c02b8',
+        gato: process.env.SNAP_LENS_GATO || process.env.SNAP_LENS_GATITO || 'f0132090-6519-4ad8-b41f-147b4c8759da',
+        makeup: process.env.SNAP_LENS_MAKEUP || process.env.SNAP_LENS_GLAM || '5792cd48-93d4-421a-bf99-b20a7e900e5c',
+        payaso: process.env.SNAP_LENS_PAYASO || '38cb3c38-bef8-4c61-ae74-fb0debb5df86',
+        perrito: process.env.SNAP_LENS_PERRITO || '49414230875',
+        cotillon: process.env.SNAP_LENS_COTILLON || '43281170875',
         angel: process.env.SNAP_LENS_ANGEL || '',
         demonio: process.env.SNAP_LENS_DEMONIO || '',
-        payaso: process.env.SNAP_LENS_PAYASO || '',
         pirata: process.env.SNAP_LENS_PIRATA || '',
         cybervisor: process.env.SNAP_LENS_CYBERVISOR || process.env.SNAP_LENS_CYBER_VISOR || '',
-        gato: process.env.SNAP_LENS_GATO || process.env.SNAP_LENS_GATITO || '',
-        corona: process.env.SNAP_LENS_CORONA || '',
-        vampiro: process.env.SNAP_LENS_VAMPIRO || ''
+        corona: process.env.SNAP_LENS_CORONA || '45a7db1b-a0ed-42a5-b7f9-b7dd419c02b8',
+        vampiro: process.env.SNAP_LENS_VAMPIRO || '76e9807a-e6b8-402f-a329-a0d134d9fed1',
+        lentes_bigote_1: process.env.SNAP_LENS_LENTES_BIGOTE_1 || 'baff51d3-5226-43dc-9091-90e652ebf5e9',
+        gigolo_face: process.env.SNAP_LENS_GIGOLO_FACE || '0f67caef-e403-47f9-ace2-7e679b56d999',
+        lentes_bigote: process.env.SNAP_LENS_LENTES_BIGOTE || '1d8461a3-8732-4341-b802-1141591fdf2c',
+        sombrero_sonrisas: process.env.SNAP_LENS_SOMBRERO_SONRISAS || '5c6715f3-5476-41d8-a6d7-d4722b9296fa',
+        sombrero_barba: process.env.SNAP_LENS_SOMBRERO_BARBA || '4d16c1f9-16c8-4ce1-9681-74730a03dd2d',
+        bulldog_frances: process.env.SNAP_LENS_BULLDOG_FRANCES || 'f0089bed-0f5e-4058-9300-686147c548eb',
+        vaca: process.env.SNAP_LENS_VACA || '0736cd2e-7fae-4084-b7fd-9589cc32b6e3',
+        narizota: process.env.SNAP_LENS_NARIZOTA || 'f31624ad-6690-4ae9-8d52-bd9ec48f5efa',
+        cachetes_kiko: process.env.SNAP_LENS_CACHETES_KIKO || 'f9f52411-9cb5-40cc-b20b-b9a69fa71882',
+        barba_lentes: process.env.SNAP_LENS_BARBA_LENTES || 'fa4b2dbd-d8a5-4efc-909e-5f911230bac1',
+        cara_gato: process.env.SNAP_LENS_CARA_GATO || '876651a8-542e-4a28-9981-b72addbcb895',
+        ruleta_filtros: process.env.SNAP_LENS_RULETA_FILTROS || '40fcc8f7-2875-44c8-9846-3336525e5473',
+        sombrero_pollo: process.env.SNAP_LENS_SOMBRERO_POLLO || 'd2c85c6f-15a0-435d-8ac4-a63907f6fae3',
+        sombrero_raton: process.env.SNAP_LENS_SOMBRERO_RATON || 'dc51212f-49a1-47d8-9c2c-14e4d017eec8',
+        baby_face_2: process.env.SNAP_LENS_BABY_FACE_2 || '254b8e9b-5c6e-47b1-a109-b50b4bcb48a1',
+        zebra: process.env.SNAP_LENS_ZEBRA || 'ef0809d5-f551-40df-a05e-fea1cb105a56',
+        jumanji: process.env.SNAP_LENS_JUMANJI || '817eff5c-e4c8-4ee3-b60d-d312d6ec9b5e',
+        pelado: process.env.SNAP_LENS_PELADO || 'a3c1ec09-867d-466d-b08f-e34a5b837b47',
+        pirata_1: process.env.SNAP_LENS_PIRATA_1 || '5106d865-c6d7-4d77-81cc-95247b7eb094',
+        words: process.env.SNAP_LENS_WORDS || 'a187bbcb-fd1f-461d-ba31-da9d71308040',
+        baby_face: process.env.SNAP_LENS_BABY_FACE || '5a9aab9a-e7ba-4542-a02a-b625a323f609',
+        filtro_viejo: process.env.SNAP_LENS_FILTRO_VIEJO || 'c6ffefce-d3d7-41f4-83e0-edb69945f228'
       },
       maxUploadSize: process.env.VERCEL ? 4 * 1024 * 1024 : 15 * 1024 * 1024
     });
@@ -902,17 +937,40 @@ app.get('/api/config', async (req, res) => {
       snapApiToken: process.env.SNAP_API_TOKEN || '',
       snapGroupId: process.env.SNAP_GROUP_ID || '',
       snapLenses: {
-        perrito: process.env.SNAP_LENS_PERRITO || '',
-        cotillon: process.env.SNAP_LENS_COTILLON || '',
-        makeup: process.env.SNAP_LENS_MAKEUP || process.env.SNAP_LENS_GLAM || '',
+        jirafa: process.env.SNAP_LENS_JIRAFA || process.env.SNAP_LENS_CORONA || '45a7db1b-a0ed-42a5-b7f9-b7dd419c02b8',
+        gato: process.env.SNAP_LENS_GATO || process.env.SNAP_LENS_GATITO || 'f0132090-6519-4ad8-b41f-147b4c8759da',
+        makeup: process.env.SNAP_LENS_MAKEUP || process.env.SNAP_LENS_GLAM || '5792cd48-93d4-421a-bf99-b20a7e900e5c',
+        payaso: process.env.SNAP_LENS_PAYASO || '38cb3c38-bef8-4c61-ae74-fb0debb5df86',
+        perrito: process.env.SNAP_LENS_PERRITO || '49414230875',
+        cotillon: process.env.SNAP_LENS_COTILLON || '43281170875',
         angel: process.env.SNAP_LENS_ANGEL || '',
         demonio: process.env.SNAP_LENS_DEMONIO || '',
-        payaso: process.env.SNAP_LENS_PAYASO || '',
         pirata: process.env.SNAP_LENS_PIRATA || '',
         cybervisor: process.env.SNAP_LENS_CYBERVISOR || process.env.SNAP_LENS_CYBER_VISOR || '',
-        gato: process.env.SNAP_LENS_GATO || process.env.SNAP_LENS_GATITO || '',
-        corona: process.env.SNAP_LENS_CORONA || '',
-        vampiro: process.env.SNAP_LENS_VAMPIRO || ''
+        corona: process.env.SNAP_LENS_CORONA || '45a7db1b-a0ed-42a5-b7f9-b7dd419c02b8',
+        vampiro: process.env.SNAP_LENS_VAMPIRO || '76e9807a-e6b8-402f-a329-a0d134d9fed1',
+        lentes_bigote_1: process.env.SNAP_LENS_LENTES_BIGOTE_1 || 'baff51d3-5226-43dc-9091-90e652ebf5e9',
+        gigolo_face: process.env.SNAP_LENS_GIGOLO_FACE || '0f67caef-e403-47f9-ace2-7e679b56d999',
+        lentes_bigote: process.env.SNAP_LENS_LENTES_BIGOTE || '1d8461a3-8732-4341-b802-1141591fdf2c',
+        sombrero_sonrisas: process.env.SNAP_LENS_SOMBRERO_SONRISAS || '5c6715f3-5476-41d8-a6d7-d4722b9296fa',
+        sombrero_barba: process.env.SNAP_LENS_SOMBRERO_BARBA || '4d16c1f9-16c8-4ce1-9681-74730a03dd2d',
+        bulldog_frances: process.env.SNAP_LENS_BULLDOG_FRANCES || 'f0089bed-0f5e-4058-9300-686147c548eb',
+        vaca: process.env.SNAP_LENS_VACA || '0736cd2e-7fae-4084-b7fd-9589cc32b6e3',
+        narizota: process.env.SNAP_LENS_NARIZOTA || 'f31624ad-6690-4ae9-8d52-bd9ec48f5efa',
+        cachetes_kiko: process.env.SNAP_LENS_CACHETES_KIKO || 'f9f52411-9cb5-40cc-b20b-b9a69fa71882',
+        barba_lentes: process.env.SNAP_LENS_BARBA_LENTES || 'fa4b2dbd-d8a5-4efc-909e-5f911230bac1',
+        cara_gato: process.env.SNAP_LENS_CARA_GATO || '876651a8-542e-4a28-9981-b72addbcb895',
+        ruleta_filtros: process.env.SNAP_LENS_RULETA_FILTROS || '40fcc8f7-2875-44c8-9846-3336525e5473',
+        sombrero_pollo: process.env.SNAP_LENS_SOMBRERO_POLLO || 'd2c85c6f-15a0-435d-8ac4-a63907f6fae3',
+        sombrero_raton: process.env.SNAP_LENS_SOMBRERO_RATON || 'dc51212f-49a1-47d8-9c2c-14e4d017eec8',
+        baby_face_2: process.env.SNAP_LENS_BABY_FACE_2 || '254b8e9b-5c6e-47b1-a109-b50b4bcb48a1',
+        zebra: process.env.SNAP_LENS_ZEBRA || 'ef0809d5-f551-40df-a05e-fea1cb105a56',
+        jumanji: process.env.SNAP_LENS_JUMANJI || '817eff5c-e4c8-4ee3-b60d-d312d6ec9b5e',
+        pelado: process.env.SNAP_LENS_PELADO || 'a3c1ec09-867d-466d-b08f-e34a5b837b47',
+        pirata_1: process.env.SNAP_LENS_PIRATA_1 || '5106d865-c6d7-4d77-81cc-95247b7eb094',
+        words: process.env.SNAP_LENS_WORDS || 'a187bbcb-fd1f-461d-ba31-da9d71308040',
+        baby_face: process.env.SNAP_LENS_BABY_FACE || '5a9aab9a-e7ba-4542-a02a-b625a323f609',
+        filtro_viejo: process.env.SNAP_LENS_FILTRO_VIEJO || 'c6ffefce-d3d7-41f4-83e0-edb69945f228'
       },
       maxUploadSize: process.env.VERCEL ? 4 * 1024 * 1024 : 15 * 1024 * 1024
     });
@@ -1079,7 +1137,8 @@ app.post('/api/config', requireAuth, async (req, res) => {
     invitationPhoto4,
     invitationPhoto5,
     serviceTrivia,
-    triviaQuestions
+    triviaQuestions,
+    selectedFilters
   } = req.body;
   const eventId = req.query.event || 'default';
   if (!eventTitle) {
@@ -1087,6 +1146,10 @@ app.post('/api/config', requireAuth, async (req, res) => {
   }
   try {
     await db.setEventTitle(eventId, eventTitle);
+    
+    if (selectedFilters !== undefined) {
+      await db.setConfigValue(eventId, 'selected_filters', JSON.stringify(selectedFilters));
+    }
     
     if (invitationEventDate !== undefined) await db.setConfigValue(eventId, 'invitation_event_date', invitationEventDate);
     if (invitationEventTimeEnd !== undefined) await db.setConfigValue(eventId, 'invitation_event_time_end', invitationEventTimeEnd);
@@ -2767,6 +2830,108 @@ function broadcastPhotoUpdate(eventId) {
     });
 }
 
+// Helper: Get all confirmed attending guests and companions for an event
+async function getConfirmedAttendingList(eventId = 'default') {
+  try {
+    const guests = await db.getGuests(eventId);
+    const rsvps = await db.getRsvps(eventId);
+
+    const list = [];
+    const addedSet = new Set();
+
+    const addPerson = (name, type, table = '') => {
+      if (!name || typeof name !== 'string') return;
+      const trimmed = name.trim();
+      if (!trimmed) return;
+      const key = normalizeString(trimmed);
+      if (!addedSet.has(key)) {
+        addedSet.add(key);
+        list.push({
+          name: trimmed,
+          type: type,
+          table: table || ''
+        });
+      }
+    };
+
+    // 1. RSVPs with attending === true
+    if (Array.isArray(rsvps)) {
+      rsvps.filter(r => r && r.attending === true).forEach(r => {
+        const matchedGuest = Array.isArray(guests) ? guests.find(g => {
+          const gFull = `${g.firstName || ''} ${g.lastName || ''}`.trim();
+          return normalizeString(gFull) === normalizeString(r.name);
+        }) : null;
+
+        const tableName = matchedGuest && matchedGuest.table ? matchedGuest.table : (r.table || '');
+        addPerson(r.name, 'Titular', tableName);
+
+        // Companions
+        let companionNames = [];
+        if (Array.isArray(r.companionsDetails)) {
+          r.companionsDetails.forEach(cd => {
+            if (typeof cd === 'string') companionNames.push(cd);
+            else if (cd && cd.name) companionNames.push(cd.name);
+          });
+        }
+        if (Array.isArray(r.companionsNames)) {
+          r.companionsNames.forEach(cn => companionNames.push(cn));
+        } else if (typeof r.companionsNames === 'string' && r.companionsNames.trim()) {
+          r.companionsNames.split(',').forEach(cn => companionNames.push(cn.trim()));
+        }
+
+        companionNames.forEach(cName => {
+          if (cName && cName.trim()) {
+            addPerson(cName.trim(), `Acompañante de ${r.name}`, tableName);
+          }
+        });
+      });
+    }
+
+    // 2. Guests from guest list with confirmed rsvp
+    if (Array.isArray(guests)) {
+      guests.filter(g => g && (g.rsvp === true || g.status === 'confirmed')).forEach(g => {
+        const fullName = `${g.firstName || ''} ${g.lastName || ''}`.trim();
+        if (fullName) {
+          addPerson(fullName, 'Titular', g.table || '');
+        }
+      });
+    }
+
+    return list;
+  } catch (err) {
+    console.error('Error fetching confirmed attending list:', err);
+    return [];
+  }
+}
+
+// API: Search confirmed attending guests & companions for photo mural upload
+app.get('/api/public/search-attendance-guests', async (req, res) => {
+  const eventId = req.query.event || 'default';
+  const query = req.query.q ? req.query.q.trim() : '';
+
+  try {
+    const attendingList = await getConfirmedAttendingList(eventId);
+    
+    // If no query provided, return all (up to 50)
+    if (!query) {
+      return res.json(attendingList.slice(0, 50));
+    }
+
+    const queryClean = normalizeString(query);
+    const queryWords = queryClean.split(/\s+/).filter(Boolean);
+
+    const filtered = attendingList.filter(item => {
+      const cleanName = normalizeString(item.name);
+      return queryWords.every(word => cleanName.includes(word));
+    });
+
+    res.json(filtered.slice(0, 30));
+  } catch (error) {
+    console.error('Error searching attendance guests:', error);
+    res.status(500).json({ error: 'Error al buscar invitados de la lista.' });
+  }
+});
+
 // API: Upload guest photo
 app.post('/api/photos/upload', upload.single('photo'), async (req, res) => {
   if (!req.file) {
@@ -2774,6 +2939,25 @@ app.post('/api/photos/upload', upload.single('photo'), async (req, res) => {
   }
   const { guestName, message } = req.body;
   const eventId = req.query.event || 'default';
+
+  // Validate that uploader is a confirmed attending guest or companion if guests exist in DB
+  try {
+    const attendingList = await getConfirmedAttendingList(eventId);
+    if (attendingList.length > 0) {
+      const cleanInputName = normalizeString(guestName || '');
+      const isAttending = attendingList.some(p => normalizeString(p.name) === cleanInputName);
+      if (!isAttending) {
+        if (req.file && fs.existsSync(req.file.path)) {
+          fs.unlinkSync(req.file.path);
+        }
+        return res.status(400).json({ 
+          error: 'Para subir una foto al mural debes haber confirmado tu asistencia o ser un acompañante registrado.' 
+        });
+      }
+    }
+  } catch (valErr) {
+    console.warn('Attendance validation check error (proceeding with upload):', valErr);
+  }
   
   try {
     const fileBuffer = fs.readFileSync(req.file.path);

@@ -214,14 +214,14 @@ html, body {
   width: 90%;
   max-width: 950px;
   padding: 50px 60px;
-  background: rgba(11, 11, 12, 0.6);
-  border: 1px solid rgba(212, 175, 55, 0.25);
+  background: rgba(11, 11, 12, 0.65);
+  border: 1px solid rgba(212, 175, 55, 0.35);
   border-radius: 24px;
   backdrop-filter: blur(15px);
   -webkit-backdrop-filter: blur(15px);
-  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), var(--glow-shadow);
   position: relative;
   overflow: hidden;
+  animation: cardBreatheGlow 5s ease-in-out infinite alternate;
 }
 
 .empty-card::after {
@@ -232,6 +232,7 @@ html, body {
   right: 10%;
   height: 3px;
   background: var(--gold-gradient);
+  animation: topBarPulse 5s ease-in-out infinite alternate;
 }
 
 .empty-state-content {
@@ -251,6 +252,10 @@ html, body {
 
 .logo-large {
   margin-bottom: 20px;
+}
+
+.logo-large img {
+  animation: logoGlowPulse 5s ease-in-out infinite alternate;
 }
 
 .logo-large svg {
@@ -310,9 +315,9 @@ html, body {
   font-family: 'Cinzel', serif;
   font-weight: 700;
   font-size: 1.2rem;
-  box-shadow: 0 0 12px rgba(212, 175, 55, 0.2);
   background: rgba(212, 175, 55, 0.05);
   flex-shrink: 0;
+  animation: stepNumberGlow 5s ease-in-out infinite alternate;
 }
 
 /* Right Column: QR Code Display */
@@ -329,9 +334,8 @@ html, body {
   background: #ffffff;
   padding: 18px;
   border-radius: 18px;
-  box-shadow: 0 0 35px rgba(212, 175, 55, 0.35);
   transition: all 0.5s ease;
-  animation: qrPulse 3s infinite alternate;
+  animation: qrBreatheGlow 5s ease-in-out infinite alternate;
 }
 
 .qr-glow-box img {
@@ -349,6 +353,7 @@ html, body {
   letter-spacing: 2px;
   font-weight: 500;
   margin-top: 5px;
+  animation: hintPulse 5s ease-in-out infinite alternate;
 }
 
 /* Connectivity Status */
@@ -407,15 +412,68 @@ html, body {
   color: #e74c3c;
 }
 
-/* Keyframes & Media Queries */
-@keyframes qrPulse {
+/* Keyframes & Glow Breathe Animations */
+@keyframes cardBreatheGlow {
   0% {
-    box-shadow: 0 0 25px rgba(212, 175, 55, 0.25);
+    border-color: rgba(212, 175, 55, 0.25);
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85), 0 0 25px rgba(212, 175, 55, 0.2), inset 0 0 15px rgba(212, 175, 55, 0.05);
+  }
+  100% {
+    border-color: rgba(212, 175, 55, 0.65);
+    box-shadow: 0 25px 65px rgba(0, 0, 0, 0.9), 0 0 65px rgba(212, 175, 55, 0.55), inset 0 0 25px rgba(212, 175, 55, 0.2);
+  }
+}
+
+@keyframes qrBreatheGlow {
+  0% {
+    box-shadow: 0 0 25px rgba(212, 175, 55, 0.35), 0 0 50px rgba(212, 175, 55, 0.15);
     transform: scale(1);
   }
   100% {
-    box-shadow: 0 0 45px rgba(212, 175, 55, 0.55);
-    transform: scale(1.02);
+    box-shadow: 0 0 60px rgba(212, 175, 55, 0.85), 0 0 110px rgba(212, 175, 55, 0.45);
+    transform: scale(1.03);
+  }
+}
+
+@keyframes topBarPulse {
+  0% {
+    opacity: 0.5;
+    filter: drop-shadow(0 0 6px rgba(212, 175, 55, 0.3));
+  }
+  100% {
+    opacity: 1;
+    filter: drop-shadow(0 0 18px rgba(212, 175, 55, 0.9));
+  }
+}
+
+@keyframes logoGlowPulse {
+  0% {
+    filter: drop-shadow(0 4px 15px rgba(212, 175, 55, 0.4));
+  }
+  100% {
+    filter: drop-shadow(0 6px 26px rgba(212, 175, 55, 0.8));
+  }
+}
+
+@keyframes stepNumberGlow {
+  0% {
+    box-shadow: 0 0 10px rgba(212, 175, 55, 0.2);
+    border-color: var(--gold-primary);
+  }
+  100% {
+    box-shadow: 0 0 22px rgba(212, 175, 55, 0.7);
+    border-color: #ffd700;
+  }
+}
+
+@keyframes hintPulse {
+  0% {
+    color: #a0aec0;
+    text-shadow: 0 0 0px transparent;
+  }
+  100% {
+    color: #fef08a;
+    text-shadow: 0 0 12px rgba(212, 175, 55, 0.6);
   }
 }
 

@@ -254,91 +254,230 @@
 
     </div> <!-- Close tab-mesas -->
 
-    <!-- PHOTOS MODERATION TAB -->
+    <!-- PHOTOS CONTROL TAB -->
     <div id="tab-fotos" class="tab-content">
-      <div class="admin-grid">
-        <!-- Left Column: Settings -->
-        <div>
-          <!-- Event Configuration panel (Photos specific) -->
-          <div class="panel">
-            <h2>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-              Personalización del Muro
-            </h2>
-            <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; margin-bottom: 20px;">
-              Define el nombre del evento que se mostrará en la pantalla gigante y en la página de carga de fotos de los invitados.
-            </p>
-            <div class="form-group-inline" style="display: flex; gap: 10px; margin-bottom: 10px;">
-              <input type="text" id="event-title-photos-input" class="form-control-admin" placeholder="Ej. XV de Mica" style="flex: 1; padding: 12px 18px; border-radius: 20px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif;">
-              <button class="btn btn-primary" id="btn-save-photos-title" style="flex: none; padding: 12px 25px; border-radius: 20px; font-size: 0.8rem;">Guardar</button>
-            </div>
-          </div>
+      
+      <!-- Sub-tabs Bar Navigation for Fotos -->
+      <div class="subtabs-bar" style="display: flex; gap: 10px; margin-bottom: 24px; border-bottom: 1px solid rgba(212,175,55,0.15); padding-bottom: 12px; overflow-x: auto;">
+        <button class="subtab-btn active" id="subtab-btn-fotos-general" onclick="switchFotosSubtab('general')">
+          <span>⚙️ General</span>
+        </button>
+        <button class="subtab-btn" id="subtab-btn-fotos-filtros" onclick="switchFotosSubtab('filtros')">
+          <span>🎨 Filtros</span>
+        </button>
+        <button class="subtab-btn" id="subtab-btn-fotos-moderacion" onclick="switchFotosSubtab('moderacion')">
+          <span>📸 Moderación</span>
+        </button>
+        <button class="subtab-btn" id="subtab-btn-fotos-qr" onclick="switchFotosSubtab('qr')">
+          <span>📱 QR & Pantalla</span>
+        </button>
+      </div>
 
-          <!-- Server Actions for Photos -->
-          <div class="panel">
-            <h2>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>
-              Acciones de Galería
-            </h2>
-            <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; margin-bottom: 20px;">
-              Proyecta las fotos en vivo en la pantalla gigante del salón, o reinicia la galería si es necesario.
-            </p>
-            <button class="btn btn-primary" id="btn-screen-mode" style="width: 100%; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; gap: 8px;">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="stroke: #0b0b0c;"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-              Proyectar Fotos
-            </button>
-            <button class="btn btn-danger" id="btn-clear-photos" style="width: 100%;">Limpiar Galería de Fotos</button>
-          </div>
-
-          <!-- QR Generator panel (Photos specific) -->
-          <div class="panel">
-            <h2>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-              Código QR del Muro de Fotos
-            </h2>
-            
-            <div class="qr-preview-box" style="margin-top: 15px;">
-              <div class="qr-code-wrapper" id="qr-photos-code-container">
-                <div style="width: 150px; height: 150px; background: #eee; display: flex; align-items: center; justify-content: center; color: #666; font-size: 0.8rem;">Cargando...</div>
-              </div>
-              <p class="qr-instructions" id="qr-photos-instructions-text">
-                Imprime el cartel con el QR oficial para ubicarlo en las mesas o recepción. Los invitados podrán escanearlo para subir sus fotos directamente.
-              </p>
-              <button class="btn btn-primary" id="btn-print-photos-qr" style="width: auto; padding-left: 30px; padding-right: 30px;">Imprimir Cartel QR</button>
-            </div>
+      <!-- SUBTAB 1: GENERAL -->
+      <div id="fotos-subtab-general" class="fotos-subtab-content active">
+        <div class="panel" style="max-width: 650px;">
+          <h2>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Personalización del Muro
+          </h2>
+          <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; margin-bottom: 20px;">
+            Define el nombre del evento que se mostrará en la pantalla gigante y en la página de carga de fotos de los invitados.
+          </p>
+          <div class="form-group-inline" style="display: flex; gap: 10px; margin-bottom: 10px;">
+            <input type="text" id="event-title-photos-input" class="form-control-admin" placeholder="Ej. XV de Mica" style="flex: 1; padding: 12px 18px; border-radius: 20px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif;">
+            <button class="btn btn-primary" id="btn-save-photos-title" style="flex: none; padding: 12px 25px; border-radius: 20px; font-size: 0.8rem;">Guardar</button>
           </div>
         </div>
 
-        <!-- Right Column: Moderation Grids -->
-        <div>
-          <div class="panel">
-            <h2>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-              Moderación de Fotos
-            </h2>
-            <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; margin-bottom: 20px;">
-              Aprueba las fotos que suben los invitados para que se proyecten en tiempo real en la pantalla gigante del salón, o rechaza aquellas que no consideres adecuadas.
-            </p>
+        <div class="panel" style="max-width: 650px; margin-top: 20px;">
+          <h2>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>
+            Mantenimiento de Galería
+          </h2>
+          <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; margin-bottom: 20px;">
+            Borra todas las fotos de la galería del evento si deseas reiniciar las pruebas o empezar la noche desde cero.
+          </p>
+          <button class="btn btn-danger" id="btn-clear-photos" style="width: 100%; max-width: 320px;">Limpiar Galería de Fotos</button>
+        </div>
+      </div>
 
-            <!-- Moderation Sections -->
-            <div class="moderation-section-header">
-              <h3>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
-                Pendientes de Aprobación
-              </h3>
-            </div>
-            <div class="photos-moderation-grid" id="pending-photos-grid">
-              <div class="no-photos-msg">Cargando fotos pendientes...</div>
+      <!-- SUBTAB 2: FILTROS DE CÁMARA SHOWROOM CON PROBADOR MÓVIL EN TIEMPO REAL -->
+      <div id="fotos-subtab-filtros" class="fotos-subtab-content" style="display: none;">
+        <div style="display: flex; gap: 25px; align-items: flex-start; flex-wrap: wrap;">
+          
+          <!-- Columna Izquierda: Catalog Showroom -->
+          <div class="panel" style="flex: 1; min-width: 320px; margin-bottom: 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;">
+              <div>
+                <h2 style="margin-bottom: 5px;">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20"/><circle cx="12" cy="12" r="10"/></svg>
+                  Showroom y Selección de Filtros
+                </h2>
+                <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; margin: 0;">
+                  Elige hasta 10 filtros activos para tu evento. Toca cualquier filtro para probarlo en el teléfono interactivo de la derecha.
+                </p>
+              </div>
+              <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <div id="filter-selection-counter-badge" style="background: rgba(212,175,55,0.15); border: 1px solid var(--gold-primary); color: var(--gold-light); padding: 8px 18px; border-radius: 20px; font-weight: 700; font-size: 0.9rem;">
+                  Seleccionados: <span id="selected-filters-count">0</span> / 10
+                </div>
+                <button type="button" id="btn-deselect-all-filters" onclick="deselectAllFilters()" 
+                        style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35); color: #f87171; padding: 8px 16px; border-radius: 20px; font-weight: 600; font-size: 0.82rem; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 6px;"
+                        onmouseover="this.style.background='rgba(239, 68, 68, 0.25)'" 
+                        onmouseout="this.style.background='rgba(239, 68, 68, 0.12)'">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                  Deseleccionar Todo
+                </button>
+              </div>
             </div>
 
-            <div class="moderation-section-header">
-              <h3>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
-                Fotos Aprobadas
-              </h3>
+            <!-- Category filter buttons bar -->
+            <div style="display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap;" id="filter-category-nav">
+              <button type="button" class="subtab-btn active" data-cat="all" onclick="filterShowroomCategory('all')">Todos</button>
+              <button type="button" class="subtab-btn" data-cat="snapchat" onclick="filterShowroomCategory('snapchat')">Snapchat 👻</button>
+              <button type="button" class="subtab-btn" data-cat="divertidos" onclick="filterShowroomCategory('divertidos')">Divertidos 🤪</button>
+              <button type="button" class="subtab-btn" data-cat="belleza" onclick="filterShowroomCategory('belleza')">Belleza ✨</button>
+              <button type="button" class="subtab-btn" data-cat="estilos" onclick="filterShowroomCategory('estilos')">Estilos 🎞️</button>
             </div>
-            <div class="photos-moderation-grid" id="approved-photos-grid">
-              <div class="no-photos-msg">Cargando fotos aprobadas...</div>
+
+            <!-- Filter Showroom Grid Container -->
+            <div class="filter-showroom-grid" id="filter-showroom-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; max-height: 560px; overflow-y: auto; padding-right: 5px;">
+              <!-- JS dynamically injects filter cards here -->
+            </div>
+
+            <div style="margin-top: 25px; display: flex; justify-content: flex-end;">
+              <button class="btn btn-primary" id="btn-save-event-filters" style="padding: 12px 35px; border-radius: 25px; font-size: 0.9rem;">Guardar Filtros del Evento</button>
+            </div>
+          </div>
+
+          <!-- Columna Derecha: Probador Móvil 3D Glassmorphic -->
+          <div class="panel" style="width: 310px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; background: rgba(15,15,18,0.7); border: 1px solid rgba(212,175,55,0.25); box-shadow: 0 10px 30px rgba(0,0,0,0.5); border-radius: 28px; padding: 20px; margin-bottom: 0;">
+            <div style="width: 100%; text-align: center; margin-bottom: 12px;">
+              <h3 style="font-size: 0.95rem; font-weight: 700; color: var(--gold-primary); margin: 0 0 4px 0; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <span>📱 Probador en Tiempo Real</span>
+              </h3>
+              <p style="font-size: 0.72rem; color: var(--text-muted); margin: 0;">Vista previa interactiva de la cámara</p>
+            </div>
+
+            <!-- Mobile Phone Frame -->
+            <div class="tester-phone-frame" style="width: 260px; height: 480px; background: #000; border-radius: 36px; border: 4px solid #333; box-shadow: 0 0 25px rgba(212,175,55,0.15), inset 0 0 10px rgba(255,255,255,0.1); position: relative; overflow: hidden; display: flex; flex-direction: column;">
+              
+              <!-- Phone Dynamic Island Notch -->
+              <div style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 70px; height: 14px; background: #111; border-radius: 10px; z-index: 20; display: flex; align-items: center; justify-content: space-around; padding: 0 6px;">
+                <div style="width: 6px; height: 6px; border-radius: 50%; background: #0b2030; border: 1px solid #1a3a50;"></div>
+                <div style="width: 25px; height: 3px; border-radius: 2px; background: #222;"></div>
+              </div>
+
+              <!-- Phone Camera Viewport / Canvas Container -->
+              <div id="tester-viewport" style="flex: 1; position: relative; background: #111; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                
+                <!-- Demo Face Avatar Backdrop (Visible when webcam is off) -->
+                <div id="tester-demo-avatar" style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle at center, #2a2536 0%, #0d0c12 100%); transition: filter 0.3s ease;">
+                  <div style="font-size: 4.5rem; margin-bottom: 10px; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5)); transition: transform 0.3s ease;" id="tester-demo-emoji">😀</div>
+                  <div id="tester-demo-label" style="font-size: 0.75rem; color: rgba(255,255,255,0.7); text-align: center; padding: 0 15px; font-weight: 500;">Rostro de Muestra</div>
+                </div>
+
+                <!-- Live Webcam Video Stream -->
+                <video id="tester-webcam-video" autoplay playsinline muted style="width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: none;"></video>
+
+                <!-- Snap Camera Kit Render Canvas -->
+                <canvas id="tester-snap-canvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: none; z-index: 5;"></canvas>
+
+                <!-- AR Overlay Canvas -->
+                <canvas id="tester-overlay-canvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; transform: scaleX(-1); z-index: 6;"></canvas>
+
+                <!-- Active Filter Name Badge Overlay -->
+                <div style="position: absolute; top: 32px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.65); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 15px; display: flex; align-items: center; gap: 6px; z-index: 15; max-width: 90%;">
+                  <span id="tester-badge-emoji" style="font-size: 1rem;">📷</span>
+                  <span id="tester-badge-name" style="font-size: 0.72rem; color: white; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Normal</span>
+                </div>
+              </div>
+
+              <!-- Phone Bottom Controls -->
+              <div style="padding: 10px; background: rgba(10,10,12,0.95); border-top: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; gap: 8px; z-index: 15;">
+                <button type="button" id="btn-toggle-tester-webcam" onclick="toggleTesterWebcam()" style="width: 100%; padding: 8px 0; border-radius: 12px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: white; font-size: 0.72rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s ease;">
+                  <span id="tester-cam-icon">📷</span>
+                  <span id="tester-cam-text">Probar con Mi Cámara</span>
+                </button>
+                <button type="button" id="btn-toggle-tester-selection" onclick="toggleTesterActiveFilterSelection()" style="width: 100%; padding: 9px 0; border-radius: 12px; background: var(--gold-gradient); border: none; color: #0b0b0c; font-size: 0.75rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; box-shadow: 0 4px 12px rgba(212,175,55,0.25);">
+                  <span id="tester-select-icon">✓</span>
+                  <span id="tester-select-text">Filtro Seleccionado</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- SUBTAB 3: MODERACIÓN DE FOTOS EN VIVO -->
+      <div id="fotos-subtab-moderacion" class="fotos-subtab-content" style="display: none;">
+        <div class="panel">
+          <h2>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+            Moderación de Fotos en Vivo
+          </h2>
+          <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; margin-bottom: 20px;">
+            Aprueba las fotos que suben los invitados para que se proyecten en tiempo real en la pantalla gigante del salón, o rechaza aquellas que no consideres adecuadas.
+          </p>
+
+          <!-- Moderation Sections -->
+          <div class="moderation-section-header">
+            <h3>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+              Pendientes de Aprobación
+            </h3>
+          </div>
+          <div class="photos-moderation-grid" id="pending-photos-grid">
+            <div class="no-photos-msg">Cargando fotos pendientes...</div>
+          </div>
+
+          <div class="moderation-section-header" style="margin-top: 35px;">
+            <h3>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+              Fotos Aprobadas
+            </h3>
+          </div>
+          <div class="photos-moderation-grid" id="approved-photos-grid">
+            <div class="no-photos-msg">Cargando fotos aprobadas...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SUBTAB 4: QR & PANTALLA GIGANTE -->
+      <div id="fotos-subtab-qr" class="fotos-subtab-content" style="display: none;">
+        <div class="admin-grid">
+          <div>
+            <div class="panel">
+              <h2>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                Pantalla Gigante del Salón
+              </h2>
+              <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; margin-bottom: 20px;">
+                Abre la vista de proyección en pantalla completa para mostrar el carrusel de fotos aprobadas y la animación del QR a los invitados en la pantalla gigante.
+              </p>
+              <button class="btn btn-primary" id="btn-screen-mode-qr" onclick="openScreenMode()" style="width: 100%; padding: 15px; font-size: 1rem; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="stroke: #0b0b0c;"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                🖥️ Proyectar Fotos en Vivo
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <div class="panel">
+              <h2>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                Código QR del Muro de Fotos
+              </h2>
+              <div class="qr-preview-box" style="margin-top: 15px;">
+                <div class="qr-code-wrapper" id="qr-photos-code-container">
+                  <div style="width: 150px; height: 150px; background: #eee; display: flex; align-items: center; justify-content: center; color: #666; font-size: 0.8rem;">Cargando...</div>
+                </div>
+                <p class="qr-instructions" id="qr-photos-instructions-text">
+                  Imprime el cartel con el QR oficial para ubicarlo en las mesas o recepción. Los invitados podrán escanearlo para subir sus fotos directamente.
+                </p>
+                <button class="btn btn-primary" id="btn-print-photos-qr" style="width: auto; padding-left: 30px; padding-right: 30px;">Imprimir Cartel QR</button>
+              </div>
             </div>
           </div>
         </div>
@@ -1005,7 +1144,7 @@
                   <tr>
                     <th>Nombre</th>
                     <th>Apellido</th>
-                    <th>Mesa</th>
+                    <th class="col-mesa">Mesa</th>
                     <th style="text-align: center; width: 120px;">Confirmación</th>
                     <th>Enlace de Invitación</th>
                     <th style="width: 180px; text-align: center;">Acciones</th>
@@ -2404,6 +2543,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="/js/alerts.js"></script>
+  <script src="/js/snap-camera-helper.js"></script>
   <script src="/js/admin.js?v=1.0.6"></script>
 </body>
 </html>
