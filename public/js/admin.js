@@ -4544,8 +4544,44 @@ Tu presencia hará que esta celebración sea aún más significativa.
   }
 
   // --- Phase 3: Invitation & RSVP Management Logic ---
+
+  function validateMandatoryInvitationFields() {
+    const mandatoryFields = [
+      { el: invTitleInput, name: 'Título del Evento' },
+      { el: invDateOnlyInput, name: 'Fecha del Evento' },
+      { el: invTimeOnlyInput, name: 'Hora Inicio' },
+      { el: invTimeEndInput, name: 'Hora Fin' },
+      { el: invAddressInput, name: 'Dirección del Salón' },
+      { el: invMapsInput, name: 'Enlace de Google Maps del Salón' }
+    ];
+
+    for (const field of mandatoryFields) {
+      if (!field.el || !field.el.value || !field.el.value.trim()) {
+        showToast('error', 'Campo Obligatorio Incompleto', `Por favor completa "${field.name}" para continuar.`);
+
+        if (field.el) {
+          performSwitchSubTab('informacion');
+
+          setTimeout(() => {
+            field.el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            field.el.focus();
+            field.el.classList.add('input-mandatory-glow');
+            setTimeout(() => {
+              field.el.classList.remove('input-mandatory-glow');
+            }, 2500);
+          }, 150);
+        }
+        return false;
+      }
+    }
+    return true;
+  }
   
   function saveInvitationConfig(e) {
+    if (!validateMandatoryInvitationFields()) {
+      return;
+    }
+
     showToast('loading', '', 'Guardando cambios en tu invitación...');
 
     const saveBtns = document.querySelectorAll('.btn-save-invitation-config');
