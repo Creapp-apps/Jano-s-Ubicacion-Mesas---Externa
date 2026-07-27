@@ -748,6 +748,25 @@
       box-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
     }
 
+    /* Onboarding Slide Smooth Fade In/Out Transition */
+    .onboarding-slide-card {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      transition: opacity 0.22s cubic-bezier(0.4, 0, 0.2, 1), transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+      will-change: opacity, transform;
+    }
+
+    .onboarding-slide-card.fade-out {
+      opacity: 0;
+      transform: translateY(-8px) scale(0.97);
+    }
+
+    .onboarding-slide-card.fade-prepare {
+      opacity: 0;
+      transform: translateY(8px) scale(0.97);
+      transition: none !important;
+    }
+
     /* High Fidelity Animations */
     .welcome-pulse-circle {
       transform-origin: center;
@@ -1692,7 +1711,7 @@
   </div>
 
   <script>
-    // Onboarding welcome modal logic
+    // Onboarding welcome modal logic with dynamic active service filtering & plan badge
     (function() {
       const urlParams = new URLSearchParams(window.location.search);
       const eventId = urlParams.get('event') || 'default';
@@ -1701,50 +1720,218 @@
       const btnCloseOnboarding = document.getElementById('btn-close-onboarding');
       const btnOnboardingPrev = document.getElementById('btn-onboarding-prev');
       const btnOnboardingNext = document.getElementById('btn-onboarding-next');
-      const onboardingSlides = document.querySelectorAll('.onboarding-slide');
-      const onboardingIndicators = document.querySelectorAll('.onboarding-indicators .indicator');
 
-      let currentSlideIndex = 0;
-      const totalSlides = onboardingSlides.length;
+      let currentEventData = null;
+      let homeHelpSlides = [];
+      let currentHomeHelpIndex = 0;
+      let isTransitioningHomeHelp = false;
 
-      function showSlide(index) {
-        if (index < 0 || index >= totalSlides) return;
-        currentSlideIndex = index;
+      function getAssignedPlanName(data) {
+        if (data && data.plan) {
+          return `PLAN ${data.plan.toUpperCase()}`;
+        }
+        let activeCount = 0;
+        if (!data || data.serviceInvitation !== false) activeCount++;
+        if (!data || data.serviceTables !== false) activeCount++;
+        if (!data || data.servicePhotos !== false) activeCount++;
+        if (!data || data.serviceTrivia !== false) activeCount++;
+        if (!data || data.serviceMusic !== false) activeCount++;
 
-        // Show/Hide slides
-        onboardingSlides.forEach((slide, i) => {
-          if (i === currentSlideIndex) {
-            slide.classList.add('active');
-          } else {
-            slide.classList.remove('active');
-          }
+        if (activeCount === 5) return 'PLAN VIP 👑';
+        if (activeCount >= 3) return 'PLAN GOLD 🥇';
+        if (activeCount >= 2) return 'PLAN SILVER 🥈';
+        return 'PLAN BRONCE 🥉';
+      }
+
+      function buildHomeHelpSlides(data) {
+        const planName = getAssignedPlanName(data);
+        const slides = [];
+
+        // Slide 0: General Overview
+        slides.push({
+          badge: `PLAN ASIGNADO: ${planName}`,
+          title: '¡Te damos la bienvenida a miFiestAPP!',
+          desc: 'miFiestAPP es tu centro de control digital integral. Desde aquí podés personalizar tu evento, gestionar tus servicios contratados y brindar una experiencia interactiva inolvidable a tus invitados desde sus celulares y en las pantallas gigantes del salón.',
+          bullets: [
+            { label: 'Gestión Centralizada', text: 'Acceso directo a cada uno de tus paneles de control contratados desde la pantalla principal.' },
+            { label: 'Experiencia sin Apps', text: 'Tus invitados participan escaneando el código QR del salón sin descargar nada.' },
+            { label: 'Soporte en Vivo', text: 'Atención y soporte técnico vía WhatsApp disponible ante cualquier inquietud.' }
+          ]
         });
 
-        // Update indicators
-        onboardingIndicators.forEach((ind, i) => {
-          if (i === currentSlideIndex) {
-            ind.classList.add('active');
-          } else {
-            ind.classList.remove('active');
-          }
-        });
-
-        // Navigation button text/visibility
-        if (currentSlideIndex === 0) {
-          btnOnboardingPrev.style.visibility = 'hidden';
-        } else {
-          btnOnboardingPrev.style.visibility = 'visible';
+        // Contracted Services ONLY
+        if (!data || data.serviceInvitation !== false) {
+          slides.push({
+            badge: `SERVICIO INCLUIDO EN TU PLAN`,
+            title: '💌 Invitación Interactiva & Confirmaciones (RSVP)',
+            desc: 'Tarjeta web personalizada con itinerario, mapa del salón, Dress Code, alias para regalos (CBU) y confirmación de asistencia en tiempo real.',
+            bullets: [
+              { label: 'Datos del Evento', text: 'Fecha, horarios, dirección exacta y mapa interactivo con Google Maps.' },
+              { label: 'Pase de Regalos', text: 'Datos bancarios (CBU / Alias) copiables en 1 solo clic de forma elegante.' },
+              { label: 'Confirmaciones RSVP', text: 'Registro automático de asistentes, acompañantes y restricciones alimenticias.' }
+            ]
+          });
         }
 
-        if (currentSlideIndex === totalSlides - 1) {
-          btnOnboardingNext.textContent = 'Comenzar';
-        } else {
-          btnOnboardingNext.textContent = 'Siguiente';
+        if (!data || data.serviceTables !== false) {
+          slides.push({
+            badge: `SERVICIO INCLUIDO EN TU PLAN`,
+            title: '🍽️ Buscador de Mesas & Plano Interactivo',
+            desc: 'Permite a tus invitados consultar su ubicación en mesa al instante escaneando el código QR del salón o buscando por su nombre.',
+            bullets: [
+              { label: 'Carga Masiva', text: 'Importación de invitados desde plantilla Excel en pocos segundos.' },
+              { label: 'Ubicación en Lote', text: 'Organización ágil de invitados por grupos y mesas familiares.' },
+              { label: 'Plano 2D Interactivo', text: 'Diseño visual de la distribución del salón en tiempo real.' }
+            ]
+          });
+        }
+
+        if (!data || data.servicePhotos !== false) {
+          slides.push({
+            badge: `SERVICIO INCLUIDO EN TU PLAN`,
+            title: '📸 Muro de Fotos en Tiempo Real',
+            desc: 'Capturá los mejores recuerdos de la fiesta. Los invitados suben fotos desde sus celulares y se proyectan en vivo en la pantalla gigante.',
+            bullets: [
+              { label: 'Subida por QR', text: 'Fotos enviadas al instante por los invitados sin descargar apps.' },
+              { label: 'Moderación Manual/Auto', text: 'Controlá si deseás aprobar previamente las fotos antes de proyectar.' },
+              { label: 'Proyección Gigante', text: 'Carrusel en vivo HD en el proyector o pantalla del salón.' }
+            ]
+          });
+        }
+
+        if (!data || data.serviceTrivia !== false) {
+          slides.push({
+            badge: `SERVICIO INCLUIDO EN TU PLAN`,
+            title: '🎮 Trivia Show en Vivo',
+            desc: 'Juego interactivo multijugador en tiempo real para entretener a tus invitados con preguntas personalizadas sobre el agasajado.',
+            bullets: [
+              { label: 'Preguntas a Medida', text: 'Preguntas divertidas sobre la historia del homenajeado o la pareja.' },
+              { label: 'Lanzamiento Controlado', text: 'Control en vivo del avance de las preguntas desde tu celular o panel.' },
+              { label: 'Podio en Pantalla', text: 'Ranking animado con los ganadores proyectado al finalizar el juego.' }
+            ]
+          });
+        }
+
+        if (!data || data.serviceMusic !== false) {
+          slides.push({
+            badge: `SERVICIO INCLUIDO EN TU PLAN`,
+            title: '🎵 Batalla Musical & Pedidos DJ',
+            desc: 'Permite a los invitados buscar canciones en iTunes, votar su género preferido (RKT, Cumbia, Electrónica) y hacer pedidos directos a la cabina.',
+            bullets: [
+              { label: 'Buscador de Canciones', text: 'Búsqueda en catálogo oficial de iTunes con deduplicación por tema.' },
+              { label: 'Votación de Géneros', text: 'Votación interactiva del Top 3 de ritmos en la pista.' },
+              { label: 'Panel DJ', text: 'Control en tiempo real del estado de géneros y listas aprobadas.' }
+            ]
+          });
+        }
+
+        // Final Summary Slide
+        slides.push({
+          badge: `PLAN ASIGNADO: ${planName}`,
+          title: '¡Todo listo para tu gran noche!',
+          desc: 'Ya tenés el control de tu fiesta. Podés acceder a cada uno de tus servicios contratados desde los botones de la pantalla principal.',
+          bullets: [
+            { label: 'Ayuda Permanente', text: 'Presioná el botón Ayuda en cualquier momento para repasar esta guía.' },
+            { label: 'Soporte Directo', text: 'Botón de Soporte Técnico vía WhatsApp disponible en todo momento.' }
+          ]
+        });
+
+        return slides;
+      }
+
+      function renderHomeHelpSlide() {
+        const slide = homeHelpSlides[currentHomeHelpIndex];
+        if (!slide) return;
+
+        const wrapper = document.querySelector('.onboarding-slides-wrapper');
+        if (wrapper) {
+          wrapper.innerHTML = `
+            <div class="onboarding-slide-card" style="text-align: left;">
+              <div style="display: flex; justify-content: center; margin-bottom: 16px;">
+                <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(212,175,55,0.12); border: 1px solid rgba(212,175,55,0.35); color: var(--gold-light); padding: 5px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;">
+                  <span>👑</span> ${slide.badge}
+                </div>
+              </div>
+              <h2 class="onboarding-title" style="margin-bottom: 12px; font-family: 'Cinzel', serif; font-size: 1.3rem;">${slide.title}</h2>
+              <p class="onboarding-desc" style="margin-bottom: 16px; font-size: 0.88rem; line-height: 1.6;">${slide.desc}</p>
+              <ul class="onboarding-bullets" style="margin: 0;">
+                ${slide.bullets.map(b => `<li><strong>${b.label}:</strong> ${b.text}</li>`).join('')}
+              </ul>
+            </div>
+          `;
+        }
+
+        const indContainer = document.querySelector('.onboarding-indicators');
+        if (indContainer) {
+          indContainer.innerHTML = homeHelpSlides.map((_, i) => `
+            <span onclick="jumpToHomeHelpSlide(${i})" class="indicator ${i === currentHomeHelpIndex ? 'active' : ''}" style="width: ${i === currentHomeHelpIndex ? '22px' : '8px'}; height: 8px; border-radius: 4px; background: ${i === currentHomeHelpIndex ? 'var(--gold-primary)' : 'rgba(255,255,255,0.2)'}; cursor: pointer; transition: all 0.25s ease; display: inline-block;"></span>
+          `).join('');
+        }
+
+        if (btnOnboardingPrev) {
+          btnOnboardingPrev.style.visibility = currentHomeHelpIndex === 0 ? 'hidden' : 'visible';
+        }
+
+        if (btnOnboardingNext) {
+          if (currentHomeHelpIndex === homeHelpSlides.length - 1) {
+            btnOnboardingNext.textContent = '¡Entendido!';
+          } else {
+            btnOnboardingNext.textContent = 'Siguiente';
+          }
         }
       }
 
+      window.navigateHomeHelpSlide = function(dir) {
+        if (isTransitioningHomeHelp) return;
+        const newIdx = currentHomeHelpIndex + dir;
+        if (newIdx < 0) return;
+        if (newIdx >= homeHelpSlides.length) {
+          closeOnboarding();
+          return;
+        }
+        changeHomeHelpSlide(newIdx);
+      };
+
+      window.jumpToHomeHelpSlide = function(idx) {
+        if (isTransitioningHomeHelp) return;
+        if (idx >= 0 && idx < homeHelpSlides.length && idx !== currentHomeHelpIndex) {
+          changeHomeHelpSlide(idx);
+        }
+      };
+
+      function changeHomeHelpSlide(newIdx) {
+        const card = document.querySelector('.onboarding-slides-wrapper .onboarding-slide-card');
+        if (!card) {
+          currentHomeHelpIndex = newIdx;
+          renderHomeHelpSlide();
+          return;
+        }
+
+        isTransitioningHomeHelp = true;
+        card.classList.add('fade-out');
+
+        setTimeout(() => {
+          currentHomeHelpIndex = newIdx;
+          renderHomeHelpSlide();
+
+          const newCard = document.querySelector('.onboarding-slides-wrapper .onboarding-slide-card');
+          if (newCard) {
+            newCard.classList.add('fade-prepare');
+            newCard.offsetHeight; // Force reflow
+            newCard.classList.remove('fade-prepare');
+          }
+
+          setTimeout(() => {
+            isTransitioningHomeHelp = false;
+          }, 230);
+        }, 180);
+      }
+
       function openOnboarding() {
-        showSlide(0);
+        homeHelpSlides = buildHomeHelpSlides(currentEventData);
+        currentHomeHelpIndex = 0;
+        renderHomeHelpSlide();
+
         if (onboardingContainer) {
           onboardingContainer.style.display = 'flex';
           onboardingContainer.offsetHeight; // Force reflow
@@ -1767,42 +1954,36 @@
       }
 
       if (onboardingContainer) {
-        // Dismiss handlers
         if (btnCloseOnboarding) {
           btnCloseOnboarding.addEventListener('click', dismissOnboardingPermanently);
         }
 
-        // Prev / Next button handlers
         if (btnOnboardingPrev) {
           btnOnboardingPrev.addEventListener('click', () => {
-            showSlide(currentSlideIndex - 1);
+            navigateHomeHelpSlide(-1);
           });
         }
 
         if (btnOnboardingNext) {
           btnOnboardingNext.addEventListener('click', () => {
-            if (currentSlideIndex === totalSlides - 1) {
-              dismissOnboardingPermanently();
-            } else {
-              showSlide(currentSlideIndex + 1);
-            }
+            navigateHomeHelpSlide(1);
           });
         }
-
-        // Indicators click
-        onboardingIndicators.forEach((ind, i) => {
-          ind.addEventListener('click', () => {
-            showSlide(i);
-          });
-        });
       }
+
+      // Fetch event config data
+      fetch(`/api/event/config?event=${encodeURIComponent(eventId)}`)
+        .then(res => res.json())
+        .then(data => {
+          currentEventData = data;
+        })
+        .catch(() => {});
 
       // Check admin session to show controls and automatic onboarding
       fetch(`/api/admin/check?event=${encodeURIComponent(eventId)}`)
         .then(res => res.json())
         .then(data => {
           if (data && data.loggedIn) {
-            // Append admin controls to body for absolute screen positioning
             const adminControls = document.createElement('div');
             adminControls.className = 'admin-header-controls';
             adminControls.innerHTML = `
@@ -1832,7 +2013,6 @@
                 });
             });
 
-            // Show onboarding welcome modal if not dismissed
             if (!localStorage.getItem(`onboarding_dismissed_${eventId}`)) {
               setTimeout(() => {
                 openOnboarding();

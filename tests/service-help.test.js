@@ -34,4 +34,15 @@ assert.strictEqual(adminJsContent.includes('window.closeServiceHelpModal'), true
 assert.strictEqual(adminJsContent.includes('window.navigateServiceHelpSlide'), true, 'navigateServiceHelpSlide function missing');
 console.log('  ✓ Test 3 Passed: Controller functions exported.');
 
+// Test 4: Check public/event.html Home Help Modal & Plan Badge
+console.log('- Test 4: Verifying public/event.html dynamic Home Help Modal & Plan Badge...');
+const eventHtmlPath = path.join(__dirname, '../public/event.html');
+const eventHtmlContent = fs.readFileSync(eventHtmlPath, 'utf8');
+
+assert.strictEqual(eventHtmlContent.includes('getAssignedPlanName'), true, 'getAssignedPlanName missing in event.html');
+assert.strictEqual(eventHtmlContent.includes('buildHomeHelpSlides'), true, 'buildHomeHelpSlides missing in event.html');
+assert.strictEqual(eventHtmlContent.includes('PLAN ASIGNADO:'), true, 'Plan badge text missing in event.html');
+assert.strictEqual(eventHtmlContent.includes('onboarding-slide-card'), true, 'onboarding-slide-card transition element missing');
+console.log('  ✓ Test 4 Passed: Home Help Modal & Plan Badge correctly implemented.');
+
 console.log('\n✅ ALL SERVICE HELP MODAL TESTS PASSED SUCCESSFULLY! 👑\n');
