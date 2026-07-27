@@ -1935,11 +1935,21 @@ header {
   transform: scale(1.1);
 }
 
+@keyframes ringBreathingGlow {
+  0%, 100% {
+    filter: drop-shadow(0 0 6px rgba(212, 175, 55, 0.35));
+  }
+  50% {
+    filter: drop-shadow(0 0 18px rgba(212, 175, 55, 0.75));
+  }
+}
+
 .audio-up-progress-wrap {
   position: relative;
   width: 140px;
   height: 140px;
   margin: 0 auto 25px auto;
+  animation: ringBreathingGlow 2.5s infinite ease-in-out;
 }
 
 .audio-up-svg {

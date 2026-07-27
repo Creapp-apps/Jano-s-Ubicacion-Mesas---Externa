@@ -5444,6 +5444,9 @@ Tu presencia hará que esta celebración sea aún más significativa.
         <div class="audio-up-progress-text" id="audio-up-text">0%</div>
       </div>
       <div class="audio-up-status-title" id="audio-up-status-title">Iniciando...</div>
+      <div class="audio-up-friendly-msg" id="audio-up-friendly-msg" style="font-size: 0.84rem; color: var(--gold-light); margin-top: -18px; margin-bottom: 22px; font-weight: 500; font-style: italic; opacity: 1; transition: opacity 0.3s ease, transform 0.3s ease; text-shadow: 0 0 10px rgba(212,175,55,0.3);">
+        Calibrando tu pista de audio... 🎵
+      </div>
       
       <ul class="audio-up-steps">
         <li class="audio-up-step" id="audio-up-step-analyze">
@@ -5472,7 +5475,37 @@ Tu presencia hará que esta celebración sea aún más significativa.
     const fillCircle = document.getElementById('audio-up-circle-fill');
     const progressText = document.getElementById('audio-up-text');
     const statusTitle = document.getElementById('audio-up-status-title');
+    const friendlyMsgEl = modal.querySelector('#audio-up-friendly-msg');
     const closeBtn = backdrop.querySelector('.audio-up-close');
+
+    // Rotating friendly reassuring messages
+    const FRIENDLY_MESSAGES = [
+      'Calibrando tu pista de audio... 🎵',
+      'Preparando la mejor fiesta de tu vida... 🎉',
+      'Ajustando los decibeles para la pista de baile... 🎧',
+      'Sincronizando la música con tu invitación... ✨',
+      '¡Falta muy poco! Dejando todo impecable... 💫',
+      'Procesando el sonido en alta definición... 🎶'
+    ];
+
+    let friendlyMsgIndex = 0;
+    const friendlyMsgInterval = setInterval(() => {
+      if (!friendlyMsgEl) return;
+      friendlyMsgEl.style.opacity = '0';
+      friendlyMsgEl.style.transform = 'translateY(-4px)';
+
+      setTimeout(() => {
+        friendlyMsgIndex = (friendlyMsgIndex + 1) % FRIENDLY_MESSAGES.length;
+        if (friendlyMsgEl) {
+          friendlyMsgEl.textContent = FRIENDLY_MESSAGES[friendlyMsgIndex];
+          friendlyMsgEl.style.transform = 'translateY(4px)';
+          requestAnimationFrame(() => {
+            friendlyMsgEl.style.opacity = '1';
+            friendlyMsgEl.style.transform = 'translateY(0)';
+          });
+        }
+      }, 300);
+    }, 2800);
 
     closeBtn.addEventListener('click', () => {
       closeModal();
@@ -5489,6 +5522,7 @@ Tu presencia hará que esta celebración sea aún más significativa.
     }
 
     function closeModal() {
+      clearInterval(friendlyMsgInterval);
       backdrop.classList.remove('active');
       setTimeout(() => {
         if (backdrop.parentNode) {
@@ -5521,6 +5555,8 @@ Tu presencia hará que esta celebración sea aún más significativa.
         }
       },
       setSuccess: () => {
+        clearInterval(friendlyMsgInterval);
+        if (friendlyMsgEl) friendlyMsgEl.style.display = 'none';
         setProgress(100);
         statusTitle.textContent = '¡Pista guardada con éxito!';
         statusTitle.style.color = 'var(--success)';
@@ -5541,6 +5577,8 @@ Tu presencia hará que esta celebración sea aún más significativa.
         }, 2000);
       },
       setError: (msg) => {
+        clearInterval(friendlyMsgInterval);
+        if (friendlyMsgEl) friendlyMsgEl.style.display = 'none';
         statusTitle.textContent = msg;
         statusTitle.style.color = 'var(--error)';
         fillCircle.style.stroke = 'var(--error)';
