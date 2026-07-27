@@ -5972,14 +5972,27 @@ Tu presencia hará que esta celebración sea aún más significativa.
   initAudioPreviewPlayer();
 
   // --- Custom Luxury Dropdowns & Template Guidance ---
-  function convertSelectToCustomDropdown(selectEl, customOptionsMap = null) {
-    if (!selectEl || selectEl.dataset.customized === 'true') return;
+  window.convertSelectToCustomDropdown = function(selectEl, customOptionsMap = null) {
+    if (typeof selectEl === 'string') selectEl = document.getElementById(selectEl);
+    if (!selectEl) return;
+
+    if (selectEl.dataset.customized === 'true') return;
+
+    // Clean up any existing custom container sibling if present
+    if (selectEl.nextSibling && selectEl.nextSibling.classList && selectEl.nextSibling.classList.contains('custom-select-container')) {
+      selectEl.nextSibling.remove();
+    }
+    const containerId = selectEl.id ? `custom-select-wrapper-${selectEl.id}` : null;
+    if (containerId && document.getElementById(containerId)) {
+      document.getElementById(containerId).remove();
+    }
+
     selectEl.dataset.customized = 'true';
     selectEl.style.display = 'none';
 
     const container = document.createElement('div');
     container.className = 'custom-select-container';
-    container.id = `custom-select-wrapper-${selectEl.id}`;
+    if (containerId) container.id = containerId;
 
     const trigger = document.createElement('button');
     trigger.type = 'button';
@@ -6061,7 +6074,7 @@ Tu presencia hará que esta celebración sea aún más significativa.
 
     updateSelectedState();
     selectEl.addEventListener('change', updateSelectedState);
-  }
+  };
 
   // Close dropdowns on outside click
   document.addEventListener('click', (e) => {
@@ -6628,126 +6641,12 @@ Tu presencia hará que esta celebración sea aún más significativa.
   // Initialize custom datepicker
   initCustomDatePicker();
 
-  // Custom Select Dropdown logic
-  function initCustomDropdown(selectId) {
+  // Unified Custom Select Dropdown alias
+  window.initCustomDropdown = function(selectId, customOptionsMap = null) {
     const select = typeof selectId === 'string' ? document.getElementById(selectId) : selectId;
     if (!select) return;
-
-    // Check if we already initialized custom select for this element
-    const containerId = select.id ? `${select.id}-custom-container` : null;
-    if (containerId && document.getElementById(containerId)) return;
-    
-    // Fallback check: if there is a nextSibling with class 'custom-select-container'
-    if (!containerId && select.nextSibling && select.nextSibling.classList && select.nextSibling.classList.contains('custom-select-container')) {
-      return;
-    }
-
-    // Create wrapper container
-    const container = document.createElement('div');
-    container.className = 'custom-select-container';
-    if (containerId) {
-      container.id = containerId;
-    }
-
-    // Create trigger
-    const trigger = document.createElement('div');
-    trigger.className = 'custom-select-trigger';
-
-    const triggerText = document.createElement('span');
-    triggerText.className = 'custom-select-trigger-text';
-
-    // Get active option text
-    const activeOption = select.options[select.selectedIndex];
-    triggerText.textContent = activeOption ? activeOption.textContent : '';
-
-    const triggerArrow = document.createElement('span');
-    triggerArrow.className = 'custom-select-trigger-arrow';
-    triggerArrow.innerHTML = `
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="6 9 12 15 18 9"></polyline>
-      </svg>
-    `;
-
-    trigger.appendChild(triggerText);
-    trigger.appendChild(triggerArrow);
-
-    // Create dropdown menu
-    const dropdown = document.createElement('div');
-    dropdown.className = 'custom-select-dropdown';
-
-    // Build options
-    function rebuildOptions() {
-      dropdown.innerHTML = '';
-      Array.from(select.options).forEach(opt => {
-        const optionDiv = document.createElement('div');
-        optionDiv.className = 'custom-select-option';
-        optionDiv.textContent = opt.textContent;
-        optionDiv.dataset.value = opt.value;
-        if (opt.selected) {
-          optionDiv.classList.add('selected');
-        }
-
-        optionDiv.addEventListener('click', (e) => {
-          e.stopPropagation();
-          select.value = opt.value;
-          select.dispatchEvent(new Event('change'));
-          container.classList.remove('open');
-        });
-
-        dropdown.appendChild(optionDiv);
-      });
-    }
-
-    rebuildOptions();
-
-    // Append everything
-    container.appendChild(trigger);
-    container.appendChild(dropdown);
-
-    // Insert custom container in the DOM right after the select, then hide the original select
-    select.parentNode.insertBefore(container, select.nextSibling);
-    select.style.display = 'none';
-
-    // Toggle dropdown open state
-    trigger.addEventListener('click', (e) => {
-      e.stopPropagation();
-      
-      // Close other custom select dropdowns
-      document.querySelectorAll('.custom-select-container').forEach(c => {
-        if (c !== container) c.classList.remove('open');
-      });
-      
-      container.classList.toggle('open');
-    });
-
-    // Handle outside clicks to close
-    document.addEventListener('click', () => {
-      container.classList.remove('open');
-    });
-
-    // Sync back when the underlying select value changes programmatically (e.g. on loadConfig)
-    select.addEventListener('change', () => {
-      const activeOpt = select.options[select.selectedIndex];
-      triggerText.textContent = activeOpt ? activeOpt.textContent : '';
-      
-      // Rebuild classes on change to ensure "selected" class is updated
-      Array.from(dropdown.children).forEach(child => {
-        if (child.dataset.value === select.value) {
-          child.classList.add('selected');
-        } else {
-          child.classList.remove('selected');
-        }
-      });
-    });
-
-    // Listen for changes that might reset options dynamically
-    const observer = new MutationObserver(() => {
-      const activeOpt = select.options[select.selectedIndex];
-      triggerText.textContent = activeOpt ? activeOpt.textContent : '';
-      rebuildOptions();
-    });
-    observer.observe(select, { childList: true });
-  }
+    convertSelectToCustomDropdown(select, customOptionsMap);
+  };
 
   // Initialize custom dropdowns
   ['inv-theme-font', 'inv-theme-color', 'inv-bg-effect', 'inv-wax-seal', 'trivia-enabled-toggle', 'capitanes-mode-select'].forEach(id => {
