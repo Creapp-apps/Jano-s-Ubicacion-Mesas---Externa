@@ -13,7 +13,7 @@ const EMAIL_FROM = process.env.EMAIL_FROM || 'onboarding@resend.dev';
  * @param {string} [eventTimeMode]
  * @returns {Promise<{success: boolean, messageId?: string, error?: string, simulated?: boolean}>}
  */
-async function sendWelcomeEmail(clientEmail, clientName, eventId, password, eventName = '', eventTimeMode = 'noche') {
+async function sendWelcomeEmail(clientEmail, clientName, eventId, password, eventName = '', eventTimeMode = 'noche', services = {}) {
   if (!clientEmail) {
     console.log('[EMAIL] No client email provided, skipping welcome email.');
     return { success: false, error: 'No client email provided' };
@@ -37,6 +37,71 @@ async function sendWelcomeEmail(clientEmail, clientName, eventId, password, even
   const subject = `¡Tu servicio de miFiestAPP para "${displayEventName}" está listo! 🚀`;
   const timePhrase = eventTimeMode === 'dia' ? 'tu gran día' : 'tu gran noche';
 
+  // Dynamic features list based on contracted services
+  const hasServicesPassed = services && typeof services === 'object' && Object.keys(services).length > 0;
+  
+  const showInvitation = hasServicesPassed ? services.serviceInvitation !== false : true;
+  const showTables = hasServicesPassed ? services.serviceTables !== false : true;
+  const showPhotos = hasServicesPassed ? services.servicePhotos !== false : true;
+  const showTrivia = hasServicesPassed ? services.serviceTrivia !== false : true;
+
+  let servicesRowsHtml = '';
+
+  if (showInvitation) {
+    servicesRowsHtml += `
+      <tr>
+        <td valign="top" style="padding: 6px 12px 12px 0; color: #d4af37; font-size: 16px;">✦</td>
+        <td style="padding: 6px 0 12px 0; font-size: 14.5px; line-height: 1.5; color: #a59cb5;">
+          <strong style="color: #ffffff;">Invitación Interactiva & RSVPs:</strong> Personalizá tu tarjeta digital, cuenta regresiva, mapas de ubicación, pase de regalos (CBU/Alias) y gestioná las confirmaciones de asistencia en tiempo real.
+        </td>
+      </tr>
+    `;
+  }
+
+  if (showTables) {
+    servicesRowsHtml += `
+      <tr>
+        <td valign="top" style="padding: 6px 12px 12px 0; color: #d4af37; font-size: 16px;">✦</td>
+        <td style="padding: 6px 0 12px 0; font-size: 14.5px; line-height: 1.5; color: #a59cb5;">
+          <strong style="color: #ffffff;">Gestión de Mesas:</strong> Descargá la plantilla simplificada de Excel, cargá a tus invitados y organizá la distribución de mesas de tu evento fácilmente.
+        </td>
+      </tr>
+    `;
+  }
+
+  if (showPhotos) {
+    servicesRowsHtml += `
+      <tr>
+        <td valign="top" style="padding: 6px 12px 12px 0; color: #d4af37; font-size: 16px;">✦</td>
+        <td style="padding: 6px 0 12px 0; font-size: 14.5px; line-height: 1.5; color: #a59cb5;">
+          <strong style="color: #ffffff;">Fotos en Tiempo Real:</strong> Moderá las fotos enviadas por los invitados desde sus celulares para proyectarlas en la pantalla del salón.
+        </td>
+      </tr>
+    `;
+  }
+
+  if (showTrivia) {
+    servicesRowsHtml += `
+      <tr>
+        <td valign="top" style="padding: 6px 12px 12px 0; color: #d4af37; font-size: 16px;">✦</td>
+        <td style="padding: 6px 0 12px 0; font-size: 14.5px; line-height: 1.5; color: #a59cb5;">
+          <strong style="color: #ffffff;">Trivia Interactiva:</strong> Lanzá preguntas en vivo, revelá respuestas correctas y proyectá el podio de ganadores en tiempo real.
+        </td>
+      </tr>
+    `;
+  }
+
+  if (!servicesRowsHtml) {
+    servicesRowsHtml = `
+      <tr>
+        <td valign="top" style="padding: 6px 12px 12px 0; color: #d4af37; font-size: 16px;">✦</td>
+        <td style="padding: 6px 0 12px 0; font-size: 14.5px; line-height: 1.5; color: #a59cb5;">
+          <strong style="color: #ffffff;">Panel de Control miFiestAPP:</strong> Accedé a la configuración completa de tu evento y servicios contratados.
+        </td>
+      </tr>
+    `;
+  }
+
   // HTML template matching miFiestAPP premium aesthetic
   const html = `
     <!DOCTYPE html>
@@ -53,11 +118,9 @@ async function sendWelcomeEmail(clientEmail, clientName, eventId, password, even
             <table width="100%" border="0" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: #121214; border: 1px solid rgba(212, 175, 55, 0.25); border-radius: 24px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.8);">
               <!-- Header -->
               <tr>
-                <td align="center" style="padding: 40px 30px 20px 30px; background: linear-gradient(180deg, rgba(212, 175, 55, 0.08) 0%, rgba(18, 18, 20, 0) 100%); border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
-                  <h1 style="margin: 0; font-size: 28px; font-weight: 800; letter-spacing: 2px; color: #ffffff; text-transform: uppercase;">
-                    miFiest<span style="color: #d4af37;">APP</span>
-                  </h1>
-                  <p style="font-size: 14px; color: #a59cb5; margin: 8px 0 0 0; font-weight: 400; letter-spacing: 0.5px;">Gestión Exclusiva de Mesas y Eventos en Vivo</p>
+                <td align="center" style="padding: 40px 30px 25px 30px; background: linear-gradient(180deg, rgba(212, 175, 55, 0.1) 0%, rgba(18, 18, 20, 0) 100%); border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+                  <img src="${baseUrl}/assets/completomain.png" alt="miFiestAPP" width="220" style="max-width: 220px; height: auto; border: 0; outline: none; text-decoration: none; display: block; margin: 0 auto 10px auto;" />
+                  <p style="font-size: 12px; color: #a59cb5; margin: 0; font-weight: 500; letter-spacing: 1px; text-transform: uppercase;">Gestión Exclusiva de Mesas y Eventos en Vivo</p>
                 </td>
               </tr>
               
@@ -72,22 +135,18 @@ async function sendWelcomeEmail(clientEmail, clientName, eventId, password, even
                   </p>
                   
                   <!-- Credentials Card -->
-                  <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 16px; padding: 25px; margin: 30px 0;">
-                    <h3 style="margin-top: 0; margin-bottom: 15px; color: #d4af37; font-size: 15px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">
+                  <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(212, 175, 55, 0.25); border-radius: 16px; padding: 22px 25px; margin: 30px 0;">
+                    <h3 style="margin-top: 0; margin-bottom: 15px; color: #d4af37; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px;">
                       🔑 Tus Datos de Acceso
                     </h3>
                     <table width="100%" border="0" cellpadding="0" cellspacing="0">
                       <tr>
-                        <td width="35%" style="padding: 10px 0; font-size: 14px; color: #888096; border-bottom: 1px solid rgba(255, 255, 255, 0.04);">ID del Evento:</td>
-                        <td style="padding: 10px 0; font-size: 15px; font-family: monospace; color: #ffffff; font-weight: 700; border-bottom: 1px solid rgba(255, 255, 255, 0.04);">${eventId}</td>
+                        <td width="35%" style="padding: 10px 0; font-size: 14px; color: #888096; border-bottom: 1px solid rgba(255, 255, 255, 0.05);">Contraseña:</td>
+                        <td style="padding: 10px 0; font-size: 15px; font-family: monospace; color: #ffffff; font-weight: 700; border-bottom: 1px solid rgba(255, 255, 255, 0.05);">${password}</td>
                       </tr>
                       <tr>
-                        <td style="padding: 10px 0; font-size: 14px; color: #888096; border-bottom: 1px solid rgba(255, 255, 255, 0.04);">Contraseña:</td>
-                        <td style="padding: 10px 0; font-size: 15px; font-family: monospace; color: #ffffff; font-weight: 700; border-bottom: 1px solid rgba(255, 255, 255, 0.04);">${password}</td>
-                      </tr>
-                      <tr>
-                        <td style="padding: 10px 0; font-size: 14px; color: #888096;">Acceso Panel:</td>
-                        <td style="padding: 10px 0; font-size: 14px;"><a href="${baseUrl}/admin?event=${eventId}" style="color: #4a90e2; text-decoration: none; font-weight: 600;">Ingresar al Administrador &rarr;</a></td>
+                        <td style="padding: 12px 0 4px 0; font-size: 14px; color: #888096;">Acceso Panel:</td>
+                        <td style="padding: 12px 0 4px 0; font-size: 14px;"><a href="${baseUrl}/admin?event=${eventId}" style="color: #d4af37; text-decoration: underline; font-weight: 700;">Ingresar al Panel Administrador &rarr;</a></td>
                       </tr>
                     </table>
                   </div>
@@ -97,24 +156,7 @@ async function sendWelcomeEmail(clientEmail, clientName, eventId, password, even
                   </p>
                   
                   <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin-bottom: 30px;">
-                    <tr>
-                      <td valign="top" style="padding: 5px 10px 10px 0; color: #2ecc71; font-size: 16px;">✦</td>
-                      <td style="padding: 5px 0 10px 0; font-size: 14.5px; line-height: 1.5; color: #a59cb5;">
-                        <strong style="color: #ffffff;">Gestión de Mesas:</strong> Descarga la plantilla simplificada de Excel, sube a tus invitados y organízalos fácilmente.
-                      </td>
-                    </tr>
-                    <tr>
-                      <td valign="top" style="padding: 5px 10px 10px 0; color: #2ecc71; font-size: 16px;">✦</td>
-                      <td style="padding: 5px 0 10px 0; font-size: 14.5px; line-height: 1.5; color: #a59cb5;">
-                        <strong style="color: #ffffff;">Fotos en Tiempo Real:</strong> Modera las fotos enviadas por los invitados para proyectarlas en la pantalla del salón.
-                      </td>
-                    </tr>
-                    <tr>
-                      <td valign="top" style="padding: 5px 10px 10px 0; color: #2ecc71; font-size: 16px;">✦</td>
-                      <td style="padding: 5px 0 10px 0; font-size: 14.5px; line-height: 1.5; color: #a59cb5;">
-                        <strong style="color: #ffffff;">Trivia Interactiva:</strong> Lanza preguntas, revela respuestas correctas y proyecta el podio de ganadores en vivo.
-                      </td>
-                    </tr>
+                    ${servicesRowsHtml}
                   </table>
 
                 </td>
@@ -134,7 +176,6 @@ async function sendWelcomeEmail(clientEmail, clientName, eventId, password, even
         </tr>
       </table>
     </body>
-    </html>
   `;
 
   if (!RESEND_API_KEY) {

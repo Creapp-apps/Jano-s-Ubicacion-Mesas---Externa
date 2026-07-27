@@ -1479,7 +1479,20 @@ app.post('/api/superadmin/events', requireSuperAuth, async (req, res) => {
     let emailStatus = { sent: false };
     if (clientEmail && clientEmail.trim()) {
       try {
-        const emailResult = await sendWelcomeEmail(clientEmail.trim(), clientName.trim(), cleanId, password || '', resolvedEventName);
+        const emailResult = await sendWelcomeEmail(
+          clientEmail.trim(), 
+          clientName.trim(), 
+          cleanId, 
+          password || '', 
+          resolvedEventName,
+          'noche',
+          {
+            serviceTables: sTables,
+            servicePhotos: sPhotos,
+            serviceInvitation: sInvitation,
+            serviceTrivia: sTrivia
+          }
+        );
         if (emailResult.success) {
           emailStatus.sent = true;
           emailStatus.simulated = !!emailResult.simulated;
