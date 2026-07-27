@@ -2863,24 +2863,61 @@ footer a:hover {
 }
 
 .form-control::placeholder {
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.45);
 }
 
-/* Custom background icons for Spotify slide inputs */
+/* =========================================================================
+   HIGH-VISIBILITY SPOTIFY & RSVP INPUT ENHANCEMENTS (ACCESSIBILITY & GLOW)
+   ========================================================================= */
+
+#spotify-search-input,
+#spotify-guest-name-input {
+  background-color: rgba(25, 25, 30, 0.9);
+  border: 2px solid rgba(212, 175, 55, 0.55);
+  border-radius: 16px;
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 500;
+  padding: 16px 50px 16px 20px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6), 0 0 14px rgba(212, 175, 55, 0.25);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+#spotify-search-input::placeholder,
+#spotify-guest-name-input::placeholder {
+  color: rgba(255, 255, 255, 0.72);
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+#spotify-search-input:hover,
+#spotify-guest-name-input:hover {
+  border-color: rgba(243, 224, 157, 0.8);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7), 0 0 18px rgba(212, 175, 55, 0.35);
+}
+
+#spotify-search-input:focus,
+#spotify-guest-name-input:focus {
+  outline: none;
+  border-color: var(--gold-light);
+  background-color: rgba(35, 32, 24, 0.96);
+  box-shadow: 0 0 25px rgba(212, 175, 55, 0.5), 0 6px 25px rgba(0, 0, 0, 0.8);
+  transform: translateY(-1px);
+}
+
+/* Custom background icons with high contrast gold stroke */
 #spotify-search-input {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='rgba(212, 175, 55, 0.6)' stroke-width='1.8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23f3e09d' stroke-width='2.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 16px center;
-  background-size: 20px 20px;
-  padding-right: 48px;
+  background-position: right 18px center;
+  background-size: 22px 22px;
 }
 
 #spotify-guest-name-input {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='rgba(212, 175, 55, 0.6)' stroke-width='1.8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23f3e09d' stroke-width='2.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 16px center;
-  background-size: 20px 20px;
-  padding-right: 48px;
+  background-position: right 18px center;
+  background-size: 22px 22px;
 }
 
 /* RSVP inputs custom icons for consistency */

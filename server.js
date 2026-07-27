@@ -1226,6 +1226,7 @@ app.put('/api/rsvps/:id', requireAuth, async (req, res) => {
 // API: Public RSVP submit (No Auth)
 app.post('/api/public/rsvp', async (req, res) => {
   const eventId = req.query.event || req.body.eventId || 'default';
+  const isPreview = req.query.preview === 'true' || req.body.preview === true || req.body.isPreview === true;
   
   // Validate that the event exists and is active
   try {
@@ -1240,6 +1241,11 @@ app.post('/api/public/rsvp', async (req, res) => {
   const { name, attending, companionsCount, companionsNames, companionsDetails, dietaryRestrictions, suggestedSong } = req.body;
   if (!name || name.trim() === '') {
     return res.status(400).json({ error: 'El nombre es obligatorio' });
+  }
+
+  if (isPreview) {
+    console.log(`[Preview Mode] Simulated RSVP submission for event: ${eventId} by ${name}`);
+    return res.json({ success: true, isPreview: true, message: '✨ Modo Vista Previa: Confirmación probada con éxito (No se guardó en la base de datos para no alterar las estadísticas reales)' });
   }
 
   try {
@@ -1262,6 +1268,7 @@ app.post('/api/public/rsvp', async (req, res) => {
 // API: Public QR RSVP Auto-Registration submit (No Auth)
 app.post('/api/public/rsvp-qr', async (req, res) => {
   const eventId = req.query.event || req.body.eventId || 'default';
+  const isPreview = req.query.preview === 'true' || req.body.preview === true || req.body.isPreview === true;
   
   try {
     const isValid = await db.isEventValid(eventId);
@@ -1282,6 +1289,11 @@ app.post('/api/public/rsvp-qr', async (req, res) => {
     return res.status(400).json({ error: 'El número de teléfono / WhatsApp es obligatorio (mínimo 6 dígitos)' });
   }
 
+  if (isPreview) {
+    console.log(`[Preview Mode] Simulated QR RSVP submission for event: ${eventId} by ${name}`);
+    return res.json({ success: true, isPreview: true, message: '✨ Modo Vista Previa: Confirmación probada con éxito (No se guardó en la base de datos)' });
+  }
+
   try {
     const result = await db.addOrUpdatePublicRsvp(eventId, {
       name,
@@ -1300,6 +1312,7 @@ app.post('/api/public/rsvp-qr', async (req, res) => {
 // API: Public Song Suggestion submit (No Auth)
 app.post('/api/public/suggest-song', async (req, res) => {
   const eventId = req.query.event || req.body.eventId || 'default';
+  const isPreview = req.query.preview === 'true' || req.body.preview === true || req.body.isPreview === true;
   
   try {
     const isValid = await db.isEventValid(eventId);
@@ -1316,6 +1329,11 @@ app.post('/api/public/suggest-song', async (req, res) => {
   }
   if (!song || song.trim() === '') {
     return res.status(400).json({ error: 'La canción sugerida es obligatoria' });
+  }
+
+  if (isPreview) {
+    console.log(`[Preview Mode] Simulated Song Suggestion submission for event: ${eventId} by ${name}`);
+    return res.json({ success: true, isPreview: true, message: '✨ Modo Vista Previa: Sugerencia probada con éxito (No se guardó en la base de datos)' });
   }
 
   try {

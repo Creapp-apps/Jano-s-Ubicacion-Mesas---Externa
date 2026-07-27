@@ -3548,6 +3548,68 @@ input.input-highlight-pulse {
   line-height: 1.4;
 }
 
+/* ==========================================================================
+   Design Editor 2-Column Split Workspace (Sticky Live Preview)
+   ========================================================================== */
+.design-editor-split-container {
+  display: flex;
+  gap: 28px;
+  text-align: left;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.design-editor-controls {
+  flex: 1;
+  min-width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.design-editor-preview-sticky {
+  width: 310px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 22px 16px;
+  border-radius: 30px;
+  box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.5), 0 10px 30px rgba(0, 0, 0, 0.4);
+  position: sticky;
+  top: 20px;
+  align-self: flex-start;
+  z-index: 10;
+  transition: all 0.3s ease;
+}
+
+.design-editor-preview-sticky h4 {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--gold-primary);
+  margin-bottom: 14px;
+  font-weight: 600;
+  text-align: center;
+}
+
+@media (max-width: 992px) {
+  .design-editor-split-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .design-editor-preview-sticky {
+    width: 100%;
+    position: static;
+    top: auto;
+  }
+}
+
+
 
 
 

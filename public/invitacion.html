@@ -729,8 +729,11 @@
             </div>
 
             <div style="position: relative; z-index: 30;">
-              <label style="display: block; text-align: center; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Buscar Canción o Artista</label>
-              <input type="text" id="spotify-search-input" class="form-control" placeholder="Ej: Daft Punk - One More Time" autocomplete="off" required>
+              <label style="display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-light); margin-bottom: 10px; font-weight: 700; text-shadow: 0 2px 6px rgba(0,0,0,0.8);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold-primary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                BUSCAR CANCIÓN O ARTISTA
+              </label>
+              <input type="text" id="spotify-search-input" class="form-control" placeholder="🔍 Ej: Daft Punk - One More Time..." autocomplete="off" required>
               
               <!-- Search Results Dropdown -->
               <div id="spotify-search-results" class="autocomplete-results" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: rgba(18,18,20,0.98); border: 1px solid var(--border-gold); border-radius: 8px; max-height: 220px; overflow-y: auto; z-index: 1000; margin-top: 5px; box-shadow: 0 10px 30px rgba(0,0,0,0.9); -webkit-overflow-scrolling: touch;">
@@ -2251,14 +2254,55 @@
         hideTimer = setTimeout(hideToast, 6500);
       }
 
-      function showInvitationSuccessToast(msg, callback) {
+      function showInvitationSuccessToast(msg, isWarning = false, callback = null) {
+        if (typeof isWarning === 'function') {
+          callback = isWarning;
+          isWarning = false;
+        }
         const modal = document.getElementById('invitation-success-toast');
         const msgEl = document.getElementById('invitation-toast-msg');
+        const titleEl = modal ? modal.querySelector('.invitation-toast-title') : null;
+        const iconEl = modal ? modal.querySelector('.invitation-toast-icon') : null;
+
         if (!modal) {
           if (typeof callback === 'function') callback();
           return;
         }
-        if (msgEl) msgEl.textContent = msg || '¡Canción enviada correctamente!';
+
+        if (msgEl) msgEl.textContent = msg || '¡Operación realizada!';
+
+        const isWarn = isWarning || (msg && (msg.includes('⚠️') || msg.toLowerCase().includes('por favor') || msg.toLowerCase().includes('completá') || msg.toLowerCase().includes('ingresá')));
+
+        if (isWarn) {
+          if (titleEl) {
+            titleEl.textContent = '¡Atención!';
+            titleEl.style.color = '#f3e09d';
+          }
+          if (iconEl) {
+            iconEl.innerHTML = `<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#f3e09d" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+              <line x1="12" y1="9" x2="12"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>`;
+            iconEl.style.background = 'rgba(212, 175, 55, 0.18)';
+            iconEl.style.borderColor = 'rgba(212, 175, 55, 0.5)';
+            iconEl.style.boxShadow = '0 0 15px rgba(212, 175, 55, 0.3)';
+          }
+        } else {
+          if (titleEl) {
+            titleEl.textContent = '¡Éxito!';
+            titleEl.style.color = '#4cd964';
+          }
+          if (iconEl) {
+            iconEl.innerHTML = `<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#4cd964" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>`;
+            iconEl.style.background = 'rgba(76, 217, 100, 0.18)';
+            iconEl.style.borderColor = 'rgba(76, 217, 100, 0.5)';
+            iconEl.style.boxShadow = '0 0 15px rgba(76, 217, 100, 0.3)';
+          }
+        }
+
         modal.style.display = 'flex';
         setTimeout(() => modal.classList.add('active'), 20);
 
@@ -2268,7 +2312,7 @@
             modal.style.display = 'none';
             if (typeof callback === 'function') callback();
           }, 380);
-        }, 1800);
+        }, 2200);
       }
       window.showInvitationSuccessToast = showInvitationSuccessToast;
 
@@ -2746,7 +2790,9 @@
           rsvpStatusMsg.style.color = 'var(--gold-primary)';
           rsvpStatusMsg.textContent = 'Enviando confirmación...';
           
-          fetch(`/api/public/rsvp?event=${encodeURIComponent(eventId)}`, {
+          const isPreviewMode = new URLSearchParams(window.location.search).get('preview') === 'true';
+          
+          fetch(`/api/public/rsvp?event=${encodeURIComponent(eventId)}${isPreviewMode ? '&preview=true' : ''}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -2756,7 +2802,8 @@
               companionsNames,
               companionsDetails,
               dietaryRestrictions,
-              suggestedSong: window.temporarilySuggestedSong || ''
+              suggestedSong: window.temporarilySuggestedSong || '',
+              preview: isPreviewMode
             })
           })
           .then(res => res.json())
@@ -2781,8 +2828,12 @@
                 successContainer.style.display = 'block';
               }
 
+              const toastMsg = data.isPreview 
+                ? '✨ Prueba exitosa (Modo Vista Previa: No se guardó en la base de datos)' 
+                : '✅ ¡Asistencia confirmada! Ahora podés sugerir tu canción 🎵';
+
               if (typeof window.showInvitationSuccessToast === 'function') {
-                window.showInvitationSuccessToast('✅ ¡Asistencia confirmada! Ahora podés sugerir tu canción 🎵');
+                window.showInvitationSuccessToast(toastMsg);
               }
 
               setTimeout(() => {
@@ -4342,18 +4393,23 @@
           const song = spotifySearchInput.value.trim();
           
           if (!song) {
-            spotifyStatusMsg.style.display = 'block';
-            spotifyStatusMsg.style.color = '#ff3b30';
-            spotifyStatusMsg.textContent = 'Por favor, buscá o escribí una canción';
+            if (typeof window.showInvitationSuccessToast === 'function') {
+              window.showInvitationSuccessToast('⚠️ Por favor, buscá o escribí una canción', true);
+            } else {
+              spotifyStatusMsg.style.display = 'block';
+              spotifyStatusMsg.style.color = '#f3e09d';
+              spotifyStatusMsg.textContent = 'Por favor, buscá o escribí una canción';
+            }
             return;
           }
           
           const guestName = (spotifyGuestNameInput && spotifyGuestNameInput.value.trim()) || document.getElementById('rsvp-name').value.trim() || 'Invitado';
+          const isPreviewMode = new URLSearchParams(window.location.search).get('preview') === 'true';
           
-          fetch(`/api/public/suggest-song?event=${encodeURIComponent(eventId)}`, {
+          fetch(`/api/public/suggest-song?event=${encodeURIComponent(eventId)}${isPreviewMode ? '&preview=true' : ''}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: guestName, song })
+            body: JSON.stringify({ name: guestName, song, preview: isPreviewMode })
           }).catch(err => console.error('Error saving song suggestion:', err));
 
           window.temporarilySuggestedSong = song;
