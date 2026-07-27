@@ -5102,16 +5102,48 @@ Tu presencia hará que esta celebración sea aún más significativa.
     }
   };
 
+  let isTransitioningHelpSlide = false;
+
   window.navigateServiceHelpSlide = function(dir) {
+    if (isTransitioningHelpSlide) return;
     const newIdx = currentServiceHelpIndex + dir;
     if (newIdx < 0) return;
     if (newIdx >= currentServiceHelpSlides.length) {
       closeServiceHelpModal();
       return;
     }
-    currentServiceHelpIndex = newIdx;
-    renderServiceHelpSlide();
+    changeServiceHelpSlide(newIdx);
   };
+
+  window.jumpToServiceHelpSlide = function(idx) {
+    if (isTransitioningHelpSlide) return;
+    if (idx >= 0 && idx < currentServiceHelpSlides.length && idx !== currentServiceHelpIndex) {
+      changeServiceHelpSlide(idx);
+    }
+  };
+
+  function changeServiceHelpSlide(newIdx) {
+    const wrapper = document.getElementById('service-help-slides-wrapper');
+    if (!wrapper) {
+      currentServiceHelpIndex = newIdx;
+      renderServiceHelpSlide();
+      return;
+    }
+
+    isTransitioningHelpSlide = true;
+    wrapper.classList.remove('help-slide-anim-in');
+    wrapper.classList.add('help-slide-anim-out');
+
+    setTimeout(() => {
+      currentServiceHelpIndex = newIdx;
+      renderServiceHelpSlide();
+      wrapper.classList.remove('help-slide-anim-out');
+      wrapper.classList.add('help-slide-anim-in');
+      setTimeout(() => {
+        isTransitioningHelpSlide = false;
+      }, 280);
+    }, 140);
+  }
 
   function renderServiceHelpSlide() {
     const slide = currentServiceHelpSlides[currentServiceHelpIndex];
@@ -5120,14 +5152,14 @@ Tu presencia hará que esta celebración sea aún más significativa.
     const wrapper = document.getElementById('service-help-slides-wrapper');
     if (wrapper) {
       wrapper.innerHTML = `
-        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(212,175,55,0.25); border-radius: 18px; padding: 22px; text-align: left; transition: all 0.3s ease; box-shadow: inset 0 0 20px rgba(212,175,55,0.05);">
-          <div style="font-size: 0.72rem; font-weight: 700; color: var(--gold-light); letter-spacing: 1px; margin-bottom: 8px; text-transform: uppercase;">
+        <div style="background: rgba(12, 12, 16, 0.85); border: 1px solid rgba(212,175,55,0.25); border-radius: 18px; padding: 24px; text-align: left; box-shadow: inset 0 0 25px rgba(0,0,0,0.8), 0 5px 20px rgba(0,0,0,0.5);">
+          <div style="font-size: 0.72rem; font-weight: 700; color: var(--gold-light); letter-spacing: 1px; margin-bottom: 10px; text-transform: uppercase;">
             ${slide.step}
           </div>
           <h4 style="margin: 0 0 10px 0; color: #ffffff; font-size: 1.15rem; font-weight: 700;">
             ${slide.title}
           </h4>
-          <p style="margin: 0; color: var(--text-muted); font-size: 0.88rem; line-height: 1.6;">
+          <p style="margin: 0; color: var(--text-muted); font-size: 0.88rem; line-height: 1.65;">
             ${slide.desc}
           </p>
         </div>
@@ -5156,13 +5188,6 @@ Tu presencia hará que esta celebración sea aún más significativa.
       }
     }
   }
-
-  window.jumpToServiceHelpSlide = function(idx) {
-    if (idx >= 0 && idx < currentServiceHelpSlides.length) {
-      currentServiceHelpIndex = idx;
-      renderServiceHelpSlide();
-    }
-  };
 
   window.openEditRsvpModal = function(id) {
     const rsvp = allRsvps.find(r => String(r.id) === String(id));
