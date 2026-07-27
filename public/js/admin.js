@@ -4534,7 +4534,11 @@ Tu presencia hará que esta celebración sea aún más significativa.
     if (btnToggleGuide) {
       btnToggleGuide.addEventListener('click', (e) => {
         e.preventDefault();
-        openOnboarding();
+        if (typeof openServiceHelpModal === 'function') {
+          openServiceHelpModal();
+        } else {
+          openOnboarding();
+        }
       });
     }
   }
@@ -4920,16 +4924,245 @@ Tu presencia hará que esta celebración sea aún más significativa.
     closeCustomAttendingDropdown();
   };
 
-  // Close custom select menu when clicking outside
-  document.addEventListener('click', (e) => {
-    const trigger = document.getElementById('custom-attending-trigger');
-    const menu = document.getElementById('custom-attending-menu');
-    if (menu && trigger && !trigger.contains(e.target) && !menu.contains(e.target)) {
-      if (menu.classList.contains('open')) {
-        closeCustomAttendingDropdown();
+  // --- Service Help Modal Toast Central Controller ---
+  const SERVICE_GUIDES = {
+    invitacion: {
+      badge: '💌 INVITACIÓN & RSVPs',
+      title: 'Guía de la Invitación Digital',
+      subtitle: 'Configurá tu tarjeta interactiva, regalos y confirmaciones.',
+      slides: [
+        {
+          step: 'PASO 1 DE 4',
+          title: '📝 Datos de tu Fiesta',
+          desc: 'Completá el título del evento, fecha, horario de inicio y finalización. Agregá la dirección exacta del salón, el enlace de Google Maps y el código de vestimenta (Dress Code) para tus invitados.'
+        },
+        {
+          step: 'PASO 2 DE 4',
+          title: '🎨 Personalización Estética',
+          desc: 'Personalizá el diseño de tu tarjeta digital. Elegí entre plantillas temáticas, tipografías elegantes, paletas de colores y efectos visuales animados de fondo (estrellas, destellos, burbujas).'
+        },
+        {
+          step: 'PASO 3 DE 4',
+          title: '🎁 Pase de Regalos (CBU / Alias)',
+          desc: 'Cargá los datos de tu cuenta bancaria (Titular, CBU y Alias). Tus invitados podrán copiar tus datos en un solo clic desde la tarjeta digital para enviarte su regalo de forma rápida y directa.'
+        },
+        {
+          step: 'PASO 4 DE 4',
+          title: '👥 Confirmaciones de Asistencia (RSVP)',
+          desc: 'Gestioná la lista de respuestas enviadas por los invitados en tiempo real. Consultá o editá asistencias, restricciones alimenticias (Celiaquía, Vegetariano) y nombres de acompañantes con el botón de lápiz ✏️.'
+        }
+      ]
+    },
+
+    mesas: {
+      badge: '🍽️ GESTOR DE MESAS',
+      title: 'Guía del Organizador de Mesas',
+      subtitle: 'Organizá y asigná la ubicación de tus invitados fácilmente.',
+      slides: [
+        {
+          step: 'PASO 1 DE 4',
+          title: '📊 Carga Masiva desde Excel',
+          desc: 'Descargá nuestra plantilla estructurada de Excel, cargá el listado completo de tus invitados y subilo al panel en un solo clic para sincronizarlos automáticamente.'
+        },
+        {
+          step: 'PASO 2 DE 4',
+          title: '🍽️ Creación de Mesas',
+          desc: 'Agregá mesas con nombres y capacidades personalizadas (Mesa Principal, Familia, Amigos). Podés editar o eliminar mesas en cualquier momento.'
+        },
+        {
+          step: 'PASO 3 DE 4',
+          title: '⚡ Asignación en Lote',
+          desc: 'Utilizá el botón "Ubicación en Lote" para buscar invitados por nombre y ubicarlos masivamente en su mesa correspondiente de forma ágil y cómoda.'
+        },
+        {
+          step: 'PASO 4 DE 4',
+          title: '🗺️ Plano 2D Interactivo del Salón',
+          desc: 'Diseñá la distribución de mesas en el lienzo visual 2D. Tus invitados podrán escanear el código QR del salón para buscar su mesa y ver el mapa interactivo animado.'
+        }
+      ]
+    },
+
+    fotos: {
+      badge: '📸 FOTOS EN TIEMPO REAL',
+      title: 'Guía del Muro de Fotos',
+      subtitle: 'Capturá los mejores momentos proyectados en pantalla.',
+      slides: [
+        {
+          step: 'PASO 1 DE 3',
+          title: '📱 Carga Interactiva por QR',
+          desc: 'Los invitados escanean el código QR impreso en sus mesas y suben fotos o mensajes directamente desde sus celulares sin necesidad de descargar ninguna aplicación.'
+        },
+        {
+          step: 'PASO 2 DE 3',
+          title: '🛡️ Moderación Manual o Automática',
+          desc: 'Utilizá el switch de moderación al inicio de la pestaña. Si está ACTIVADA, deberás aprobar o rechazar cada foto antes de proyectarla. Si está DESACTIVADA, las fotos se auto-aprobarán al instante.'
+        },
+        {
+          step: 'PASO 3 DE 3',
+          title: '📺 Proyección Gigante en el Salón',
+          desc: 'Conectá el proyector o pantalla gigante del salón a la vista de Proyección para mostrar el carrusel animado con las fotos aprobadas en tiempo real durante la fiesta.'
+        }
+      ]
+    },
+
+    trivia: {
+      badge: '🎮 TRIVIA SHOW EN VIVO',
+      title: 'Guía del Juego de Trivia',
+      subtitle: 'Hacé participar a tus invitados en un juego interactivo.',
+      slides: [
+        {
+          step: 'PASO 1 DE 3',
+          title: '❓ Creación de Preguntas',
+          desc: 'Agregá preguntas divertidas sobre la historia del homenajeado o la pareja. Configurá las opciones múltiples y seleccioná la respuesta correcta.'
+        },
+        {
+          step: 'PASO 2 DE 3',
+          title: '🚀 Lanzamiento del Juego',
+          desc: 'Iniciá la trivia desde tu panel de control. El juego se desplegará de forma sincronizada en los celulares de todos los invitados presentes.'
+        },
+        {
+          step: 'PASO 3 DE 3',
+          title: '🏆 Podio y Ranking de Ganadores',
+          desc: 'Controlá la velocidad de las preguntas y proyectá en vivo la pantalla gigante con el ranking interactivo de los participantes más rápidos y precisos.'
+        }
+      ]
+    },
+
+    tanda: {
+      badge: '🎵 BATALLA MUSICAL & DJ',
+      title: 'Guía de la Batalla Musical',
+      subtitle: 'Permití a los invitados votar el ritmo y pedir canciones.',
+      slides: [
+        {
+          step: 'PASO 1 DE 3',
+          title: '🎧 Nominación de Canciones',
+          desc: 'Los invitados buscan temas en la API de iTunes desde la vista de Pedidos y votan por su favorita (limitado a 1 voto por persona para evitar abusos).'
+        },
+        {
+          step: 'PASO 2 DE 3',
+          title: '🔥 Votación del Top 3 de Géneros',
+          desc: 'Cambiá al modo Géneros para que los invitados elijan qué estilo prefieren escuchar a continuación (RKT, Cumbia 420, Electrónica, 80s/90s).'
+        },
+        {
+          step: 'PASO 3 DE 3',
+          title: '🎛️ Control DJ en Vivo',
+          desc: 'Desde tu panel podés encender o apagar géneros (poniéndolos grises pero manteniéndolos en lista) y administrar la lista de canciones aprobadas para la fiesta.'
+        }
+      ]
+    }
+  };
+
+  let currentServiceHelpIndex = 0;
+  let currentServiceHelpSlides = [];
+
+  window.openServiceHelpModal = function() {
+    // Detect active service from URL or active nav tab
+    const urlParams = new URLSearchParams(window.location.search);
+    let activeService = urlParams.get('service') || 'invitacion';
+
+    const activeTab = document.querySelector('.nav-tab.active');
+    if (activeTab) {
+      if (activeTab.id.includes('mesas')) activeService = 'mesas';
+      else if (activeTab.id.includes('fotos')) activeService = 'fotos';
+      else if (activeTab.id.includes('trivia')) activeService = 'trivia';
+      else if (activeTab.id.includes('musica') || activeTab.id.includes('tanda')) activeService = 'tanda';
+      else if (activeTab.id.includes('invitacion')) activeService = 'invitacion';
+    }
+
+    const guideData = SERVICE_GUIDES[activeService] || SERVICE_GUIDES['invitacion'];
+    currentServiceHelpSlides = guideData.slides || [];
+    currentServiceHelpIndex = 0;
+
+    const badgeEl = document.getElementById('service-help-badge');
+    const titleEl = document.getElementById('service-help-title');
+    const subTitleEl = document.getElementById('service-help-subtitle');
+
+    if (badgeEl) badgeEl.innerHTML = `<span>👑</span> ${guideData.badge}`;
+    if (titleEl) titleEl.textContent = guideData.title;
+    if (subTitleEl) subTitleEl.textContent = guideData.subtitle;
+
+    renderServiceHelpSlide();
+
+    const modal = document.getElementById('service-help-modal');
+    if (modal) {
+      modal.style.display = 'flex';
+      requestAnimationFrame(() => {
+        modal.classList.add('open');
+      });
+    }
+  };
+
+  window.closeServiceHelpModal = function() {
+    const modal = document.getElementById('service-help-modal');
+    if (modal) {
+      modal.classList.remove('open');
+      setTimeout(() => {
+        modal.style.display = 'none';
+      }, 280);
+    }
+  };
+
+  window.navigateServiceHelpSlide = function(dir) {
+    const newIdx = currentServiceHelpIndex + dir;
+    if (newIdx < 0) return;
+    if (newIdx >= currentServiceHelpSlides.length) {
+      closeServiceHelpModal();
+      return;
+    }
+    currentServiceHelpIndex = newIdx;
+    renderServiceHelpSlide();
+  };
+
+  function renderServiceHelpSlide() {
+    const slide = currentServiceHelpSlides[currentServiceHelpIndex];
+    if (!slide) return;
+
+    const wrapper = document.getElementById('service-help-slides-wrapper');
+    if (wrapper) {
+      wrapper.innerHTML = `
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(212,175,55,0.25); border-radius: 18px; padding: 22px; text-align: left; transition: all 0.3s ease; box-shadow: inset 0 0 20px rgba(212,175,55,0.05);">
+          <div style="font-size: 0.72rem; font-weight: 700; color: var(--gold-light); letter-spacing: 1px; margin-bottom: 8px; text-transform: uppercase;">
+            ${slide.step}
+          </div>
+          <h4 style="margin: 0 0 10px 0; color: #ffffff; font-size: 1.15rem; font-weight: 700;">
+            ${slide.title}
+          </h4>
+          <p style="margin: 0; color: var(--text-muted); font-size: 0.88rem; line-height: 1.6;">
+            ${slide.desc}
+          </p>
+        </div>
+      `;
+    }
+
+    const indContainer = document.getElementById('service-help-indicators');
+    if (indContainer) {
+      indContainer.innerHTML = currentServiceHelpSlides.map((_, i) => `
+        <span onclick="jumpToServiceHelpSlide(${i})" style="width: ${i === currentServiceHelpIndex ? '22px' : '8px'}; height: 8px; border-radius: 4px; background: ${i === currentServiceHelpIndex ? 'var(--gold-primary)' : 'rgba(255,255,255,0.2)'}; cursor: pointer; transition: all 0.25s ease; display: inline-block;"></span>
+      `).join('');
+    }
+
+    const prevBtn = document.getElementById('btn-service-help-prev');
+    const nextBtn = document.getElementById('btn-service-help-next');
+
+    if (prevBtn) {
+      prevBtn.style.visibility = currentServiceHelpIndex === 0 ? 'hidden' : 'visible';
+    }
+
+    if (nextBtn) {
+      if (currentServiceHelpIndex === currentServiceHelpSlides.length - 1) {
+        nextBtn.textContent = '¡Entendido!';
+      } else {
+        nextBtn.textContent = 'Siguiente';
       }
     }
-  });
+  }
+
+  window.jumpToServiceHelpSlide = function(idx) {
+    if (idx >= 0 && idx < currentServiceHelpSlides.length) {
+      currentServiceHelpIndex = idx;
+      renderServiceHelpSlide();
+    }
+  };
 
   window.openEditRsvpModal = function(id) {
     const rsvp = allRsvps.find(r => String(r.id) === String(id));

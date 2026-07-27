@@ -2708,6 +2708,44 @@
     </div>
   </div>
 
+  <!-- Modal Toast Central: Guía interactiva por servicio -->
+  <div id="service-help-modal" class="modal-backdrop-smooth" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.78); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 10000; align-items: center; justify-content: center; padding: 20px;">
+    <div class="modal-card-smooth" style="background: rgba(22, 22, 30, 0.98); border: 1.5px solid var(--gold-primary); border-radius: 24px; width: 100%; max-width: 540px; padding: 28px; box-shadow: 0 20px 60px rgba(0,0,0,0.9), 0 0 35px rgba(212,175,55,0.25); position: relative; max-height: 90vh; overflow-y: auto;">
+      
+      <!-- Close Button -->
+      <button type="button" onclick="closeServiceHelpModal()" style="position: absolute; top: 20px; right: 20px; background: none; border: none; color: rgba(255,255,255,0.5); font-size: 1.5rem; cursor: pointer; line-height: 1; transition: color 0.2s; z-index: 10;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,0.5)'">&times;</button>
+
+      <!-- Badge / Header -->
+      <div style="text-align: center; margin-bottom: 20px;">
+        <div id="service-help-badge" style="display: inline-flex; align-items: center; gap: 8px; background: rgba(212,175,55,0.12); border: 1px solid rgba(212,175,55,0.35); color: var(--gold-light); padding: 5px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;">
+          <span>👑</span> GUÍA DEL SERVICIO
+        </div>
+        <h3 id="service-help-title" style="margin: 10px 0 4px 0; color: #ffffff; font-family: 'Cinzel', serif; font-size: 1.3rem; font-weight: 700;">
+          Guía de Uso
+        </h3>
+        <p id="service-help-subtitle" style="margin: 0; color: var(--text-muted); font-size: 0.83rem;">
+          Paso a paso para aprovechar al máximo esta función.
+        </p>
+      </div>
+
+      <!-- Slides Container -->
+      <div id="service-help-slides-wrapper" style="min-height: 220px; margin-bottom: 20px;">
+        <!-- Dynamic slides will be injected here per service -->
+      </div>
+
+      <!-- Footer Navigation -->
+      <div style="display: flex; align-items: center; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 16px;">
+        <button type="button" id="btn-service-help-prev" onclick="navigateServiceHelpSlide(-1)" class="btn btn-header-action" style="border-radius: 12px; padding: 8px 16px; font-size: 0.8rem; visibility: hidden;">Anterior</button>
+        
+        <div id="service-help-indicators" style="display: flex; gap: 8px; align-items: center;">
+          <!-- Dynamic indicators -->
+        </div>
+
+        <button type="button" id="btn-service-help-next" onclick="navigateServiceHelpSlide(1)" class="btn btn-primary" style="border-radius: 12px; padding: 8px 20px; font-size: 0.8rem; font-weight: 700;">Siguiente</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal Toast Central de Edición de Confirmación RSVP -->
   <div id="edit-rsvp-modal" class="modal-backdrop-smooth" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.78); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 10000; align-items: center; justify-content: center; padding: 20px;">
     <div class="modal-card-smooth" style="background: rgba(22, 22, 30, 0.98); border: 1.5px solid var(--gold-primary); border-radius: 24px; width: 100%; max-width: 520px; padding: 28px; box-shadow: 0 15px 40px rgba(0,0,0,0.8), 0 0 35px rgba(212,175,55,0.25); position: relative; max-height: 90vh; overflow-y: auto;">
