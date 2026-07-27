@@ -5123,26 +5123,31 @@ Tu presencia hará que esta celebración sea aún más significativa.
   };
 
   function changeServiceHelpSlide(newIdx) {
-    const wrapper = document.getElementById('service-help-slides-wrapper');
-    if (!wrapper) {
+    const card = document.querySelector('#service-help-slides-wrapper .service-help-slide-card');
+    if (!card) {
       currentServiceHelpIndex = newIdx;
       renderServiceHelpSlide();
       return;
     }
 
     isTransitioningHelpSlide = true;
-    wrapper.classList.remove('help-slide-anim-in');
-    wrapper.classList.add('help-slide-anim-out');
+    card.classList.add('fade-out');
 
     setTimeout(() => {
       currentServiceHelpIndex = newIdx;
       renderServiceHelpSlide();
-      wrapper.classList.remove('help-slide-anim-out');
-      wrapper.classList.add('help-slide-anim-in');
+      
+      const newCard = document.querySelector('#service-help-slides-wrapper .service-help-slide-card');
+      if (newCard) {
+        newCard.classList.add('fade-prepare');
+        newCard.offsetHeight; // Force DOM reflow
+        newCard.classList.remove('fade-prepare');
+      }
+      
       setTimeout(() => {
         isTransitioningHelpSlide = false;
-      }, 280);
-    }, 140);
+      }, 230);
+    }, 180);
   }
 
   function renderServiceHelpSlide() {
@@ -5152,7 +5157,7 @@ Tu presencia hará que esta celebración sea aún más significativa.
     const wrapper = document.getElementById('service-help-slides-wrapper');
     if (wrapper) {
       wrapper.innerHTML = `
-        <div style="background: rgba(12, 12, 16, 0.85); border: 1px solid rgba(212,175,55,0.25); border-radius: 18px; padding: 24px; text-align: left; box-shadow: inset 0 0 25px rgba(0,0,0,0.8), 0 5px 20px rgba(0,0,0,0.5);">
+        <div class="service-help-slide-card">
           <div style="font-size: 0.72rem; font-weight: 700; color: var(--gold-light); letter-spacing: 1px; margin-bottom: 10px; text-transform: uppercase;">
             ${slide.step}
           </div>

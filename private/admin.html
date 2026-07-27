@@ -2859,35 +2859,31 @@
     .modal-backdrop-smooth.open .modal-card-smooth {
       transform: scale(1) translateY(0) !important;
       opacity: 1 !important;
-    /* Service Help Slide In/Out Animation */
-    @keyframes helpSlideFadeIn {
-      0% {
-        opacity: 0;
-        transform: translateY(10px) scale(0.97);
-      }
-      100% {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-      }
     }
 
-    @keyframes helpSlideFadeOut {
-      0% {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-      }
-      100% {
-        opacity: 0;
-        transform: translateY(-10px) scale(0.97);
-      }
+    /* Service Help Slide Smooth Fade In/Out Transition */
+    .service-help-slide-card {
+      background: rgba(12, 12, 16, 0.85);
+      border: 1px solid rgba(212, 175, 55, 0.25);
+      border-radius: 18px;
+      padding: 24px;
+      text-align: left;
+      box-shadow: inset 0 0 25px rgba(0,0,0,0.8), 0 5px 20px rgba(0,0,0,0.5);
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      transition: opacity 0.22s cubic-bezier(0.4, 0, 0.2, 1), transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+      will-change: opacity, transform;
     }
 
-    .help-slide-anim-in {
-      animation: helpSlideFadeIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    .service-help-slide-card.fade-out {
+      opacity: 0;
+      transform: translateY(-8px) scale(0.97);
     }
 
-    .help-slide-anim-out {
-      animation: helpSlideFadeOut 0.14s cubic-bezier(0.7, 0, 0.84, 0) forwards;
+    .service-help-slide-card.fade-prepare {
+      opacity: 0;
+      transform: translateY(8px) scale(0.97);
+      transition: none !important;
     }
 
     /* Custom Select Component Styling with Soft Dropdown Animation */
