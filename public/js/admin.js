@@ -4851,13 +4851,70 @@ Tu presencia hará que esta celebración sea aún más significativa.
     });
   }
 
+  window.toggleCustomAttendingDropdown = function() {
+    const menu = document.getElementById('custom-attending-menu');
+    const chevron = document.getElementById('custom-attending-chevron');
+    if (!menu) return;
+
+    const isOpen = menu.style.display === 'block';
+    menu.style.display = isOpen ? 'none' : 'block';
+    if (chevron) {
+      chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+    }
+  };
+
+  window.selectCustomAttendingOption = function(attending) {
+    const isAttending = Boolean(attending);
+    const hiddenInput = document.getElementById('edit-rsvp-attending-input');
+    if (hiddenInput) hiddenInput.value = isAttending ? 'true' : 'false';
+
+    const selectedLabel = document.getElementById('custom-attending-selected');
+    if (selectedLabel) {
+      selectedLabel.innerHTML = isAttending 
+        ? '<span>✅</span> Sí, Asiste' 
+        : '<span>❌</span> No Asiste';
+    }
+
+    const optTrue = document.getElementById('opt-attending-true');
+    const optFalse = document.getElementById('opt-attending-false');
+
+    if (optTrue && optFalse) {
+      optTrue.classList.toggle('selected', isAttending);
+      optFalse.classList.toggle('selected', !isAttending);
+
+      const checkTrue = optTrue.querySelector('.check-icon');
+      const checkFalse = optFalse.querySelector('.check-icon');
+      if (checkTrue) checkTrue.style.display = isAttending ? 'block' : 'none';
+      if (checkFalse) checkFalse.style.display = !isAttending ? 'block' : 'none';
+    }
+
+    const menu = document.getElementById('custom-attending-menu');
+    const chevron = document.getElementById('custom-attending-chevron');
+    if (menu) menu.style.display = 'none';
+    if (chevron) chevron.style.transform = 'rotate(0deg)';
+  };
+
+  // Close custom select menu when clicking outside
+  document.addEventListener('click', (e) => {
+    const trigger = document.getElementById('custom-attending-trigger');
+    const menu = document.getElementById('custom-attending-menu');
+    if (menu && trigger && !trigger.contains(e.target) && !menu.contains(e.target)) {
+      menu.style.display = 'none';
+      const chevron = document.getElementById('custom-attending-chevron');
+      if (chevron) chevron.style.transform = 'rotate(0deg)';
+    }
+  });
+
   window.openEditRsvpModal = function(id) {
     const rsvp = allRsvps.find(r => String(r.id) === String(id));
     if (!rsvp) return;
 
     document.getElementById('edit-rsvp-id').value = rsvp.id;
     document.getElementById('edit-rsvp-name-input').value = rsvp.name || '';
-    document.getElementById('edit-rsvp-attending-input').value = rsvp.attending ? 'true' : 'false';
+    
+    // Set custom attending dropdown
+    selectCustomAttendingOption(Boolean(rsvp.attending));
+
     document.getElementById('edit-rsvp-dietary-input').value = rsvp.dietaryRestrictions || '';
     document.getElementById('edit-rsvp-phone-input').value = rsvp.phone || '';
     document.getElementById('edit-rsvp-companions-count-input').value = rsvp.companionsCount || 0;
@@ -4877,12 +4934,22 @@ Tu presencia hará que esta celebración sea aún más significativa.
     document.getElementById('edit-rsvp-companions-names-input').value = compStr;
 
     const modal = document.getElementById('edit-rsvp-modal');
-    if (modal) modal.style.display = 'flex';
+    if (modal) {
+      modal.style.display = 'flex';
+      requestAnimationFrame(() => {
+        modal.classList.add('open');
+      });
+    }
   };
 
   window.closeEditRsvpModal = function() {
     const modal = document.getElementById('edit-rsvp-modal');
-    if (modal) modal.style.display = 'none';
+    if (modal) {
+      modal.classList.remove('open');
+      setTimeout(() => {
+        modal.style.display = 'none';
+      }, 280);
+    }
   };
 
   window.submitEditRsvpForm = function() {
@@ -9503,13 +9570,19 @@ window.editAdminGenre = function(genreId, currentName, currentIcon) {
 
   if (modal) {
     modal.style.display = 'flex';
+    requestAnimationFrame(() => {
+      modal.classList.add('open');
+    });
   }
 };
 
 window.closeEditGenreModal = function() {
   const modal = document.getElementById('edit-genre-modal');
   if (modal) {
-    modal.style.display = 'none';
+    modal.classList.remove('open');
+    setTimeout(() => {
+      modal.style.display = 'none';
+    }, 280);
   }
 };
 
