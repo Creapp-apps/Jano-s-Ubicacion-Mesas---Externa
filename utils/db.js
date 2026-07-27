@@ -1982,6 +1982,60 @@ async function deleteRsvp(eventId = 'default', rsvpId) {
 }
 
 /**
+ * Update an RSVP entry by ID
+ */
+async function updateRsvp(eventId = 'default', rsvpId, fields = {}) {
+  const { name, attending, companionsCount, companionsNames, dietaryRestrictions, phone, suggestedSong } = fields;
+
+  if (isSupabaseEnabled) {
+    const payload = {};
+    if (name !== undefined) payload.name = (name || '').trim();
+    if (attending !== undefined) payload.attending = Boolean(attending);
+    if (companionsCount !== undefined) payload.companions_count = parseInt(companionsCount, 10) || 0;
+    if (companionsNames !== undefined) payload.companions_names = typeof companionsNames === 'string' ? companionsNames : JSON.stringify(companionsNames || []);
+    if (dietaryRestrictions !== undefined) payload.dietary_restrictions = (dietaryRestrictions || '').trim();
+    if (phone !== undefined) payload.phone = (phone || '').trim();
+    if (suggestedSong !== undefined) payload.suggested_song = (suggestedSong || '').trim();
+
+    const { error } = await supabase
+      .from('rsvps')
+      .update(payload)
+      .eq('id', rsvpId)
+      .eq('event_id', eventId);
+
+    if (error) {
+      console.error('Error updating RSVP in Supabase:', error);
+      throw error;
+    }
+  } else {
+    const { configFile } = getEventFiles(eventId);
+    const eventDir = path.dirname(configFile);
+    const rsvpsFile = path.join(eventDir, 'rsvps.json');
+    if (!fs.existsSync(rsvpsFile)) return;
+    try {
+      let rsvps = JSON.parse(fs.readFileSync(rsvpsFile, 'utf8'));
+      const numId = parseInt(rsvpId, 10);
+      const index = rsvps.findIndex(r => r.id === numId || String(r.id) === String(rsvpId));
+      if (index !== -1) {
+        if (name !== undefined) rsvps[index].name = (name || '').trim();
+        if (attending !== undefined) rsvps[index].attending = Boolean(attending);
+        if (companionsCount !== undefined) rsvps[index].companionsCount = parseInt(companionsCount, 10) || 0;
+        if (companionsNames !== undefined) rsvps[index].companionsNames = companionsNames;
+        if (dietaryRestrictions !== undefined) rsvps[index].dietaryRestrictions = (dietaryRestrictions || '').trim();
+        if (phone !== undefined) rsvps[index].phone = (phone || '').trim();
+        if (suggestedSong !== undefined) rsvps[index].suggestedSong = (suggestedSong || '').trim();
+        rsvps[index].updated_at = new Date().toISOString();
+        
+        fs.writeFileSync(rsvpsFile, JSON.stringify(rsvps, null, 2), 'utf8');
+      }
+    } catch (err) {
+      console.error('Error updating local RSVP:', err);
+      throw err;
+    }
+  }
+}
+
+/**
  * Save a song suggestion for a guest (either update existing RSVP or add a new one)
  */
 async function saveSongSuggestion(eventId = 'default', name, song) {
@@ -2153,6 +2207,7 @@ module.exports = {
   addRsvp,
   addOrUpdatePublicRsvp,
   deleteRsvp,
+  updateRsvp,
   saveSongSuggestion,
   getCapitanesConfig,
   saveCapitanesConfig,
@@ -2160,4 +2215,3 @@ module.exports = {
   saveCapitanesProgress,
   assignVendorToEvent
 };
-

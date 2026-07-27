@@ -1210,6 +1210,19 @@ app.delete('/api/rsvps/:id', requireAuth, async (req, res) => {
   }
 });
 
+// API: Update RSVP (Admin only)
+app.put('/api/rsvps/:id', requireAuth, async (req, res) => {
+  const eventId = req.query.event || 'default';
+  const rsvpId = req.params.id;
+  try {
+    await db.updateRsvp(eventId, rsvpId, req.body);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error updating RSVP:', error);
+    res.status(500).json({ error: 'Error al actualizar la confirmación' });
+  }
+});
+
 // API: Public RSVP submit (No Auth)
 app.post('/api/public/rsvp', async (req, res) => {
   const eventId = req.query.event || req.body.eventId || 'default';

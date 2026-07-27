@@ -4823,13 +4823,25 @@ Tu presencia hará que esta celebración sea aún más significativa.
           <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.03); color: white;">${companionsText}</td>
           <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.03);">${dietText}</td>
           <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.03); text-align: center;">
-            <button class="btn btn-delete-rsvp" data-id="${rsvp.id}" style="padding: 4px 8px; border-radius: 6px; font-size: 0.65rem; background: rgba(255,0,0,0.15); color: #ff4d4d; border: 1px solid rgba(255,0,0,0.3); cursor: pointer;">
-              Eliminar
-            </button>
+            <div style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+              <button type="button" class="btn btn-edit-rsvp" data-id="${rsvp.id}" style="width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 9px; background: rgba(212,175,55,0.12); border: 1px solid rgba(212,175,55,0.4); color: var(--gold-light); cursor: pointer; transition: all 0.2s;" title="Editar confirmación">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+              </button>
+              <button type="button" class="btn btn-delete-rsvp" data-id="${rsvp.id}" style="width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 9px; background: rgba(231,76,60,0.12); border: 1px solid rgba(231,76,60,0.4); color: #ff6b6b; cursor: pointer; transition: all 0.2s;" title="Eliminar confirmación">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+              </button>
+            </div>
           </td>
         </tr>
       `;
     }).join('');
+
+    rsvpTableBody.querySelectorAll('.btn-edit-rsvp').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-id');
+        openEditRsvpModal(id);
+      });
+    });
 
     rsvpTableBody.querySelectorAll('.btn-delete-rsvp').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -4838,6 +4850,80 @@ Tu presencia hará que esta celebración sea aún más significativa.
       });
     });
   }
+
+  window.openEditRsvpModal = function(id) {
+    const rsvp = allRsvps.find(r => String(r.id) === String(id));
+    if (!rsvp) return;
+
+    document.getElementById('edit-rsvp-id').value = rsvp.id;
+    document.getElementById('edit-rsvp-name-input').value = rsvp.name || '';
+    document.getElementById('edit-rsvp-attending-input').value = rsvp.attending ? 'true' : 'false';
+    document.getElementById('edit-rsvp-dietary-input').value = rsvp.dietaryRestrictions || '';
+    document.getElementById('edit-rsvp-phone-input').value = rsvp.phone || '';
+    document.getElementById('edit-rsvp-companions-count-input').value = rsvp.companionsCount || 0;
+
+    let compStr = '';
+    if (Array.isArray(rsvp.companionsDetails) && rsvp.companionsDetails.length > 0) {
+      compStr = rsvp.companionsDetails.map(c => {
+        let name = typeof c === 'object' && c ? c.name : String(c || '');
+        let diet = typeof c === 'object' && c ? c.dietary : '';
+        return diet ? `${name} (${diet})` : name;
+      }).join(', ');
+    } else if (Array.isArray(rsvp.companionsNames)) {
+      compStr = rsvp.companionsNames.join(', ');
+    } else if (typeof rsvp.companionsNames === 'string') {
+      compStr = rsvp.companionsNames;
+    }
+    document.getElementById('edit-rsvp-companions-names-input').value = compStr;
+
+    const modal = document.getElementById('edit-rsvp-modal');
+    if (modal) modal.style.display = 'flex';
+  };
+
+  window.closeEditRsvpModal = function() {
+    const modal = document.getElementById('edit-rsvp-modal');
+    if (modal) modal.style.display = 'none';
+  };
+
+  window.submitEditRsvpForm = function() {
+    const id = document.getElementById('edit-rsvp-id').value;
+    if (!id) return;
+
+    const payload = {
+      name: document.getElementById('edit-rsvp-name-input').value.trim(),
+      attending: document.getElementById('edit-rsvp-attending-input').value === 'true',
+      dietaryRestrictions: document.getElementById('edit-rsvp-dietary-input').value.trim(),
+      phone: document.getElementById('edit-rsvp-phone-input').value.trim(),
+      companionsCount: parseInt(document.getElementById('edit-rsvp-companions-count-input').value, 10) || 0,
+      companionsNames: document.getElementById('edit-rsvp-companions-names-input').value.trim()
+    };
+
+    fetch(`/api/rsvps/${id}?event=${encodeURIComponent(eventId)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          closeEditRsvpModal();
+          if (typeof showSuccess === 'function') {
+            showSuccess('Confirmación Actualizada', 'Los datos de la respuesta se guardaron correctamente.');
+          }
+          loadRsvps();
+        } else {
+          if (typeof showError === 'function') {
+            showError('Error', 'No se pudo actualizar la confirmación.');
+          }
+        }
+      })
+      .catch(err => {
+        console.error('Error submitting RSVP edit:', err);
+        if (typeof showError === 'function') {
+          showError('Error de red', 'Ocurrió un error al intentar guardar los cambios.');
+        }
+      });
+  };
 
   function deleteRsvpEntry(id) {
     showConfirm(
