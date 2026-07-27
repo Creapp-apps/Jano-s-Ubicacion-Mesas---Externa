@@ -381,10 +381,10 @@ document.addEventListener('DOMContentLoaded', () => {
     modalToggleBtn.addEventListener('click', () => {
       if (modalPasswordInput.type === 'password') {
         modalPasswordInput.type = 'text';
-        modalEyeIcon.innerHTML = `<path d="${eyeClosedPath}"/>`;
+        modalEyeIcon.innerHTML = `<path d="${eyeOpenPath}"/>`;
       } else {
         modalPasswordInput.type = 'password';
-        modalEyeIcon.innerHTML = `<path d="${eyeOpenPath}"/>`;
+        modalEyeIcon.innerHTML = `<path d="${eyeClosedPath}"/>`;
       }
     });
   }
@@ -399,7 +399,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (modalLoginForm) modalLoginForm.reset();
       if (modalPasswordInput) {
         modalPasswordInput.type = 'password';
-        if (modalEyeIcon) modalEyeIcon.innerHTML = `<path d="${eyeOpenPath}"/>`;
+        if (modalEyeIcon) modalEyeIcon.innerHTML = `<path d="${eyeClosedPath}"/>`;
       }
     }
   };
