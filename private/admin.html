@@ -2823,7 +2823,21 @@
       opacity: 1 !important;
     }
 
-    /* Custom Select Component Styling */
+    /* Custom Select Component Styling with Soft Dropdown Animation */
+    .custom-select-menu {
+      opacity: 0;
+      transform: translateY(-8px) scale(0.96);
+      transform-origin: top center;
+      transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1), transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: none;
+    }
+    .custom-select-menu.open {
+      opacity: 1 !important;
+      transform: translateY(0) scale(1) !important;
+      pointer-events: auto !important;
+      display: block !important;
+    }
+
     .custom-select-trigger:hover {
       border-color: var(--gold-primary) !important;
       box-shadow: 0 0 12px rgba(212, 175, 55, 0.25);

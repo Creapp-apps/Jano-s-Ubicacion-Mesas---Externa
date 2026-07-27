@@ -4851,15 +4851,44 @@ Tu presencia hará que esta celebración sea aún más significativa.
     });
   }
 
-  window.toggleCustomAttendingDropdown = function() {
+  window.openCustomAttendingDropdown = function() {
     const menu = document.getElementById('custom-attending-menu');
     const chevron = document.getElementById('custom-attending-chevron');
     if (!menu) return;
 
-    const isOpen = menu.style.display === 'block';
-    menu.style.display = isOpen ? 'none' : 'block';
+    menu.style.display = 'block';
+    requestAnimationFrame(() => {
+      menu.classList.add('open');
+    });
     if (chevron) {
-      chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+      chevron.style.transform = 'rotate(180deg)';
+    }
+  };
+
+  window.closeCustomAttendingDropdown = function() {
+    const menu = document.getElementById('custom-attending-menu');
+    const chevron = document.getElementById('custom-attending-chevron');
+    if (!menu) return;
+
+    menu.classList.remove('open');
+    if (chevron) {
+      chevron.style.transform = 'rotate(0deg)';
+    }
+    setTimeout(() => {
+      if (!menu.classList.contains('open')) {
+        menu.style.display = 'none';
+      }
+    }, 220);
+  };
+
+  window.toggleCustomAttendingDropdown = function() {
+    const menu = document.getElementById('custom-attending-menu');
+    if (!menu) return;
+
+    if (menu.classList.contains('open')) {
+      closeCustomAttendingDropdown();
+    } else {
+      openCustomAttendingDropdown();
     }
   };
 
@@ -4888,10 +4917,7 @@ Tu presencia hará que esta celebración sea aún más significativa.
       if (checkFalse) checkFalse.style.display = !isAttending ? 'block' : 'none';
     }
 
-    const menu = document.getElementById('custom-attending-menu');
-    const chevron = document.getElementById('custom-attending-chevron');
-    if (menu) menu.style.display = 'none';
-    if (chevron) chevron.style.transform = 'rotate(0deg)';
+    closeCustomAttendingDropdown();
   };
 
   // Close custom select menu when clicking outside
@@ -4899,9 +4925,9 @@ Tu presencia hará que esta celebración sea aún más significativa.
     const trigger = document.getElementById('custom-attending-trigger');
     const menu = document.getElementById('custom-attending-menu');
     if (menu && trigger && !trigger.contains(e.target) && !menu.contains(e.target)) {
-      menu.style.display = 'none';
-      const chevron = document.getElementById('custom-attending-chevron');
-      if (chevron) chevron.style.transform = 'rotate(0deg)';
+      if (menu.classList.contains('open')) {
+        closeCustomAttendingDropdown();
+      }
     }
   });
 
