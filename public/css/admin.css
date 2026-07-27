@@ -3609,6 +3609,78 @@ input.input-highlight-pulse {
   }
 }
 
+/* ==========================================================================
+   LUXURY MODULE SWITCH TOGGLES (MODULAR INVITATION)
+   ========================================================================== */
+.luxury-module-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 10px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(212, 175, 55, 0.15);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.25s ease;
+}
+
+.luxury-module-toggle:hover {
+  background: rgba(212, 175, 55, 0.08);
+  border-color: rgba(212, 175, 55, 0.4);
+}
+
+.luxury-module-toggle input[type="checkbox"] {
+  display: none;
+}
+
+.luxury-module-toggle .toggle-slider {
+  width: 36px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  position: relative;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  flex-shrink: 0;
+}
+
+.luxury-module-toggle .toggle-slider::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  background: #888;
+  border-radius: 50%;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.luxury-module-toggle input[type="checkbox"]:checked + .toggle-slider {
+  background: rgba(212, 175, 55, 0.25);
+  border-color: var(--gold-primary);
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+}
+
+.luxury-module-toggle input[type="checkbox"]:checked + .toggle-slider::after {
+  transform: translateX(16px);
+  background: var(--gold-gradient);
+  box-shadow: 0 0 8px rgba(212, 175, 55, 0.8);
+}
+
+.luxury-module-toggle .toggle-label {
+  font-size: 0.76rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.luxury-module-toggle input[type="checkbox"]:checked ~ .toggle-label {
+  color: var(--text-main);
+  font-weight: 600;
+}
+
 
 
 

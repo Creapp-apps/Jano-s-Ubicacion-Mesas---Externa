@@ -834,6 +834,16 @@ app.get('/api/config', async (req, res) => {
       } catch (e) {}
     }
 
+    let enabledModules = { countdown: true, location: true, dresscode: true, photos: true, gifts: true, rsvp: true, music: true, farewell: true };
+    if (config['enabled_modules']) {
+      try {
+        const parsed = JSON.parse(config['enabled_modules']);
+        if (parsed && typeof parsed === 'object') {
+          enabledModules = { ...enabledModules, ...parsed };
+        }
+      } catch (e) {}
+    }
+
     res.json({
       eventTitle,
       googleDriveFolderUrl,
@@ -845,6 +855,7 @@ app.get('/api/config', async (req, res) => {
       serviceInvitation,
       serviceTrivia,
       serviceCapitanes,
+      enabledModules,
       selectedFilters,
       triviaQuestions,
       invitationEventDate,
@@ -1150,6 +1161,10 @@ app.post('/api/config', requireAuth, async (req, res) => {
     
     if (selectedFilters !== undefined) {
       await db.setConfigValue(eventId, 'selected_filters', JSON.stringify(selectedFilters));
+    }
+    
+    if (req.body.enabledModules !== undefined) {
+      await db.setConfigValue(eventId, 'enabled_modules', JSON.stringify(req.body.enabledModules));
     }
     
     if (invitationEventDate !== undefined) await db.setConfigValue(eventId, 'invitation_event_date', invitationEventDate);

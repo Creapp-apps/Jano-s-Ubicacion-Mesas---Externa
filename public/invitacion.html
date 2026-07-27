@@ -1636,6 +1636,7 @@
         .then(data => {
           invitationData = data;
           applyInvitationStyles(data);
+          applyModularSections(data.enabledModules);
 
           // Pre-resolve coordinates in background to eliminate delay on click
           resolveEventCoordinates().then(coords => {
@@ -2315,6 +2316,62 @@
         }, 2200);
       }
       window.showInvitationSuccessToast = showInvitationSuccessToast;
+
+      function applyModularSections(enabledModules) {
+        if (!enabledModules) return;
+
+        const giftsEnabled = enabledModules.gifts !== false;
+        const chestEnabled = enabledModules.chest !== false;
+
+        const moduleMap = [
+          { key: 'countdown', targetId: 'countdown-container', isSlide: false },
+          { key: 'location', targetId: 'slide-1', dotId: 'nav-dot-1', isSlide: true },
+          { key: 'dresscode', targetId: 'slide-2', dotId: 'nav-dot-2', isSlide: true },
+          { key: 'photos', targetId: 'slide-3', dotId: 'nav-dot-3', isSlide: true },
+          { key: 'rsvp', targetId: 'slide-4', dotId: 'nav-dot-4', isSlide: true },
+          { key: 'music', targetId: 'slide-6', dotId: 'nav-dot-6', isSlide: true },
+          { key: 'farewell', targetId: 'slide-farewell', dotId: 'nav-dot-farewell', isSlide: true }
+        ];
+
+        moduleMap.forEach(mod => {
+          const isEnabled = enabledModules[mod.key] !== false;
+          const el = document.getElementById(mod.targetId);
+          if (el) {
+            el.style.display = isEnabled ? '' : 'none';
+          }
+          if (mod.dotId) {
+            const dotEl = document.getElementById(mod.dotId);
+            if (dotEl) {
+              dotEl.style.display = isEnabled ? '' : 'none';
+            }
+          }
+        });
+
+        // Gifts Module & 3D Chest Toggle
+        const slideGifts3D = document.getElementById('slide-5');
+        const slideGiftsDirect = document.getElementById('slide-5-directo');
+        const dotGifts = document.getElementById('nav-dot-5');
+
+        if (!giftsEnabled) {
+          if (slideGifts3D) slideGifts3D.style.display = 'none';
+          if (slideGiftsDirect) slideGiftsDirect.style.display = 'none';
+          if (dotGifts) dotGifts.style.display = 'none';
+        } else {
+          if (dotGifts) dotGifts.style.display = '';
+          if (chestEnabled) {
+            if (slideGifts3D) slideGifts3D.style.display = '';
+            if (slideGiftsDirect) slideGiftsDirect.style.display = 'none';
+          } else {
+            if (slideGifts3D) slideGifts3D.style.display = 'none';
+            if (slideGiftsDirect) slideGiftsDirect.style.display = '';
+          }
+        }
+
+        if (typeof initNavigation === 'function') {
+          initNavigation();
+        }
+      }
+      window.applyModularSections = applyModularSections;
 
       if (waxSealBtn) waxSealBtn.addEventListener('click', triggerEnvelopeOpening);
 
@@ -3039,6 +3096,9 @@
         if (event.data.type === 'invitation-preview-update') {
           const config = event.data.config;
           applyInvitationStyles(config);
+          if (config.enabledModules) {
+            applyModularSections(config.enabledModules);
+          }
 
           // Update texts, title and subtitle
           if (config.title !== undefined) {

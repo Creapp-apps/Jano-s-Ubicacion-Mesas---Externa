@@ -3652,6 +3652,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (invPhoto4) invPhoto4.value = data.invitationPhoto4 || '';
         if (invPhoto5) invPhoto5.value = data.invitationPhoto5 || '';
 
+        const enabledMods = data.enabledModules || {};
+        const modKeys = ['countdown', 'location', 'dresscode', 'photos', 'gifts', 'chest', 'rsvp', 'music', 'farewell'];
+        modKeys.forEach(key => {
+          const el = document.getElementById(`mod-${key}`);
+          if (el) {
+            el.checked = enabledMods[key] !== false;
+          }
+        });
+
         // Update real-time preview after population
         updateRealTimePreview();
         if (window.syncPhotoPreviewImages) {
@@ -4635,7 +4644,18 @@ Tu presencia hará que esta celebración sea aún más significativa.
       invitationPhoto2: invPhoto2 ? invPhoto2.value.trim() : '',
       invitationPhoto3: invPhoto3 ? invPhoto3.value.trim() : '',
       invitationPhoto4: invPhoto4 ? invPhoto4.value.trim() : '',
-      invitationPhoto5: invPhoto5 ? invPhoto5.value.trim() : ''
+      invitationPhoto5: invPhoto5 ? invPhoto5.value.trim() : '',
+      enabledModules: {
+        countdown: document.getElementById('mod-countdown') ? document.getElementById('mod-countdown').checked : true,
+        location: document.getElementById('mod-location') ? document.getElementById('mod-location').checked : true,
+        dresscode: document.getElementById('mod-dresscode') ? document.getElementById('mod-dresscode').checked : true,
+        photos: document.getElementById('mod-photos') ? document.getElementById('mod-photos').checked : true,
+        gifts: document.getElementById('mod-gifts') ? document.getElementById('mod-gifts').checked : true,
+        chest: document.getElementById('mod-chest') ? document.getElementById('mod-chest').checked : true,
+        rsvp: document.getElementById('mod-rsvp') ? document.getElementById('mod-rsvp').checked : true,
+        music: document.getElementById('mod-music') ? document.getElementById('mod-music').checked : true,
+        farewell: document.getElementById('mod-farewell') ? document.getElementById('mod-farewell').checked : true
+      }
     };
 
     if (!payload.eventTitle) {
@@ -6351,7 +6371,18 @@ Tu presencia hará que esta celebración sea aún más significativa.
       title: invTitleInput ? invTitleInput.value.trim() : '',
       date: invDateOnlyInput ? invDateOnlyInput.value.trim() : '',
       time: invTimeOnlyInput ? invTimeOnlyInput.value.trim() : '21:00',
-      timeEnd: invTimeEndInput ? invTimeEndInput.value.trim() : ''
+      timeEnd: invTimeEndInput ? invTimeEndInput.value.trim() : '',
+      enabledModules: {
+        countdown: document.getElementById('mod-countdown') ? document.getElementById('mod-countdown').checked : true,
+        location: document.getElementById('mod-location') ? document.getElementById('mod-location').checked : true,
+        dresscode: document.getElementById('mod-dresscode') ? document.getElementById('mod-dresscode').checked : true,
+        photos: document.getElementById('mod-photos') ? document.getElementById('mod-photos').checked : true,
+        gifts: document.getElementById('mod-gifts') ? document.getElementById('mod-gifts').checked : true,
+        chest: document.getElementById('mod-chest') ? document.getElementById('mod-chest').checked : true,
+        rsvp: document.getElementById('mod-rsvp') ? document.getElementById('mod-rsvp').checked : true,
+        music: document.getElementById('mod-music') ? document.getElementById('mod-music').checked : true,
+        farewell: document.getElementById('mod-farewell') ? document.getElementById('mod-farewell').checked : true
+      }
     };
 
     previewIframe.contentWindow.postMessage({
@@ -6364,7 +6395,8 @@ Tu presencia hará que esta celebración sea aún más significativa.
   const inputsToListen = [
     invTemplate, invThemeFont, invThemeColor, invBgEffect, invWaxSeal,
     invBgUrl, invTitleInput, invDateOnlyInput, invTimeOnlyInput, invTimeEndInput,
-    invPhoto1, invPhoto2, invPhoto3, invPhoto4, invPhoto5
+    invPhoto1, invPhoto2, invPhoto3, invPhoto4, invPhoto5,
+    ...Array.from(document.querySelectorAll('.inv-module-toggle'))
   ];
 
   inputsToListen.forEach(input => {
