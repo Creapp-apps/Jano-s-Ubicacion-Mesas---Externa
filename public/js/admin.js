@@ -5971,6 +5971,187 @@ Tu presencia hará que esta celebración sea aún más significativa.
   // Initialize Audio Preview Player
   initAudioPreviewPlayer();
 
+  // --- Custom Luxury Dropdowns & Template Guidance ---
+  function convertSelectToCustomDropdown(selectEl, customOptionsMap = null) {
+    if (!selectEl || selectEl.dataset.customized === 'true') return;
+    selectEl.dataset.customized = 'true';
+    selectEl.style.display = 'none';
+
+    const container = document.createElement('div');
+    container.className = 'custom-select-container';
+    container.id = `custom-select-wrapper-${selectEl.id}`;
+
+    const trigger = document.createElement('button');
+    trigger.type = 'button';
+    trigger.className = 'custom-select-trigger';
+
+    const labelSpan = document.createElement('span');
+    labelSpan.className = 'custom-select-label';
+
+    const arrowSvg = document.createElement('span');
+    arrowSvg.innerHTML = `<svg class="custom-select-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
+
+    trigger.appendChild(labelSpan);
+    trigger.appendChild(arrowSvg.firstElementChild);
+
+    const dropdown = document.createElement('div');
+    dropdown.className = 'custom-select-dropdown';
+
+    function renderOptions() {
+      dropdown.innerHTML = '';
+      Array.from(selectEl.options).forEach(opt => {
+        const optionEl = document.createElement('div');
+        const isSelected = opt.value === selectEl.value;
+        optionEl.className = `custom-select-option ${isSelected ? 'active' : ''}`;
+        optionEl.dataset.value = opt.value;
+
+        const info = customOptionsMap && customOptionsMap[opt.value];
+        if (info) {
+          optionEl.innerHTML = `
+            <div class="option-title">
+              <span>${info.icon || ''} ${opt.text}</span>
+              ${isSelected ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gold-primary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>' : ''}
+            </div>
+            ${info.desc ? `<div class="option-desc">${info.desc}</div>` : ''}
+          `;
+        } else {
+          optionEl.innerHTML = `
+            <div class="option-title" style="margin-bottom: 0;">
+              <span>${opt.text}</span>
+              ${isSelected ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gold-primary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>' : ''}
+            </div>
+          `;
+        }
+
+        optionEl.addEventListener('click', (e) => {
+          e.stopPropagation();
+          selectEl.value = opt.value;
+          selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+          selectEl.dispatchEvent(new Event('input', { bubbles: true }));
+          updateSelectedState();
+          container.classList.remove('open');
+        });
+
+        dropdown.appendChild(optionEl);
+      });
+    }
+
+    function updateSelectedState() {
+      const selectedOpt = selectEl.options[selectEl.selectedIndex];
+      if (selectedOpt) {
+        labelSpan.textContent = selectedOpt.text;
+      }
+      renderOptions();
+    }
+
+    trigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      document.querySelectorAll('.custom-select-container.open').forEach(c => {
+        if (c !== container) c.classList.remove('open');
+      });
+      container.classList.toggle('open');
+    });
+
+    container.appendChild(trigger);
+    container.appendChild(dropdown);
+
+    if (selectEl.parentNode) {
+      selectEl.parentNode.insertBefore(container, selectEl.nextSibling);
+    }
+
+    updateSelectedState();
+    selectEl.addEventListener('change', updateSelectedState);
+  }
+
+  // Close dropdowns on outside click
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.custom-select-container')) {
+      document.querySelectorAll('.custom-select-container.open').forEach(c => c.classList.remove('open'));
+    }
+  });
+
+  function initCustomTemplateSelectAndGuides() {
+    const invTemplateSelect = document.getElementById('inv-template');
+    const templateInfoBox = document.getElementById('inv-template-info-box');
+
+    const TEMPLATE_META = {
+      'interactivo-3d': {
+        icon: '✨',
+        title: 'Interactivo 3D (Cofre & Sobre Realista)',
+        desc: 'El invitado inicia la experiencia abriendo un sobre digital 3D con sello de lacre personalizado, del cual se desliza suavemente la tarjeta principal.',
+        bullets: [
+          '👑 Experiencia inmersiva VIP de alto impacto visual.',
+          '✉️ Incluye la animación inicial del sobre digital interactivo.',
+          '💫 Ideal para Bodas y Quinceañeras que buscan deslumbrar.'
+        ]
+      },
+      'slides-directo': {
+        icon: '📜',
+        title: 'Slides Clásicos (Sin 3D)',
+        desc: 'Acceso directo a las tarjetas horizontales por secciones sin la animación previa del sobre (Portada, Mapa del Salón, Regalos, RSVP).',
+        bullets: [
+          '🚀 Apertura directa e inmediata sin tiempos de espera.',
+          '📱 Navegación limpia y ágil ideal para cualquier celular.',
+          '🎯 Enfoque directo en la información del evento.'
+        ]
+      },
+      'vertical-scroll': {
+        icon: '📱',
+        title: 'Vertical Scroll (Lectura Continua)',
+        desc: 'Estilo Landing Page moderna de una sola página. El invitado simplemente desliza el dedo de arriba hacia abajo con animaciones de revelado progresivo.',
+        bullets: [
+          '⬇️ Lectura fluida e intuitiva sin cambiar de pantalla.',
+          '✨ Animaciones de revelado progresivo (Scroll-Reveal).',
+          '👥 La opción más fácil para invitados de todas las edades.'
+        ]
+      }
+    };
+
+    function updateTemplateInfoBox(val) {
+      if (!templateInfoBox) return;
+      const meta = TEMPLATE_META[val] || TEMPLATE_META['interactivo-3d'];
+
+      templateInfoBox.innerHTML = `
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+          <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--gold-light); font-size: 0.82rem;">
+            <span>${meta.icon}</span> ${meta.title}
+          </div>
+        </div>
+        <p style="font-size: 0.76rem; color: var(--text-muted); line-height: 1.45; margin-bottom: 8px;">
+          ${meta.desc}
+        </p>
+        <div style="display: flex; flex-direction: column; gap: 4px; font-size: 0.74rem; color: var(--text-main);">
+          ${meta.bullets.map(b => `<div style="display: flex; align-items: center; gap: 6px;"><span style="color: var(--gold-primary);">✓</span> <span>${b}</span></div>`).join('')}
+        </div>
+      `;
+    }
+
+    if (invTemplateSelect) {
+      convertSelectToCustomDropdown(invTemplateSelect, {
+        'interactivo-3d': { icon: '✨', desc: 'Apertura de sobre 3D + sello de lacre' },
+        'slides-directo': { icon: '📜', desc: 'Diapositivas horizontales por secciones' },
+        'vertical-scroll': { icon: '📱', desc: 'Desplazamiento continuo estilo Landing Page' }
+      });
+
+      invTemplateSelect.addEventListener('change', (e) => {
+        updateTemplateInfoBox(e.target.value);
+      });
+
+      updateTemplateInfoBox(invTemplateSelect.value);
+    }
+
+    const styleSelectIds = ['inv-theme-font', 'inv-theme-color', 'inv-bg-effect', 'inv-wax-seal'];
+    styleSelectIds.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        convertSelectToCustomDropdown(el);
+      }
+    });
+  }
+
+  // Initialize Custom Template Select & Info Card
+  initCustomTemplateSelectAndGuides();
+
   if (invTimeOnlyInput) {
     invTimeOnlyInput.addEventListener('input', (e) => {
       let val = e.target.value.replace(/[^0-9:]/g, '');

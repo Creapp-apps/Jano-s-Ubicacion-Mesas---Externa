@@ -710,13 +710,40 @@
               <div style="flex: 1.2; min-width: 320px; display: flex; flex-direction: column; justify-content: space-between; gap: 15px;">
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
                   <div>
-                    <div style="margin-bottom: 15px;">
-                      <label style="display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Diseño / Plantilla de la Invitación</label>
+                    <div style="margin-bottom: 20px;">
+                      <label style="display: flex; align-items: center; gap: 6px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">
+                        Diseño / Plantilla de la Invitación
+                        <span class="info-help-tooltip">
+                          ?
+                          <span class="tooltip-text" style="width: 290px;">
+                            <strong style="color: var(--gold-primary); display: block; margin-bottom: 6px;">¿Cómo elegir tu plantilla?</strong>
+                            <span class="tooltip-step-list">
+                              <span class="tooltip-step-item">
+                                <span class="tooltip-step-badge">✨</span>
+                                <span><strong>Interactivo 3D:</strong> Apertura de sobre en 3D con sello de lacre y tarjeta deslizable.</span>
+                              </span>
+                              <span class="tooltip-step-item">
+                                <span class="tooltip-step-badge">📜</span>
+                                <span><strong>Slides Clásicos:</strong> Diapositivas horizontales directas por secciones.</span>
+                              </span>
+                              <span class="tooltip-step-item">
+                                <span class="tooltip-step-badge">📱</span>
+                                <span><strong>Vertical Scroll:</strong> Lectura continua estilo Landing Page de arriba a abajo.</span>
+                              </span>
+                            </span>
+                          </span>
+                        </span>
+                      </label>
                       <select id="inv-template" class="form-control-admin" style="width: 100%; padding: 12px 18px; border-radius: 20px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif;">
                         <option value="interactivo-3d">Interactivo 3D (Cofre y Tarjeta Deslizable)</option>
                         <option value="slides-directo">Slides Clásicos (Sin Interactividad 3D obligatoria)</option>
                         <option value="vertical-scroll">Vertical Scroll (Lectura y Navegación Continua)</option>
                       </select>
+                      
+                      <!-- Dynamic Template Explanation Card -->
+                      <div id="inv-template-info-box" class="template-info-card" style="margin-top: 10px; padding: 12px 14px; background: rgba(212,175,55,0.06); border: 1px dashed rgba(212,175,55,0.35); border-radius: 16px; font-family: 'Montserrat', sans-serif;">
+                        <!-- Updated via JS -->
+                      </div>
                     </div>
 
                     <div style="margin-bottom: 15px;">
