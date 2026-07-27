@@ -591,6 +591,39 @@
                   <input type="file" id="inv-audio-upload" accept="audio/mpeg,audio/mp3" style="display: none;">
                 </div>
                 <div id="inv-audio-upload-status" style="font-size: 0.75rem; color: #a1a1a6; margin-top: 6px; font-family: 'Montserrat', sans-serif; min-height: 15px; font-weight: 500;"></div>
+
+                <!-- Audio Player Preview Widget with Sound Waves -->
+                <div id="inv-audio-player-widget" class="audio-player-preview-card" style="display: none; margin-top: 12px; padding: 14px 18px; background: linear-gradient(145deg, rgba(20,20,25,0.95) 0%, rgba(10,10,14,0.98) 100%); border: 1px solid rgba(212,175,55,0.3); border-radius: 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05); transition: all 0.3s ease;">
+                  <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px;">
+                    
+                    <!-- Controls (Play/Pause & Stop) -->
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <button type="button" id="btn-audio-play-pause" class="audio-player-btn btn-play-pause" title="Reproducir / Pausar" style="width: 40px; height: 40px; border-radius: 50%; background: var(--gold-gradient); border: none; color: #0b0b0c; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.25s ease; box-shadow: 0 0 15px rgba(212,175,55,0.4); flex-shrink: 0;">
+                        <svg id="icon-audio-play" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                        <svg id="icon-audio-pause" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="display: none;"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+                      </button>
+
+                      <button type="button" id="btn-audio-stop" class="audio-player-btn btn-stop" title="Detener y Reiniciar" style="width: 34px; height: 34px; border-radius: 50%; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #ccc; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.25s ease; flex-shrink: 0;">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="2"></rect></svg>
+                      </button>
+                    </div>
+
+                    <!-- Sound Wave Visualizer & Progress Info -->
+                    <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px;">
+                      <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.73rem; color: var(--gold-light); font-family: 'Montserrat', sans-serif; font-weight: 600;">
+                        <span id="audio-player-track-name" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; color: var(--text-main); font-weight: 600;">Pista de Fondo Cargada</span>
+                        <span id="audio-player-time" style="font-feature-settings: 'tnum'; font-variant-numeric: tabular-nums; color: var(--gold-primary); font-weight: 700;">0:00 / 0:00</span>
+                      </div>
+
+                      <!-- Waveform Bars Container -->
+                      <div id="audio-waveform-container" class="audio-waveform-wrap" style="position: relative; height: 26px; display: flex; align-items: center; gap: 3px; cursor: pointer; padding: 2px 0;" title="Hacé clic para saltar a cualquier parte del tema">
+                        <!-- Bars generated dynamically via JS -->
+                      </div>
+                    </div>
+
+                  </div>
+                  <audio id="inv-audio-element" preload="metadata" style="display: none;"></audio>
+                </div>
               </div>
 
               <div style="margin-bottom: 15px; text-align: left;">

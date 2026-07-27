@@ -5816,6 +5816,161 @@ Tu presencia hará que esta celebración sea aún más significativa.
     });
   }
 
+  // --- Audio Preview Player & Sound Wave Visualizer ---
+  function initAudioPreviewPlayer() {
+    const musicInput = document.getElementById('inv-music-input');
+    const playerWidget = document.getElementById('inv-audio-player-widget');
+    const audioElement = document.getElementById('inv-audio-element');
+    const btnPlayPause = document.getElementById('btn-audio-play-pause');
+    const btnStop = document.getElementById('btn-audio-stop');
+    const iconPlay = document.getElementById('icon-audio-play');
+    const iconPause = document.getElementById('icon-audio-pause');
+    const timeDisplay = document.getElementById('audio-player-time');
+    const trackNameDisplay = document.getElementById('audio-player-track-name');
+    const waveformContainer = document.getElementById('audio-waveform-container');
+
+    if (!musicInput || !playerWidget || !audioElement || !waveformContainer) return;
+
+    // 1. Generate Waveform Bars (30 realistic audio bars)
+    const waveHeights = [25, 40, 65, 80, 100, 75, 50, 35, 60, 85, 95, 70, 45, 30, 55, 75, 90, 80, 60, 40, 70, 95, 85, 65, 45, 30, 50, 75, 60, 35];
+    waveformContainer.innerHTML = '';
+    waveHeights.forEach((h, idx) => {
+      const bar = document.createElement('div');
+      bar.className = 'audio-wave-bar';
+      bar.style.height = `${h}%`;
+      bar.style.animationDelay = `${(idx % 5) * 0.15}s`;
+      waveformContainer.appendChild(bar);
+    });
+
+    const waveBars = waveformContainer.querySelectorAll('.audio-wave-bar');
+
+    function formatTime(sec) {
+      if (isNaN(sec) || sec < 0) return '0:00';
+      const m = Math.floor(sec / 60);
+      const s = Math.floor(sec % 60);
+      return `${m}:${String(s).padStart(2, '0')}`;
+    }
+
+    function updateTrackPreview(url) {
+      if (!url || !url.trim()) {
+        if (!audioElement.paused) audioElement.pause();
+        playerWidget.style.display = 'none';
+        return;
+      }
+
+      const cleanUrl = url.trim();
+      audioElement.src = cleanUrl;
+      playerWidget.style.display = 'block';
+
+      try {
+        const urlObj = new URL(cleanUrl);
+        const pathParts = urlObj.pathname.split('/');
+        let filename = pathParts[pathParts.length - 1];
+        if (filename && filename.length > 2) {
+          trackNameDisplay.textContent = decodeURIComponent(filename);
+        } else {
+          trackNameDisplay.textContent = 'Pista de fondo del evento';
+        }
+      } catch (e) {
+        trackNameDisplay.textContent = 'Pista de fondo del evento';
+      }
+
+      timeDisplay.textContent = '0:00 / 0:00';
+      resetWaveform();
+    }
+
+    function resetWaveform() {
+      waveBars.forEach(bar => bar.classList.remove('played'));
+      waveformContainer.classList.remove('playing');
+      if (iconPlay) iconPlay.style.display = '';
+      if (iconPause) iconPause.style.display = 'none';
+    }
+
+    if (btnPlayPause) {
+      btnPlayPause.addEventListener('click', () => {
+        if (!audioElement.src) return;
+        if (audioElement.paused) {
+          audioElement.play().catch(err => {
+            console.warn('Audio play prevented:', err);
+            showToast('error', 'Error al Reproducir', 'No se pudo reproducir el audio. Verifica la URL.');
+          });
+        } else {
+          audioElement.pause();
+        }
+      });
+    }
+
+    if (btnStop) {
+      btnStop.addEventListener('click', () => {
+        audioElement.pause();
+        audioElement.currentTime = 0;
+        resetWaveform();
+        timeDisplay.textContent = `0:00 / ${formatTime(audioElement.duration)}`;
+      });
+    }
+
+    audioElement.addEventListener('play', () => {
+      if (iconPlay) iconPlay.style.display = 'none';
+      if (iconPause) iconPause.style.display = '';
+      waveformContainer.classList.add('playing');
+    });
+
+    audioElement.addEventListener('pause', () => {
+      if (iconPlay) iconPlay.style.display = '';
+      if (iconPause) iconPause.style.display = 'none';
+      waveformContainer.classList.remove('playing');
+    });
+
+    audioElement.addEventListener('ended', () => {
+      audioElement.currentTime = 0;
+      resetWaveform();
+      timeDisplay.textContent = `0:00 / ${formatTime(audioElement.duration)}`;
+    });
+
+    audioElement.addEventListener('loadedmetadata', () => {
+      timeDisplay.textContent = `${formatTime(audioElement.currentTime)} / ${formatTime(audioElement.duration)}`;
+    });
+
+    audioElement.addEventListener('timeupdate', () => {
+      const cur = audioElement.currentTime || 0;
+      const dur = audioElement.duration || 1;
+      timeDisplay.textContent = `${formatTime(cur)} / ${formatTime(dur)}`;
+
+      const ratio = cur / dur;
+      const playedCount = Math.floor(ratio * waveBars.length);
+      waveBars.forEach((bar, i) => {
+        if (i <= playedCount) {
+          bar.classList.add('played');
+        } else {
+          bar.classList.remove('played');
+        }
+      });
+    });
+
+    waveformContainer.addEventListener('click', (e) => {
+      if (!audioElement.duration) return;
+      const rect = waveformContainer.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const ratio = Math.max(0, Math.min(1, clickX / rect.width));
+      audioElement.currentTime = ratio * audioElement.duration;
+    });
+
+    musicInput.addEventListener('input', (e) => {
+      updateTrackPreview(e.target.value);
+    });
+
+    musicInput.addEventListener('change', (e) => {
+      updateTrackPreview(e.target.value);
+    });
+
+    if (musicInput.value) {
+      updateTrackPreview(musicInput.value);
+    }
+  }
+
+  // Initialize Audio Preview Player
+  initAudioPreviewPlayer();
+
   if (invTimeOnlyInput) {
     invTimeOnlyInput.addEventListener('input', (e) => {
       let val = e.target.value.replace(/[^0-9:]/g, '');

@@ -3392,6 +3392,58 @@ input.input-highlight-pulse {
   border-color: #ff4d4d !important;
 }
 
+/* Audio Player Preview & Waveform Styles */
+.audio-player-btn:hover {
+  transform: scale(1.08);
+}
+.audio-player-btn:active {
+  transform: scale(0.95);
+}
+
+.btn-play-pause:hover {
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.7) !important;
+}
+
+.btn-stop:hover {
+  background: rgba(255, 77, 77, 0.2) !important;
+  border-color: rgba(255, 77, 77, 0.5) !important;
+  color: #ff4d4d !important;
+}
+
+.audio-waveform-wrap .audio-wave-bar {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+  min-width: 2px;
+  height: 35%;
+  transition: height 0.15s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+  transform-origin: bottom;
+}
+
+.audio-waveform-wrap .audio-wave-bar.played {
+  background: var(--gold-primary);
+  box-shadow: 0 0 6px rgba(212, 175, 55, 0.5);
+}
+
+.audio-waveform-wrap.playing .audio-wave-bar.played {
+  animation: waveEqualizer 0.8s infinite ease-in-out alternate;
+}
+
+@keyframes waveEqualizer {
+  0% {
+    transform: scaleY(0.4);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scaleY(1.35);
+    opacity: 1;
+  }
+  100% {
+    transform: scaleY(0.6);
+    opacity: 0.85;
+  }
+}
+
 
 
 
