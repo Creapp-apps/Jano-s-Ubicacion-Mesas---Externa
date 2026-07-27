@@ -804,6 +804,10 @@ async function getPhoto(eventId = 'default', photoId) {
  * Add a photo submission
  */
 async function addPhoto(eventId = 'default', { guestName, message, photoUrl }) {
+  // Check if moderation is enabled (default: true). If disabled ('false'), auto-approve photos.
+  const moderationEnabled = (await getConfigValue(eventId, 'photo_moderation_enabled', 'true')) !== 'false';
+  const approvedInitial = !moderationEnabled;
+
   // Extract first name (omit surname/lastname) for informal projection mural
   let rawName = (guestName || 'Invitado').trim();
   const nameParts = rawName.split(/\s+/).filter(Boolean);
@@ -816,7 +820,7 @@ async function addPhoto(eventId = 'default', { guestName, message, photoUrl }) {
     guestName: firstNameOnly,
     message: (message || '').trim(),
     photoUrl: photoUrl,
-    approved: false,
+    approved: approvedInitial,
     createdAt: new Date().toISOString()
   };
 
@@ -828,7 +832,7 @@ async function addPhoto(eventId = 'default', { guestName, message, photoUrl }) {
         guest_name: photo.guestName,
         message: photo.message,
         photo_url: photo.photoUrl,
-        approved: false
+        approved: approvedInitial
       }]);
     if (error) {
       console.error('Error adding photo to Supabase:', error);

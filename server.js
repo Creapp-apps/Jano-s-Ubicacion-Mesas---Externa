@@ -2981,6 +2981,30 @@ app.post('/api/photos/upload', upload.single('photo'), async (req, res) => {
   }
 });
 
+// API: Get photo moderation config (Admin)
+app.get('/api/admin/photos/moderation-config', requireAuth, async (req, res) => {
+  try {
+    const eventId = req.query.event || 'default';
+    const val = await db.getConfigValue(eventId, 'photo_moderation_enabled', 'true');
+    res.json({ moderationEnabled: val !== 'false' });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al obtener la configuración de moderación.' });
+  }
+});
+
+// API: Set photo moderation config (Admin)
+app.post('/api/admin/photos/moderation-config', requireAuth, async (req, res) => {
+  try {
+    const eventId = req.query.event || 'default';
+    const { moderationEnabled } = req.body;
+    const valStr = String(Boolean(moderationEnabled));
+    await db.setConfigValue(eventId, 'photo_moderation_enabled', valStr);
+    res.json({ success: true, moderationEnabled: Boolean(moderationEnabled) });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al actualizar la configuración de moderación.' });
+  }
+});
+
 // API: Get all photos (Admin)
 app.get('/api/admin/photos', requireAuth, async (req, res) => {
   try {

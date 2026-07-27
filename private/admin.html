@@ -421,6 +421,27 @@
             Aprueba las fotos que suben los invitados para que se proyecten en tiempo real en la pantalla gigante del salón, o rechaza aquellas que no consideres adecuadas.
           </p>
 
+          <!-- Moderation Mode Toggle Banner -->
+          <div style="background: rgba(0, 0, 0, 0.35); border: 1px solid var(--card-border); border-radius: 16px; padding: 18px 22px; margin-bottom: 25px; display: flex; align-items: center; justify-content: space-between; gap: 20px;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                <span style="font-size: 0.95rem; font-weight: 700; color: #fff; letter-spacing: 0.5px;">MODERACIÓN MANUAL DE FOTOS</span>
+                <span id="photo-moderation-badge" style="font-size: 0.72rem; padding: 3px 9px; border-radius: 12px; font-weight: 700; background: rgba(46, 204, 113, 0.15); border: 1px solid #2ecc71; color: #2ecc71;">🟢 ACTIVADA</span>
+              </div>
+              <p id="photo-moderation-desc" style="color: var(--text-muted); font-size: 0.82rem; margin: 0; line-height: 1.4;">
+                Las fotos subidas por los invitados requieren la aprobación manual del cliente antes de mostrarse en la pantalla gigante.
+              </p>
+            </div>
+            <div>
+              <label class="custom-switch-toggle" title="Activar / Desactivar moderación manual de fotos">
+                <input type="checkbox" id="photo-moderation-switch" role="switch" aria-checked="true" checked onchange="togglePhotoModeration(this.checked)">
+                <span class="custom-switch-track">
+                  <span class="custom-switch-thumb"></span>
+                </span>
+              </label>
+            </div>
+          </div>
+
           <!-- Moderation Sections -->
           <div class="moderation-section-header">
             <h3>
@@ -2763,6 +2784,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="/js/alerts.js"></script>
   <script src="/js/snap-camera-helper.js"></script>
-  <script src="/js/admin.js?v=1.1.2"></script>
+  <script src="/js/admin.js?v=1.1.3"></script>
 </body>
 </html>

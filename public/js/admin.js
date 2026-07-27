@@ -2726,6 +2726,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function startPhotoPolling() {
     stopPhotoPolling(); // Clean up any existing connection/polling
+    loadPhotoModerationConfig();
     
     if (typeof EventSource !== 'undefined') {
       console.log('Initializing Real-time Photo Stream...');
@@ -2775,8 +2776,75 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  function loadPhotoModerationConfig() {
+    const switchEl = document.getElementById('photo-moderation-switch');
+    if (!switchEl) return;
+
+    fetch(`/api/admin/photos/moderation-config?event=${encodeURIComponent(eventId)}`)
+      .then(res => res.json())
+      .then(data => {
+        const isEnabled = data.moderationEnabled !== false;
+        switchEl.checked = isEnabled;
+        switchEl.setAttribute('aria-checked', String(isEnabled));
+        updatePhotoModerationUI(isEnabled);
+      })
+      .catch(err => console.error('Error fetching photo moderation config:', err));
+  }
+
+  function updatePhotoModerationUI(isEnabled) {
+    const badgeEl = document.getElementById('photo-moderation-badge');
+    const descEl = document.getElementById('photo-moderation-desc');
+    if (!badgeEl || !descEl) return;
+
+    if (isEnabled) {
+      badgeEl.style.background = 'rgba(46, 204, 113, 0.15)';
+      badgeEl.style.borderColor = '#2ecc71';
+      badgeEl.style.color = '#2ecc71';
+      badgeEl.innerHTML = '🟢 ACTIVADA';
+      descEl.textContent = 'Las fotos subidas por los invitados requieren la aprobación manual del cliente antes de mostrarse en la pantalla gigante.';
+    } else {
+      badgeEl.style.background = 'rgba(241, 196, 15, 0.15)';
+      badgeEl.style.borderColor = '#f1c40f';
+      badgeEl.style.color = '#f1c40f';
+      badgeEl.innerHTML = '⚡ APROBACIÓN AUTOMÁTICA';
+      descEl.textContent = 'Aprobación automática activada. Las fotos que suban los invitados se aprobarán y enviarán directamente a la pantalla gigante sin filtro previo.';
+    }
+  }
+
+  window.togglePhotoModeration = function(checked) {
+    updatePhotoModerationUI(checked);
+
+    fetch(`/api/admin/photos/moderation-config?event=${encodeURIComponent(eventId)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ moderationEnabled: checked })
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          if (typeof showSuccess === 'function') {
+            showSuccess(checked ? 'Moderación Manual Activada' : 'Aprobación Automática Activada', 
+                        checked ? 'Las fotos requerirán aprobación previa.' : 'Las fotos irán directamente a la pantalla gigante.');
+          }
+        } else {
+          if (typeof showError === 'function') {
+            showError('Error', 'No se pudo actualizar la configuración de moderación.');
+          }
+          loadPhotoModerationConfig();
+        }
+      })
+      .catch(err => {
+        console.error('Error updating photo moderation:', err);
+        if (typeof showError === 'function') {
+          showError('Error de red', 'Ocurrió un error al actualizar la configuración.');
+        }
+        loadPhotoModerationConfig();
+      });
+  };
+
   function loadPhotos() {
     if (!pendingPhotosGrid || !approvedPhotosGrid) return;
+    loadPhotoModerationConfig();
     
     fetch(`/api/admin/photos?event=${encodeURIComponent(eventId)}`)
       .then(res => res.json())
