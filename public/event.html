@@ -7,15 +7,24 @@
   <title>miFiestAPP | Portal del Invitado</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cormorant+Garamond:wght@400;600;700&family=Montserrat:wght@300;400;500;600;700&family=Outfit:wght@300;400;600;700&family=Playfair+Display:wght@400;600;700&family=Syncopate:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/preloader.css">
+  <script src="/js/theme-bootstrap.js"></script>
+  <script src="/js/preloader.js"></script>
+  <script src="/js/alerts.js"></script>
   <style>
     :root {
       --bg-color: #0b0b0c;
       --card-bg: rgba(22, 22, 25, 0.45);
-      --card-border: rgba(212, 175, 55, 0.15);
-      --card-border-hover: rgba(212, 175, 55, 0.6);
+      --primary-rgb: 212, 175, 55;
+      --secondary-rgb: 170, 124, 17;
       --gold-primary: #d4af37;
+      --gold-secondary: #aa7c11;
       --gold-gradient: linear-gradient(135deg, #f3e5ab 0%, #d4af37 50%, #aa7c11 100%);
+      --card-border: rgba(var(--primary-rgb), 0.15);
+      --card-border-hover: rgba(var(--primary-rgb), 0.6);
+      --ambient-glow: rgba(var(--primary-rgb), 0.25);
+      --accent-font: 'Cinzel', serif;
       --text-main: #ffffff;
       --text-muted: #a0a0a5;
       --success: #2ec4b6;
@@ -39,6 +48,7 @@
       overflow-x: hidden;
       position: relative;
       padding: 40px 20px;
+      transition: background-color 0.4s ease;
     }
 
     /* Ambient background glows wrapper */
@@ -57,18 +67,20 @@
       position: absolute;
       width: 400px;
       height: 400px;
-      background: radial-gradient(circle, rgba(212, 175, 55, 0.08) 0%, transparent 70%);
+      background: radial-gradient(circle, rgba(var(--primary-rgb), 0.12) 0%, transparent 70%);
       top: -100px;
       left: -100px;
+      transition: background 0.4s ease;
     }
 
     .bg-glow-2 {
       position: absolute;
       width: 500px;
       height: 500px;
-      background: radial-gradient(circle, rgba(212, 175, 55, 0.05) 0%, transparent 70%);
+      background: radial-gradient(circle, rgba(var(--secondary-rgb), 0.08) 0%, transparent 70%);
       bottom: -150px;
       right: -100px;
+      transition: background 0.4s ease;
     }
 
     header {
@@ -87,22 +99,23 @@
     .logo-container img {
       height: 55px;
       object-fit: contain;
-      filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.2));
+      filter: drop-shadow(0 0 14px rgba(var(--primary-rgb), 0.4));
+      transition: filter 0.3s ease;
     }
 
     .event-title {
-      font-family: 'Cinzel', serif;
-      font-size: 0.8rem;
+      font-family: var(--accent-font, 'Cinzel', serif);
+      font-size: 0.85rem;
       letter-spacing: 3px;
       color: var(--gold-primary);
       text-transform: uppercase;
       font-weight: 600;
-      margin-bottom: 20px;
-      opacity: 0.9;
+      margin-bottom: 15px;
+      opacity: 0.95;
     }
 
     .welcome-greeting {
-      font-family: 'Cinzel', serif;
+      font-family: var(--accent-font, 'Cinzel', serif);
       font-size: 1.8rem;
       font-weight: 600;
       color: var(--text-main);
@@ -111,16 +124,45 @@
       letter-spacing: 1px;
     }
 
-    .main-title {
-      font-family: 'Cinzel', serif;
-      font-size: 2.2rem;
-      font-weight: 700;
+    .brand-header-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 8px 0 16px 0;
+    }
+
+    .brand-main-title {
+      font-family: var(--accent-font, 'Cinzel', serif);
+      font-size: 2.7rem;
+      font-weight: 800;
       letter-spacing: 2px;
       background: var(--gold-gradient);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      margin-bottom: 10px;
-      text-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+      line-height: 1.1;
+      filter: drop-shadow(0 0 25px rgba(var(--primary-rgb), 0.45));
+      text-transform: none;
+      margin: 0;
+      transition: all 0.4s ease;
+    }
+
+    .brand-main-title span {
+      font-weight: 900;
+      letter-spacing: 3px;
+    }
+
+    .brand-tagline-sub {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.76rem;
+      font-weight: 700;
+      letter-spacing: 5px;
+      color: var(--gold-primary);
+      text-transform: uppercase;
+      margin-top: 6px;
+      opacity: 0.95;
+      text-shadow: 0 0 12px rgba(var(--primary-rgb), 0.35);
+      transition: all 0.4s ease;
     }
 
     .tagline {
@@ -192,7 +234,7 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background: radial-gradient(800px circle at var(--x, 0px) var(--y, 0px), rgba(212, 175, 55, 0.08), transparent 40%);
+      background: radial-gradient(800px circle at var(--x, 0px) var(--y, 0px), rgba(var(--primary-rgb), 0.12), transparent 40%);
       z-index: -1;
       opacity: 0;
       transition: opacity 0.5s;
@@ -205,15 +247,15 @@
     .service-card:hover {
       transform: translateY(-8px);
       border-color: var(--card-border-hover);
-      box-shadow: 0 20px 40px rgba(212, 175, 55, 0.15);
+      box-shadow: 0 20px 40px rgba(var(--primary-rgb), 0.2);
     }
 
     /* Icon Styling */
     .icon-wrapper {
       width: 80px;
       height: 80px;
-      background: rgba(212, 175, 55, 0.05);
-      border: 1px solid rgba(212, 175, 55, 0.15);
+      background: rgba(var(--primary-rgb), 0.08);
+      border: 1px solid rgba(var(--primary-rgb), 0.2);
       border-radius: 50%;
       display: flex;
       align-items: center;
@@ -237,10 +279,10 @@
     }
 
     .service-card:hover .icon-wrapper {
-      background: rgba(212, 175, 55, 0.15);
+      background: rgba(var(--primary-rgb), 0.2);
       color: #fff;
       transform: scale(1.05);
-      box-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
+      box-shadow: 0 0 20px rgba(var(--primary-rgb), 0.45);
     }
 
     .service-card:hover .icon-wrapper::after {
@@ -256,7 +298,7 @@
 
     /* Card Text content */
     .service-title {
-      font-family: 'Cinzel', serif;
+      font-family: var(--accent-font, 'Cinzel', serif);
       font-size: 1.3rem;
       font-weight: 600;
       letter-spacing: 1px;
@@ -283,7 +325,7 @@
       width: 100%;
       padding: 12px 24px;
       border-radius: 30px;
-      border: 1px solid rgba(212, 175, 55, 0.3);
+      border: 1px solid rgba(var(--primary-rgb), 0.35);
       background: transparent;
       color: var(--text-main);
       font-size: 0.8rem;
@@ -327,7 +369,7 @@
     .secondary-btn:hover {
       border-color: var(--gold-primary) !important;
       color: var(--gold-primary) !important;
-      background: rgba(212, 175, 55, 0.05) !important;
+      background: rgba(var(--primary-rgb), 0.08) !important;
     }
 
     .secondary-btn::before {
@@ -383,8 +425,8 @@
       position: absolute;
       top: 15px;
       right: 15px;
-      background: rgba(212, 175, 55, 0.1);
-      border: 1px solid rgba(212, 175, 55, 0.3);
+      background: rgba(var(--primary-rgb), 0.12);
+      border: 1px solid rgba(var(--primary-rgb), 0.35);
       padding: 6px 12px;
       border-radius: 12px;
       font-size: 0.65rem;
@@ -481,8 +523,12 @@
         padding: 30px 15px;
       }
 
-      .main-title {
-        font-size: 1.8rem;
+      .brand-main-title {
+        font-size: 2.1rem;
+      }
+      .brand-tagline-sub {
+        font-size: 0.65rem;
+        letter-spacing: 4px;
       }
 
       .grid-container {
@@ -569,12 +615,12 @@
       max-width: 620px;
       width: 90%;
       background: linear-gradient(135deg, rgba(22, 22, 26, 0.98) 0%, rgba(12, 12, 15, 0.99) 100%);
-      border: 1px solid rgba(212, 175, 55, 0.25);
+      border: 1px solid rgba(var(--primary-rgb), 0.25);
       border-radius: 28px;
       padding: 40px 35px;
       box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7), 
                   inset 0 1px 0 rgba(255, 255, 255, 0.05),
-                  0 0 40px rgba(212, 175, 55, 0.05);
+                  0 0 40px rgba(var(--primary-rgb), 0.08);
       position: relative;
       overflow: hidden;
       display: flex;
@@ -637,7 +683,7 @@
       margin-bottom: 25px;
     }
     .onboarding-svg-glowing {
-      filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.4));
+      filter: drop-shadow(0 0 8px rgba(var(--primary-rgb), 0.45));
       overflow: visible !important;
     }
 
@@ -745,7 +791,7 @@
     .onboarding-indicators .indicator.active {
       background: var(--gold-primary);
       transform: scale(1.3);
-      box-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+      box-shadow: 0 0 10px rgba(var(--primary-rgb), 0.5);
     }
 
     /* Onboarding Slide Smooth Fade In/Out Transition */
@@ -782,7 +828,7 @@
     .welcome-sparkle-3 { animation: welcomeSparkle 2s infinite ease-in-out 1.2s; }
     @keyframes welcomeSparkle {
       0%, 100% { opacity: 0.3; transform: scale(0.8); }
-      50% { opacity: 1; transform: scale(1.2) rotate(15deg); filter: drop-shadow(0 0 5px rgba(212, 175, 55, 0.8)); }
+      50% { opacity: 1; transform: scale(1.2) rotate(15deg); filter: drop-shadow(0 0 5px rgba(var(--primary-rgb), 0.8)); }
     }
 
     /* Table Spin and Chair Pulse */
@@ -821,7 +867,7 @@
     }
     @keyframes flapMove {
       0% { transform: scaleY(1); }
-      100% { transform: scaleY(-0.9) translateY(-1px); fill: rgba(212, 175, 55, 0.2); }
+      100% { transform: scaleY(-0.9) translateY(-1px); fill: rgba(var(--primary-rgb), 0.2); }
     }
 
     .flying-sparkle-1 { animation: floatSparkle 3s infinite ease-in-out; }
@@ -979,11 +1025,11 @@
       background: var(--gold-gradient);
       color: #0b0b0c;
       border: 1px solid var(--gold-primary);
-      box-shadow: 0 4px 15px rgba(212, 175, 55, 0.2);
+      box-shadow: 0 4px 15px rgba(var(--primary-rgb), 0.2);
     }
     .btn-primary:hover {
       transform: translateY(-1px);
-      box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+      box-shadow: 0 6px 20px rgba(var(--primary-rgb), 0.4);
     }
     .btn-secondary {
       background: transparent;
@@ -1030,17 +1076,17 @@
       padding: 0 18px;
       border-radius: 30px;
       gap: 8px;
-      background: rgba(212, 175, 55, 0.05);
-      border: 1px solid rgba(212, 175, 55, 0.25);
+      background: rgba(var(--primary-rgb), 0.08);
+      border: 1px solid rgba(var(--primary-rgb), 0.25);
       color: var(--gold-primary);
-      box-shadow: 0 4px 15px rgba(212, 175, 55, 0.05);
+      box-shadow: 0 4px 15px rgba(var(--primary-rgb), 0.08);
     }
     .btn-admin-help:hover {
-      background: rgba(212, 175, 55, 0.15);
+      background: rgba(var(--primary-rgb), 0.2);
       border-color: var(--gold-primary);
       color: var(--text-main);
       transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(212, 175, 55, 0.25), inset 0 0 8px rgba(212, 175, 55, 0.2);
+      box-shadow: 0 6px 20px rgba(var(--primary-rgb), 0.3), inset 0 0 8px rgba(var(--primary-rgb), 0.2);
     }
     .btn-admin-help:hover .admin-icon {
       transform: scale(1.15);
@@ -1080,23 +1126,391 @@
         height: 34px;
       }
     }
+
+    /* THEME SYSTEM STYLES */
+    .theme-locked-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      border-radius: 20px;
+      background: rgba(var(--primary-rgb), 0.08);
+      border: 1px solid rgba(var(--primary-rgb), 0.3);
+      color: var(--gold-primary);
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-top: 5px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(8px);
+    }
+    .theme-locked-pill .lock-icon {
+      font-size: 0.9rem;
+    }
+
+    /* THEME MODAL STYLES */
+    .theme-modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: radial-gradient(circle at 50% 30%, rgba(var(--primary-rgb), 0.16) 0%, rgba(6, 6, 10, 0.94) 100%);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      z-index: 99999;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), background 0.4s ease;
+    }
+    .theme-modal-backdrop.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .theme-modal-card {
+      background: radial-gradient(circle at 50% 0%, rgba(var(--primary-rgb), 0.15) 0%, transparent 65%), linear-gradient(180deg, rgba(22, 20, 28, 0.97) 0%, var(--bg-color, #0b0b0c) 100%);
+      border: 1.5px solid rgba(var(--primary-rgb), 0.45);
+      border-radius: 24px;
+      max-width: 960px;
+      width: 100%;
+      max-height: 92vh;
+      overflow-y: auto;
+      padding: 32px 28px;
+      box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.9), 0 0 50px rgba(var(--primary-rgb), 0.28);
+      position: relative;
+      transform: translateY(20px) scale(0.97);
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.35s ease, box-shadow 0.35s ease, background 0.4s ease;
+    }
+    .theme-modal-backdrop.active .theme-modal-card {
+      transform: translateY(0) scale(1);
+    }
+    .theme-modal-card::-webkit-scrollbar {
+      width: 6px;
+    }
+    .theme-modal-card::-webkit-scrollbar-thumb {
+      background: rgba(var(--primary-rgb), 0.45);
+      border-radius: 4px;
+      transition: background 0.35s ease;
+    }
+    .theme-modal-header {
+      text-align: center;
+      margin-bottom: 22px;
+    }
+    .theme-modal-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 14px;
+      border-radius: 12px;
+      background: rgba(var(--primary-rgb), 0.14);
+      border: 1px solid rgba(var(--primary-rgb), 0.45);
+      color: var(--gold-primary);
+      font-family: var(--accent-font, 'Cinzel', serif);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      box-shadow: 0 0 16px rgba(var(--primary-rgb), 0.2);
+      transition: all 0.35s ease;
+    }
+    .theme-modal-title {
+      font-family: var(--accent-font, 'Cinzel', serif);
+      font-size: 1.75rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #ffffff 15%, var(--gold-primary, #d4af37) 65%, var(--gold-secondary, #aa7c11) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      color: var(--gold-primary, #d4af37);
+      margin-bottom: 8px;
+      letter-spacing: 1px;
+      filter: drop-shadow(0 2px 14px rgba(var(--primary-rgb), 0.45));
+      transition: all 0.35s ease;
+    }
+    .theme-modal-desc {
+      color: #b0b0ba;
+      font-size: 0.88rem;
+      line-height: 1.5;
+      max-width: 680px;
+      margin: 0 auto 12px auto;
+    }
+    .theme-modal-desc strong {
+      color: var(--gold-primary);
+      text-shadow: 0 0 10px rgba(var(--primary-rgb), 0.3);
+      transition: color 0.35s ease, text-shadow 0.35s ease;
+    }
+    .theme-modal-alert {
+      background: rgba(var(--primary-rgb), 0.08);
+      border: 1px solid rgba(var(--primary-rgb), 0.35);
+      border-radius: 14px;
+      padding: 10px 18px;
+      color: #e2e2e8;
+      font-size: 0.82rem;
+      line-height: 1.45;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      max-width: 680px;
+      margin: 0 auto;
+      text-align: left;
+      box-shadow: 0 0 20px rgba(var(--primary-rgb), 0.12);
+      transition: all 0.35s ease;
+    }
+    .theme-modal-alert svg {
+      color: var(--gold-primary);
+      transition: color 0.35s ease;
+    }
+    .theme-modal-alert strong {
+      color: var(--gold-primary);
+      transition: color 0.35s ease;
+    }
+    .theme-grid-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 16px;
+      margin: 22px 0;
+    }
+    .theme-option-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1.5px solid rgba(255, 255, 255, 0.08);
+      border-radius: 18px;
+      padding: 16px 14px;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.25s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .theme-option-card:hover {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(var(--primary-rgb), 0.45);
+      transform: translateY(-3px);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+    }
+    .theme-option-card.selected {
+      background: rgba(var(--primary-rgb), 0.09);
+      border-color: var(--gold-primary);
+      box-shadow: 0 0 25px rgba(var(--primary-rgb), 0.3), inset 0 0 15px rgba(var(--primary-rgb), 0.05);
+    }
+    .theme-card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .theme-card-swatch {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+    }
+    .swatch-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .theme-card-check {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(255, 255, 255, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      color: transparent;
+      font-size: 0.75rem;
+    }
+    .theme-option-card.selected .theme-card-check {
+      background: var(--gold-primary);
+      border-color: var(--gold-primary);
+      color: #0b0b0c;
+      font-weight: 800;
+    }
+    .theme-card-title {
+      font-size: 0.96rem;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 2px;
+    }
+    .theme-card-tagline {
+      font-size: 0.73rem;
+      color: #8c8c94;
+      line-height: 1.3;
+    }
+
+    /* Mini Invitation Preview Inside Theme Card */
+    .mini-invitation-preview {
+      width: 100%;
+      height: 120px;
+      border-radius: 12px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+      transition: transform 0.3s ease, border-color 0.3s ease;
+    }
+    .theme-option-card:hover .mini-invitation-preview {
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+    .mini-envelope-bg {
+      position: absolute;
+      inset: 0;
+      opacity: 0.9;
+    }
+    .mini-envelope-flap-line {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 38px;
+      border-bottom: 1.5px dashed rgba(255, 255, 255, 0.18);
+      clip-path: polygon(0 0, 100% 0, 50% 100%);
+      background: rgba(255, 255, 255, 0.03);
+    }
+    .mini-card-sheet {
+      position: relative;
+      z-index: 2;
+      width: 84%;
+      height: 72%;
+      border-radius: 8px;
+      background: rgba(15, 14, 20, 0.88);
+      backdrop-filter: blur(5px);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 6px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.6);
+      transition: transform 0.3s ease;
+    }
+    .theme-option-card:hover .mini-card-sheet {
+      transform: translateY(-2px);
+    }
+    .mini-card-monogram {
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      margin-bottom: 2px;
+    }
+    .mini-card-event-type {
+      font-size: 0.58rem;
+      opacity: 0.75;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    .mini-card-seal {
+      position: absolute;
+      bottom: -6px;
+      right: 12px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.70rem;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.65);
+      border: 1.5px solid rgba(255, 255, 255, 0.35);
+    }
+    .mini-inv-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.68rem;
+      padding: 4px 8px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      color: #c4c4cc;
+      width: 100%;
+      justify-content: center;
+      box-sizing: border-box;
+    }
+    .theme-modal-footer {
+      display: flex;
+      justify-content: center;
+      margin-top: 10px;
+    }
+    .btn-confirm-theme {
+      background: var(--gold-gradient);
+      color: #0b0b0c;
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 700;
+      font-size: 0.95rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 16px 36px;
+      border-radius: 30px;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 8px 25px rgba(var(--primary-rgb), 0.35);
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .btn-confirm-theme:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 30px rgba(var(--primary-rgb), 0.5);
+      filter: brightness(1.08);
+    }
+    .btn-confirm-theme:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
   </style>
 </head>
 <body>
+  <!-- Premium Neutral Preloader -->
+  <div id="mifiestapp-preloader" class="mifiestapp-preloader">
+    <div class="preloader-backdrop"></div>
+    <div class="preloader-content">
+      <div class="preloader-logo-wrapper">
+        <div class="preloader-orbital-ring"></div>
+        <img src="/assets/coronamain.png" alt="miFiestAPP" class="preloader-crown-logo">
+      </div>
+      <div class="preloader-brand-title">miFiest<span>APP</span></div>
+      <div class="preloader-status-text">
+        <span class="preloader-dot-pulse"></span>
+        <span id="preloader-text-label">Cargando tu fiesta...</span>
+      </div>
+      <div class="preloader-progress-track">
+        <div class="preloader-progress-bar"></div>
+      </div>
+    </div>
+  </div>
+
   <div class="bg-glows">
     <div class="bg-glow-1"></div>
     <div class="bg-glow-2"></div>
   </div>
 
   <header>
-    <div class="logo-container" style="display: flex; justify-content: center; align-items: center; margin-bottom: 15px;">
-      <img src="/assets/coronamain.png" alt="miFiestAPP" style="height: 55px; width: auto; object-fit: contain; filter: drop-shadow(0 0 12px rgba(212, 175, 55, 0.45));">
+    <div class="logo-container" style="display: flex; justify-content: center; align-items: center; margin-bottom: 12px;">
+      <img id="header-crown-logo" src="/assets/coronamain.png" alt="miFiestAPP" style="height: 58px; width: auto; object-fit: contain; filter: drop-shadow(0 0 16px rgba(var(--primary-rgb), 0.5)); transition: filter 0.5s ease, transform 0.4s ease;">
     </div>
     <div class="event-title" id="event-title">Cargando evento...</div>
+    <div id="theme-status-container" style="display: flex; justify-content: center; align-items: center; margin-bottom: 8px;"></div>
     <h2 class="welcome-greeting" id="welcome-greeting" style="display: none;"></h2>
-    <h1 class="main-title" style="display: flex; justify-content: center; align-items: center; margin-bottom: 15px;">
-      <img src="/assets/textomain.png" alt="miFiestAPP" style="height: 48px; width: auto; object-fit: contain; filter: drop-shadow(0 2px 10px rgba(212,175,55,0.3));">
-    </h1>
+    <div class="brand-header-block">
+      <h1 class="brand-main-title">miFiest<span>APP</span></h1>
+      <p class="brand-tagline-sub">DIGITALIZÁ TU FIESTA</p>
+    </div>
     <p class="tagline">Elegí uno de nuestros servicios interactivos para disfrutar al máximo de la celebración.</p>
   </header>
 
@@ -1192,6 +1606,22 @@
           <a id="btn-service-music-play" href="/pedir-cancion.html" class="service-btn" style="text-decoration: none; text-align: center; display: block;">Pedir Canción / Votar</a>
           <a id="btn-service-music-screen" href="/tanda-battle-screen.html" class="service-btn secondary-btn" style="text-decoration: none; text-align: center; display: block; margin-top: 0;">Pantalla Gigante</a>
           <a id="btn-service-music-personalize" href="/admin" class="service-btn secondary-btn" style="text-decoration: none; text-align: center; display: block; margin-top: 0;">Configurar DJ</a>
+        </div>
+      </div>
+
+      <!-- Service 6: miFiestAPP Awards & App Móvil -->
+      <div class="service-card" id="card-service-awards" style="cursor: default; border-color: rgba(var(--primary-rgb), 0.4);">
+        <div class="icon-wrapper" style="background: rgba(var(--primary-rgb), 0.15); color: var(--gold-primary);">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+        </div>
+        <h2 class="service-title">Awards & App Oficial</h2>
+        <p class="service-desc">App móvil con credencial digital, look de fiesta, votación de Awards y pantalla del salón en vivo.</p>
+        <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; z-index: 5; position: relative;">
+          <a id="btn-service-app-open" href="/app" class="service-btn" style="text-decoration: none; text-align: center; display: block;">Abrir App Móvil</a>
+          <a id="btn-service-awards-screen" href="/awards-screen" class="service-btn secondary-btn" style="text-decoration: none; text-align: center; display: block; margin-top: 0;">Pantalla Salón (Awards)</a>
+          <a id="btn-service-awards-admin" href="/admin" class="service-btn secondary-btn" style="text-decoration: none; text-align: center; display: block; margin-top: 0;">Configurar Premios</a>
         </div>
       </div>
     </div>
@@ -1326,6 +1756,10 @@
           document.getElementById('event-title').textContent = "Mi Fiesta";
         }
 
+        if (typeof initThemeSystem === 'function' && data) {
+          initThemeSystem(data);
+        }
+
         const greetingEl = document.getElementById('welcome-greeting');
         const nameToUse = data.clientName || data.eventTitle || '';
         if (nameToUse && eventId !== 'default') {
@@ -1393,6 +1827,9 @@
         const revealGrid = () => {
           const grid = document.querySelector('.grid-container');
           if (grid) grid.classList.add('config-loaded');
+          if (typeof window.hideMiFiestappPreloader === 'function') {
+            window.hideMiFiestappPreloader();
+          }
         };
 
         // Dynamic service locking based on tenant config
@@ -1420,13 +1857,19 @@
         document.getElementById('event-title').textContent = "Mi Fiesta";
         const grid = document.querySelector('.grid-container');
         if (grid) grid.classList.add('config-loaded');
+        if (typeof window.hideMiFiestappPreloader === 'function') {
+          window.hideMiFiestappPreloader();
+        }
       });
 
     // Safety fallback: reveal grid even if network is delayed
     setTimeout(() => {
       const grid = document.querySelector('.grid-container');
       if (grid) grid.classList.add('config-loaded');
-    }, 1000);
+      if (typeof window.hideMiFiestappPreloader === 'function') {
+        window.hideMiFiestappPreloader();
+      }
+    }, 1200);
 
     // Elegant Mouse Hover Effect for Radial Glow Background on Cards
     const cards = document.querySelectorAll('.service-card:not(.disabled)');
@@ -2022,6 +2465,245 @@
         })
         .catch(err => console.error('Error checking admin status:', err));
     })();
+  </script>
+
+  <!-- Interactive Theme Selector Modal (One-Time Lock) -->
+  <div id="theme-modal-backdrop" class="theme-modal-backdrop">
+    <div class="theme-modal-card">
+      <div class="theme-modal-header">
+        <div class="theme-modal-badge">✦ Identidad Visual Oficial ✦</div>
+        <h2 class="theme-modal-title">Elegí la Temática de tu Fiesta</h2>
+        <p class="theme-modal-desc">
+          Esta estética vestirá automáticamente tu <strong>Invitación Digital</strong>, la <strong>App Móvil de tus invitados</strong> y las <strong>Pantallas Interactivas</strong> del salón.
+        </p>
+        <div class="theme-modal-alert">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0;"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+          <div>
+            <strong>Elección Definitiva:</strong> Una vez confirmada, la temática quedará fijada para asegurar la armonía visual de todo el evento.
+          </div>
+        </div>
+      </div>
+
+      <div class="theme-grid-list" id="theme-grid-list">
+        <!-- Theme cards populated dynamically -->
+      </div>
+
+      <div class="theme-modal-footer">
+        <button type="button" id="btn-confirm-theme" class="btn-confirm-theme">
+          Confirmar y Fijar Temática Oficial ➔
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // THEME ENGINE INTEGRATION
+    let selectedThemeId = 'golden-luxury';
+    let officialThemesMap = {};
+
+    function hexToRgb(hex) {
+      if (!hex) return '212, 175, 55';
+      let c = hex.replace('#', '');
+      if (c.length === 3) c = c.split('').map(x => x + x).join('');
+      const num = parseInt(c, 16);
+      if (isNaN(num)) return '212, 175, 55';
+      return `${(num >> 16) & 255}, ${(num >> 8) & 255}, ${num & 255}`;
+    }
+
+    function applyThemeVariables(theme) {
+      if (!theme) return;
+      const root = document.documentElement;
+      const primRgb = hexToRgb(theme.primaryColor || '#d4af37');
+      const secRgb = hexToRgb(theme.secondaryColor || '#aa7c11');
+
+      root.style.setProperty('--primary-rgb', primRgb);
+      root.style.setProperty('--secondary-rgb', secRgb);
+
+      if (theme.primaryColor) {
+        root.style.setProperty('--gold-primary', theme.primaryColor);
+        root.style.setProperty('--card-border-hover', theme.primaryColor);
+      }
+      if (theme.secondaryColor) {
+        root.style.setProperty('--gold-secondary', theme.secondaryColor);
+      }
+      if (theme.bgColor) {
+        root.style.setProperty('--bg-color', theme.bgColor);
+      }
+      if (theme.fontFamily) {
+        root.style.setProperty('--accent-font', theme.fontFamily);
+      }
+      if (theme.primaryColor && theme.secondaryColor) {
+        root.style.setProperty('--gold-gradient', `linear-gradient(135deg, #ffffff 0%, ${theme.primaryColor} 50%, ${theme.secondaryColor} 100%)`);
+      }
+
+      // Dynamic Crown Logo Filter
+      const crown = document.getElementById('header-crown-logo');
+      if (crown) {
+        if (theme.crownFilter) {
+          crown.style.filter = theme.crownFilter;
+        } else {
+          crown.style.filter = `drop-shadow(0 0 16px rgba(${primRgb}, 0.55))`;
+        }
+      }
+
+      const glow1 = document.querySelector('.bg-glow-1');
+      const glow2 = document.querySelector('.bg-glow-2');
+      if (glow1) glow1.style.background = `radial-gradient(circle, ${theme.glow1 || `rgba(${primRgb}, 0.16)`} 0%, transparent 70%)`;
+      if (glow2) glow2.style.background = `radial-gradient(circle, ${theme.glow2 || `rgba(${secRgb}, 0.12)`} 0%, transparent 70%)`;
+    }
+
+    function renderLockedThemeBadge(theme) {
+      const container = document.getElementById('theme-status-container');
+      if (!container) return;
+      const themeName = (theme && theme.name) ? theme.name : 'Golden Luxury';
+      const themeIcon = (theme && theme.icon) ? theme.icon : '👑';
+      container.innerHTML = `
+        <div class="theme-locked-pill" title="Identidad visual fijada para Invitación, App y Pantallas">
+          <span class="lock-icon">🔒</span>
+          <span>${themeIcon} Temática: ${themeName}</span>
+        </div>
+      `;
+    }
+
+    function initThemeSystem(data) {
+      officialThemesMap = data.officialThemes || {};
+      const activeThemeId = data.eventTheme;
+      const isLocked = data.eventThemeLocked === true;
+      const activeThemeObj = data.themeDetails || (activeThemeId ? officialThemesMap[activeThemeId] : null);
+
+      if (activeThemeObj) {
+        applyThemeVariables(activeThemeObj);
+        renderLockedThemeBadge(activeThemeObj);
+      }
+
+      // If theme is NOT yet configured/locked for this event, open the mandatory one-time selector modal
+      if (!activeThemeId && !isLocked) {
+        openThemeModal();
+      } else {
+        const modal = document.getElementById('theme-modal-backdrop');
+        if (modal) modal.remove();
+      }
+    }
+
+    function openThemeModal() {
+      const modal = document.getElementById('theme-modal-backdrop');
+      if (!modal) return;
+
+      const INVITATION_MODEL_NAMES = {
+        'imperial-gold': 'Imperial Gold & Velvet',
+        'editorial-luxe': 'Editorial Luxe & Glam',
+        'cyber-neon': 'Cyber Neon Party',
+        'botanical': 'Botanical Royal',
+        'terracotta': 'Terracotta Boho',
+        'retro-disco': 'Retro Disco Wave'
+      };
+
+      const grid = document.getElementById('theme-grid-list');
+      if (grid && Object.keys(officialThemesMap).length > 0) {
+        grid.innerHTML = '';
+        Object.values(officialThemesMap).forEach((thm) => {
+          const card = document.createElement('div');
+          card.className = `theme-option-card ${thm.id === selectedThemeId ? 'selected' : ''}`;
+          card.dataset.themeId = thm.id;
+          
+          const primRgb = hexToRgb(thm.primaryColor || '#d4af37');
+          const invModelName = INVITATION_MODEL_NAMES[thm.invitationModel] || 'Diseño Exclusivo';
+
+          card.innerHTML = `
+            <div class="theme-card-top">
+              <div>
+                <div class="theme-card-title" style="font-family: ${thm.fontFamily};">${thm.icon} ${thm.name}</div>
+                <div class="theme-card-tagline">${thm.tagline}</div>
+              </div>
+              <div class="theme-card-check">✓</div>
+            </div>
+
+            <!-- Mini Invitation Realistic Preview -->
+            <div class="mini-invitation-preview" style="background: ${thm.bgColor}; border-color: rgba(${primRgb}, 0.28);">
+              <div class="mini-envelope-bg" style="background: radial-gradient(circle at 50% 20%, ${thm.glow1 || `rgba(${primRgb}, 0.18)`} 0%, ${thm.bgColor} 95%);"></div>
+              <div class="mini-envelope-flap-line" style="border-bottom-color: ${thm.primaryColor};"></div>
+              <div class="mini-card-sheet" style="border-color: ${thm.primaryColor}; box-shadow: 0 4px 14px rgba(0,0,0,0.6), 0 0 16px rgba(${primRgb}, 0.25);">
+                <div class="mini-card-monogram" style="color: ${thm.primaryColor}; font-family: ${thm.fontFamily};">Nuestra Fiesta</div>
+                <div class="mini-card-event-type" style="color: ${thm.secondaryColor};">Invitación Interactiva</div>
+              </div>
+              <div class="mini-card-seal" style="background: ${thm.primaryColor}; box-shadow: 0 2px 10px rgba(${primRgb}, 0.6);">${thm.icon}</div>
+            </div>
+
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 2px;">
+              <div class="theme-card-swatch">
+                <div class="swatch-dot" style="background: ${thm.primaryColor}; box-shadow: 0 0 8px ${thm.primaryColor};" title="Color Primario"></div>
+                <div class="swatch-dot" style="background: ${thm.secondaryColor};" title="Color Secundario"></div>
+                <div class="swatch-dot" style="background: ${thm.bgColor}; border-color: rgba(255,255,255,0.4);" title="Color de Fondo"></div>
+              </div>
+              <div class="mini-inv-badge" title="Modelo de invitación asociado a este tema">
+                💌 <span>${invModelName}</span>
+              </div>
+            </div>
+          `;
+          card.addEventListener('click', () => {
+            selectedThemeId = thm.id;
+            document.querySelectorAll('.theme-option-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+            applyThemeVariables(thm);
+          });
+          grid.appendChild(card);
+        });
+      }
+
+      // Ensure initial theme is applied to modal
+      if (officialThemesMap[selectedThemeId]) {
+        applyThemeVariables(officialThemesMap[selectedThemeId]);
+      }
+
+      modal.classList.add('active');
+
+      const btnConfirm = document.getElementById('btn-confirm-theme');
+      if (btnConfirm) {
+        btnConfirm.addEventListener('click', async () => {
+          btnConfirm.disabled = true;
+          btnConfirm.textContent = 'Fijando Temática...';
+
+          try {
+            const res = await fetch('/api/event/theme', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                eventId: eventId,
+                themeId: selectedThemeId
+              })
+            });
+
+            const result = await res.json();
+            if (res.ok && result.success) {
+              applyThemeVariables(result.theme);
+              renderLockedThemeBadge(result.theme);
+              if (typeof showToast === 'function') {
+                showToast(`✨ ¡Temática "${result.theme.name}" fijada con éxito!`, 'success');
+              }
+              modal.classList.remove('active');
+              setTimeout(() => modal.remove(), 400);
+            } else {
+              if (typeof customAlert === 'function') {
+                await customAlert('Identidad Visual Oficial', result.error || 'Error al fijar la temática.');
+              } else {
+                alert(result.error || 'Error al fijar la temática.');
+              }
+              btnConfirm.disabled = false;
+              btnConfirm.textContent = 'Confirmar y Fijar Temática Oficial ➔';
+            }
+          } catch (err) {
+            console.error('Error saving theme:', err);
+            if (typeof customAlert === 'function') {
+              await customAlert('Conexión Interrumpida', 'Error de conexión al fijar la temática. Por favor verificá tu red.');
+            } else {
+              alert('Error de conexión al fijar la temática.');
+            }
+            btnConfirm.disabled = false;
+            btnConfirm.textContent = 'Confirmar y Fijar Temática Oficial ➔';
+          }
+        });
+      }
+    }
   </script>
 
   <!-- Floating WhatsApp Support Button -->

@@ -9,9 +9,10 @@ const { searchGuests } = require('./utils/search');
 const db = require('./utils/db');
 const { sendWelcomeEmail } = require('./utils/email');
 const { exec } = require('child_process');
-const { triviaCoordinator } = require('./utils/trivia');
+const { triviaCoordinator, TRIVIA_TEMPLATES } = require('./utils/trivia');
 const { capitanesCoordinator } = require('./utils/capitanes');
 const tandaBattle = require('./utils/tanda-battle');
+const awardsEngine = require('./utils/awards-engine');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -43,8 +44,8 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.json({ limit: '20mb' }));
-app.use(express.urlencoded({ extended: true, limit: '20mb' }));
+app.use(express.json({ limit: '100mb' }));
+app.use(express.urlencoded({ extended: true, limit: '100mb' }));
 
 // Validation Middleware: Ensure the Event ID is registered and active
 async function validateEventAccess(req, res, next) {
@@ -59,6 +60,8 @@ async function validateEventAccess(req, res, next) {
     filePath === '/inactive.html' ||
     filePath === '/superlogin.html' ||
     filePath === '/favicon.ico' ||
+    filePath === '/complementos' ||
+    filePath === '/complementos.html' ||
     filePath.startsWith('/css') ||
     filePath.startsWith('/js') ||
     filePath.startsWith('/uploads')
@@ -76,9 +79,9 @@ async function validateEventAccess(req, res, next) {
     }
   }
 
-  // If we are accessing the root or index.html and no custom eventId is provided (or eventId is 'default'),
-  // we are requesting the landing page and don't need event validation.
-  if ((filePath === '/' || filePath === '/index.html') && (!eventId || eventId === 'default')) {
+  // If we are accessing the root or index.html or complementos and no custom eventId is provided (or eventId is 'default'),
+  // we are requesting the landing / public catalog page and don't need event validation.
+  if ((filePath === '/' || filePath === '/index.html' || filePath === '/complementos' || filePath === '/complementos.html') && (!eventId || eventId === 'default')) {
     return next();
   }
 
@@ -110,13 +113,55 @@ app.get('/admin.html', (req, res) => {
 });
 
 // Clean slug routing (e.g. /xvmica -> /event.html?event=xvmica)
+app.get(['/app', '/app.html'], async (req, res) => {
+  const eventId = req.query.event || 'default';
+  try {
+    const filePath = path.join(__dirname, 'public', 'app.html');
+    let html = await fs.promises.readFile(filePath, 'utf8');
+    const config = await db.getConfigValues(eventId);
+    const eventTheme = config['event_theme'] || 'golden-luxury';
+    html = injectThemeIntoHtml(html, eventTheme);
+    return res.send(html);
+  } catch (err) {
+    res.sendFile(path.join(__dirname, 'public', 'app.html'));
+  }
+});
+
+app.get(['/event', '/event.html'], async (req, res) => {
+  const eventId = req.query.event || 'default';
+  try {
+    const filePath = path.join(__dirname, 'public', 'event.html');
+    let html = await fs.promises.readFile(filePath, 'utf8');
+    const config = await db.getConfigValues(eventId);
+    const eventTheme = config['event_theme'] || 'golden-luxury';
+    html = injectThemeIntoHtml(html, eventTheme);
+    return res.send(html);
+  } catch (err) {
+    res.sendFile(path.join(__dirname, 'public', 'event.html'));
+  }
+});
+
+app.get(['/awards-screen', '/awards-screen.html'], async (req, res) => {
+  const eventId = req.query.event || 'default';
+  try {
+    const filePath = path.join(__dirname, 'public', 'awards-screen.html');
+    let html = await fs.promises.readFile(filePath, 'utf8');
+    const config = await db.getConfigValues(eventId);
+    const eventTheme = config['event_theme'] || 'golden-luxury';
+    html = injectThemeIntoHtml(html, eventTheme);
+    return res.send(html);
+  } catch (err) {
+    res.sendFile(path.join(__dirname, 'public', 'awards-screen.html'));
+  }
+});
+
 app.get('/:eventId', async (req, res, next) => {
   const eventId = req.params.eventId;
   const staticRoutes = [
-    'fotos', 'proyeccion', 'mesas', 'invitacion', 
-    'admin', 'superadmin', 'superlogin', 'inactive', 
+    'fotos', 'proyeccion', 'mesas', 'invitacion', 'app', 'awards-screen', 'awards',
+    'admin', 'superadmin', 'superlogin', 'inactive', 'complementos',
     'api', 'css', 'js', 'uploads', 'assets', 'favicon.ico', 
-    'event.html', 'index.html', 'landing.html', '404.html', 'login.html'
+    'event.html', 'index.html', 'landing.html', '404.html', 'login.html', 'complementos.html', 'app.html', 'awards-screen.html'
   ];
   if (staticRoutes.includes(eventId) || eventId.includes('.')) {
     return next();
@@ -241,7 +286,17 @@ app.get(['/invitacion', '/invitacion.html'], async (req, res) => {
   <meta name="twitter:description" content="${ogDescription}" />
   <meta name="twitter:image" content="${ogImageUrl}" />`;
 
-    html = html.replace('</head>', () => `${ogMeta}\n</head>`);
+    // Inject Theme CSS and Pre-populate body classes
+    const invThemeColor = config['invitation_theme_color'] || config['inv_theme_color'] || config['event_theme'] || 'golden-luxury';
+    const invThemeFont = config['invitation_theme_font'] || config['inv_theme_font'] || 'classic-editorial';
+    let invCardModel = (config['invitation_card_model'] || config['inv_card_model'] || 'imperial-gold').replace('card-model-', '');
+    if (req.query.model || req.query.modelId || req.query.cardModel) {
+      invCardModel = (req.query.model || req.query.modelId || req.query.cardModel).replace('card-model-', '');
+    }
+
+    const themeStyle = generateThemeCss(invThemeColor);
+    html = html.replace('</head>', () => `${ogMeta}\n${themeStyle}\n</head>`);
+    html = html.replace(/<body(\s+[^>]*)?>/i, () => `<body class="card-model-${invCardModel} theme-${invThemeColor} font-${invThemeFont}">`);
     
     res.send(html);
   } catch (err) {
@@ -308,13 +363,19 @@ async function requireVendorAuth(req, res, next) {
 // Configure Multer storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
+    if (!fs.existsSync(UPLOADS_DIR)) {
+      try { fs.mkdirSync(UPLOADS_DIR, { recursive: true }); } catch (e) {}
+    }
     cb(null, UPLOADS_DIR);
   },
   filename: (req, file, cb) => {
-    cb(null, Date.now() + '-' + file.originalname);
+    cb(null, Date.now() + '-' + file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_'));
   }
 });
-const upload = multer({ storage });
+const upload = multer({
+  storage,
+  limits: { fileSize: 100 * 1024 * 1024 } // 100MB max limit
+});
 
 // API: Search guests
 app.get('/api/guests/search', async (req, res) => {
@@ -726,6 +787,207 @@ app.get('/api/debug/network-ip', (req, res) => {
   res.json({ localIp });
 });
 
+// Official Catalog of Curated miFiestAPP Event Themes
+const OFFICIAL_THEMES = {
+  'golden-luxury': {
+    id: 'golden-luxury',
+    name: 'Golden Luxury',
+    icon: '👑',
+    tagline: 'Elegancia Clásica & Oro Champagne',
+    primaryColor: '#d4af37',
+    secondaryColor: '#aa7c11',
+    accentGlow: 'rgba(212, 175, 55, 0.25)',
+    bgColor: '#0b0b0c',
+    glow1: 'rgba(212, 175, 55, 0.16)',
+    glow2: 'rgba(139, 92, 246, 0.10)',
+    crownFilter: 'drop-shadow(0 0 16px rgba(212, 175, 55, 0.55))',
+    fontFamily: "'Cinzel', serif",
+    invitationModel: 'imperial-gold',
+    invitationColor: 'golden-luxury',
+    invitationEffect: 'golden-dust',
+    invitationFont: 'classic-editorial'
+  },
+  'rose-gold': {
+    id: 'rose-gold',
+    name: 'Rose Gold Glam',
+    icon: '🌸',
+    tagline: 'Romántico, Chic & Oro Rosa',
+    primaryColor: '#e0a899',
+    secondaryColor: '#b76e79',
+    accentGlow: 'rgba(224, 168, 153, 0.30)',
+    bgColor: '#0d0b0f',
+    glow1: 'rgba(224, 168, 153, 0.20)',
+    glow2: 'rgba(183, 110, 121, 0.15)',
+    crownFilter: 'hue-rotate(305deg) saturate(1.4) brightness(1.1) drop-shadow(0 0 18px rgba(224, 168, 153, 0.6))',
+    fontFamily: "'Playfair Display', serif",
+    invitationModel: 'editorial-luxe',
+    invitationColor: 'rose-gold',
+    invitationEffect: 'rose-petals',
+    invitationFont: 'romantic-serif'
+  },
+  'cyber-neon': {
+    id: 'cyber-neon',
+    name: 'Cyber Neon Party',
+    icon: '⚡',
+    tagline: 'Moderno, Neón, Cian & Magenta',
+    primaryColor: '#00f3ff',
+    secondaryColor: '#ff007f',
+    accentGlow: 'rgba(0, 243, 255, 0.35)',
+    bgColor: '#080511',
+    glow1: 'rgba(0, 243, 255, 0.22)',
+    glow2: 'rgba(255, 0, 127, 0.18)',
+    crownFilter: 'hue-rotate(145deg) saturate(2.6) brightness(1.15) drop-shadow(0 0 22px rgba(0, 243, 255, 0.75))',
+    fontFamily: "'Montserrat', sans-serif",
+    invitationModel: 'cyber-neon',
+    invitationColor: 'cyber-neon',
+    invitationEffect: 'neon-cyber-grid',
+    invitationFont: 'modern-sans'
+  },
+  'emerald-royal': {
+    id: 'emerald-royal',
+    name: 'Emerald Royal',
+    icon: '🌲',
+    tagline: 'Verde Esmeralda Profundo & Dorado',
+    primaryColor: '#2ec4b6',
+    secondaryColor: '#0d5c46',
+    accentGlow: 'rgba(46, 196, 182, 0.30)',
+    bgColor: '#060d0a',
+    glow1: 'rgba(46, 196, 182, 0.20)',
+    glow2: 'rgba(212, 175, 55, 0.14)',
+    crownFilter: 'hue-rotate(95deg) saturate(1.9) brightness(1.05) drop-shadow(0 0 18px rgba(46, 196, 182, 0.65))',
+    fontFamily: "'Cinzel', serif",
+    invitationModel: 'botanical',
+    invitationColor: 'emerald-royal',
+    invitationEffect: 'golden-dust',
+    invitationFont: 'classic-editorial'
+  },
+  'midnight-navy': {
+    id: 'midnight-navy',
+    name: 'Midnight Navy',
+    icon: '🌌',
+    tagline: 'Azul Noche Zafiro & Oro Estelar',
+    primaryColor: '#4cc9f0',
+    secondaryColor: '#1e3a8a',
+    accentGlow: 'rgba(76, 201, 240, 0.30)',
+    bgColor: '#050a14',
+    glow1: 'rgba(76, 201, 240, 0.22)',
+    glow2: 'rgba(212, 175, 55, 0.12)',
+    crownFilter: 'hue-rotate(185deg) saturate(2.2) brightness(1.1) drop-shadow(0 0 20px rgba(76, 201, 240, 0.7))',
+    fontFamily: "'Cinzel', serif",
+    invitationModel: 'editorial-luxe',
+    invitationColor: 'midnight-navy',
+    invitationEffect: 'stars-cosmic',
+    invitationFont: 'classic-editorial'
+  },
+  'boho-rust': {
+    id: 'boho-rust',
+    name: 'Boho Chic Rust',
+    icon: '🌾',
+    tagline: 'Terracota, Arena & Cobre Cálido',
+    primaryColor: '#e07a5f',
+    secondaryColor: '#81b29a',
+    accentGlow: 'rgba(224, 122, 95, 0.30)',
+    bgColor: '#0e0b09',
+    glow1: 'rgba(224, 122, 95, 0.20)',
+    glow2: 'rgba(238, 217, 196, 0.12)',
+    crownFilter: 'hue-rotate(335deg) saturate(1.3) sepia(0.25) drop-shadow(0 0 16px rgba(224, 122, 95, 0.55))',
+    fontFamily: "'Outfit', sans-serif",
+    invitationModel: 'terracotta',
+    invitationColor: 'boho-rust',
+    invitationEffect: 'golden-dust',
+    invitationFont: 'boho-sans'
+  },
+  'retro-disco': {
+    id: 'retro-disco',
+    name: 'Retro Disco 80/90s',
+    icon: '🪩',
+    tagline: 'Púrpura Cósmico & Neón Flúor',
+    primaryColor: '#ff0080',
+    secondaryColor: '#7928ca',
+    accentGlow: 'rgba(255, 0, 128, 0.35)',
+    bgColor: '#0b0614',
+    glow1: 'rgba(255, 0, 128, 0.22)',
+    glow2: 'rgba(121, 40, 202, 0.20)',
+    crownFilter: 'hue-rotate(265deg) saturate(2.8) brightness(1.2) drop-shadow(0 0 22px rgba(255, 0, 128, 0.75))',
+    fontFamily: "'Syncopate', sans-serif",
+    invitationModel: 'retro-disco',
+    invitationColor: 'retro-disco',
+    invitationEffect: 'disco-lights',
+    invitationFont: 'modern-sans'
+  }
+};
+
+/**
+ * Generates an inline CSS block with root theme variables to prevent FOUC / theme flickering
+ */
+function generateThemeCss(themeDetailsOrId) {
+  let themeObj = themeDetailsOrId;
+  if (typeof themeDetailsOrId === 'string') {
+    themeObj = OFFICIAL_THEMES[themeDetailsOrId] || OFFICIAL_THEMES['golden-luxury'];
+  }
+  if (!themeObj || typeof themeObj !== 'object') {
+    themeObj = OFFICIAL_THEMES['golden-luxury'];
+  }
+
+  function hexToRgb(hex) {
+    if (!hex) return '212, 175, 55';
+    let c = hex.replace('#', '');
+    if (c.length === 3) c = c.split('').map(x => x + x).join('');
+    const num = parseInt(c, 16);
+    if (isNaN(num)) return '212, 175, 55';
+    return `${(num >> 16) & 255}, ${(num >> 8) & 255}, ${num & 255}`;
+  }
+
+  const primColor = themeObj.primaryColor || '#d4af37';
+  const secColor = themeObj.secondaryColor || '#aa7c11';
+  const primRgb = hexToRgb(primColor);
+  const secRgb = hexToRgb(secColor);
+  const fontFam = themeObj.fontFamily || "'Cinzel', serif";
+  const bgColor = themeObj.bgColor || '#0b0b0c';
+  const crownFilter = themeObj.crownFilter || 'drop-shadow(0 0 16px rgba(212, 175, 55, 0.55))';
+
+  return `
+  <!-- SSR Injected Theme (Zero Flicker / Instant Color Palette) -->
+  <style id="mifiestapp-injected-theme">
+    :root {
+      --primary-rgb: ${primRgb};
+      --secondary-rgb: ${secRgb};
+      --gold-primary: ${primColor};
+      --gold-secondary: ${secColor};
+      --gold-light: ${primColor};
+      --gold-gradient: linear-gradient(135deg, #ffffff 0%, ${primColor} 50%, ${secColor} 100%);
+      --card-border: rgba(${primRgb}, 0.15);
+      --card-border-active: rgba(${primRgb}, 0.5);
+      --border-gold: rgba(${primRgb}, 0.25);
+      --border-gold-bright: ${primColor};
+      --gold-glow: 0 0 25px rgba(${primRgb}, 0.25);
+      --glow-shadow: 0 0 25px rgba(${primRgb}, 0.25);
+      --accent-font: ${fontFam};
+      --bg-dark: ${bgColor};
+      --bg-color: ${bgColor};
+      --bg-radial: radial-gradient(circle at 50% 10%, rgba(${primRgb}, 0.12) 0%, ${bgColor} 90%);
+    }
+    #admin-header-crown, #header-crown-logo, .logo-container img, .app-brand img, .gatekeeper-logo, #sidebar-avatar, #header-avatar-badge img {
+      filter: ${crownFilter} !important;
+    }
+    .mesh-glow-1 {
+      background: radial-gradient(circle, ${themeObj.glow1 || `rgba(${primRgb}, 0.22)`} 0%, transparent 70%) !important;
+    }
+    .mesh-glow-2 {
+      background: radial-gradient(circle, ${themeObj.glow2 || `rgba(${secRgb}, 0.16)`} 0%, transparent 70%) !important;
+    }
+  </style>`;
+}
+
+function injectThemeIntoHtml(html, themeDetailsOrId) {
+  if (!html) return html;
+  const themeStyle = generateThemeCss(themeDetailsOrId);
+  if (html.includes('</head>')) {
+    return html.replace('</head>', `${themeStyle}\n</head>`);
+  }
+  return themeStyle + html;
+}
+
 // API: Get config (Public)
 app.get('/api/config', async (req, res) => {
   try {
@@ -768,7 +1030,7 @@ app.get('/api/config', async (req, res) => {
     }
 
     const triviaQuestions = config['trivia_questions'] || '[]';
-    const invitationEventDate = config['invitation_event_date'] || '';
+    const invitationEventDate = config['invitation_event_date'] || '2026-08-30T21:30';
     const invitationEventTimeEnd = config['invitation_event_time_end'] || '';
     const invitationMusicUrl = config['invitation_music_url'] || '';
     const invitationPartyAddress = config['invitation_party_address'] || '';
@@ -795,10 +1057,12 @@ app.get('/api/config', async (req, res) => {
     }
 
     const invitationTemplate = config['invitation_template'] || 'interactivo-3d';
+    const invitationCardModel = config['invitation_card_model'] || 'imperial-gold';
     const invitationThemeColor = config['invitation_theme_color'] || 'golden-luxury';
     const invitationThemeFont = config['invitation_theme_font'] || 'classic-editorial';
     const invitationBgEffect = config['invitation_bg_effect'] || 'golden-dust';
     const invitationWaxSealDesign = config['invitation_wax_seal_design'] || 'rings';
+    const invitationWaxSealInitials = config['invitation_wax_seal_initials'] || '';
     const invitationBgUrl = config['invitation_bg_url'] || '';
     const invitationCoverUrl = config['invitation_cover_url'] || '';
 
@@ -807,6 +1071,9 @@ app.get('/api/config', async (req, res) => {
     const invitationPhoto3 = config['invitation_photo_3'] || '';
     const invitationPhoto4 = config['invitation_photo_4'] || '';
     const invitationPhoto5 = config['invitation_photo_5'] || '';
+    const eventTheme = config['event_theme'] || '';
+    const eventThemeLocked = config['event_theme_locked'] === 'true';
+    const themeDetails = eventTheme ? (OFFICIAL_THEMES[eventTheme] || null) : null;
 
     const eventSupportPhone = config['support_whatsapp_number'] || '';
     let globalSupportPhone = eventSupportPhone;
@@ -834,7 +1101,7 @@ app.get('/api/config', async (req, res) => {
       } catch (e) {}
     }
 
-    let enabledModules = { countdown: true, location: true, dresscode: true, photos: true, gifts: true, rsvp: true, music: true, farewell: true };
+    let enabledModules = { countdown: true, location: true, dresscode: true, photos: true, gifts: true, chest: true, rsvp: true, music: true, farewell: true };
     if (config['enabled_modules']) {
       try {
         const parsed = JSON.parse(config['enabled_modules']);
@@ -869,10 +1136,12 @@ app.get('/api/config', async (req, res) => {
       invitationBankHolder,
       invitationDressCode,
       invitationTemplate,
+      invitationCardModel,
       invitationThemeColor,
       invitationThemeFont,
       invitationBgEffect,
       invitationWaxSealDesign,
+      invitationWaxSealInitials,
       invitationBgUrl,
       invitationCoverUrl,
       invitationPhoto1,
@@ -880,6 +1149,12 @@ app.get('/api/config', async (req, res) => {
       invitationPhoto3,
       invitationPhoto4,
       invitationPhoto5,
+      eventTheme,
+      eventThemeLocked,
+      themeDetails,
+      officialThemes: OFFICIAL_THEMES,
+      invitationWizardUnlocked: config['invitation_wizard_unlocked'] || '',
+      invitationWizardCompleted: config['invitation_wizard_completed'] === 'true',
       snapApiToken: process.env.SNAP_API_TOKEN || '',
       snapGroupId: process.env.SNAP_GROUP_ID || '',
       snapLenses: {
@@ -1137,10 +1412,12 @@ app.post('/api/config', requireAuth, async (req, res) => {
     invitationBankHolder,
     invitationDressCode,
     invitationTemplate,
+    invitationCardModel,
     invitationThemeColor,
     invitationThemeFont,
     invitationBgEffect,
     invitationWaxSealDesign,
+    invitationWaxSealInitials,
     invitationBgUrl,
     invitationCoverUrl,
     invitationPhoto1,
@@ -1178,10 +1455,12 @@ app.post('/api/config', requireAuth, async (req, res) => {
     if (invitationDressCode !== undefined) await db.setConfigValue(eventId, 'invitation_dress_code', invitationDressCode);
 
     if (invitationTemplate !== undefined) await db.setConfigValue(eventId, 'invitation_template', invitationTemplate);
+    if (invitationCardModel !== undefined) await db.setConfigValue(eventId, 'invitation_card_model', invitationCardModel);
     if (invitationThemeColor !== undefined) await db.setConfigValue(eventId, 'invitation_theme_color', invitationThemeColor);
     if (invitationThemeFont !== undefined) await db.setConfigValue(eventId, 'invitation_theme_font', invitationThemeFont);
     if (invitationBgEffect !== undefined) await db.setConfigValue(eventId, 'invitation_bg_effect', invitationBgEffect);
     if (invitationWaxSealDesign !== undefined) await db.setConfigValue(eventId, 'invitation_wax_seal_design', invitationWaxSealDesign);
+    if (invitationWaxSealInitials !== undefined) await db.setConfigValue(eventId, 'invitation_wax_seal_initials', invitationWaxSealInitials);
     if (invitationBgUrl !== undefined) await db.setConfigValue(eventId, 'invitation_bg_url', invitationBgUrl);
     if (invitationCoverUrl !== undefined) await db.setConfigValue(eventId, 'invitation_cover_url', invitationCoverUrl);
 
@@ -1193,10 +1472,65 @@ app.post('/api/config', requireAuth, async (req, res) => {
     if (serviceTrivia !== undefined) await db.updateEventServiceTrivia(eventId, serviceTrivia === true || serviceTrivia === 'true');
     if (triviaQuestions !== undefined) await db.setConfigValue(eventId, 'trivia_questions', triviaQuestions);
 
+    if (req.body.invitation_wizard_unlocked !== undefined) {
+      await db.setConfigValue(eventId, 'invitation_wizard_unlocked', typeof req.body.invitation_wizard_unlocked === 'string' ? req.body.invitation_wizard_unlocked : JSON.stringify(req.body.invitation_wizard_unlocked));
+    }
+    if (req.body.invitation_wizard_completed !== undefined) {
+      await db.setConfigValue(eventId, 'invitation_wizard_completed', String(req.body.invitation_wizard_completed));
+    }
+
     res.json({ success: true });
   } catch (error) {
     console.error('Error saving config:', error);
     res.status(500).json({ error: 'Error al guardar la configuración' });
+  }
+});
+
+// API: Set and Lock Event Theme (One-Time Selection / SuperAdmin override)
+app.post('/api/event/theme', async (req, res) => {
+  const { eventId, themeId } = req.body || {};
+  const cleanId = (eventId || '').trim().toLowerCase();
+  if (!cleanId) {
+    return res.status(400).json({ error: 'Código de evento requerido.' });
+  }
+
+  const selectedTheme = OFFICIAL_THEMES[themeId];
+  if (!selectedTheme) {
+    return res.status(400).json({ error: 'Temática seleccionada no válida.' });
+  }
+
+  try {
+    // Check if theme is already locked for this event
+    const isLocked = await db.getConfigValue(cleanId, 'event_theme_locked', 'false');
+    const isSuperAdmin = req.session && req.session.isSuperAdmin;
+
+    if (isLocked === 'true' && !isSuperAdmin) {
+      return res.status(403).json({
+        error: 'La temática oficial ya ha sido confirmada y fijada. Para solicitar un cambio de diseño, contactá a Soporte Técnico.'
+      });
+    }
+
+    // Save Theme Configuration
+    await db.setConfigValue(cleanId, 'event_theme', selectedTheme.id);
+    await db.setConfigValue(cleanId, 'event_theme_locked', 'true');
+
+    // Auto-synchronize Invitation defaults to match theme aesthetics
+    await db.setConfigValue(cleanId, 'invitation_theme_color', selectedTheme.invitationColor);
+    await db.setConfigValue(cleanId, 'invitation_card_model', selectedTheme.invitationModel);
+    await db.setConfigValue(cleanId, 'invitation_bg_effect', selectedTheme.invitationEffect);
+    await db.setConfigValue(cleanId, 'invitation_theme_font', selectedTheme.invitationFont);
+
+    console.log(`[miFiestAPP] Temática "${selectedTheme.name}" fijada y bloqueada para el evento: ${cleanId}`);
+
+    res.json({
+      success: true,
+      message: `¡Temática "${selectedTheme.name}" confirmada y fijada con éxito!`,
+      theme: selectedTheme,
+      locked: true
+    });
+  } catch (error) {
+    console.error('Error saving event theme:', error);
+    res.status(500).json({ error: 'Error al guardar la temática del evento.' });
   }
 });
 
@@ -1253,7 +1587,7 @@ app.post('/api/public/rsvp', async (req, res) => {
     console.error('Error validating event for RSVP:', err);
   }
 
-  const { name, attending, companionsCount, companionsNames, companionsDetails, dietaryRestrictions, suggestedSong } = req.body;
+  const { name, attending, companionsCount, companionsNames, companionsDetails, dietaryRestrictions, suggestedSong, message } = req.body;
   if (!name || name.trim() === '') {
     return res.status(400).json({ error: 'El nombre es obligatorio' });
   }
@@ -1271,7 +1605,8 @@ app.post('/api/public/rsvp', async (req, res) => {
       companionsNames,
       companionsDetails,
       dietaryRestrictions,
-      suggestedSong
+      suggestedSong,
+      message
     });
     res.json({ success: true });
   } catch (error) {
@@ -1385,6 +1720,93 @@ app.post('/api/public/download-souvenir', (req, res) => {
   }
 });
 
+// API: Get Guest Messages & Dedications (Public approved list or Admin full list)
+app.get('/api/messages', async (req, res) => {
+  const eventId = req.query.event || 'default';
+  const isAdmin = (req.session && req.session.authenticated) || (req.cookies && req.cookies.admin_session);
+  const includeHidden = req.query.all === 'true' && isAdmin;
+
+  try {
+    const messages = await db.getEventMessages(eventId, includeHidden);
+    res.json({ success: true, messages });
+  } catch (err) {
+    console.error('Error getting guest messages:', err);
+    res.status(500).json({ error: 'Error al obtener mensajes de invitados' });
+  }
+});
+
+// API: Public Guest Message submit (No Auth)
+app.post('/api/public/message', async (req, res) => {
+  const eventId = req.query.event || req.body.eventId || 'default';
+  const isPreview = req.query.preview === 'true' || req.body.preview === true || req.body.isPreview === true;
+
+  try {
+    const isValid = await db.isEventValid(eventId);
+    if (!isValid && eventId !== 'default') {
+      return res.status(404).json({ error: 'El evento no existe o está inactivo' });
+    }
+  } catch (err) {
+    console.error('Error validating event for message submit:', err);
+  }
+
+  const { author, message, phone } = req.body;
+  if (!message || message.trim() === '') {
+    return res.status(400).json({ error: 'El mensaje de dedicatoria es obligatorio' });
+  }
+
+  if (isPreview) {
+    return res.json({ success: true, isPreview: true, message: '✨ Modo Vista Previa: Dedicatoria probada con éxito' });
+  }
+
+  try {
+    const newMsg = await db.addEventMessage(eventId, {
+      author: author || 'Invitado',
+      message: message.trim(),
+      phone: phone || '',
+      source: 'direct'
+    });
+    res.json({ success: true, message: newMsg });
+  } catch (err) {
+    console.error('Error adding guest message:', err);
+    res.status(500).json({ error: 'Error al enviar tu dedicatoria' });
+  }
+});
+
+// API: Admin Moderate Guest Message (Auth required)
+app.post('/api/admin/messages/moderate', requireAuth, async (req, res) => {
+  const eventId = req.query.event || req.body.eventId || 'default';
+  const { id, approved, featured } = req.body;
+
+  if (!id) {
+    return res.status(400).json({ error: 'ID de mensaje requerido' });
+  }
+
+  try {
+    const updated = await db.moderateEventMessage(eventId, id, { approved, featured });
+    if (!updated) {
+      return res.status(404).json({ error: 'Mensaje no encontrado' });
+    }
+    res.json({ success: true, message: updated });
+  } catch (err) {
+    console.error('Error moderating message:', err);
+    res.status(500).json({ error: 'Error al moderar mensaje' });
+  }
+});
+
+// API: Admin Delete Guest Message (Auth required)
+app.delete('/api/admin/messages/:id', requireAuth, async (req, res) => {
+  const eventId = req.query.event || req.body.eventId || 'default';
+  const messageId = req.params.id;
+
+  try {
+    await db.deleteEventMessage(eventId, messageId);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error deleting message:', err);
+    res.status(500).json({ error: 'Error al eliminar mensaje' });
+  }
+});
+
 // API: Admin Login
 app.post('/api/admin/login', async (req, res) => {
   const { password, email } = req.body;
@@ -1487,7 +1909,7 @@ app.get('/api/superadmin/events', requireSuperAuth, async (req, res) => {
 
 // API: Superadmin Create Event
 app.post('/api/superadmin/events', requireSuperAuth, async (req, res) => {
-  const { id, clientName, eventName, password, clientEmail, serviceTables, servicePhotos, serviceInvitation, serviceTrivia } = req.body;
+  const { id, clientName, eventName, password, clientEmail, serviceTables, servicePhotos, serviceInvitation, serviceTrivia, serviceMusic } = req.body;
   if (!id || !clientName) {
     return res.status(400).json({ error: 'El ID y el nombre del cliente son requeridos.' });
   }
@@ -1496,9 +1918,10 @@ app.post('/api/superadmin/events', requireSuperAuth, async (req, res) => {
     const sPhotos = servicePhotos !== false;
     const sInvitation = serviceInvitation !== false;
     const sTrivia = serviceTrivia !== false;
+    const sMusic = serviceMusic !== false;
     const resolvedEventName = (eventName || clientName || '').trim();
     
-    const cleanId = await db.createEvent(id, clientName, password || '', clientEmail || '', sTables, sPhotos, sInvitation, sTrivia, resolvedEventName);
+    const cleanId = await db.createEvent(id, clientName, password || '', clientEmail || '', sTables, sPhotos, sInvitation, sTrivia, resolvedEventName, {}, sMusic);
     
     // Create Google Drive folder immediately on event creation (awaited to guarantee completion on Vercel)
     const { syncPhotosToDrive } = require('./utils/googleDrive');
@@ -1523,7 +1946,8 @@ app.post('/api/superadmin/events', requireSuperAuth, async (req, res) => {
             serviceTables: sTables,
             servicePhotos: sPhotos,
             serviceInvitation: sInvitation,
-            serviceTrivia: sTrivia
+            serviceTrivia: sTrivia,
+            serviceMusic: sMusic
           }
         );
         if (emailResult.success) {
@@ -1707,6 +2131,74 @@ app.put('/api/superadmin/events/:id/vendor', requireSuperAuth, async (req, res) 
   } catch (error) {
     console.error('Error assigning vendor to event:', error);
     res.status(500).json({ error: 'Error al asignar vendedor al evento' });
+  }
+});
+
+// API: Superadmin Get Fine-Tuner Config for Template Model
+app.get('/api/superadmin/fine-tuner', requireSuperAuth, async (req, res) => {
+  const modelId = req.query.modelId || 'card-model-imperial-gold';
+  const eventId = req.query.eventId || 'default';
+  const formatId = req.query.formatId || null;
+  try {
+    const config = await db.getTemplateFineTuning(modelId, eventId, formatId);
+    res.json(config);
+  } catch (error) {
+    console.error('Error fetching fine-tuner config:', error);
+    res.status(500).json({ error: 'Error al obtener la calibración' });
+  }
+});
+
+// API: Superadmin Save Fine-Tuner Config for Template Model
+app.post('/api/superadmin/fine-tuner', requireSuperAuth, async (req, res) => {
+  const { modelId, config, eventId, formatId } = req.body;
+  if (!modelId) {
+    return res.status(400).json({ error: 'Model ID requerido' });
+  }
+  try {
+    const saved = await db.saveTemplateFineTuning(modelId, config || {}, eventId || 'default', formatId || null);
+    res.json({ success: true, config: saved });
+  } catch (error) {
+    console.error('Error saving fine-tuner config:', error);
+    res.status(500).json({ error: 'Error al guardar la calibración' });
+  }
+});
+
+// API: Superadmin Upload Frame Video MP4
+app.post('/api/superadmin/upload-frame-video', requireSuperAuth, upload.single('video'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No se subió ningún archivo de video.' });
+  }
+
+  const filePath = req.file.path;
+  try {
+    const fileBuffer = fs.readFileSync(filePath);
+    const publicUrl = await db.uploadVideoFrameFile(req.file.originalname, fileBuffer, req.file.mimetype);
+
+    // Clean up temporary local file
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+
+    res.json({ success: true, url: publicUrl });
+  } catch (err) {
+    console.error('Error uploading frame video:', err);
+    if (req.file && fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+    res.status(500).json({ error: 'Error al subir el video marco.' });
+  }
+});
+
+// API Public: Get Fine-Tuner Config for Public Invitation
+app.get('/api/public/fine-tuner/:modelId', async (req, res) => {
+  const modelId = req.params.modelId || 'card-model-imperial-gold';
+  const eventId = req.query.eventId || 'default';
+  const formatId = req.query.formatId || req.query.format || null;
+  try {
+    const config = await db.getTemplateFineTuning(modelId, eventId, formatId);
+    res.json(config);
+  } catch (error) {
+    res.json({ paddingTop: 88, paddingBottom: 98, maxWidth: 275, btnOffsetY: 0, contentScale: 1.0 });
   }
 });
 
@@ -3208,7 +3700,7 @@ app.post('/api/admin/photos/clear', requireAuth, async (req, res) => {
 
 
 // Serve main app pages
-app.get('/fotos', async (req, res) => {
+app.get(['/fotos', '/fotos.html'], async (req, res) => {
   const eventId = req.query.event || 'default';
   try {
     const events = await db.getEvents();
@@ -3216,17 +3708,23 @@ app.get('/fotos', async (req, res) => {
     if (event && event.servicePhotos === false) {
       return res.redirect(`/event.html?event=${encodeURIComponent(eventId)}`);
     }
+    const filePath = path.join(__dirname, 'public', 'fotos.html');
+    let html = await fs.promises.readFile(filePath, 'utf8');
+    const config = await db.getConfigValues(eventId);
+    const eventTheme = config['event_theme'] || 'golden-luxury';
+    html = injectThemeIntoHtml(html, eventTheme);
+    return res.send(html);
   } catch (err) {
-    console.error('Error checking service availability:', err);
+    console.error('Error checking service availability or injecting theme into fotos.html:', err);
+    res.sendFile(path.join(__dirname, 'public', 'fotos.html'));
   }
-  res.sendFile(path.join(__dirname, 'public', 'fotos.html'));
 });
 
 app.get('/proyeccion', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'proyeccion.html'));
 });
 
-app.get('/mesas', async (req, res) => {
+app.get(['/mesas', '/mesas.html'], async (req, res) => {
   const eventId = req.query.event || 'default';
   try {
     const events = await db.getEvents();
@@ -3234,10 +3732,20 @@ app.get('/mesas', async (req, res) => {
     if (event && event.serviceTables === false) {
       return res.redirect(`/event.html?event=${encodeURIComponent(eventId)}`);
     }
+    const filePath = path.join(__dirname, 'public', 'mesas.html');
+    let html = await fs.promises.readFile(filePath, 'utf8');
+    const config = await db.getConfigValues(eventId);
+    const eventTheme = config['event_theme'] || 'golden-luxury';
+    html = injectThemeIntoHtml(html, eventTheme);
+    return res.send(html);
   } catch (err) {
-    console.error('Error checking service availability:', err);
+    console.error('Error checking service availability or injecting theme into mesas.html:', err);
+    res.sendFile(path.join(__dirname, 'public', 'mesas.html'));
   }
-  res.sendFile(path.join(__dirname, 'public', 'mesas.html'));
+});
+
+app.get(['/complementos', '/complementos.html'], (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'complementos.html'));
 });
 
 app.get('/', (req, res) => {
@@ -3269,7 +3777,17 @@ app.get('/admin', async (req, res) => {
 
   if (isSuperadmin || isClientAdmin || isVendorAdmin) {
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    return res.sendFile(path.join(__dirname, 'private', 'admin.html'));
+    try {
+      const filePath = path.join(__dirname, 'private', 'admin.html');
+      let html = await fs.promises.readFile(filePath, 'utf8');
+      const config = await db.getConfigValues(eventId);
+      const eventTheme = config['event_theme'] || 'golden-luxury';
+      html = injectThemeIntoHtml(html, eventTheme);
+      return res.send(html);
+    } catch (err) {
+      console.error('Error injecting theme into admin.html:', err);
+      return res.sendFile(path.join(__dirname, 'private', 'admin.html'));
+    }
   }
   const queryParams = new URLSearchParams();
   if (req.query.event) queryParams.set('event', req.query.event);
@@ -3595,6 +4113,18 @@ app.post('/api/trivia/control', requireAuth, async (req, res) => {
       }
       triviaCoordinator.nextQuestion(eventId);
       res.json({ success: true });
+    } else if (action === 'jump_podium') {
+      triviaCoordinator.jumpToPodium(eventId);
+      res.json({ success: true, state: triviaCoordinator.getSessionState(eventId) });
+    } else if (action === 'load_template') {
+      const templateId = req.body.templateId;
+      const tpl = TRIVIA_TEMPLATES[templateId];
+      if (!tpl) {
+        return res.status(404).json({ error: 'Plantilla no encontrada' });
+      }
+      await db.setConfigValue(eventId, 'trivia_questions', JSON.stringify(tpl.questions));
+      triviaCoordinator.initializeSession(eventId, tpl.questions, templateId);
+      res.json({ success: true, questions: tpl.questions, state: triviaCoordinator.getSessionState(eventId) });
     } else {
       res.status(400).json({ error: 'Acción no válida' });
     }
@@ -3602,6 +4132,107 @@ app.post('/api/trivia/control', requireAuth, async (req, res) => {
     console.error('[Trivia Control Error]', err);
     res.status(500).json({ error: err.message || 'Error al procesar la acción de control de trivia' });
   }
+});
+
+// Templates Catalog Endpoint
+app.get('/api/trivia/templates', (req, res) => {
+  res.json({ success: true, templates: TRIVIA_TEMPLATES });
+});
+
+// Game Summary & Statistics Endpoint
+app.get('/api/trivia/summary', (req, res) => {
+  const eventId = req.query.event || 'default';
+  const summary = triviaCoordinator.getGameSummary(eventId);
+  if (!summary) {
+    return res.status(404).json({ error: 'No hay datos de sesión activos' });
+  }
+  res.json({ success: true, summary });
+});
+
+// Export Final Results as CSV or JSON
+app.get('/api/trivia/export', (req, res) => {
+  const eventId = req.query.event || 'default';
+  const format = req.query.format || 'csv';
+  const summary = triviaCoordinator.getGameSummary(eventId);
+
+  if (!summary || !summary.leaderboard) {
+    return res.status(400).send('No hay resultados de trivia disponibles para exportar.');
+  }
+
+  if (format === 'json') {
+    return res.json(summary);
+  }
+
+  // Generate clean CSV format
+  const rows = [
+    ['Posición', 'Invitado / Jugador', 'Puntaje Total', 'Racha Máxima', 'Tiempo Acumulado (s)']
+  ];
+
+  summary.leaderboard.forEach((p, idx) => {
+    rows.push([
+      idx + 1,
+      `"${(p.nickname || '').replace(/"/g, '""')}"`,
+      p.score || 0,
+      p.highestStreak || p.streak || 0,
+      ((p.totalTimeMs || 0) / 1000).toFixed(2)
+    ]);
+  });
+
+  const csvContent = rows.map(r => r.join(',')).join('\n');
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="ranking-trivia-${eventId}.csv"`);
+  res.send('\uFEFF' + csvContent);
+});
+
+// Intelligent Question Generator Endpoint
+app.post('/api/trivia/generate', requireAuth, async (req, res) => {
+  const { eventType, names, details, count = 5 } = req.body;
+  const cleanType = eventType || 'casamiento';
+  const cleanNames = (names || '').trim();
+  const cleanDetails = (details || '').trim();
+
+  // Smart algorithmic question synthesizer tailored for Argentine events
+  const generated = [];
+  const baseTpl = TRIVIA_TEMPLATES[cleanType] ? TRIVIA_TEMPLATES[cleanType].questions : TRIVIA_TEMPLATES.casamiento.questions;
+
+  baseTpl.forEach((q, idx) => {
+    let customText = q.questionText;
+    if (cleanNames) {
+      if (cleanType === 'casamiento') {
+        customText = customText.replace(/los novios/gi, cleanNames).replace(/la pareja/gi, cleanNames);
+      } else if (cleanType === 'quince_anos') {
+        customText = customText.replace(/la Quinceañera/gi, cleanNames).replace(/ella/gi, cleanNames);
+      } else if (cleanType === 'cumple_adultos') {
+        customText = customText.replace(/el cumpleañero\/a/gi, cleanNames);
+      }
+    }
+    generated.push({
+      questionText: customText,
+      options: [...q.options],
+      correctOptionIndex: q.correctOptionIndex || 0,
+      timeLimit: q.timeLimit || 20,
+      doublePoints: !!q.doublePoints,
+      category: q.category || 'Trivia'
+    });
+  });
+
+  if (cleanDetails) {
+    generated.push({
+      questionText: `🌟 ANÉCDOTA ESPECIAL: ¿Cuál es el secreto mejor guardado de ${cleanNames || 'la noche'}?`,
+      options: [
+        cleanDetails.substring(0, 45),
+        'Nadie se lo esperaba esa noche',
+        'Se enteraron todos por una foto',
+        'Fue el secreto mejor guardado por años'
+      ],
+      correctOptionIndex: 0,
+      timeLimit: 20,
+      doublePoints: true,
+      category: 'Anécdotas VIP'
+    });
+  }
+
+  res.json({ success: true, questions: generated.slice(0, Math.max(3, parseInt(count) || 5)) });
 });
 
 
@@ -3928,6 +4559,269 @@ app.post('/api/tanda/mode', express.json(), (req, res) => {
     res.json({ success: true, state: updatedState });
   } catch (err) {
     res.status(500).json({ error: 'Error al cambiar modo de batalla' });
+  }
+});
+
+/**
+ * =========================================================================
+ * MIFIESTAPP MOBILE APP & AWARDS API ENDPOINTS (/api/app/*)
+ * =========================================================================
+ */
+
+// 1. Verify Event Code (e.g. 'ALMA15')
+app.post('/api/app/verify-code', express.json(), async (req, res) => {
+  try {
+    const rawCode = (req.body && req.body.code) ? String(req.body.code).trim() : '';
+    if (!rawCode) {
+      return res.status(400).json({ success: false, error: 'Por favor, ingresá el código de tu fiesta.' });
+    }
+
+    const cleanCode = rawCode.toLowerCase();
+    const normalizedCode = cleanCode.replace(/[^a-z0-9]/g, '');
+
+    const events = await db.getEvents();
+    const matchedEvent = events.find(e => {
+      const eId = (e.id || '').toLowerCase();
+      const eClean = eId.replace(/[^a-z0-9]/g, '');
+      return eId === cleanCode || eClean === normalizedCode;
+    });
+
+    if (!matchedEvent) {
+      return res.status(404).json({ success: false, error: `No encontramos ningún evento con el código "${rawCode}". Verificá e intentá nuevamente.` });
+    }
+
+    if (matchedEvent.active === false) {
+      return res.status(403).json({ success: false, error: 'Este evento se encuentra inactivo en este momento.' });
+    }
+
+    const eventId = matchedEvent.id;
+    const info = await db.getEventInfoForApp(eventId);
+    const coverUrl = await db.getConfigValue(eventId, 'event_cover_image', '/assets/coronamain.png');
+    const brandColor = await db.getConfigValue(eventId, 'event_brand_color', '#d4af37');
+
+    res.json({
+      success: true,
+      eventId,
+      clientName: matchedEvent.clientName,
+      title: info.eventTitle,
+      coverUrl,
+      brandColor,
+      info,
+      services: {
+        tables: matchedEvent.serviceTables !== false,
+        photos: matchedEvent.servicePhotos !== false,
+        invitation: matchedEvent.serviceInvitation !== false,
+        trivia: matchedEvent.serviceTrivia !== false,
+        music: matchedEvent.serviceMusic !== false
+      }
+    });
+  } catch (err) {
+    console.error('[API App Verify Code Error]', err);
+    res.status(500).json({ success: false, error: 'Error al verificar el código del evento.' });
+  }
+});
+
+// 2. Upload Look / Selfie file for Guest Profile
+app.post('/api/app/upload-look', upload.single('photo'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ success: false, error: 'No se recibió ninguna imagen.' });
+  }
+  const eventId = req.query.event || 'default';
+  try {
+    const fileBuffer = fs.readFileSync(req.file.path);
+    const photoUrl = await db.uploadPhotoFile(eventId, `look_${Date.now()}_${req.file.originalname}`, fileBuffer, req.file.mimetype);
+    if (fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    res.json({ success: true, photoUrl });
+  } catch (error) {
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    res.status(500).json({ success: false, error: 'Error al procesar la foto de perfil.' });
+  }
+});
+
+// 3. Save or Update Guest Profile (Name, Table, Look photo, Dietary, Device Token)
+app.post('/api/app/guest-profile', express.json({ limit: '25mb' }), async (req, res) => {
+  try {
+    const { eventId = 'default', guestId, name, tableNumber, avatarUrl, dietary, phone, deviceToken } = req.body;
+    if (!name || !name.trim()) {
+      return res.status(400).json({ success: false, error: 'El nombre del invitado es requerido.' });
+    }
+
+    let finalAvatarUrl = avatarUrl;
+
+    // Handle base64 selfie data URL if uploaded directly
+    if (avatarUrl && avatarUrl.startsWith('data:image/')) {
+      try {
+        const matches = avatarUrl.match(/^data:([A-Za-z-+/]+);base64,(.+)$/);
+        if (matches && matches.length === 3) {
+          const mimeType = matches[1];
+          const buffer = Buffer.from(matches[2], 'base64');
+          const filename = `avatar_${Date.now()}.jpg`;
+          finalAvatarUrl = await db.uploadPhotoFile(eventId, filename, buffer, mimeType);
+        }
+      } catch (uploadErr) {
+        console.warn('[App Profile Avatar Base64 Upload Warning]:', uploadErr.message);
+      }
+    }
+
+    const savedProfile = await db.saveGuestProfile(eventId, {
+      id: guestId,
+      name: name.trim(),
+      tableNumber,
+      avatarUrl: finalAvatarUrl,
+      dietary,
+      phone,
+      deviceToken
+    });
+
+    res.json({ success: true, profile: savedProfile });
+  } catch (err) {
+    console.error('[API App Save Guest Profile Error]', err);
+    res.status(500).json({ success: false, error: 'Error al guardar el perfil del invitado.' });
+  }
+});
+
+// 4. Get Guest Profile
+app.get('/api/app/guest-profile/:eventId/:guestId', async (req, res) => {
+  try {
+    const { eventId, guestId } = req.params;
+    const profile = await db.getGuestProfile(eventId, guestId);
+    if (!profile) {
+      return res.status(404).json({ success: false, error: 'Perfil no encontrado.' });
+    }
+    res.json({ success: true, profile });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Error al obtener el perfil.' });
+  }
+});
+
+// 5. Get All Guest Profiles for an Event (Admin & Avatar Picker)
+app.get('/api/app/guest-profiles/:eventId', async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const profiles = await db.getGuestProfiles(eventId);
+    res.json({ success: true, profiles });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Error al obtener listado de perfiles.' });
+  }
+});
+
+// 6. Get Event Info for App (Timeline, Location, Gifts, Dresscode, Transport)
+app.get('/api/app/event-info/:eventId', async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const info = await db.getEventInfoForApp(eventId);
+    res.json({ success: true, info });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Error al obtener información del evento.' });
+  }
+});
+
+// 7. Get Table Companions
+app.get('/api/app/table-companions/:eventId/:tableNumber', async (req, res) => {
+  try {
+    const { eventId, tableNumber } = req.params;
+    const guests = await db.getGuests(eventId);
+    const companions = guests.filter(g => {
+      const t1 = (g.table || '').toLowerCase().trim();
+      const t2 = (tableNumber || '').toLowerCase().trim();
+      return t1 === t2 && t1 !== 'sin mesa';
+    }).map(g => ({
+      name: `${g.firstName || ''} ${g.lastName || ''}`.trim(),
+      table: g.table
+    }));
+
+    res.json({ success: true, companions });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Error al obtener compañeros de mesa.' });
+  }
+});
+
+// 8. Awards State (Categories, Nominees, Winner)
+app.get('/api/app/awards/:eventId', async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const state = await awardsEngine.getAwardsState(eventId);
+    res.json({ success: true, state });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Error al obtener los premios.' });
+  }
+});
+
+// 9. Vote for an Award Nominee (Guest Action)
+app.post('/api/app/awards/:eventId/vote', express.json(), async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const { awardId, nomineeId, voterId } = req.body;
+    if (!awardId || !nomineeId) {
+      return res.status(400).json({ success: false, error: 'Premio y nominado requeridos.' });
+    }
+    const result = await awardsEngine.voteAwardNominee(eventId, awardId, nomineeId, voterId || 'anon_guest');
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message || 'Error al emitir el voto.' });
+  }
+});
+
+// 10. Manage Awards (Admin Control Actions)
+app.post('/api/app/awards/:eventId/manage', express.json(), async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const { action, awardData, awardId, nominees, durationSeconds, winnerNomineeId } = req.body;
+
+    switch (action) {
+      case 'save_category':
+        const saved = await awardsEngine.saveAwardCategory(eventId, awardData);
+        return res.json({ success: true, awards: saved });
+      case 'delete_category':
+        const afterDelete = await awardsEngine.deleteAwardCategory(eventId, awardId);
+        return res.json({ success: true, awards: afterDelete });
+      case 'set_nominees':
+        const updatedNominees = await awardsEngine.setAwardNominees(eventId, awardId, nominees);
+        return res.json({ success: true, award: updatedNominees });
+      case 'start_voting':
+        const votingAward = await awardsEngine.startAwardVoting(eventId, awardId, durationSeconds || 90);
+        return res.json({ success: true, award: votingAward });
+      case 'declare_winner':
+        const winnerAward = await awardsEngine.declareAwardWinner(eventId, awardId, winnerNomineeId);
+        return res.json({ success: true, award: winnerAward });
+      case 'reset':
+        const resetAward = await awardsEngine.resetAward(eventId, awardId);
+        return res.json({ success: true, award: resetAward });
+      default:
+        return res.status(400).json({ success: false, error: 'Acción de administración no reconocida.' });
+    }
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message || 'Error en la gestión del premio.' });
+  }
+});
+
+// 11. SSE Stream for Salon Big Screen & Mobile Sync
+app.get('/api/app/awards-stream/:eventId', (req, res) => {
+  const { eventId } = req.params;
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders?.();
+
+  awardsEngine.subscribeAwardsStream(eventId, res);
+});
+
+// 12. Update Event Timeline (Admin)
+app.post('/api/app/timeline/:eventId', express.json(), async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const { timeline } = req.body;
+    if (!Array.isArray(timeline)) {
+      return res.status(400).json({ success: false, error: 'El cronograma debe ser una lista.' });
+    }
+    const saved = await db.saveEventTimeline(eventId, timeline);
+    res.json({ success: true, timeline: saved });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Error al guardar el cronograma.' });
   }
 });
 

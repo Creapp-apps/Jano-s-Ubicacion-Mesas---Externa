@@ -10,6 +10,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/style.css">
   <link rel="stylesheet" href="/css/hall-map.css">
+  <link rel="stylesheet" href="/css/preloader.css">
+  <script src="/js/theme-bootstrap.js"></script>
+  <script src="/js/preloader.js"></script>
   <style>
     /* Premium layout for single onboarding card */
     .onboarding-container {
@@ -61,6 +64,25 @@
   </style>
 </head>
 <body>
+
+  <!-- Premium Neutral Preloader -->
+  <div id="mifiestapp-preloader" class="mifiestapp-preloader">
+    <div class="preloader-backdrop"></div>
+    <div class="preloader-content">
+      <div class="preloader-logo-wrapper">
+        <div class="preloader-orbital-ring"></div>
+        <img src="/assets/coronamain.png" alt="miFiestAPP" class="preloader-crown-logo">
+      </div>
+      <div class="preloader-brand-title">miFiest<span>APP</span></div>
+      <div class="preloader-status-text">
+        <span class="preloader-dot-pulse"></span>
+        <span id="preloader-text-label">Buscando tu mesa...</span>
+      </div>
+      <div class="preloader-progress-track">
+        <div class="preloader-progress-bar"></div>
+      </div>
+    </div>
+  </div>
   
   <header>
     <div class="logo-container" style="display: flex; justify-content: center; align-items: center; margin-bottom: 15px;">

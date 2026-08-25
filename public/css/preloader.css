@@ -1,0 +1,166 @@
+/* ==========================================================================
+   miFiestAPP - Premium Neutral Preloader Component
+   Neutral dark luxury loading screen to eliminate FOUC / theme flickering
+   ========================================================================== */
+
+.mifiestapp-preloader {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  background: #09090c;
+  z-index: 999999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+              filter 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+              visibility 0.45s;
+  pointer-events: all;
+  user-select: none;
+  overflow: hidden;
+}
+
+.mifiestapp-preloader.fade-out {
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(1.04);
+  filter: blur(6px);
+  pointer-events: none;
+}
+
+/* Ambient Deep Glows */
+.preloader-backdrop {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 0.04) 0%, transparent 65%);
+}
+
+.preloader-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 20px;
+}
+
+/* Logo Wrapper with Orbital Rotating Ring */
+.preloader-logo-wrapper {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 22px;
+}
+
+.preloader-orbital-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: rgba(255, 255, 255, 0.85);
+  border-right-color: rgba(255, 255, 255, 0.25);
+  animation: preloaderSpin 1.4s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+  box-shadow: 0 0 25px rgba(255, 255, 255, 0.15);
+}
+
+.preloader-crown-logo {
+  height: 52px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.45));
+  animation: preloaderFloat 2.2s ease-in-out infinite alternate;
+}
+
+/* Brand Name */
+.preloader-brand-title {
+  font-family: 'Cinzel', 'Montserrat', serif;
+  font-size: 1.55rem;
+  font-weight: 800;
+  letter-spacing: 3.5px;
+  color: #ffffff;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+.preloader-brand-title span {
+  font-weight: 900;
+  background: linear-gradient(135deg, #ffffff 0%, rgba(255, 255, 255, 0.65) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Status Text with Pulse Dot */
+.preloader-status-text {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.86rem;
+  font-weight: 500;
+  letter-spacing: 1px;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 24px;
+}
+
+.preloader-dot-pulse {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 0 10px #ffffff;
+  animation: preloaderPulse 1.2s ease-in-out infinite;
+}
+
+/* Sleek Progress Track */
+.preloader-progress-track {
+  width: 140px;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+}
+
+.preloader-progress-bar {
+  width: 45%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, #ffffff, transparent);
+  border-radius: 999px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  animation: preloaderBar 1.6s ease-in-out infinite;
+}
+
+/* Animations */
+@keyframes preloaderSpin {
+  0% { transform: rotate(0deg) scale(0.96); }
+  50% { transform: rotate(180deg) scale(1.04); }
+  100% { transform: rotate(360deg) scale(0.96); }
+}
+
+@keyframes preloaderFloat {
+  0% { transform: translateY(0px) scale(0.97); }
+  100% { transform: translateY(-6px) scale(1.03); }
+}
+
+@keyframes preloaderPulse {
+  0%, 100% { opacity: 0.3; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1.25); }
+}
+
+@keyframes preloaderBar {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(320%); }
+}

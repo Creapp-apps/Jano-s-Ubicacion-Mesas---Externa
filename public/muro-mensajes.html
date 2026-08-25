@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Muro de Dedicatorias en Vivo • miFiestAPP</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Great+Vibes&family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Outfit:wght@300;400;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,400&family=Press+Start+2P&family=Righteous&family=Alex+Brush&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --primary-rgb: 212, 175, 55;
+      --gold-primary: #d4af37;
+      --gold-light: #f3e5ab;
+      --gold-gradient: linear-gradient(135deg, #f3e5ab 0%, #d4af37 50%, #aa7c11 100%);
+      --card-bg: rgba(14, 14, 18, 0.75);
+      --card-border: rgba(var(--primary-rgb), 0.25);
+      --font-title: 'Cinzel', serif;
+      --font-body: 'Montserrat', sans-serif;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      background: #050508;
+      color: #ffffff;
+      font-family: var(--font-body);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Ambient Background Canvas */
+    #ambient-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    /* Top Stage Header */
+    .stage-header {
+      position: fixed;
+      top: 30px;
+      left: 40px;
+      right: 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 20;
+      transition: opacity 0.5s ease;
+    }
+
+    .stage-event-title {
+      font-family: var(--font-title);
+      font-size: 1.5rem;
+      letter-spacing: 4px;
+      color: var(--gold-light);
+      text-transform: uppercase;
+      text-shadow: 0 0 20px rgba(var(--primary-rgb), 0.5);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .stage-badge {
+      background: rgba(var(--primary-rgb), 0.15);
+      border: 1px solid var(--gold-primary);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      letter-spacing: 2px;
+      font-family: var(--font-body);
+      color: #ffffff;
+      box-shadow: 0 0 15px rgba(var(--primary-rgb), 0.25);
+    }
+
+    .stage-offline-indicator {
+      display: none;
+      background: rgba(231, 76, 60, 0.2);
+      border: 1px solid #e74c3c;
+      color: #ff7675;
+      padding: 6px 12px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+    }
+
+    /* Main Central Stage Card Container */
+    .stage-content {
+      position: relative;
+      z-index: 10;
+      width: 85%;
+      max-width: 1200px;
+      min-height: 520px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .stage-card {
+      position: relative;
+      width: 100%;
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1.5px solid var(--card-border);
+      border-radius: 36px;
+      padding: 60px 80px;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.85), 0 0 40px rgba(var(--primary-rgb), 0.2);
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transform: translateY(20px) scale(0.96);
+      transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.5s ease;
+    }
+
+    .stage-card.visible {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    .stage-card.featured-card {
+      border-color: var(--gold-primary);
+      box-shadow: 0 30px 90px rgba(0, 0, 0, 0.9), 0 0 60px rgba(var(--primary-rgb), 0.4);
+    }
+
+    .quote-icon {
+      font-family: var(--font-title);
+      font-size: 6rem;
+      line-height: 1;
+      color: var(--gold-primary);
+      opacity: 0.35;
+      margin-bottom: -15px;
+      text-shadow: 0 0 25px rgba(var(--primary-rgb), 0.6);
+    }
+
+    .stage-message-text {
+      font-size: 2.2rem;
+      line-height: 1.45;
+      color: #ffffff;
+      font-weight: 400;
+      margin-bottom: 35px;
+      max-width: 950px;
+      text-shadow: 0 4px 15px rgba(0,0,0,0.8);
+      font-style: italic;
+    }
+
+    .stage-author-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .stage-divider {
+      width: 140px;
+      height: 2px;
+      background: var(--gold-gradient);
+      margin-bottom: 15px;
+      border-radius: 2px;
+      box-shadow: 0 0 10px rgba(var(--primary-rgb), 0.6);
+    }
+
+    .stage-author-name {
+      font-family: var(--font-title);
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--gold-light);
+      letter-spacing: 2px;
+      text-shadow: 0 0 15px rgba(var(--primary-rgb), 0.4);
+    }
+
+    .stage-featured-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--gold-primary);
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    /* Bottom HUD Controls (Fade on Idle) */
+    .stage-hud {
+      position: fixed;
+      bottom: 25px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      background: rgba(10, 10, 14, 0.85);
+      border: 1px solid var(--card-border);
+      padding: 10px 20px;
+      border-radius: 30px;
+      z-index: 30;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      backdrop-filter: blur(10px);
+    }
+
+    .stage-hud.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .hud-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--card-border);
+      color: #fff;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .hud-btn:hover {
+      background: rgba(var(--primary-rgb), 0.2);
+      border-color: var(--gold-primary);
+      color: var(--gold-light);
+    }
+
+    /* Progress Bar */
+    .stage-progress-track {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.05);
+      z-index: 25;
+    }
+
+    .stage-progress-fill {
+      width: 0%;
+      height: 100%;
+      background: var(--gold-gradient);
+      box-shadow: 0 0 10px rgba(var(--primary-rgb), 0.8);
+      transition: width 0.1s linear;
+    }
+
+    @media (max-width: 900px) {
+      .stage-card { padding: 40px 30px; border-radius: 24px; }
+      .stage-message-text { font-size: 1.4rem; margin-bottom: 20px; }
+      .stage-author-name { font-size: 1.2rem; }
+      .stage-event-title { font-size: 1.1rem; }
+      .quote-icon { font-size: 4rem; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="ambient-canvas"></canvas>
+
+  <header class="stage-header">
+    <div class="stage-event-title">
+      <span>✨</span>
+      <span id="stage-event-title">MIFIETAPP</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <span class="stage-offline-indicator" id="stage-offline-badge">⚡ MODO OFFLINE SEGURO</span>
+      <span class="stage-badge" id="stage-counter-badge">CARGANDO...</span>
+    </div>
+  </header>
+
+  <main class="stage-content">
+    <div class="stage-card" id="stage-card">
+      <div class="quote-icon">“</div>
+      <p class="stage-message-text" id="stage-message-text">Preparando el libro de deseos...</p>
+      <div class="stage-author-container">
+        <div class="stage-divider"></div>
+        <div class="stage-author-name" id="stage-author-name">Los Homenajeados</div>
+        <div class="stage-featured-badge" id="stage-featured-badge" style="display: none;">★ Mensaje Destacado ★</div>
+      </div>
+    </div>
+  </main>
+
+  <div class="stage-hud" id="stage-hud">
+    <button class="hud-btn" onclick="prevSlide()">◀ Anterior</button>
+    <button class="hud-btn" id="btn-play-pause" onclick="togglePlayPause()">⏸ Pausar</button>
+    <button class="hud-btn" onclick="nextSlide()">Siguiente ▶</button>
+    <button class="hud-btn" onclick="toggleFullscreen()">⛶ Pantalla Completa</button>
+  </div>
+
+  <div class="stage-progress-track">
+    <div class="stage-progress-fill" id="stage-progress-fill"></div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script>
+    (function () {
+      const urlParams = new URLSearchParams(window.location.search);
+      const eventId = urlParams.get('event') || 'default';
+      const LOCAL_STORAGE_KEY = `mifiestapp_stage_messages_${eventId}`;
+
+      let messages = [];
+      let currentIndex = 0;
+      let isPaused = false;
+      let slideTimer = null;
+      let progressTimer = null;
+      let progressStart = 0;
+      let currentDuration = 7000;
+      let hudTimeout = null;
+
+      // Theme Application
+      async function loadThemeAndConfig() {
+        try {
+          const configRes = await fetch(`/api/config?event=${encodeURIComponent(eventId)}`);
+          if (configRes.ok) {
+            const cfg = await configRes.json();
+            if (cfg.eventTitle) {
+              document.getElementById('stage-event-title').textContent = cfg.eventTitle;
+              document.title = `${cfg.eventTitle} • Muro de Mensajes`;
+            }
+          }
+
+          const themeRes = await fetch(`/api/theme?event=${encodeURIComponent(eventId)}`);
+          if (themeRes.ok) {
+            const theme = await themeRes.json();
+            if (theme.primaryRgb) document.documentElement.style.setProperty('--primary-rgb', theme.primaryRgb);
+            if (theme.goldPrimary) document.documentElement.style.setProperty('--gold-primary', theme.goldPrimary);
+            if (theme.goldLight) document.documentElement.style.setProperty('--gold-light', theme.goldLight);
+            if (theme.goldGradient) document.documentElement.style.setProperty('--gold-gradient', theme.goldGradient);
+            if (theme.accentFont) document.documentElement.style.setProperty('--font-title', theme.accentFont);
+          }
+        } catch (e) {
+          console.warn('Offline or fallback config active for stage.');
+        }
+      }
+
+      // Offline-First Messages Cache & Polling
+      async function fetchMessages() {
+        try {
+          const res = await fetch(`/api/messages?event=${encodeURIComponent(eventId)}`);
+          if (res.ok) {
+            const data = await res.json();
+            const fetched = (data && data.messages) ? data.messages.filter(m => m.approved !== false) : [];
+            if (fetched.length > 0) {
+              messages = fetched;
+              localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(messages));
+              updateOfflineBadge(false);
+            }
+          } else {
+            throw new Error('Server response not ok');
+          }
+        } catch (e) {
+          console.warn('Using cached messages from localStorage:', e.message);
+          updateOfflineBadge(true);
+          const cached = localStorage.getItem(LOCAL_STORAGE_KEY);
+          if (cached) {
+            try {
+              messages = JSON.parse(cached);
+            } catch (err) {}
+          }
+        }
+
+        // Fallback default message if no messages yet
+        if (!messages || messages.length === 0) {
+          messages = [
+            { author: 'Familia & Amigos', message: '¡Que esta noche sea mágica e inolvidable para todos!', featured: true },
+            { author: 'Invitados de Honor', message: '¡Gracias por hacernos parte de esta gran celebración!', featured: false }
+          ];
+        }
+
+        updateCounterBadge();
+      }
+
+      function updateOfflineBadge(isOffline) {
+        const badge = document.getElementById('stage-offline-badge');
+        if (badge) {
+          badge.style.display = (!navigator.onLine || isOffline) ? 'inline-block' : 'none';
+        }
+      }
+
+      function updateCounterBadge() {
+        const badge = document.getElementById('stage-counter-badge');
+        if (badge) {
+          badge.textContent = `${currentIndex + 1} DE ${messages.length} DEDICATORIAS`;
+        }
+      }
+
+      // Slide Presentation Engine
+      function displayCurrentMessage() {
+        if (!messages || messages.length === 0) return;
+        const msg = messages[currentIndex];
+        const card = document.getElementById('stage-card');
+        const textEl = document.getElementById('stage-message-text');
+        const authorEl = document.getElementById('stage-author-name');
+        const featBadge = document.getElementById('stage-featured-badge');
+
+        currentDuration = msg.featured ? 9000 : 7000;
+
+        // Transition Out
+        card.classList.remove('visible');
+
+        setTimeout(() => {
+          textEl.textContent = `"${msg.message}"`;
+          authorEl.textContent = msg.author || 'Invitado Especial';
+
+          if (msg.featured) {
+            card.classList.add('featured-card');
+            featBadge.style.display = 'inline-flex';
+          } else {
+            card.classList.remove('featured-card');
+            featBadge.style.display = 'none';
+          }
+
+          updateCounterBadge();
+
+          // Transition In
+          card.classList.add('visible');
+
+          startProgressBar(currentDuration);
+          startSlideTimer(currentDuration);
+        }, 600);
+      }
+
+      function startSlideTimer(duration) {
+        clearTimeout(slideTimer);
+        if (isPaused) return;
+
+        slideTimer = setTimeout(() => {
+          nextSlide();
+        }, duration);
+      }
+
+      function startProgressBar(duration) {
+        clearInterval(progressTimer);
+        const fill = document.getElementById('stage-progress-fill');
+        if (!fill) return;
+
+        fill.style.width = '0%';
+        progressStart = Date.now();
+
+        if (isPaused) return;
+
+        progressTimer = setInterval(() => {
+          const elapsed = Date.now() - progressStart;
+          const percent = Math.min(100, (elapsed / duration) * 100);
+          fill.style.width = `${percent}%`;
+          if (percent >= 100) {
+            clearInterval(progressTimer);
+          }
+        }, 50);
+      }
+
+      window.nextSlide = function () {
+        currentIndex = (currentIndex + 1) % messages.length;
+        displayCurrentMessage();
+      };
+
+      window.prevSlide = function () {
+        currentIndex = (currentIndex - 1 + messages.length) % messages.length;
+        displayCurrentMessage();
+      };
+
+      window.togglePlayPause = function () {
+        isPaused = !isPaused;
+        const btn = document.getElementById('btn-play-pause');
+        if (btn) {
+          btn.textContent = isPaused ? '▶ Reanudar' : '⏸ Pausar';
+        }
+        if (isPaused) {
+          clearTimeout(slideTimer);
+          clearInterval(progressTimer);
+        } else {
+          startSlideTimer(currentDuration);
+          startProgressBar(currentDuration);
+        }
+      };
+
+      window.toggleFullscreen = function () {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(() => {});
+        } else {
+          document.exitFullscreen().catch(() => {});
+        }
+      };
+
+      // Particle Canvas Animation (Thematic Ambient)
+      function initAmbientParticles() {
+        const canvas = document.getElementById('ambient-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resize() {
+          canvas.width = window.innerWidth;
+          canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        for (let i = 0; i < 50; i++) {
+          particles.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            size: Math.random() * 2.5 + 0.8,
+            speedY: Math.random() * 0.4 + 0.1,
+            speedX: (Math.random() - 0.5) * 0.3,
+            opacity: Math.random() * 0.7 + 0.2
+          });
+        }
+
+        function loop() {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          const computed = getComputedStyle(document.documentElement);
+          const primaryRgb = computed.getPropertyValue('--primary-rgb').trim() || '212, 175, 55';
+
+          particles.forEach(p => {
+            p.y -= p.speedY;
+            p.x += p.speedX;
+            if (p.y < 0) {
+              p.y = canvas.height + 10;
+              p.x = Math.random() * canvas.width;
+            }
+            ctx.fillStyle = `rgba(${primaryRgb}, ${p.opacity})`;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fill();
+          });
+
+          requestAnimationFrame(loop);
+        }
+        loop();
+      }
+
+      // HUD Auto-Hide on mouse inactivity
+      function showHudTemporarily() {
+        const hud = document.getElementById('stage-hud');
+        if (!hud) return;
+        hud.classList.add('active');
+        clearTimeout(hudTimeout);
+        hudTimeout = setTimeout(() => {
+          hud.classList.remove('active');
+        }, 3500);
+      }
+      window.addEventListener('mousemove', showHudTemporarily);
+      window.addEventListener('touchstart', showHudTemporarily);
+
+      // Keyboard Controls
+      window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space') {
+          e.preventDefault();
+          togglePlayPause();
+          showHudTemporarily();
+        } else if (e.code === 'ArrowRight') {
+          e.preventDefault();
+          nextSlide();
+          showHudTemporarily();
+        } else if (e.code === 'ArrowLeft') {
+          e.preventDefault();
+          prevSlide();
+          showHudTemporarily();
+        } else if (e.key === 'f' || e.key === 'F') {
+          e.preventDefault();
+          toggleFullscreen();
+        }
+      });
+
+      // Periodic Background Sync (every 18 seconds)
+      setInterval(async () => {
+        if (navigator.onLine) {
+          try {
+            const res = await fetch(`/api/messages?event=${encodeURIComponent(eventId)}`);
+            if (res.ok) {
+              const data = await res.json();
+              const fetched = (data && data.messages) ? data.messages.filter(m => m.approved !== false) : [];
+              if (fetched.length > 0) {
+                messages = fetched;
+                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(messages));
+                updateOfflineBadge(false);
+                updateCounterBadge();
+              }
+            }
+          } catch (e) {
+            updateOfflineBadge(true);
+          }
+        } else {
+          updateOfflineBadge(true);
+        }
+      }, 18000);
+
+      window.addEventListener('online', () => updateOfflineBadge(false));
+      window.addEventListener('offline', () => updateOfflineBadge(true));
+
+      // Startup
+      loadThemeAndConfig().then(() => {
+        fetchMessages().then(() => {
+          initAmbientParticles();
+          displayCurrentMessage();
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

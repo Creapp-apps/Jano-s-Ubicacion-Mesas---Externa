@@ -7,10 +7,32 @@
   <title>Panel de Administración | Jano's Eventos</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&family=Cormorant+Garamond:ital,wght@0,600;0,700;1,400&family=Montserrat:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,400&family=Syncopate:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/admin.css">
+  <link rel="stylesheet" href="/css/preloader.css">
+  <script src="/js/theme-bootstrap.js"></script>
+  <script src="/js/preloader.js"></script>
 </head>
 <body>
+
+  <!-- Premium Neutral Preloader -->
+  <div id="mifiestapp-preloader" class="mifiestapp-preloader">
+    <div class="preloader-backdrop"></div>
+    <div class="preloader-content">
+      <div class="preloader-logo-wrapper">
+        <div class="preloader-orbital-ring"></div>
+        <img src="/assets/coronamain.png" alt="miFiestAPP" class="preloader-crown-logo">
+      </div>
+      <div class="preloader-brand-title">miFiest<span>APP</span></div>
+      <div class="preloader-status-text">
+        <span class="preloader-dot-pulse"></span>
+        <span id="preloader-text-label">Cargando panel de control...</span>
+      </div>
+      <div class="preloader-progress-track">
+        <div class="preloader-progress-bar"></div>
+      </div>
+    </div>
+  </div>
 
   <!-- Screen Content -->
   <div class="admin-container">
@@ -19,10 +41,13 @@
         <a href="#" id="btn-back-to-portal" class="btn-back" title="Volver al Portal" style="margin-right: 4px;">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--gold-primary); display: block;"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
         </a>
-        <img src="/assets/textomain.png" alt="miFiestAPP" style="height: 26px; width: auto; object-fit: contain; filter: drop-shadow(0 2px 5px rgba(212,175,55,0.2));">
+        <div class="admin-brand-wrap" style="display: flex; align-items: center; gap: 8px;">
+          <img id="admin-header-crown" src="/assets/coronamain.png" alt="miFiestAPP" style="height: 24px; width: auto; object-fit: contain; transition: filter 0.4s ease;">
+          <span class="admin-brand-title" style="font-family: var(--accent-font, 'Cinzel', serif); font-size: 1.15rem; font-weight: 800; letter-spacing: 1.5px; background: var(--gold-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">miFiest<span style="font-weight: 900;">APP</span></span>
+        </div>
         <span style="color: rgba(255,255,255,0.15); font-size: 1rem; font-weight: 300;">|</span>
-        <h1 style="margin: 0; font-size: 1.1rem; letter-spacing: 0.5px; font-weight: 600;">Panel de Control</h1>
-        <button id="btn-toggle-guide" class="btn-header-action" style="padding: 6px 12px; font-size: 0.75rem; border-radius: 12px; margin-left: 15px; border-color: rgba(212,175,55,0.4); color: var(--gold-primary); display: flex; align-items: center; gap: 5px; cursor: pointer; background: transparent; transition: all 0.3s;" title="Ver guía interactiva">
+        <h1 id="admin-header-service-title" style="margin: 0; font-size: 1.05rem; letter-spacing: 0.5px; font-weight: 600; font-family: var(--accent-font, 'Cinzel', serif); color: var(--gold-primary);">Panel de Control</h1>
+        <button id="btn-toggle-guide" class="btn-header-action" style="padding: 6px 12px; font-size: 0.75rem; border-radius: 12px; margin-left: 15px; border-color: rgba(var(--primary-rgb), 0.4); color: var(--gold-primary); display: flex; align-items: center; gap: 5px; cursor: pointer; background: transparent; transition: all 0.3s;" title="Ver guía interactiva">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17" stroke-width="2"/></svg>
           Ayuda
         </button>
@@ -69,7 +94,7 @@
     <div id="tab-mesas" class="tab-content active">
       
       <!-- Sub-tabs Bar Navigation -->
-      <div class="subtabs-bar" style="display: flex; gap: 10px; margin-bottom: 24px; border-bottom: 1px solid rgba(212,175,55,0.15); padding-bottom: 12px; overflow-x: auto;">
+      <div class="subtabs-bar" style="display: flex; gap: 10px; margin-bottom: 24px; border-bottom: 1px solid rgba(var(--primary-rgb, 212, 175, 55), 0.18); padding-bottom: 12px; overflow-x: auto;">
         <button class="subtab-btn active" id="subtab-btn-plano" onclick="switchMesasSubtab('plano')">
           <span>🗺️ Plano de Mesas</span>
         </button>
@@ -258,7 +283,7 @@
     <div id="tab-fotos" class="tab-content">
       
       <!-- Sub-tabs Bar Navigation for Fotos -->
-      <div class="subtabs-bar" style="display: flex; gap: 10px; margin-bottom: 24px; border-bottom: 1px solid rgba(212,175,55,0.15); padding-bottom: 12px; overflow-x: auto;">
+      <div class="subtabs-bar" style="display: flex; gap: 10px; margin-bottom: 24px; border-bottom: 1px solid rgba(var(--primary-rgb, 212, 175, 55), 0.18); padding-bottom: 12px; overflow-x: auto;">
         <button class="subtab-btn active" id="subtab-btn-fotos-general" onclick="switchFotosSubtab('general')">
           <span>⚙️ General</span>
         </button>
@@ -593,12 +618,12 @@
                 <div id="inv-audio-upload-status" style="font-size: 0.75rem; color: #a1a1a6; margin-top: 6px; font-family: 'Montserrat', sans-serif; min-height: 15px; font-weight: 500;"></div>
 
                 <!-- Audio Player Preview Widget with Sound Waves -->
-                <div id="inv-audio-player-widget" class="audio-player-preview-card" style="display: none; margin-top: 12px; padding: 14px 18px; background: linear-gradient(145deg, rgba(20,20,25,0.95) 0%, rgba(10,10,14,0.98) 100%); border: 1px solid rgba(212,175,55,0.3); border-radius: 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05); transition: all 0.3s ease;">
+                <div id="inv-audio-player-widget" class="audio-player-preview-card" style="display: none; margin-top: 12px; padding: 14px 18px;">
                   <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px;">
                     
                     <!-- Controls (Play/Pause & Stop) -->
                     <div style="display: flex; align-items: center; gap: 8px;">
-                      <button type="button" id="btn-audio-play-pause" class="audio-player-btn btn-play-pause" title="Reproducir / Pausar" style="width: 40px; height: 40px; border-radius: 50%; background: var(--gold-gradient); border: none; color: #0b0b0c; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.25s ease; box-shadow: 0 0 15px rgba(212,175,55,0.4); flex-shrink: 0;">
+                      <button type="button" id="btn-audio-play-pause" class="audio-player-btn btn-play-pause" title="Reproducir / Pausar" style="width: 40px; height: 40px; border-radius: 50%; border: none; color: #0b0b0c; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.25s ease; flex-shrink: 0;">
                         <svg id="icon-audio-play" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
                         <svg id="icon-audio-pause" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="display: none;"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
                       </button>
@@ -668,7 +693,7 @@
               </div>
 
               <div style="margin-top: 25px;">
-                <button type="button" class="btn btn-primary btn-save-invitation-config" style="width: 100%; padding: 14px; border-radius: 20px; font-weight: bold;">Guardar Configuración</button>
+                <button type="button" onclick="saveAndAdvanceWizard('diseno')" class="btn btn-primary btn-save-invitation-config" style="width: 100%; padding: 14px; border-radius: 20px; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px;"><span>Guardar y Continuar a Diseño</span> ➔</button>
               </div>
             </div>
 
@@ -713,7 +738,22 @@
                   <div>
                     <div style="margin-bottom: 20px;">
                       <label style="display: flex; align-items: center; gap: 6px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">
-                        Diseño / Plantilla de la Invitación
+                        🎨 Modelo / Galería de Diseño de Tarjeta (7 Estilos Estéticos)
+                      </label>
+                      <select id="inv-card-model" class="form-control-admin" style="width: 100%; padding: 12px 18px; border-radius: 20px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif;">
+                        <option value="imperial-gold">👑 Imperial Gold & Velvet</option>
+                        <option value="terracotta">🍂 Terracotta</option>
+                        <option value="editorial-luxe">✨ Editorial Luxe</option>
+                        <option value="botanical">🌿 Botanical</option>
+                        <option value="cyber-neon">⚡ Cyber Neon & Dark Party</option>
+                        <option value="glitz-glam">💎 Glitz & Glam Diamond</option>
+                        <option value="retro-disco">🎉 Retro Disco Wave & Festival</option>
+                      </select>
+                    </div>
+
+                    <div style="margin-bottom: 20px;">
+                      <label style="display: flex; align-items: center; gap: 6px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">
+                        Formato / Navegación de la Invitación
                         <span class="info-help-tooltip">
                           ?
                           <span class="tooltip-text" style="width: 290px;">
@@ -742,7 +782,7 @@
                       </select>
                       
                       <!-- Dynamic Template Explanation Card -->
-                      <div id="inv-template-info-box" class="template-info-card" style="margin-top: 10px; padding: 12px 14px; background: rgba(212,175,55,0.06); border: 1px dashed rgba(212,175,55,0.35); border-radius: 16px; font-family: 'Montserrat', sans-serif;">
+                      <div id="inv-template-info-box" class="template-info-card" style="margin-top: 10px; padding: 12px 14px; background: rgba(var(--primary-rgb, 212, 175, 55), 0.06); border: 1px dashed rgba(var(--primary-rgb, 212, 175, 55), 0.35); border-radius: 16px; font-family: 'Montserrat', sans-serif;">
                         <!-- Updated via JS -->
                       </div>
                     </div>
@@ -781,14 +821,21 @@
                   </div>
 
                   <div>
-                    <div style="margin-bottom: 15px;">
-                      <label style="display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Diseño del Sello (Sobre Virtual)</label>
-                      <select id="inv-wax-seal" class="form-control-admin" style="width: 100%; padding: 12px 18px; border-radius: 20px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif;">
-                        <option value="rings">Alianzas de Boda (Rings)</option>
-                        <option value="heart">Corazón Romántico (Heart)</option>
-                        <option value="crown">Corona de Iniciales (Crown)</option>
-                        <option value="star">Celebración / Estrella (Star)</option>
-                      </select>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                      <div>
+                        <label style="display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Diseño del Sello</label>
+                        <select id="inv-wax-seal" class="form-control-admin" style="width: 100%; padding: 12px 18px; border-radius: 20px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif;">
+                          <option value="initials">Iniciales Grabadas 3D (Custom)</option>
+                          <option value="rings">Alianzas de Boda (Rings)</option>
+                          <option value="heart">Corazón Romántico (Heart)</option>
+                          <option value="crown">Corona de Iniciales (Crown)</option>
+                          <option value="star">Celebración / Estrella (Star)</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label style="display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Iniciales Grabadas (Sello)</label>
+                        <input type="text" id="inv-wax-seal-initials" class="form-control-admin" placeholder="Ej: S & M o 15" maxlength="8" style="width: 100%; padding: 12px 18px; border-radius: 20px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Playfair Display', serif; text-transform: uppercase; font-weight: 700; letter-spacing: 1px;">
+                      </div>
                     </div>
 
                     <!-- Imagen de Fondo -->
@@ -804,7 +851,7 @@
                         </label>
                         <div style="display: flex; gap: 8px;">
                           <input type="url" id="inv-bg-url" class="form-control-admin" placeholder="Ej. https://tuservidor.com/mi-fondo.jpg" style="flex: 1; padding: 10px 14px; border-radius: 15px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif; font-size: 0.8rem;">
-                          <button type="button" class="btn-trigger-upload" data-photo-id="bg" style="padding: 10px 14px; border-radius: 15px; background: var(--gold-gradient); color: #0b0b0c; border: none; font-weight: bold; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 5px; flex-shrink: 0; box-shadow: 0 4px 10px rgba(212,175,55,0.2); transition: all 0.3s;">
+                          <button type="button" class="btn-trigger-upload" data-photo-id="bg" style="padding: 10px 14px; border-radius: 15px; background: var(--gold-gradient); color: #0b0b0c; border: none; font-weight: bold; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 5px; flex-shrink: 0; box-shadow: 0 4px 10px rgba(var(--primary-rgb, 212, 175, 55), 0.25); transition: all 0.3s;">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                             Subir
                           </button>
@@ -886,11 +933,18 @@
                       <span class="toggle-slider"></span>
                       <span class="toggle-label">🏆 Recuerdo / VIP</span>
                     </label>
+
+                    <!-- Switch 9: Guest Messages & Dedications -->
+                    <label class="luxury-module-toggle">
+                      <input type="checkbox" id="mod-messages" class="inv-module-toggle" checked>
+                      <span class="toggle-slider"></span>
+                      <span class="toggle-label">💌 Muro de Mensajes</span>
+                    </label>
                   </div>
                 </div>
 
                 <div style="margin-top: 15px;">
-                  <button type="button" class="btn btn-primary btn-save-invitation-config" style="width: 100%; padding: 14px; border-radius: 20px; font-weight: bold;">Guardar Configuración</button>
+                  <button type="button" onclick="saveAndAdvanceWizard('fotos-inv')" class="btn btn-primary btn-save-invitation-config" style="width: 100%; padding: 14px; border-radius: 20px; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px;"><span>Guardar y Continuar a Fotos</span> ➔</button>
                 </div>
               </div>
 
@@ -962,7 +1016,7 @@
                         </div>
                         <div style="display: flex; gap: 8px;">
                           <input type="url" id="inv-photo-1" class="form-control-admin inv-photo-input" placeholder="https://ejemplo.com/foto1.jpg" style="flex: 1; padding: 10px 14px; border-radius: 15px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif; font-size: 0.8rem;">
-                          <button type="button" class="btn-trigger-upload" data-photo-id="1" style="padding: 10px 14px; border-radius: 15px; background: var(--gold-gradient); color: #0b0b0c; border: none; font-weight: bold; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 5px; flex-shrink: 0; box-shadow: 0 4px 10px rgba(212,175,55,0.2); transition: all 0.3s;">
+                          <button type="button" class="btn-trigger-upload" data-photo-id="1" style="padding: 10px 14px; border-radius: 15px; background: var(--gold-gradient); color: #0b0b0c; border: none; font-weight: bold; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 5px; flex-shrink: 0; box-shadow: 0 4px 10px rgba(var(--primary-rgb, 212, 175, 55), 0.25); transition: all 0.3s;">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                             Subir
                           </button>
@@ -972,7 +1026,7 @@
 
                     <!-- Photo 2 -->
                     <div class="individual-photo-row" data-photo-id="2" style="display: flex; gap: 15px; align-items: center; background: rgba(255,255,255,0.02); padding: 12px; border-radius: 20px; border: 1px solid var(--card-border); transition: all 0.3s;">
-                      <div class="photo-preview-box" style="width: 60px; height: 80px; border-radius: 10px; border: 1px solid var(--gold-primary); background: #111; overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 0 8px rgba(212,175,55,0.1);">
+                      <div class="photo-preview-box" style="width: 60px; height: 80px; border-radius: 10px; border: 1px solid var(--gold-primary); background: #111; overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 0 8px rgba(var(--primary-rgb, 212, 175, 55), 0.15);">
                         <img id="prev-thumb-2" src="" style="width: 100%; height: 100%; object-fit: cover; display: none;">
                         <span id="prev-icon-2" style="color: var(--gold-primary); font-size: 1.2rem;">⚜</span>
                       </div>
@@ -983,7 +1037,7 @@
                         </div>
                         <div style="display: flex; gap: 8px;">
                           <input type="url" id="inv-photo-2" class="form-control-admin inv-photo-input" placeholder="https://ejemplo.com/foto2.jpg" style="flex: 1; padding: 10px 14px; border-radius: 15px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif; font-size: 0.8rem;">
-                          <button type="button" class="btn-trigger-upload" data-photo-id="2" style="padding: 10px 14px; border-radius: 15px; background: var(--gold-gradient); color: #0b0b0c; border: none; font-weight: bold; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 5px; flex-shrink: 0; box-shadow: 0 4px 10px rgba(212,175,55,0.2); transition: all 0.3s;">
+                          <button type="button" class="btn-trigger-upload" data-photo-id="2" style="padding: 10px 14px; border-radius: 15px; background: var(--gold-gradient); color: #0b0b0c; border: none; font-weight: bold; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 5px; flex-shrink: 0; box-shadow: 0 4px 10px rgba(var(--primary-rgb, 212, 175, 55), 0.25); transition: all 0.3s;">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                             Subir
                           </button>
@@ -993,7 +1047,7 @@
 
                     <!-- Photo 3 -->
                     <div class="individual-photo-row" data-photo-id="3" style="display: flex; gap: 15px; align-items: center; background: rgba(255,255,255,0.02); padding: 12px; border-radius: 20px; border: 1px solid var(--card-border); transition: all 0.3s;">
-                      <div class="photo-preview-box" style="width: 60px; height: 80px; border-radius: 10px; border: 1px solid var(--gold-primary); background: #111; overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 0 8px rgba(212,175,55,0.1);">
+                      <div class="photo-preview-box" style="width: 60px; height: 80px; border-radius: 10px; border: 1px solid var(--gold-primary); background: #111; overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 0 8px rgba(var(--primary-rgb, 212, 175, 55), 0.15);">
                         <img id="prev-thumb-3" src="" style="width: 100%; height: 100%; object-fit: cover; display: none;">
                         <span id="prev-icon-3" style="color: var(--gold-primary); font-size: 1.2rem;">⚜</span>
                       </div>
@@ -1004,7 +1058,7 @@
                         </div>
                         <div style="display: flex; gap: 8px;">
                           <input type="url" id="inv-photo-3" class="form-control-admin inv-photo-input" placeholder="https://ejemplo.com/foto3.jpg" style="flex: 1; padding: 10px 14px; border-radius: 15px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif; font-size: 0.8rem;">
-                          <button type="button" class="btn-trigger-upload" data-photo-id="3" style="padding: 10px 14px; border-radius: 15px; background: var(--gold-gradient); color: #0b0b0c; border: none; font-weight: bold; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 5px; flex-shrink: 0; box-shadow: 0 4px 10px rgba(212,175,55,0.2); transition: all 0.3s;">
+                          <button type="button" class="btn-trigger-upload" data-photo-id="3" style="padding: 10px 14px; border-radius: 15px; background: var(--gold-gradient); color: #0b0b0c; border: none; font-weight: bold; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 5px; flex-shrink: 0; box-shadow: 0 4px 10px rgba(var(--primary-rgb, 212, 175, 55), 0.25); transition: all 0.3s;">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                             Subir
                           </button>
@@ -1014,7 +1068,7 @@
 
                     <!-- Photo 4 -->
                     <div class="individual-photo-row" data-photo-id="4" style="display: flex; gap: 15px; align-items: center; background: rgba(255,255,255,0.02); padding: 12px; border-radius: 20px; border: 1px solid var(--card-border); transition: all 0.3s;">
-                      <div class="photo-preview-box" style="width: 60px; height: 80px; border-radius: 10px; border: 1px solid var(--gold-primary); background: #111; overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 0 8px rgba(212,175,55,0.1);">
+                      <div class="photo-preview-box" style="width: 60px; height: 80px; border-radius: 10px; border: 1px solid var(--gold-primary); background: #111; overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 0 8px rgba(var(--primary-rgb, 212, 175, 55), 0.15);">
                         <img id="prev-thumb-4" src="" style="width: 100%; height: 100%; object-fit: cover; display: none;">
                         <span id="prev-icon-4" style="color: var(--gold-primary); font-size: 1.2rem;">⚜</span>
                       </div>
@@ -1025,7 +1079,7 @@
                         </div>
                         <div style="display: flex; gap: 8px;">
                           <input type="url" id="inv-photo-4" class="form-control-admin inv-photo-input" placeholder="https://ejemplo.com/foto4.jpg" style="flex: 1; padding: 10px 14px; border-radius: 15px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif; font-size: 0.8rem;">
-                          <button type="button" class="btn-trigger-upload" data-photo-id="4" style="padding: 10px 14px; border-radius: 15px; background: var(--gold-gradient); color: #0b0b0c; border: none; font-weight: bold; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 5px; flex-shrink: 0; box-shadow: 0 4px 10px rgba(212,175,55,0.2); transition: all 0.3s;">
+                          <button type="button" class="btn-trigger-upload" data-photo-id="4" style="padding: 10px 14px; border-radius: 15px; background: var(--gold-gradient); color: #0b0b0c; border: none; font-weight: bold; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 5px; flex-shrink: 0; box-shadow: 0 4px 10px rgba(var(--primary-rgb, 212, 175, 55), 0.25); transition: all 0.3s;">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                             Subir
                           </button>
@@ -1035,7 +1089,7 @@
 
                     <!-- Photo 5 -->
                     <div class="individual-photo-row" data-photo-id="5" style="display: flex; gap: 15px; align-items: center; background: rgba(255,255,255,0.02); padding: 12px; border-radius: 20px; border: 1px solid var(--card-border); transition: all 0.3s;">
-                      <div class="photo-preview-box" style="width: 60px; height: 80px; border-radius: 10px; border: 1px solid var(--gold-primary); background: #111; overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 0 8px rgba(212,175,55,0.1);">
+                      <div class="photo-preview-box" style="width: 60px; height: 80px; border-radius: 10px; border: 1px solid var(--gold-primary); background: #111; overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 0 8px rgba(var(--primary-rgb, 212, 175, 55), 0.15);">
                         <img id="prev-thumb-5" src="" style="width: 100%; height: 100%; object-fit: cover; display: none;">
                         <span id="prev-icon-5" style="color: var(--gold-primary); font-size: 1.2rem;">⚜</span>
                       </div>
@@ -1046,7 +1100,7 @@
                         </div>
                         <div style="display: flex; gap: 8px;">
                           <input type="url" id="inv-photo-5" class="form-control-admin inv-photo-input" placeholder="https://ejemplo.com/foto5.jpg" style="flex: 1; padding: 10px 14px; border-radius: 15px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif; font-size: 0.8rem;">
-                          <button type="button" class="btn-trigger-upload" data-photo-id="5" style="padding: 10px 14px; border-radius: 15px; background: var(--gold-gradient); color: #0b0b0c; border: none; font-weight: bold; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 5px; flex-shrink: 0; box-shadow: 0 4px 10px rgba(212,175,55,0.2); transition: all 0.3s;">
+                          <button type="button" class="btn-trigger-upload" data-photo-id="5" style="padding: 10px 14px; border-radius: 15px; background: var(--gold-gradient); color: #0b0b0c; border: none; font-weight: bold; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 5px; flex-shrink: 0; box-shadow: 0 4px 10px rgba(var(--primary-rgb, 212, 175, 55), 0.25); transition: all 0.3s;">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                             Subir
                           </button>
@@ -1095,7 +1149,7 @@
             </div>
 
             <div style="margin-top: 25px;">
-              <button type="button" class="btn btn-primary btn-save-invitation-config" style="width: 100%; padding: 14px; border-radius: 20px; font-weight: bold;">Guardar Configuración</button>
+              <button type="button" onclick="saveAndAdvanceWizard('regalos')" class="btn btn-primary btn-save-invitation-config" style="width: 100%; padding: 14px; border-radius: 20px; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px;"><span>Guardar y Continuar a Regalos</span> ➔</button>
             </div>
           </div>
         </div>
@@ -1126,7 +1180,7 @@
               </div>
 
               <div style="margin-top: 25px;">
-                <button type="button" class="btn btn-primary btn-save-invitation-config" style="width: 100%; padding: 14px; border-radius: 20px; font-weight: bold;">Guardar Configuración</button>
+                <button type="button" onclick="saveAndAdvanceWizard('confirmaciones')" class="btn btn-primary btn-save-invitation-config" style="width: 100%; padding: 14px; border-radius: 20px; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px;"><span>Guardar y Continuar a Confirmaciones</span> ➔</button>
               </div>
             </div>
           </div>
@@ -1188,6 +1242,10 @@
               </div>
             </div>
           </div>
+
+          <div style="margin-top: 25px;">
+            <button type="button" onclick="saveAndAdvanceWizard('respuestas')" class="btn btn-primary" style="width: 100%; padding: 14px; border-radius: 20px; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px;"><span>Ver Respuestas de Invitados</span> ➔</button>
+          </div>
         </div>
       </div>
 
@@ -1216,6 +1274,47 @@
               <tbody id="rsvp-table-body">
                 <tr>
                   <td colspan="5" style="text-align: center; padding: 20px; color: var(--text-muted);">Cargando confirmaciones de asistencia...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Panel de Dedicatorias, Pantalla Salón y Video .MP4 -->
+        <div class="panel" style="margin-top: 25px; border-color: var(--card-border-active);">
+          <div class="panel-header-flex" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+            <div>
+              <h2 style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                💌 Dedicatorias de Invitados & Video Show
+              </h2>
+              <p style="color: var(--text-muted); font-size: 0.8rem; margin: 4px 0 0 0;">
+                Mensajes dejados por tus invitados. Proyectalos en las pantallas LED del salón o exportá el video .MP4 para el DJ.
+              </p>
+            </div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+              <button type="button" id="btn-open-messages-wall" class="btn btn-secondary" style="font-size: 0.8rem; display: flex; align-items: center; gap: 6px;" onclick="openMessagesWallScreen()">
+                🖥️ Abrir Pantalla Salón / DJ
+              </button>
+              <button type="button" id="btn-export-messages-video" class="btn btn-primary" style="font-size: 0.8rem; display: flex; align-items: center; gap: 6px;" onclick="openVideoExportModal()">
+                🎥 Exportar Video .MP4
+              </button>
+            </div>
+          </div>
+
+          <div class="table-wrapper" style="margin-top: 20px; max-height: 400px; overflow-y: auto;">
+            <table class="guests-table" style="font-size: 0.8rem;">
+              <thead>
+                <tr>
+                  <th style="width: 22%;">Invitado</th>
+                  <th>Mensaje / Dedicatoria</th>
+                  <th style="width: 15%;">Origen</th>
+                  <th style="width: 15%; text-align: center;">Estado</th>
+                  <th style="width: 140px; text-align: center;">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="messages-table-body">
+                <tr>
+                  <td colspan="5" style="text-align: center; padding: 20px; color: var(--text-muted);">Cargando dedicatorias de invitados...</td>
                 </tr>
               </tbody>
             </table>
@@ -1331,122 +1430,225 @@
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             Configuración de Preguntas
           </h2>
-          <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; margin-bottom: 20px;">
-            Personalizá las preguntas de la trivia. Los novios o agasajados podrán jugar con sus invitados.
+          <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; margin-bottom: 15px;">
+            Elegí una plantilla temática lista para usar en 1 clic, utilizá el asistente inteligente o personalizá cada pregunta a tu gusto.
           </p>
 
-          <!-- Estado de la Trivia (Ocultado para simplicidad, siempre habilitada) -->
+          <!-- Quick Templates Bar -->
+          <div class="trivia-templates-box">
+            <div class="trivia-templates-header">
+              <div class="trivia-templates-title-wrap">
+                <span class="trivia-templates-badge-dot"></span>
+                <span class="trivia-templates-title">Plantillas Temáticas en 1 Clic</span>
+              </div>
+              <button type="button" class="btn-trivia-ai-trigger" id="btn-open-trivia-ai-modal">
+                <span style="font-size: 0.95rem;">✨</span>
+                <span>Asistente Inteligente IA</span>
+              </button>
+            </div>
+            
+            <div class="trivia-templates-grid">
+              <button type="button" class="btn-trivia-tpl btn-trivia-tpl-card" data-tpl="casamiento" title="Cargar plantilla de Casamientos">
+                <div class="tpl-card-top">
+                  <span class="tpl-card-icon">💍</span>
+                  <span class="tpl-card-pill">5 Qs</span>
+                </div>
+                <div class="tpl-card-name">Casamientos</div>
+                <div class="tpl-card-desc">Boda & Romance</div>
+              </button>
+
+              <button type="button" class="btn-trivia-tpl-card btn-trivia-tpl" data-tpl="quince_anos" title="Cargar plantilla de 15 Años">
+                <div class="tpl-card-top">
+                  <span class="tpl-card-icon">👑</span>
+                  <span class="tpl-card-pill">5 Qs</span>
+                </div>
+                <div class="tpl-card-name">15 Años</div>
+                <div class="tpl-card-desc">Mis Quince</div>
+              </button>
+
+              <button type="button" class="btn-trivia-tpl-card btn-trivia-tpl" data-tpl="cumple_adultos" title="Cargar plantilla de Cumpleaños">
+                <div class="tpl-card-top">
+                  <span class="tpl-card-icon">🎉</span>
+                  <span class="tpl-card-pill">5 Qs</span>
+                </div>
+                <div class="tpl-card-name">Cumpleaños</div>
+                <div class="tpl-card-desc">Anécdotas & Hitos</div>
+              </button>
+
+              <button type="button" class="btn-trivia-tpl-card btn-trivia-tpl" data-tpl="corporativo" title="Cargar plantilla Corporativa">
+                <div class="tpl-card-top">
+                  <span class="tpl-card-icon">💼</span>
+                  <span class="tpl-card-pill">4 Qs</span>
+                </div>
+                <div class="tpl-card-name">Corporativo</div>
+                <div class="tpl-card-desc">Team & Empresa</div>
+              </button>
+
+              <button type="button" class="btn-trivia-tpl-card btn-trivia-tpl" data-tpl="musica_fiesta" title="Cargar plantilla de Música y Fiesta">
+                <div class="tpl-card-top">
+                  <span class="tpl-card-icon">🎵</span>
+                  <span class="tpl-card-pill">3 Qs</span>
+                </div>
+                <div class="tpl-card-name">Música & Fiesta</div>
+                <div class="tpl-card-desc">Hits & Pista</div>
+              </button>
+            </div>
+          </div>
+
+          <!-- Estado de la Trivia -->
           <div style="display: none;">
             <label style="display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 600;">Estado de la Trivia</label>
-            <select id="trivia-enabled-toggle" class="form-control-admin" style="width: 100%; padding: 12px 18px; border-radius: 20px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: 'Montserrat', sans-serif;">
+            <select id="trivia-enabled-toggle" class="form-control-admin" style="width: 100%;">
               <option value="false">Deshabilitada</option>
               <option value="true" selected>Habilitada</option>
             </select>
           </div>
 
           <div id="trivia-questions-editor-section">
-            <h3 style="font-size: 0.95rem; font-family: 'Cinzel', serif; color: var(--gold-light); margin-bottom: 12px; text-align: left;">Listado de Preguntas</h3>
-            <div id="trivia-questions-list" style="display: flex; flex-direction: column; gap: 15px; max-height: 550px; overflow-y: auto; margin-bottom: 20px; padding-right: 5px; padding-bottom: 60px;">
-              <!-- Question items injected here -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <h3 style="font-size: 0.95rem; font-family: 'Cinzel', serif; color: var(--gold-light); text-align: left; margin: 0;">
+                Preguntas de la Trivia (<span id="admin-trivia-q-count">0</span>)
+              </h3>
             </div>
             
-            <button type="button" class="btn btn-header-action" id="btn-add-trivia-question" style="width: 100%; margin-bottom: 15px;">+ Agregar Nueva Pregunta</button>
-            <button type="button" class="btn btn-primary" id="btn-save-trivia-questions" style="width: 100%;">Guardar Preguntas</button>
+            <div id="trivia-questions-list" style="display: flex; flex-direction: column; gap: 15px; max-height: 520px; overflow-y: auto; margin-bottom: 20px; padding-right: 5px; padding-bottom: 40px;">
+              <!-- Question items injected dynamically -->
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+              <button type="button" class="btn btn-header-action" id="btn-add-trivia-question" style="width: 100%;">+ Nueva Pregunta</button>
+              <button type="button" class="btn btn-primary" id="btn-save-trivia-questions" style="width: 100%;">Guardar Preguntas</button>
+            </div>
           </div>
         </div>
 
-        <!-- Right Column: Control en Vivo -->
+        <!-- Right Column: Control en Vivo y Host DJ -->
         <div class="panel">
           <h2>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-            Consola del Organizador
+            Consola del Conductor / DJ
           </h2>
-          <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; margin-bottom: 20px;">
-            Guía el ritmo del juego desde aquí. La pantalla gigante y los celulares de los invitados se actualizarán en tiempo real.
+          <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; margin-bottom: 15px;">
+            Guía el show desde aquí. La pantalla gigante y los celulares de los invitados se sincronizan automáticamente.
           </p>
 
-          <button type="button" class="btn btn-primary" id="btn-admin-trivia-projector" style="width: 100%; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 8px;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="stroke: #0b0b0c;"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-            Proyectar en pantalla
+          <button type="button" class="btn btn-primary" id="btn-admin-trivia-projector" style="width: 100%; margin-bottom: 16px; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            Abrir Pantalla Gigante Proyector 📽️
           </button>
 
-          <!-- Status Indicator -->
-          <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 15px; border: 1px solid var(--card-border); margin-bottom: 20px; text-align: left;">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <!-- Status Indicator & Live Response Meter -->
+          <div style="background: rgba(0,0,0,0.25); padding: 15px; border-radius: 16px; border: 1px solid var(--card-border); margin-bottom: 16px; text-align: left;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
               <span style="font-weight: 600; color: var(--gold-light);">Estado actual:</span>
-              <span id="admin-trivia-status-badge" style="background: var(--gold-primary); color: #000; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">Inactivo</span>
+              <span id="admin-trivia-status-badge" style="background: var(--gold-primary); color: #000; padding: 2px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">Inactivo</span>
             </div>
-            <div style="display: flex; justify-content: space-between;">
-              <span style="font-weight: 600; color: var(--gold-light);">Pregunta:</span>
-              <span id="admin-trivia-question-index">-</span>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+              <span style="font-weight: 600; color: var(--gold-light);">Fase del Juego:</span>
+              <span id="admin-trivia-question-index" style="color: #fff; font-weight: 600;">-</span>
             </div>
-          </div>
-
-          <!-- Auto Mode Toggle (Oculto, forzado a verdadero) -->
-          <div style="display: none;">
-            <input type="checkbox" id="check-admin-trivia-auto" checked>
-          </div>
-
-          <!-- Timer Duration Modifier (Siempre visible) -->
-          <div id="container-admin-trivia-timer-duration" class="trivia-timer-modifier visible" style="background: rgba(212, 175, 55, 0.03); border-radius: 12px; border: 1px solid transparent; display: flex !important; margin-bottom: 20px !important;">
-            <div style="display: flex; flex-direction: column;">
-              <span style="font-weight: 600; color: var(--gold-light); font-size: 0.85rem;">Duración del Timer</span>
-              <span style="color: var(--text-muted); font-size: 0.7rem;">Segundos para responder</span>
-            </div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <input type="number" id="input-admin-trivia-duration" min="5" max="120" value="20" style="width: 60px; background: rgba(0, 0, 0, 0.6); border: 1px solid var(--gold-primary); color: white; border-radius: 6px; padding: 4px 8px; text-align: center; font-size: 0.85rem; font-weight: bold; outline: none;">
-              <span style="color: var(--gold-primary); font-size: 0.85rem; font-weight: 500;">seg</span>
-            </div>
-          </div>
-
-          <!-- Controls Grid Simplified -->
-          <div class="trivia-controls-grid" style="display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 25px;">
-            <div id="btn-admin-trivia-play-wrapper" style="position: relative; width: 100%;">
-              <button type="button" class="btn btn-primary" id="btn-admin-trivia-play" style="width: 100%; font-size: 1.1rem; padding: 15px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; border-radius: 30px; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3); transition: all 0.3s ease;">
-                Iniciar Juego ▶️
-              </button>
-              <div id="trivia-play-tooltip" style="display: none; position: absolute; bottom: 110%; left: 50%; transform: translateX(-50%); background: rgba(220, 53, 69, 0.95); color: #fff; padding: 10px 16px; font-size: 0.8rem; font-weight: 600; border-radius: 10px; white-space: nowrap; box-shadow: 0 8px 24px rgba(220, 53, 69, 0.4); z-index: 1000; pointer-events: none; transition: opacity 0.2s ease, transform 0.2s ease; opacity: 0; border: 1px solid rgba(255, 255, 255, 0.2); backdrop-filter: blur(5px);">
-                Debes guardar tus preguntas antes de poder iniciar el juego ⚠️
-                <div style="position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border-width: 6px; border-style: solid; border-color: rgba(220, 53, 69, 0.95) transparent transparent transparent;"></div>
+            
+            <!-- Live Progress Bar -->
+            <div style="margin-top: 8px;">
+              <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 4px; color: var(--text-muted);">
+                <span>Respuestas en vivo:</span>
+                <span id="admin-trivia-meter-text" style="font-weight: 700; color: var(--gold-light);">0 / 0 (0%)</span>
+              </div>
+              <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.08); border-radius: 10px; overflow: hidden;">
+                <div id="admin-trivia-progress-bar" style="width: 0%; height: 100%; background: var(--gold-gradient); transition: width 0.3s ease;"></div>
               </div>
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-              <button type="button" class="btn btn-secondary" id="btn-admin-trivia-stop" style="font-size: 0.9rem; padding: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; border-radius: 20px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid rgba(255, 255, 255, 0.15); background: rgba(255, 255, 255, 0.05); color: #fff; transition: all 0.3s ease;">
-                Detener Juego ⏸️
-              </button>
-              <button type="button" class="btn btn-danger" id="btn-admin-trivia-reset" style="font-size: 0.9rem; padding: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; border-radius: 20px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid rgba(220, 53, 69, 0.5); background: rgba(220, 53, 69, 0.1); color: #ff6b6b; transition: all 0.3s ease;">
-                Reiniciar Juego 🔄
-              </button>
-            </div>
           </div>
 
-          <!-- Hidden manual controls for testing/compatibility -->
-          <div style="display: none;">
-            <button type="button" class="btn btn-danger" id="btn-admin-trivia-init">Inicializar / Reiniciar Juego</button>
-            <button type="button" class="btn btn-primary" id="btn-admin-trivia-start">Lanzar Pregunta</button>
-            <button type="button" class="btn btn-primary" id="btn-admin-trivia-reveal">Revelar Respuesta</button>
-            <button type="button" class="btn btn-header-action" id="btn-admin-trivia-leaderboard">Mostrar Posiciones</button>
-            <button type="button" class="btn btn-header-action" id="btn-admin-trivia-next">Siguiente Pregunta</button>
+          <!-- Controls Grid -->
+          <div class="trivia-controls-grid" style="display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 16px;">
+            <div id="btn-admin-trivia-play-wrapper" style="position: relative; width: 100%;">
+              <button type="button" class="btn btn-primary" id="btn-admin-trivia-play" style="width: 100%; font-size: 1rem; padding: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; border-radius: 30px; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                Iniciar Juego ▶️
+              </button>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+              <button type="button" class="btn btn-trivia-control-pause" id="btn-admin-trivia-stop">
+                <span>⏸️</span>
+                <span>Pausar</span>
+              </button>
+              <button type="button" class="btn btn-trivia-control-podium" id="btn-admin-trivia-jump-podium">
+                <span>🏆</span>
+                <span>Saltar a Podio</span>
+              </button>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+              <button type="button" class="btn btn-trivia-control-export" id="btn-admin-trivia-export">
+                <span>📥</span>
+                <span>Exportar CSV</span>
+              </button>
+              <button type="button" class="btn btn-trivia-control-reset" id="btn-admin-trivia-reset">
+                <span>🔄</span>
+                <span>Reiniciar</span>
+              </button>
+            </div>
           </div>
 
           <!-- Active Players list -->
-          <h3 style="font-size: 0.95rem; font-family: 'Cinzel', serif; color: var(--gold-light); margin-bottom: 12px; text-align: left;">Jugadores Conectados (<span id="admin-trivia-players-count">0</span>)</h3>
-          <div class="table-wrapper" style="max-height: 200px; overflow-y: auto;">
+          <h3 style="font-size: 0.95rem; font-family: 'Cinzel', serif; color: var(--gold-light); margin-bottom: 10px; text-align: left;">Jugadores Conectados (<span id="admin-trivia-players-count">0</span>)</h3>
+          <div class="table-wrapper" style="max-height: 180px; overflow-y: auto;">
             <table class="guests-table" style="font-size: 0.75rem;">
               <thead>
                 <tr>
                   <th>Pos</th>
                   <th>Jugador</th>
+                  <th>Racha</th>
                   <th style="text-align: right;">Puntos</th>
                 </tr>
               </thead>
               <tbody id="admin-trivia-players-tbody">
                 <tr>
-                  <td colspan="3" style="text-align: center; padding: 15px; color: var(--text-muted);">Ningún jugador conectado.</td>
+                  <td colspan="4" style="text-align: center; padding: 15px; color: var(--text-muted);">Ningún jugador conectado.</td>
                 </tr>
               </tbody>
             </table>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI / SMART QUESTION GENERATOR MODAL -->
+    <div id="modal-trivia-ai" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 10000; align-items: center; justify-content: center; backdrop-filter: blur(8px);">
+      <div class="modal-content" style="background: rgba(18, 14, 10, 0.96); border: 1.5px solid var(--gold-primary); border-radius: 24px; padding: 28px; width: 92%; max-width: 520px; box-shadow: 0 20px 60px rgba(0,0,0,0.9); text-align: left;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+          <h2 style="font-family: 'Cinzel', serif; font-size: 1.3rem; color: var(--gold-light); margin: 0;">✨ Asistente de Preguntas</h2>
+          <button type="button" id="btn-close-trivia-ai-modal" style="background: transparent; border: none; color: #fff; font-size: 1.5rem; cursor: pointer;">&times;</button>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; margin-bottom: 16px;">
+          Ingresá los datos del evento y generá preguntas personalizadas al instante.
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px;">
+          <div>
+            <label style="display: block; font-size: 0.72rem; text-transform: uppercase; color: var(--gold-light); margin-bottom: 4px; font-weight: 700;">Tipo de Fiesta / Evento</label>
+            <select id="trivia-ai-event-type" class="form-control-admin" style="width: 100%;">
+              <option value="casamiento">💍 Casamiento / Boda</option>
+              <option value="quince_anos">👑 15 Años</option>
+              <option value="cumple_adultos">🎉 Cumpleaños Adultos</option>
+              <option value="corporativo">💼 Fiesta Corporativa / Empresa</option>
+              <option value="musica_fiesta">🎵 Música & Desafío de Fiesta</option>
+            </select>
+          </div>
+
+          <div>
+            <label style="display: block; font-size: 0.72rem; text-transform: uppercase; color: var(--gold-light); margin-bottom: 4px; font-weight: 700;">Nombre de Novios / Homenajeados</label>
+            <input type="text" id="trivia-ai-names" class="form-control-admin" placeholder="Ej. Sofía y Mateo" style="width: 100%;">
+          </div>
+
+          <div>
+            <label style="display: block; font-size: 0.72rem; text-transform: uppercase; color: var(--gold-light); margin-bottom: 4px; font-weight: 700;">Anécdota o detalle divertido (Opcional)</label>
+            <textarea id="trivia-ai-details" class="form-control-admin" rows="2" placeholder="Ej. Se conocieron en Bariloche y casi pierden el vuelo..." style="width: 100%; resize: none;"></textarea>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button type="button" class="btn btn-secondary" id="btn-cancel-trivia-ai" style="padding: 10px 18px; border-radius: 14px;">Cancelar</button>
+          <button type="button" class="btn btn-primary" id="btn-submit-trivia-ai" style="padding: 10px 20px; border-radius: 14px; font-weight: 700;">Generar y Cargar Preguntas</button>
         </div>
       </div>
     </div>
@@ -2264,6 +2466,7 @@
     }
 
     /* Help Tooltip System */
+    /* Help Tooltip System */
     .info-help-tooltip {
       position: relative;
       display: inline-flex;
@@ -2272,8 +2475,8 @@
       width: 16px;
       height: 16px;
       border-radius: 50%;
-      background: rgba(212, 175, 55, 0.12);
-      border: 1px solid rgba(212, 175, 55, 0.4);
+      background: rgba(var(--primary-rgb, 212, 175, 55), 0.15);
+      border: 1px solid rgba(var(--primary-rgb, 212, 175, 55), 0.4);
       color: var(--gold-primary);
       font-size: 0.65rem;
       cursor: help;
@@ -2288,7 +2491,7 @@
       background: var(--gold-gradient);
       color: #0b0b0c;
       border-color: rgba(255, 255, 255, 0.1);
-      box-shadow: 0 0 10px rgba(212, 175, 55, 0.4);
+      box-shadow: 0 0 12px rgba(var(--primary-rgb, 212, 175, 55), 0.5);
     }
 
     .info-help-tooltip .tooltip-text {
@@ -2296,7 +2499,7 @@
       opacity: 0;
       width: 280px;
       background: linear-gradient(135deg, rgba(22, 22, 26, 0.98) 0%, rgba(12, 12, 15, 0.99) 100%);
-      border: 1px solid rgba(212, 175, 55, 0.3);
+      border: 1px solid rgba(var(--secondary-rgb, var(--primary-rgb, 212, 175, 55)), 0.35);
       color: #f5f5f7;
       text-align: left;
       border-radius: 16px;
@@ -2306,9 +2509,9 @@
       bottom: 130%;
       left: 50%;
       transform: translateX(-50%) translateY(10px);
-      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6), 
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7), 
                   inset 0 1px 0 rgba(255, 255, 255, 0.05),
-                  0 0 20px rgba(212, 175, 55, 0.05);
+                  0 0 25px rgba(var(--secondary-rgb, var(--primary-rgb, 212, 175, 55)), 0.15);
       font-family: 'Montserrat', sans-serif;
       font-size: 0.8rem;
       line-height: 1.6;
@@ -2364,8 +2567,8 @@
       width: 18px;
       height: 18px;
       border-radius: 50%;
-      background: rgba(212, 175, 55, 0.15);
-      border: 1px solid rgba(212, 175, 55, 0.3);
+      background: rgba(var(--secondary-rgb, var(--primary-rgb, 212, 175, 55)), 0.18);
+      border: 1px solid rgba(var(--secondary-rgb, var(--primary-rgb, 212, 175, 55)), 0.45);
       color: var(--gold-primary);
       font-size: 0.65rem;
       font-weight: bold;
@@ -2844,14 +3047,14 @@
 
   <!-- Modal Toast Central: Guía interactiva por servicio -->
   <div id="service-help-modal" class="modal-backdrop-smooth" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); z-index: 10000; align-items: center; justify-content: center; padding: 20px;">
-    <div class="modal-card-smooth" style="background: linear-gradient(145deg, rgba(14, 14, 18, 0.99) 0%, rgba(6, 6, 10, 0.99) 100%); border: 1.5px solid var(--gold-primary); border-radius: 24px; width: 100%; max-width: 540px; padding: 28px; box-shadow: 0 25px 65px rgba(0,0,0,0.95), 0 0 40px rgba(212,175,55,0.22); position: relative; max-height: 90vh; overflow-y: auto;">
+    <div class="modal-card-smooth" style="background: linear-gradient(145deg, rgba(14, 14, 18, 0.99) 0%, rgba(6, 6, 10, 0.99) 100%); border: 1.5px solid var(--gold-primary); border-radius: 24px; width: 100%; max-width: 540px; padding: 28px; box-shadow: 0 25px 65px rgba(0,0,0,0.95), 0 0 40px rgba(var(--primary-rgb, 212, 175, 55), 0.22); position: relative; max-height: 90vh; overflow-y: auto;">
       
       <!-- Close Button -->
       <button type="button" onclick="closeServiceHelpModal()" style="position: absolute; top: 20px; right: 20px; background: none; border: none; color: rgba(255,255,255,0.5); font-size: 1.5rem; cursor: pointer; line-height: 1; transition: color 0.2s; z-index: 10;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,0.5)'">&times;</button>
 
       <!-- Badge / Header -->
       <div style="text-align: center; margin-bottom: 22px;">
-        <div id="service-help-badge" style="display: inline-flex; align-items: center; gap: 8px; background: rgba(212,175,55,0.12); border: 1px solid rgba(212,175,55,0.35); color: var(--gold-light); padding: 5px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;">
+        <div id="service-help-badge" style="display: inline-flex; align-items: center; gap: 8px; background: rgba(var(--primary-rgb, 212, 175, 55), 0.15); border: 1px solid rgba(var(--primary-rgb, 212, 175, 55), 0.4); color: var(--gold-primary); padding: 5px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;">
           <span>👑</span> GUÍA DEL SERVICIO
         </div>
         <h3 id="service-help-title" style="margin: 12px 0 4px 0; color: #ffffff; font-family: 'Cinzel', serif; font-size: 1.3rem; font-weight: 700;">
@@ -2868,7 +3071,7 @@
       </div>
 
       <!-- Footer Navigation -->
-      <div style="display: flex; align-items: center; justify-content: space-between; border-top: 1px solid rgba(212,175,55,0.15); padding-top: 20px; margin-top: 10px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; border-top: 1px solid rgba(var(--primary-rgb, 212, 175, 55), 0.18); padding-top: 20px; margin-top: 10px;">
         <button type="button" id="btn-service-help-prev" onclick="navigateServiceHelpSlide(-1)" class="btn btn-header-action" style="border-radius: 12px; padding: 10px 20px; font-size: 0.8rem; font-weight: 600; min-width: 110px; visibility: hidden;">Anterior</button>
         
         <div id="service-help-indicators" style="display: flex; gap: 12px; align-items: center; justify-content: center; padding: 0 24px;">
@@ -2882,8 +3085,8 @@
 
   <!-- Modal Toast Central de Edición de Confirmación RSVP -->
   <div id="edit-rsvp-modal" class="modal-backdrop-smooth" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.78); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 10000; align-items: center; justify-content: center; padding: 20px;">
-    <div class="modal-card-smooth" style="background: rgba(22, 22, 30, 0.98); border: 1.5px solid var(--gold-primary); border-radius: 24px; width: 100%; max-width: 520px; padding: 28px; box-shadow: 0 15px 40px rgba(0,0,0,0.8), 0 0 35px rgba(212,175,55,0.25); position: relative; max-height: 90vh; overflow-y: auto;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid rgba(212,175,55,0.2); padding-bottom: 14px;">
+    <div class="modal-card-smooth" style="background: rgba(22, 22, 30, 0.98); border: 1.5px solid var(--gold-primary); border-radius: 24px; width: 100%; max-width: 520px; padding: 28px; box-shadow: 0 15px 40px rgba(0,0,0,0.8), 0 0 35px rgba(var(--primary-rgb, 212, 175, 55), 0.25); position: relative; max-height: 90vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid rgba(var(--primary-rgb, 212, 175, 55), 0.2); padding-bottom: 14px;">
         <h3 style="margin: 0; color: var(--gold-light); font-family: 'Cinzel', serif; font-size: 1.25rem; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
           ✏️ Editar Confirmación de Asistencia
         </h3>
@@ -2912,7 +3115,7 @@
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--gold-primary); transition: transform 0.2s;" id="custom-attending-chevron"><polyline points="6 9 12 15 18 9"/></svg>
           </div>
 
-          <div id="custom-attending-menu" class="custom-select-menu" style="display: none; position: absolute; top: calc(100% + 6px); left: 0; right: 0; background: rgba(22, 22, 30, 0.98); border: 1.5px solid var(--gold-primary); border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 20px rgba(212,175,55,0.25); z-index: 10050; padding: 6px; backdrop-filter: blur(12px);">
+          <div id="custom-attending-menu" class="custom-select-menu" style="display: none; position: absolute; top: calc(100% + 6px); left: 0; right: 0; background: rgba(22, 22, 30, 0.98); border: 1.5px solid var(--gold-primary); border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 20px rgba(var(--primary-rgb, 212, 175, 55), 0.25); z-index: 10050; padding: 6px; backdrop-filter: blur(12px);">
             <div id="opt-attending-true" class="custom-select-option" onclick="selectCustomAttendingOption(true)" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-radius: 10px; cursor: pointer; color: white; font-size: 0.9rem; font-weight: 600; transition: all 0.2s;">
               <span style="display: flex; align-items: center; gap: 8px;"><span>✅</span> Sí, Asiste</span>
               <svg class="check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gold-primary)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -2998,7 +3201,7 @@
     /* Service Help Slide Smooth Fade In/Out Transition */
     .service-help-slide-card {
       background: rgba(12, 12, 16, 0.85);
-      border: 1px solid rgba(212, 175, 55, 0.25);
+      border: 1px solid rgba(var(--primary-rgb, 212, 175, 55), 0.25);
       border-radius: 18px;
       padding: 24px;
       text-align: left;
@@ -3037,15 +3240,15 @@
 
     .custom-select-trigger:hover {
       border-color: var(--gold-primary) !important;
-      box-shadow: 0 0 12px rgba(212, 175, 55, 0.25);
+      box-shadow: 0 0 12px rgba(var(--primary-rgb, 212, 175, 55), 0.25);
     }
     .custom-select-option:hover {
-      background: rgba(212, 175, 55, 0.18) !important;
+      background: rgba(var(--primary-rgb, 212, 175, 55), 0.18) !important;
       color: var(--gold-light) !important;
     }
     .custom-select-option.selected {
-      background: rgba(212, 175, 55, 0.22) !important;
-      border: 1px solid rgba(212, 175, 55, 0.35);
+      background: rgba(var(--primary-rgb, 212, 175, 55), 0.22) !important;
+      border: 1px solid rgba(var(--primary-rgb, 212, 175, 55), 0.35);
     }
 
     /* High-End Role="Switch" Component */
@@ -3102,11 +3305,87 @@
     }
   </style>
 
+  <!-- Modal de Exportación de Video .MP4 para DJ / Salón -->
+  <div id="video-export-modal" class="modal-backdrop-smooth" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); z-index: 10000; align-items: center; justify-content: center; padding: 20px;">
+    <div class="modal-card-smooth" style="background: linear-gradient(145deg, rgba(22, 22, 30, 0.99) 0%, rgba(12, 12, 18, 0.99) 100%); border: 1.5px solid var(--gold-primary); border-radius: 24px; width: 100%; max-width: 520px; padding: 28px; box-shadow: 0 20px 60px rgba(0,0,0,0.9), 0 0 35px rgba(var(--primary-rgb, 212, 175, 55), 0.25); position: relative;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--card-border); padding-bottom: 14px;">
+        <h3 style="margin: 0; color: var(--gold-light); font-family: 'Cinzel', serif; font-size: 1.25rem; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
+          🎥 Exportador de Video de Mensajes (.MP4)
+        </h3>
+        <button type="button" onclick="closeVideoExportModal()" style="background: none; border: none; color: rgba(255,255,255,0.5); font-size: 1.5rem; cursor: pointer; line-height: 1; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,0.5)'">&times;</button>
+      </div>
+
+      <div id="video-export-config-view">
+        <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; margin-bottom: 18px;">
+          Generá un video en resolución <strong>Full HD 1080p</strong> con transiciones cinemáticas y la temática oficial de tu fiesta, listo para entregar al DJ o proyectar en la pantalla LED.
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px;">
+          <div style="background: rgba(0,0,0,0.4); padding: 12px 16px; border-radius: 14px; border: 1px solid var(--card-border); display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="font-size: 0.85rem; font-weight: 600; color: white;">💌 Mensajes a exportar</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);" id="video-export-count-label">Calculando mensajes aprobados...</div>
+            </div>
+            <span class="badge" style="background: rgba(var(--primary-rgb, 212,175,55), 0.2); color: var(--gold-light); border: 1px solid var(--gold-primary);" id="video-export-badge">0 mensajes</span>
+          </div>
+
+          <div style="background: rgba(0,0,0,0.4); padding: 12px 16px; border-radius: 14px; border: 1px solid var(--card-border); display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="font-size: 0.85rem; font-weight: 600; color: white;">⏱️ Tiempo por mensaje</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">Duración de visualización en pantalla</div>
+            </div>
+            <select id="video-export-duration" class="form-control-admin" style="width: 110px; padding: 6px 10px; border-radius: 10px; font-size: 0.85rem; background: #000;">
+              <option value="4">4 seg</option>
+              <option value="6" selected>6 seg</option>
+              <option value="8">8 seg</option>
+              <option value="10">10 seg</option>
+            </select>
+          </div>
+
+          <div style="background: rgba(0,0,0,0.4); padding: 12px 16px; border-radius: 14px; border: 1px solid var(--card-border); display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="font-size: 0.85rem; font-weight: 600; color: white;">🎵 Incluir música de fondo</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">Pista MP3 configurada en la fiesta</div>
+            </div>
+            <label class="custom-switch-toggle">
+              <input type="checkbox" id="video-export-include-audio" checked>
+              <span class="custom-switch-track"><span class="custom-switch-thumb"></span></span>
+            </label>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 12px; justify-content: flex-end;">
+          <button type="button" onclick="closeVideoExportModal()" class="btn btn-secondary" style="padding: 10px 18px;">Cancelar</button>
+          <button type="button" id="btn-start-video-export" onclick="startVideoRenderingProcess()" class="btn btn-primary" style="padding: 10px 22px; display: flex; align-items: center; gap: 8px;">
+            <span>Renderizar y Descargar .MP4</span> 🚀
+          </button>
+        </div>
+      </div>
+
+      <!-- Render Progress View -->
+      <div id="video-export-progress-view" style="display: none; text-align: center; padding: 15px 0;">
+        <div style="font-size: 2.2rem; margin-bottom: 10px;">🎬</div>
+        <h4 style="margin: 0 0 8px 0; color: var(--gold-light); font-size: 1.1rem;" id="video-progress-title">Renderizando Video Cinemático...</h4>
+        <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 20px;" id="video-progress-subtitle">Procesando diapositivas en Full HD 1080p con GPU.</p>
+
+        <div style="width: 100%; height: 10px; background: rgba(255,255,255,0.1); border-radius: 10px; overflow: hidden; margin-bottom: 12px; border: 1px solid var(--card-border);">
+          <div id="video-progress-bar" style="width: 0%; height: 100%; background: var(--gold-gradient); transition: width 0.2s ease; box-shadow: 0 0 10px rgba(var(--primary-rgb, 212,175,55), 0.8);"></div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted);">
+          <span id="video-progress-percent">0%</span>
+          <span id="video-progress-status">Preparando motor de render...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="/js/alerts.js"></script>
   <script src="/js/snap-camera-helper.js"></script>
-  <script src="/js/admin.js?v=1.1.4"></script>
+  <script src="/js/video-exporter.js?v=1.0.0"></script>
+  <script src="/js/admin.js?v=1.2.0"></script>
 </body>
 </html>

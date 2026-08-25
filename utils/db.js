@@ -592,6 +592,22 @@ async function deleteGuest(eventId = 'default', index) {
 /**
  * Get config key value
  */
+function saveLocalConfigValue(eventId, key, value) {
+  try {
+    const { configFile } = getEventFiles(eventId);
+    let config = {};
+    if (fs.existsSync(configFile)) {
+      try {
+        config = JSON.parse(fs.readFileSync(configFile, 'utf8'));
+      } catch (e) {}
+    }
+    config[key] = value;
+    fs.writeFileSync(configFile, JSON.stringify(config, null, 2), 'utf8');
+  } catch (e) {
+    console.error(`Error saving local config value for ${key}:`, e);
+  }
+}
+
 async function getConfigValue(eventId = 'default', key, defaultValue = '') {
   if (isSupabaseEnabled) {
     try {
@@ -602,20 +618,21 @@ async function getConfigValue(eventId = 'default', key, defaultValue = '') {
         .eq('key', key)
         .order('updated_at', { ascending: false })
         .limit(1);
-      if (error || !data || data.length === 0) return defaultValue;
-      return data[0].value;
+      if (!error && data && data.length > 0) {
+        return data[0].value;
+      }
     } catch (e) {
-      return defaultValue;
+      console.warn(`[miFiestAPP DB] Supabase getConfigValue error for key ${key}:`, e.message);
     }
-  } else {
-    const { configFile } = getEventFiles(eventId);
-    if (!fs.existsSync(configFile)) return defaultValue;
-    try {
-      const config = JSON.parse(fs.readFileSync(configFile, 'utf8'));
-      return config[key] !== undefined ? config[key] : defaultValue;
-    } catch (e) {
-      return defaultValue;
-    }
+  }
+
+  const { configFile } = getEventFiles(eventId);
+  if (!fs.existsSync(configFile)) return defaultValue;
+  try {
+    const config = JSON.parse(fs.readFileSync(configFile, 'utf8'));
+    return config[key] !== undefined ? config[key] : defaultValue;
+  } catch (e) {
+    return defaultValue;
   }
 }
 
@@ -629,24 +646,24 @@ async function getConfigValues(eventId = 'default') {
         .from('config')
         .select('key, value')
         .eq('event_id', eventId);
-      if (error || !data) return {};
-      const config = {};
-      data.forEach(row => {
-        config[row.key] = row.value;
-      });
-      return config;
+      if (!error && data) {
+        const config = {};
+        data.forEach(row => {
+          config[row.key] = row.value;
+        });
+        return config;
+      }
     } catch (e) {
       console.error('Error in getConfigValues batch query:', e);
-      return {};
     }
-  } else {
-    const { configFile } = getEventFiles(eventId);
-    if (!fs.existsSync(configFile)) return {};
-    try {
-      return JSON.parse(fs.readFileSync(configFile, 'utf8')) || {};
-    } catch (e) {
-      return {};
-    }
+  }
+
+  const { configFile } = getEventFiles(eventId);
+  if (!fs.existsSync(configFile)) return {};
+  try {
+    return JSON.parse(fs.readFileSync(configFile, 'utf8')) || {};
+  } catch (e) {
+    return {};
   }
 }
 
@@ -655,49 +672,49 @@ async function getConfigValues(eventId = 'default') {
  */
 async function setConfigValue(eventId = 'default', key, value) {
   if (isSupabaseEnabled) {
-    const { data: existing } = await supabase
-      .from('config')
-      .select('id')
-      .eq('event_id', eventId)
-      .eq('key', key);
-
-    let error;
-    if (existing && existing.length > 0) {
-      const res = await supabase
+    try {
+      const { data: existing } = await supabase
         .from('config')
-        .update({
-          value: value,
-          updated_at: new Date().toISOString()
-        })
+        .select('id')
         .eq('event_id', eventId)
         .eq('key', key);
-      error = res.error;
-    } else {
-      const res = await supabase
-        .from('config')
-        .insert([{
-          event_id: eventId,
-          key: key,
-          value: value,
-          updated_at: new Date().toISOString()
-        }]);
-      error = res.error;
+
+      let error;
+      if (existing && existing.length > 0) {
+        const res = await supabase
+          .from('config')
+          .update({
+            value: value,
+            updated_at: new Date().toISOString()
+          })
+          .eq('event_id', eventId)
+          .eq('key', key);
+        error = res.error;
+      } else {
+        const res = await supabase
+          .from('config')
+          .insert([{
+            event_id: eventId,
+            key: key,
+            value: value,
+            updated_at: new Date().toISOString()
+          }]);
+        error = res.error;
+      }
+
+      if (error) {
+        console.warn(`[miFiestAPP DB] Supabase setConfigValue key ${key} notice (${error.message}). Saving to local JSON fallback.`);
+        saveLocalConfigValue(eventId, key, value);
+        return;
+      }
+    } catch (e) {
+      console.warn(`[miFiestAPP DB] Supabase setConfigValue exception (${e.message}). Saving to local JSON fallback.`);
+      saveLocalConfigValue(eventId, key, value);
+      return;
     }
-    if (error) {
-      console.error(`Error updating config key ${key} in Supabase:`, error);
-      throw error;
-    }
-  } else {
-    const { configFile } = getEventFiles(eventId);
-    let config = {};
-    if (fs.existsSync(configFile)) {
-      try {
-        config = JSON.parse(fs.readFileSync(configFile, 'utf8'));
-      } catch (e) {}
-    }
-    config[key] = value;
-    fs.writeFileSync(configFile, JSON.stringify(config, null, 2), 'utf8');
   }
+
+  saveLocalConfigValue(eventId, key, value);
 }
 
 /**
@@ -1066,6 +1083,39 @@ async function uploadAudioFile(eventId = 'default', fileName, fileBuffer, mimeTy
   }
 }
 
+async function uploadVideoFrameFile(fileName, fileBuffer, mimeType) {
+  const cleanFileName = `frame-${Date.now()}-${fileName.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+  if (isSupabaseEnabled) {
+    try {
+      const { data, error } = await supabase.storage
+        .from('event-photos')
+        .upload(`frames/${cleanFileName}`, fileBuffer, {
+          contentType: mimeType || 'video/mp4',
+          upsert: true
+        });
+
+      if (!error) {
+        const { data: publicUrlData } = supabase.storage
+          .from('event-photos')
+          .getPublicUrl(`frames/${cleanFileName}`);
+
+        return publicUrlData.publicUrl;
+      }
+    } catch (e) {
+      console.warn('[Supabase] Video frame upload fallback to local:', e);
+    }
+  }
+
+  // Local fallback
+  const framesDir = path.join(__dirname, '..', 'public', 'uploads', 'frames');
+  if (!fs.existsSync(framesDir)) {
+    fs.mkdirSync(framesDir, { recursive: true });
+  }
+  const targetPath = path.join(framesDir, cleanFileName);
+  fs.writeFileSync(targetPath, fileBuffer);
+  return `/uploads/frames/${cleanFileName}`;
+}
+
 async function isEventValid(eventId = 'default') {
   const cleanId = (eventId || 'default').trim().toLowerCase();
   if (cleanId === 'default') {
@@ -1238,7 +1288,7 @@ async function getEvents() {
   }
 }
 
-async function createEvent(id, clientName, password = '', clientEmail = '', serviceTables = true, servicePhotos = true, serviceInvitation = true, serviceTrivia = true, eventName = '', options = {}) {
+async function createEvent(id, clientName, password = '', clientEmail = '', serviceTables = true, servicePhotos = true, serviceInvitation = true, serviceTrivia = true, eventName = '', options = {}, serviceMusic = true) {
   const cleanId = (id || '').trim().toLowerCase().replace(/[^a-zA-Z0-9_-]/g, '');
   if (!cleanId) throw new Error('ID de evento inválido.');
 
@@ -1247,7 +1297,22 @@ async function createEvent(id, clientName, password = '', clientEmail = '', serv
   const isDemo = !!options.isDemo;
   const demoExpiresAt = options.demoExpiresAt || null;
 
+  // Clean up any stale local files/directories from past deleted events with same id
+  try {
+    const eventDir = path.join(DATA_DIR, cleanId);
+    if (fs.existsSync(eventDir) && cleanId !== 'default') {
+      fs.rmSync(eventDir, { recursive: true, force: true });
+    }
+  } catch (e) {}
+
   if (isSupabaseEnabled) {
+    // Clean up any stale configs, rsvps, or guest records from past deleted events with the same id
+    try { await supabase.from('config').delete().eq('event_id', cleanId); } catch(e) {}
+    try { await supabase.from('rsvps').delete().eq('event_id', cleanId); } catch(e) {}
+    try { await supabase.from('guests').delete().eq('event_id', cleanId); } catch(e) {}
+    try { await supabase.from('event_music').delete().eq('event_id', cleanId); } catch(e) {}
+    try { await supabase.from('table_configs').delete().eq('event_id', cleanId); } catch(e) {}
+
     const payload = { 
       id: cleanId, 
       client_name: clientName.trim(), 
@@ -1258,6 +1323,7 @@ async function createEvent(id, clientName, password = '', clientEmail = '', serv
       service_photos: servicePhotos,
       service_invitation: serviceInvitation,
       service_trivia: serviceTrivia,
+      service_music: serviceMusic,
       vendor_id: vendorId,
       approval_status: approvalStatus,
       is_demo: isDemo,
@@ -1268,7 +1334,8 @@ async function createEvent(id, clientName, password = '', clientEmail = '', serv
       .insert([payload]);
 
     if (error) {
-      console.warn('Error creating event with vendor fields in Supabase, retrying standard insert:', error.message);
+      console.warn('Error creating event with vendor/music fields in Supabase, retrying standard insert:', error.message);
+      delete payload.service_music;
       delete payload.vendor_id;
       delete payload.approval_status;
       delete payload.is_demo;
@@ -1292,6 +1359,7 @@ async function createEvent(id, clientName, password = '', clientEmail = '', serv
       servicePhotos,
       serviceInvitation,
       serviceTrivia,
+      serviceMusic,
       vendorId,
       approvalStatus,
       isDemo,
@@ -1303,6 +1371,7 @@ async function createEvent(id, clientName, password = '', clientEmail = '', serv
   }
 
   // Save metadata to config table for fallback lookup
+  if (serviceMusic !== undefined) await setConfigValue(cleanId, 'service_music', serviceMusic ? 'true' : 'false');
   if (vendorId) await setConfigValue(cleanId, 'vendor_id', vendorId);
   if (approvalStatus) await setConfigValue(cleanId, 'approval_status', approvalStatus);
   if (isDemo) await setConfigValue(cleanId, 'is_demo', 'true');
@@ -1356,37 +1425,90 @@ async function updateEventServiceTrivia(id, serviceTrivia) {
   }
 }
 
+async function updateEventServiceMusic(id, serviceMusic) {
+  await setConfigValue(id, 'service_music', serviceMusic ? 'true' : 'false');
+  if (isSupabaseEnabled) {
+    try {
+      await supabase
+        .from('events')
+        .update({ service_music: serviceMusic })
+        .eq('id', id);
+    } catch (e) {}
+  } else {
+    const events = getLocalEvents();
+    const event = events.find(e => e.id === id);
+    if (event) {
+      event.serviceMusic = serviceMusic;
+      saveLocalEvents(events);
+    }
+  }
+}
+
 async function deleteEvent(id) {
+  const cleanId = (id || '').trim().toLowerCase().replace(/[^a-zA-Z0-9_-]/g, '');
+  if (!cleanId || cleanId === 'default') return;
+
   // Clear all photos (records and storage files) first to prevent orphaned files in bucket
   try {
-    await clearPhotos(id);
+    await clearPhotos(cleanId);
   } catch (clearErr) {
-    console.warn(`[db] Error clearing photos during deletion of event ${id}:`, clearErr.message);
+    console.warn(`[db] Error clearing photos during deletion of event ${cleanId}:`, clearErr.message);
   }
+
   if (isSupabaseEnabled) {
+    try {
+      await supabase.from('config').delete().eq('event_id', cleanId);
+    } catch (e) {
+      console.warn(`[db] Error deleting config for event ${cleanId}:`, e.message);
+    }
+
+    try {
+      await supabase.from('rsvps').delete().eq('event_id', cleanId);
+    } catch (e) {
+      console.warn(`[db] Error deleting rsvps for event ${cleanId}:`, e.message);
+    }
+
+    try {
+      await supabase.from('guests').delete().eq('event_id', cleanId);
+    } catch (e) {
+      console.warn(`[db] Error deleting guests for event ${cleanId}:`, e.message);
+    }
+
+    try {
+      await supabase.from('event_music').delete().eq('event_id', cleanId);
+    } catch (e) {
+      console.warn(`[db] Error deleting music for event ${cleanId}:`, e.message);
+    }
+
+    try {
+      await supabase.from('table_configs').delete().eq('event_id', cleanId);
+    } catch (e) {
+      console.warn(`[db] Error deleting table_configs for event ${cleanId}:`, e.message);
+    }
+
     const { error } = await supabase
       .from('events')
       .delete()
-      .eq('id', id);
+      .eq('id', cleanId);
 
     if (error) {
       console.error('Error deleting event from Supabase:', error);
       throw error;
     }
-  } else {
-    const events = getLocalEvents();
-    const updatedEvents = events.filter(e => e.id !== id);
-    saveLocalEvents(updatedEvents);
+  }
 
-    try {
-      const cleanId = (id || '').replace(/[^a-zA-Z0-9_-]/g, '');
-      const eventDir = path.join(DATA_DIR, cleanId);
-      if (fs.existsSync(eventDir) && cleanId !== 'default') {
-        fs.rmSync(eventDir, { recursive: true, force: true });
-      }
-    } catch (err) {
-      console.warn('Could not clean up local event directories:', err.message);
+  // ALWAYS clean up local json files and directories, even if Supabase is enabled
+  const events = getLocalEvents();
+  const updatedEvents = events.filter(e => e.id !== cleanId);
+  saveLocalEvents(updatedEvents);
+
+  try {
+    const eventDir = path.join(DATA_DIR, cleanId);
+    if (fs.existsSync(eventDir) && cleanId !== 'default') {
+      fs.rmSync(eventDir, { recursive: true, force: true });
     }
+  } catch (err) {
+    console.warn('Could not clean up local event directories:', err.message);
   }
 }
 
@@ -1725,6 +1847,7 @@ async function addRsvp(eventId = 'default', rsvpData) {
   const companionsDetails = Array.isArray(rsvpData.companionsDetails) ? rsvpData.companionsDetails : [];
 
   const cleanPhone = (rsvpData.phone || '').replace(/[^0-9]/g, '');
+  const messageText = (rsvpData.message || rsvpData.dedication || '').trim();
   const rsvp = {
     name: (rsvpData.name || '').trim(),
     phone: cleanPhone,
@@ -1735,8 +1858,22 @@ async function addRsvp(eventId = 'default', rsvpData) {
     companionsDetails: companionsDetails,
     dietaryRestrictions: (rsvpData.dietaryRestrictions || '').trim(),
     suggestedSong: (rsvpData.suggestedSong || '').trim(),
+    message: messageText,
     createdAt: new Date().toISOString()
   };
+
+  if (messageText) {
+    try {
+      await addEventMessage(eventId, {
+        author: rsvp.name,
+        message: messageText,
+        phone: cleanPhone,
+        source: 'rsvp'
+      });
+    } catch (msgErr) {
+      console.warn('Notice saving dedication message from RSVP:', msgErr.message);
+    }
+  }
 
   const normName = rsvp.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ');
   const rsvps = await getRsvps(eventId);
@@ -2215,3 +2352,621 @@ module.exports = {
   saveCapitanesProgress,
   assignVendorToEvent
 };
+
+/**
+ * Fine-Tuner Visual Settings per Template Model or Event
+ */
+const fineTunerDefaults = {
+  paddingTop: 100,
+  paddingBottom: 98,
+  maxWidth: 275,
+  s0TitleSize: 1.55,
+  s0TitleOffsetY: 0,
+  s0TitleOffsetX: 0,
+  s0SubtitleSize: 0.76,
+  s0SubtitleOffsetY: 0,
+  s0PhraseSize: 1.25,
+  s0PhraseOffsetY: 0,
+  s0IntroSize: 0.76,
+  s0IntroOffsetY: 0,
+  s0CountdownSize: 50,
+  s0CountdownOffsetY: 0,
+  s0CountdownOffsetX: 0,
+  s0BtnOffsetY: 0,
+  s0BtnFontSize: 0.75,
+  s0BtnScale: 1.0,
+  s1TitleSize: 1.50,
+  s1TitleOffsetY: 0,
+  s1TitleOffsetX: 0,
+  s1OrnamentSize: 1.00,
+  s1OrnamentOffsetY: 0,
+  s1OrnamentOffsetX: 0,
+  s1CalendarScale: 1.00,
+  s1CalendarOffsetY: 0,
+  s1CalendarOffsetX: 0,
+  s1CalBtnFontSize: 0.75,
+  s1CalBtnScale: 1.00,
+  s1CalBtnOffsetY: 0,
+  s1CalBtnOffsetX: 0,
+  s1BtnFontSize: 0.75,
+  s1BtnScale: 1.00,
+  s1BtnOffsetY: 0,
+  s1BtnOffsetX: 0,
+  s1ItemsOffsetY: 0,
+  s1bTitleSize: 1.50,
+  s1bTitleOffsetY: 0,
+  s1bTitleOffsetX: 0,
+  s1bCardScale: 1.00,
+  s1bCardOffsetY: 0,
+  s1bCardOffsetX: 0,
+  s1bBtnFontSize: 0.75,
+  s1bBtnScale: 1.00,
+  s1bBtnOffsetY: 0,
+  s1bBtnOffsetX: 0,
+  s2TitleSize: 1.50,
+  s2TitleOffsetY: 0,
+  s2TitleOffsetX: 0,
+  s2BadgeScale: 1.00,
+  s2BadgeOffsetY: 0,
+  s2BadgeOffsetX: 0,
+  s2CardScale: 1.00,
+  s2CardOffsetY: 0,
+  s2CardOffsetX: 0,
+  s2ChecklistScale: 1.00,
+  s2ChecklistOffsetY: 0,
+  s2ChecklistOffsetX: 0,
+  s2BtnFontSize: 0.75,
+  s2BtnScale: 1.00,
+  s2BtnOffsetY: 0,
+  s2BtnOffsetX: 0,
+  s3TitleSize: 1.50,
+  s3TitleOffsetY: 0,
+  s3TitleOffsetX: 0,
+  s3SubtitleSize: 0.75,
+  s3SubtitleOffsetY: 0,
+  s3SubtitleOffsetX: 0,
+  s3CarouselScale: 1.00,
+  s3CarouselOffsetY: 0,
+  s3CarouselOffsetX: 0,
+  s3ControlsScale: 1.00,
+  s3ControlsOffsetY: 0,
+  s3ControlsOffsetX: 0,
+  s3BtnScale: 1.00,
+  s3BtnOffsetY: 0,
+  s3BtnOffsetX: 0,
+  s4TitleSize: 1.10,
+  s4TitleOffsetY: 0,
+  s4TitleOffsetX: 0,
+  s4SubtitleSize: 0.75,
+  s4SubtitleOffsetY: 0,
+  s4SubtitleOffsetX: 0,
+  s4FormScale: 1.00,
+  s4FormOffsetY: 0,
+  s4FormOffsetX: 0,
+  s4BtnScale: 1.00,
+  s4BtnOffsetY: 0,
+  s4BtnOffsetX: 0,
+  s5TitleSize: 1.50,
+  s5TitleOffsetY: 0,
+  s5TitleOffsetX: 0,
+  s5SubtitleSize: 0.76,
+  s5SubtitleOffsetY: 0,
+  s5SubtitleOffsetX: 0,
+  s5CardScale: 1.00,
+  s5CardOffsetY: 0,
+  s5CardOffsetX: 0,
+  s5BtnScale: 1.00,
+  s5BtnOffsetY: 0,
+  s5BtnOffsetX: 0,
+  s5HintSize: 0.72,
+  s5HintScale: 1.00,
+  s5HintOffsetY: 0,
+  s5HintOffsetX: 0,
+  s5NextBtnScale: 1.00,
+  s5NextBtnOffsetY: 0,
+  s5NextBtnOffsetX: 0,
+  s5bChestScale: 1.00,
+  s5bChestOffsetY: 0,
+  s5bChestOffsetX: 0,
+  s6TitleSize: 1.50,
+  s6TitleOffsetY: 0,
+  s6TitleOffsetX: 0,
+  s6SubtitleSize: 0.76,
+  s6SubtitleOffsetY: 0,
+  s6SubtitleOffsetX: 0,
+  s6FormScale: 1.00,
+  s6FormOffsetY: 0,
+  s6FormOffsetX: 0,
+  s6BtnScale: 1.00,
+  s6BtnOffsetY: 0,
+  s6BtnOffsetX: 0,
+  s6NextBtnScale: 1.00,
+  s6NextBtnOffsetY: 0,
+  s6NextBtnOffsetX: 0,
+  sfIconScale: 1.00,
+  sfIconOffsetY: 0,
+  sfIconOffsetX: 0,
+  sfTitleSize: 1.55,
+  sfTitleOffsetY: 0,
+  sfTitleOffsetX: 0,
+  sfSubtitleSize: 0.78,
+  sfSubtitleOffsetY: 0,
+  sfSubtitleOffsetX: 0,
+  sfGalleryBtnScale: 1.00,
+  sfGalleryBtnOffsetY: 0,
+  sfGalleryBtnOffsetX: 0,
+  sfCalendarBtnScale: 1.00,
+  sfCalendarBtnOffsetY: 0,
+  sfCalendarBtnOffsetX: 0,
+  sfBtnScale: 1.00,
+  sfBtnOffsetY: 0,
+  sfBtnOffsetX: 0,
+  // Marco Animado MP4
+  frameVideoUrl: '',
+  frameScale: 1.00,
+  frameOffsetY: 0,
+  frameOffsetX: 0,
+  frameRotate: 0,
+  frameOpacity: 0.88,
+  frameBlendMode: 'screen',
+  frameFit: 'fill',
+  s0CountdownGap: 8,
+  // Textos Personalizados Slide 0
+  s0SubtitleText: '',
+  s0PhraseText: '',
+  s0IntroText: '',
+  s0BtnText: '',
+  // Texto Personalizado Despedida (Slide Farewell)
+  sfSubtitleText: '',
+  // Floating Scroll Badge ("Deslizá para seguir viendo")
+  scrollMoreScale: 1.00,
+  scrollMoreOffsetY: 0,
+  scrollMoreOffsetX: 0
+};
+
+function normalizeFormatId(formatId) {
+  if (!formatId) return 'interactivo-3d';
+  let f = String(formatId).toLowerCase().trim();
+  if (f === 'classic-slides' || f === 'slides-directo' || f === 'slides') return 'slides-directo';
+  if (f === 'interactive-3d' || f === 'interactivo-3d' || f === '3d' || f === 'interactivo') return 'interactivo-3d';
+  if (f === 'landing' || f === 'vertical-scroll' || f === 'scroll') return 'vertical-scroll';
+  return f;
+}
+
+async function getTemplateFineTuning(modelId = 'card-model-imperial-gold', eventId = 'default', formatId = null) {
+  let modelDefaults = { ...fineTunerDefaults };
+  
+  if (modelId === 'card-model-cyber-neon') {
+    modelDefaults.frameVideoUrl = '/assets/invitaciones/Neon/Neon.mp4';
+    modelDefaults.frameRotate = 90;
+    modelDefaults.frameFit = 'fill';
+    modelDefaults.frameBlendMode = 'screen';
+    modelDefaults.frameOpacity = 0.88;
+    modelDefaults.s0SubtitleText = '¡READY FOR THE PARTY!';
+    modelDefaults.s0PhraseText = '“PREPARATE PARA LA MEJOR NOCHE DE TU VIDA. ¡ESTO ES UNA FIESTA! 🔥⚡”';
+    modelDefaults.s0IntroText = 'COUNTDOWN PARA EL FIESTÓN:';
+    modelDefaults.s0BtnText = 'VER DETALLES DE LA FIESTA ➔';
+  } else if (modelId === 'card-model-boho-rust' || modelId === 'card-model-botanical') {
+    modelDefaults.frameVideoUrl = '/assets/invitaciones/Botanical/borderbotanical_vertical.mp4';
+    modelDefaults.frameRotate = 0;
+    modelDefaults.frameFit = 'fill';
+    modelDefaults.frameBlendMode = 'screen';
+    modelDefaults.frameOpacity = 0.88;
+    modelDefaults.s0SubtitleText = '¡NOS ENCANTARÍA QUE SEAS PARTE!';
+    modelDefaults.s0PhraseText = '“Celebrar la vida es mejor cuando se comparte con quienes amamos”';
+    modelDefaults.s0IntroText = 'Cuenta regresiva para nuestro gran día:';
+    modelDefaults.s0BtnText = 'VER DETALLES DEL EVENTO ➔';
+  } else if (modelId === 'card-model-editorial-luxe') {
+    modelDefaults.frameVideoUrl = '/assets/invitaciones/Editorial/Editorial.mp4';
+    modelDefaults.frameRotate = 0;
+    modelDefaults.frameFit = 'fill';
+    modelDefaults.frameBlendMode = 'screen';
+    modelDefaults.frameOpacity = 0.88;
+    modelDefaults.s0SubtitleText = 'AN EXCLUSIVE CELEBRATION';
+    modelDefaults.s0PhraseText = '“Moments fade, memories stay forever.”';
+    modelDefaults.s0IntroText = 'Counting down the days:';
+    modelDefaults.s0BtnText = 'EXPLORE EVENT DETAILS ➔';
+  } else if (modelId === 'card-model-imperial-gold') {
+    modelDefaults.frameVideoUrl = '/assets/invitaciones/Imperial/ImperialBorder.mp4';
+    modelDefaults.frameRotate = 90;
+    modelDefaults.frameFit = 'fill';
+    modelDefaults.frameBlendMode = 'screen';
+    modelDefaults.frameOpacity = 0.88;
+    modelDefaults.s0SubtitleText = '¡TE INVITAMOS A COMPARTIR ESTE MOMENTO!';
+    modelDefaults.s0PhraseText = '“Hay momentos en la vida que son especiales, pero compartirlos con vos los hace inolvidables”';
+    modelDefaults.s0IntroText = 'Faltan muy pocos días para compartir este momento especial:';
+    modelDefaults.s0BtnText = 'VER DETALLES DEL EVENTO ➔';
+  } else if (modelId === 'card-model-terracotta') {
+    modelDefaults.frameVideoUrl = '/assets/invitaciones/Terracotta/Terracotta.mp4';
+    modelDefaults.frameRotate = 0;
+    modelDefaults.frameFit = 'fill';
+    modelDefaults.frameBlendMode = 'screen';
+    modelDefaults.frameOpacity = 0.88;
+    modelDefaults.s0SubtitleText = '¡NUESTRA CELEBRACIÓN TERRACOTTA!';
+    modelDefaults.s0PhraseText = '“Celebrar la vida y el amor con la Calidez y Elegancia de la Naturaleza”';
+    modelDefaults.s0IntroText = 'Cuenta regresiva para nuestro día especial:';
+    modelDefaults.s0BtnText = 'VER DETALLES DE LA INVITACIÓN ➔';
+  } else if (modelId === 'card-model-glitz-glam') {
+    modelDefaults.frameVideoUrl = '/assets/invitaciones/Glitz/Glitz.mp4';
+    modelDefaults.frameRotate = 0;
+    modelDefaults.frameFit = 'fill';
+    modelDefaults.frameBlendMode = 'screen';
+    modelDefaults.frameOpacity = 0.90;
+    modelDefaults.s0SubtitleText = 'SHINE LIKE A DIAMOND';
+    modelDefaults.s0PhraseText = '“Una noche llena de brillo, glamour y momentos inolvidables”';
+    modelDefaults.s0IntroText = 'Countdown para brillar juntos:';
+    modelDefaults.s0BtnText = 'DESPLEGAR INVITACIÓN VIP ➔';
+  } else if (modelId === 'card-model-retro-disco') {
+    modelDefaults.frameVideoUrl = '/assets/invitaciones/RetroDisco/Retrodisco.mp4';
+    modelDefaults.frameRotate = 0;
+    modelDefaults.frameFit = 'fill';
+    modelDefaults.frameBlendMode = 'screen';
+    modelDefaults.frameOpacity = 0.90;
+    modelDefaults.s0SubtitleText = 'WELCOME TO THE FESTIVAL!';
+    modelDefaults.s0PhraseText = '“Subí el volumen y preparate para la mejor fiesta del año”';
+    modelDefaults.s0IntroText = 'COUNTDOWN PARA EL SHOW:';
+    modelDefaults.s0BtnText = 'OBTENER PASE VIP ➔';
+  }
+
+  try {
+    const normFormat = normalizeFormatId(formatId) || 'interactivo-3d';
+    const formatKey = `fine_tuner_${modelId}_${normFormat}`;
+    const defaultKey = `fine_tuner_${modelId}`;
+
+    // 1. Check isolated format key first
+    const storedFormat = await getConfigValue(eventId, formatKey);
+    if (storedFormat) {
+      const parsed = typeof storedFormat === 'string' ? JSON.parse(storedFormat) : storedFormat;
+      let resConfig = { ...modelDefaults, ...parsed };
+      if (modelId === 'card-model-editorial-luxe' && (!resConfig.frameVideoUrl || resConfig.frameVideoUrl.includes('Neon') || resConfig.frameRotate === 90)) {
+        resConfig.frameVideoUrl = '/assets/invitaciones/Editorial/Editorial.mp4';
+        resConfig.frameRotate = 0;
+        resConfig.frameScale = 1.0;
+        resConfig.frameFit = 'fill';
+      }
+      return resConfig;
+    }
+
+    // 2. Fallback to legacy root key (and auto-migrate to format-specific key for interactivo-3d)
+    const stored = await getConfigValue(eventId, defaultKey);
+    if (stored) {
+      const parsed = typeof stored === 'string' ? JSON.parse(stored) : stored;
+      let resConfig = { ...modelDefaults, ...parsed };
+      if (modelId === 'card-model-editorial-luxe' && (!resConfig.frameVideoUrl || resConfig.frameVideoUrl.includes('Neon') || resConfig.frameRotate === 90)) {
+        resConfig.frameVideoUrl = '/assets/invitaciones/Editorial/Editorial.mp4';
+        resConfig.frameRotate = 0;
+        resConfig.frameScale = 1.0;
+        resConfig.frameFit = 'fill';
+      }
+      if (normFormat === 'interactivo-3d') {
+        try {
+          await setConfigValue(eventId, formatKey, JSON.stringify(resConfig));
+        } catch (e) {}
+      }
+      return resConfig;
+    }
+  } catch (err) {
+    console.warn('[miFiestAPP DB] Error loading fine tuner config:', err.message);
+  }
+  return { ...modelDefaults };
+}
+
+async function saveTemplateFineTuning(modelId = 'card-model-imperial-gold', config = {}, eventId = 'default', formatId = null) {
+  const normFormat = normalizeFormatId(formatId) || 'interactivo-3d';
+  const key = `fine_tuner_${modelId}_${normFormat}`;
+  
+  const existingConfig = await getTemplateFineTuning(modelId, eventId, formatId);
+  const payload = { ...fineTunerDefaults, ...existingConfig };
+  const allKeys = new Set([...Object.keys(fineTunerDefaults), ...Object.keys(existingConfig), ...Object.keys(config || {})]);
+
+  for (const k of allKeys) {
+    if (k === 'updatedAt') continue;
+    const rawVal = (config && config[k] !== undefined) ? config[k] : payload[k];
+    if (rawVal !== undefined && rawVal !== null) {
+      if (typeof rawVal === 'number') {
+        payload[k] = rawVal;
+      } else if (typeof rawVal === 'string') {
+        const num = rawVal.includes('.') ? parseFloat(rawVal) : parseInt(rawVal, 10);
+        payload[k] = !isNaN(num) ? num : rawVal;
+      } else {
+        payload[k] = rawVal;
+      }
+    }
+  }
+
+  payload.updatedAt = new Date().toISOString();
+  await setConfigValue(eventId, key, JSON.stringify(payload));
+  
+  // For backward compatibility when interactivo-3d is saved, also mirror to legacy key
+  if (normFormat === 'interactivo-3d') {
+    await setConfigValue(eventId, `fine_tuner_${modelId}`, JSON.stringify(payload));
+  }
+  return payload;
+}
+
+/**
+ * =========================================================================
+ * MIFIESTAPP MOBILE APP HELPERS (Guest Profiles, Awards, Timeline & Info)
+ * =========================================================================
+ */
+
+async function getGuestProfiles(eventId = 'default') {
+  const cleanId = eventId || 'default';
+  const profilesStr = await getConfigValue(cleanId, 'app_guest_profiles', '[]');
+  try {
+    return JSON.parse(profilesStr) || [];
+  } catch (e) {
+    return [];
+  }
+}
+
+async function getGuestProfile(eventId = 'default', guestId) {
+  const profiles = await getGuestProfiles(eventId);
+  return profiles.find(p => p.id === guestId) || null;
+}
+
+async function saveGuestProfile(eventId = 'default', profileData) {
+  const cleanId = eventId || 'default';
+  const profiles = await getGuestProfiles(cleanId);
+  const guestId = profileData.id || `guest_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+  
+  const existingIdx = profiles.findIndex(p => p.id === guestId || (profileData.name && p.name && p.name.trim().toLowerCase() === profileData.name.trim().toLowerCase()));
+
+  const updatedProfile = {
+    id: existingIdx >= 0 ? profiles[existingIdx].id : guestId,
+    name: profileData.name || 'Invitado',
+    tableNumber: normalizeTable(profileData.tableNumber || 'Sin Mesa'),
+    avatarUrl: profileData.avatarUrl || '/assets/coronamain.png',
+    dietary: profileData.dietary || '',
+    phone: profileData.phone || '',
+    deviceToken: profileData.deviceToken || '',
+    updatedAt: new Date().toISOString()
+  };
+
+  if (existingIdx >= 0) {
+    profiles[existingIdx] = { ...profiles[existingIdx], ...updatedProfile };
+  } else {
+    updatedProfile.createdAt = new Date().toISOString();
+    profiles.push(updatedProfile);
+  }
+
+  await setConfigValue(cleanId, 'app_guest_profiles', JSON.stringify(profiles));
+  return updatedProfile;
+}
+
+async function getAwardsFromDb(eventId = 'default') {
+  const cleanId = eventId || 'default';
+  const awardsStr = await getConfigValue(cleanId, 'app_event_awards', '[]');
+  try {
+    return JSON.parse(awardsStr) || [];
+  } catch (e) {
+    return [];
+  }
+}
+
+async function saveAwardsToDb(eventId = 'default', awards) {
+  const cleanId = eventId || 'default';
+  await setConfigValue(cleanId, 'app_event_awards', JSON.stringify(awards || []));
+  return awards;
+}
+
+const DEFAULT_TIMELINE = [
+  { id: 'time_1', time: '21:30', title: 'Recepción & Alfombra Roja', description: 'Cocktail de bienvenida, fotos y encuentro en el salón.', icon: '🍸', isCurrent: false },
+  { id: 'time_2', time: '22:30', title: 'Entrada Triunfal', description: 'Momento estelar de apertura y bienvenida.', icon: '✨', isCurrent: false },
+  { id: 'time_3', time: '23:00', title: 'Cena & Show Gastronómico', description: 'Plato principal y brindis inicial.', icon: '🍽️', isCurrent: true },
+  { id: 'time_4', time: '00:30', title: 'Primera Tanda de Baile', description: 'Apertura de la pista con DJ en vivo y cachengue.', icon: '💃', isCurrent: false },
+  { id: 'time_5', time: '02:00', title: 'Entrega de miFiestAPP Awards', description: 'Revelación de ganadores y votación de ternas.', icon: '🏆', isCurrent: false },
+  { id: 'time_6', time: '03:30', title: 'Torta, Brindis & Carioca', description: 'Momento emotivo del brindis y fiesta flúor.', icon: '🎂', isCurrent: false },
+  { id: 'time_7', time: '05:30', title: 'Fin de Fiesta & Desayuno', description: 'Cierre de una noche mágica e inolvidable.', icon: '🌅', isCurrent: false }
+];
+
+async function getEventTimeline(eventId = 'default') {
+  const cleanId = eventId || 'default';
+  const timelineStr = await getConfigValue(cleanId, 'app_event_timeline', '');
+  if (!timelineStr) {
+    return DEFAULT_TIMELINE;
+  }
+  try {
+    const parsed = JSON.parse(timelineStr);
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : DEFAULT_TIMELINE;
+  } catch (e) {
+    return DEFAULT_TIMELINE;
+  }
+}
+
+async function saveEventTimeline(eventId = 'default', timeline) {
+  const cleanId = eventId || 'default';
+  await setConfigValue(cleanId, 'app_event_timeline', JSON.stringify(timeline || []));
+  return timeline;
+}
+
+async function getEventInfoForApp(eventId = 'default') {
+  const cleanId = eventId || 'default';
+  const event = await getEvent(cleanId);
+  const title = await getEventTitle(cleanId);
+  const dateStr = (event && (event.date || event.fecha))
+    ? (event.date || event.fecha)
+    : await getConfigValue(cleanId, 'event_date', '');
+  const timeStr = (event && (event.time || event.hora))
+    ? (event.time || event.hora)
+    : await getConfigValue(cleanId, 'event_time', '');
+  const locationName = await getConfigValue(cleanId, 'event_location_name', (event && event.location) ? event.location : 'Salón Principal');
+  const locationAddress = await getConfigValue(cleanId, 'event_location_address', (event && event.address) ? event.address : 'Av. del Libertador 1234');
+  const locationMapUrl = await getConfigValue(cleanId, 'event_location_map_url', '');
+  const dressCode = await getConfigValue(cleanId, 'event_dresscode', 'Elegante / Gala');
+  const dressCodeDetails = await getConfigValue(cleanId, 'event_dresscode_details', 'Venir listos para disfrutar y bailar toda la noche.');
+  const giftsBankAlias = await getConfigValue(cleanId, 'event_bank_alias', 'MIFIESTAPP.EVENTO.MP');
+  const giftsBankCbu = await getConfigValue(cleanId, 'event_bank_cbu', '0000003100012345678901');
+  const giftsBankHolder = await getConfigValue(cleanId, 'event_bank_holder', title || 'Los Homenajeados');
+  const giftsBankBank = await getConfigValue(cleanId, 'event_bank_name', 'Mercado Pago');
+  const transportNotes = await getConfigValue(cleanId, 'event_transport_notes', 'Recomendamos utilizar Uber o Cabify seleccionando la dirección del salón.');
+  const remisesPhone = await getConfigValue(cleanId, 'event_remises_phone', '+54 9 11 4000-0000');
+  const eventTheme = await getConfigValue(cleanId, 'event_theme', 'golden-luxury');
+  
+  const timeline = await getEventTimeline(cleanId);
+  const guests = await getGuests(cleanId);
+
+  return {
+    eventId: cleanId,
+    clientName: event ? event.clientName : title,
+    eventTitle: title,
+    date: dateStr,
+    time: timeStr,
+    location: {
+      name: locationName,
+      address: locationAddress,
+      mapUrl: locationMapUrl
+    },
+    dressCode: {
+      title: dressCode,
+      details: dressCodeDetails
+    },
+    gifts: {
+      alias: giftsBankAlias,
+      cbu: giftsBankCbu,
+      holder: giftsBankHolder,
+      bank: giftsBankBank
+    },
+    transport: {
+      notes: transportNotes,
+      remisesPhone: remisesPhone
+    },
+    theme: eventTheme,
+    timeline,
+    tablesCount: new Set(guests.map(g => g.table).filter(t => t && t !== 'Sin Mesa')).size,
+    guestsCount: guests.length
+  };
+}
+
+/**
+ * Guest Messages & Dedications for Wall & Video
+ */
+async function getEventMessages(eventId = 'default', includeHidden = false) {
+  const cleanId = String(eventId || 'default').trim();
+  const raw = await getConfigValue(cleanId, 'app_event_messages', '[]');
+  let messages = [];
+  try {
+    messages = typeof raw === 'string' ? JSON.parse(raw) : (Array.isArray(raw) ? raw : []);
+  } catch (e) {
+    messages = [];
+  }
+  if (!Array.isArray(messages)) messages = [];
+  if (!includeHidden) {
+    return messages.filter(m => m && m.approved !== false);
+  }
+  return messages;
+}
+
+async function addEventMessage(eventId = 'default', messageData = {}) {
+  const cleanId = String(eventId || 'default').trim();
+  const author = (messageData.author || messageData.name || 'Invitado').trim();
+  const message = (messageData.message || messageData.text || '').trim();
+  if (!message) return null;
+
+  const messages = await getEventMessages(cleanId, true);
+  const newMsg = {
+    id: 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+    author: author || 'Invitado Especial',
+    message: message,
+    approved: messageData.approved !== undefined ? !!messageData.approved : true,
+    featured: !!messageData.featured,
+    source: messageData.source || 'rsvp',
+    phone: messageData.phone || '',
+    createdAt: new Date().toISOString()
+  };
+
+  messages.unshift(newMsg);
+  await setConfigValue(cleanId, 'app_event_messages', JSON.stringify(messages));
+  return newMsg;
+}
+
+async function moderateEventMessage(eventId = 'default', messageId, updates = {}) {
+  const cleanId = String(eventId || 'default').trim();
+  const messages = await getEventMessages(cleanId, true);
+  const idx = messages.findIndex(m => String(m.id) === String(messageId));
+  if (idx === -1) return null;
+
+  messages[idx] = {
+    ...messages[idx],
+    approved: updates.approved !== undefined ? !!updates.approved : messages[idx].approved,
+    featured: updates.featured !== undefined ? !!updates.featured : messages[idx].featured,
+    updatedAt: new Date().toISOString()
+  };
+
+  await setConfigValue(cleanId, 'app_event_messages', JSON.stringify(messages));
+  return messages[idx];
+}
+
+async function deleteEventMessage(eventId = 'default', messageId) {
+  const cleanId = String(eventId || 'default').trim();
+  let messages = await getEventMessages(cleanId, true);
+  messages = messages.filter(m => String(m.id) !== String(messageId));
+  await setConfigValue(cleanId, 'app_event_messages', JSON.stringify(messages));
+  return true;
+}
+
+module.exports = {
+  isSupabaseEnabled,
+  getGuests,
+  saveGuests,
+  clearGuests,
+  addGuest,
+  updateGuest,
+  deleteGuest,
+  getConfigValue,
+  getConfigValues,
+  setConfigValue,
+  getEventTitle,
+  setEventTitle,
+  getPhotos,
+  getPhoto,
+  addPhoto,
+  approvePhoto,
+  deletePhoto,
+  clearPhotos,
+  uploadPhotoFile,
+  uploadAudioFile,
+  uploadVideoFrameFile,
+  isEventValid,
+  getEvent,
+  getEvents,
+  createEvent,
+  toggleEvent,
+  updateEventServiceTrivia,
+  updateEventServiceMusic,
+  deleteEvent,
+  approveEvent,
+  rejectEvent,
+  getVendors,
+  createVendor,
+  toggleVendor,
+  deleteVendor,
+  validateEventPassword,
+  findEventByEmailAndPassword,
+  getRsvps,
+  addRsvp,
+  addOrUpdatePublicRsvp,
+  deleteRsvp,
+  updateRsvp,
+  saveSongSuggestion,
+  getCapitanesConfig,
+  saveCapitanesConfig,
+  getCapitanesProgress,
+  saveCapitanesProgress,
+  assignVendorToEvent,
+  getTemplateFineTuning,
+  saveTemplateFineTuning,
+  getGuestProfiles,
+  getGuestProfile,
+  saveGuestProfile,
+  getAwardsFromDb,
+  saveAwardsToDb,
+  getEventTimeline,
+  saveEventTimeline,
+  getEventInfoForApp,
+  getEventMessages,
+  addEventMessage,
+  moderateEventMessage,
+  deleteEventMessage
+};
+

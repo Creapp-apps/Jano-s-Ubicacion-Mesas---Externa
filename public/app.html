@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>miFiestAPP | Tu Fiesta Interactiva</title>
+  <link rel="icon" type="image/png" href="/assets/coronamain.png">
+  <meta name="theme-color" content="#09090b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;800&family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/app-mobile.css">
+  <link rel="stylesheet" href="/css/preloader.css">
+  <script src="/js/theme-bootstrap.js"></script>
+  <script src="/js/preloader.js"></script>
+</head>
+<body>
+
+  <!-- Premium Neutral Preloader -->
+  <div id="mifiestapp-preloader" class="mifiestapp-preloader">
+    <div class="preloader-backdrop"></div>
+    <div class="preloader-content">
+      <div class="preloader-logo-wrapper">
+        <div class="preloader-orbital-ring"></div>
+        <img src="/assets/coronamain.png" alt="miFiestAPP" class="preloader-crown-logo">
+      </div>
+      <div class="preloader-brand-title">miFiest<span>APP</span></div>
+      <div class="preloader-status-text">
+        <span class="preloader-dot-pulse"></span>
+        <span id="preloader-text-label">Cargando tu fiesta...</span>
+      </div>
+      <div class="preloader-progress-track">
+        <div class="preloader-progress-bar"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ambient Glows -->
+  <div class="ambient-mesh">
+    <div class="mesh-glow-1"></div>
+    <div class="mesh-glow-2"></div>
+  </div>
+
+  <div id="app-root">
+
+    <!-- Top App Navigation Header -->
+    <header class="app-header" id="app-header" style="display: none;">
+      <div class="header-left">
+        <button class="burger-btn" id="burger-btn" aria-label="Abrir Menú">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+        <div class="app-brand">
+          <img id="app-header-crown" src="/assets/coronamain.png" alt="miFiestAPP">
+          <span class="app-brand-title" id="app-brand-title">miFiestAPP</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="guest-avatar-badge" id="header-avatar-badge" title="Ver mi perfil">
+          <img src="/assets/coronamain.png" alt="Mi Perfil">
+        </div>
+      </div>
+    </header>
+
+    <!-- Sidebar Drawer Overlay -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <!-- Sidebar Drawer Menu -->
+    <aside class="sidebar-drawer" id="sidebar-drawer">
+      <!-- Profile Header -->
+      <div class="sidebar-profile-header">
+        <div class="sidebar-avatar-wrapper" data-section="mis-datos">
+          <img id="sidebar-avatar" src="/assets/coronamain.png" alt="Mi Avatar">
+          <div class="avatar-edit-icon">✎</div>
+        </div>
+        <div class="sidebar-guest-info">
+          <h4 id="sidebar-guest-name">Invitado VIP</h4>
+          <span class="sidebar-table-tag" id="sidebar-table-tag">Sin Mesa</span>
+        </div>
+      </div>
+
+      <!-- Navigation Links -->
+      <nav class="sidebar-nav">
+        <!-- Bloque 1: Mi Acceso & Datos -->
+        <div class="nav-group-title">📌 Mi Acceso & Datos</div>
+        <a href="#" class="nav-item active" data-section="credencial">
+          <div class="nav-item-left">
+            <span class="nav-icon">🎟️</span>
+            <span>Mi Credencial / QR</span>
+          </div>
+          <span class="nav-badge-pill">VIP</span>
+        </a>
+        <a href="#" class="nav-item" data-section="mis-datos">
+          <div class="nav-item-left">
+            <span class="nav-icon">👤</span>
+            <span>Mis Datos & Look</span>
+          </div>
+        </a>
+        <a href="#" class="nav-item" data-section="mi-mesa">
+          <div class="nav-item-left">
+            <span class="nav-icon">🍽️</span>
+            <span>Mi Mesa & Compañeros</span>
+          </div>
+        </a>
+
+        <!-- Bloque 2: Entretenimiento en Vivo -->
+        <div class="nav-group-title">🎉 Entretenimiento en Vivo</div>
+        <a href="#" class="nav-item" data-section="awards">
+          <div class="nav-item-left">
+            <span class="nav-icon">🏆</span>
+            <span>miFiestAPP Awards</span>
+          </div>
+          <span class="nav-badge-pill nav-badge-live">VOTAR</span>
+        </a>
+        <a href="#" class="nav-item" data-section="dj-box">
+          <div class="nav-item-left">
+            <span class="nav-icon">🎵</span>
+            <span>DJ Box & Tandas</span>
+          </div>
+        </a>
+        <a href="#" class="nav-item" data-section="muro-fotos">
+          <div class="nav-item-left">
+            <span class="nav-icon">📸</span>
+            <span>Muro de Fotos & Misiones</span>
+          </div>
+        </a>
+        <a href="#" class="nav-item" data-section="juegos">
+          <div class="nav-item-left">
+            <span class="nav-icon">🧠</span>
+            <span>Trivias & Capitanes</span>
+          </div>
+        </a>
+
+        <!-- Bloque 3: Información del Evento & Utilidades -->
+        <div class="nav-group-title">ℹ️ Información & Utilidades</div>
+        <a href="#" class="nav-item" data-section="info-evento">
+          <div class="nav-item-left">
+            <span class="nav-icon">📍</span>
+            <span>Ubicación & Dresscode</span>
+          </div>
+        </a>
+        <a href="#" class="nav-item" data-section="cronograma">
+          <div class="nav-item-left">
+            <span class="nav-icon">⏰</span>
+            <span>Cronograma de la Noche</span>
+          </div>
+        </a>
+        <a href="#" class="nav-item" data-section="regalos">
+          <div class="nav-item-left">
+            <span class="nav-icon">🎁</span>
+            <span>Cofre de Regalos</span>
+          </div>
+        </a>
+        <a href="#" class="nav-item" data-section="transporte">
+          <div class="nav-item-left">
+            <span class="nav-icon">🚕</span>
+            <span>Cómo Volver (Uber / Taxi)</span>
+          </div>
+        </a>
+      </nav>
+
+      <!-- Sidebar Footer -->
+      <div class="sidebar-footer">
+        <button class="switch-event-btn" id="switch-event-btn">
+          <span>🔄 Cambiar de Fiesta</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- SCREEN 1: GATEKEEPER (Ingreso de Código) -->
+    <main class="app-screen" id="screen-gatekeeper">
+      <div class="gatekeeper-container">
+        <img src="/assets/coronamain.png" alt="miFiestAPP" class="gatekeeper-logo">
+        <h1 class="gatekeeper-title">Bienvenido</h1>
+        <p class="gatekeeper-subtitle">Ingresá el código de tu fiesta para acceder al pase digital y la experiencia en vivo.</p>
+
+        <div class="code-input-wrapper">
+          <input type="text" id="event-code-input" class="code-input" placeholder="EJ: ALMA15" maxlength="15" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
+          <p id="code-error-msg" style="color: #ef4444; font-size: 0.78rem; margin-top: 8px; display: none;"></p>
+        </div>
+
+        <button id="btn-verify-code" class="btn-gold-primary">
+          <span>Ingresar a la Fiesta ➔</span>
+        </button>
+
+        <div class="or-divider">O TAMBIÉN</div>
+
+        <button class="btn-scan-qr" onclick="showToast('Apuntá tu cámara al QR de tu invitación o mesa 📷');">
+          <span>📷 Escanear QR de Invitación</span>
+        </button>
+      </div>
+    </main>
+
+    <!-- SCREEN 2: BIENVENIDA & ACTIVACIÓN DE PASE VIP (Completamente centrado) -->
+    <main class="app-screen" id="screen-guest-welcome">
+      <div class="look-studio-card welcome-modal-card">
+        <div class="hero-tag"><span class="dot"></span> PASE DIGITAL OFICIAL</div>
+        <h2 style="font-family: 'Cinzel', serif; font-size: 1.35rem; color: #fff; margin-bottom: 8px;">¡Bienvenido/a a la Fiesta!</h2>
+        <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 20px; line-height: 1.5;">
+          Ingresá tu nombre para generar tu <strong>Credencial VIP</strong> y acceder a tu mesa y la experiencia interactiva.
+        </p>
+
+        <div class="field-group" style="text-align: left; margin-bottom: 16px;">
+          <label class="field-label">Nombre y Apellido *</label>
+          <input type="text" id="welcome-name-input" class="field-input" placeholder="Ej: Sofía Gómez" autocomplete="name">
+        </div>
+
+        <button id="btn-activate-pass" class="btn-gold-primary" style="margin-bottom: 16px;">
+          <span>Acceder a la Fiesta ➔</span>
+        </button>
+
+        <!-- Botón Pulsante con Glow Breathe para Descargar la App Oficial -->
+        <button id="btn-download-app-banner" class="btn-download-glow" type="button" onclick="handleDownloadAppClick();">
+          <div class="btn-download-icon">📲</div>
+          <div class="btn-download-content">
+            <span class="btn-download-title">Clickeá aquí para descargar la App Oficial</span>
+            <span class="btn-download-sub">Accedé a la <strong>EXPERIENCIA COMPLETA & EXCLUSIVA</strong> del evento</span>
+          </div>
+        </button>
+      </div>
+    </main>
+
+    <!-- SCREEN 3: LOOK STUDIO (Cámara de Gala para el Día de la Fiesta) -->
+    <main class="app-screen" id="screen-look-onboarding">
+      <div class="look-studio-card">
+        <div class="hero-tag"><span class="dot"></span> ALFOMBRA ROJA DIGITAL</div>
+        <h2 style="font-family: 'Cinzel', serif; font-size: 1.25rem; color: #fff; margin-bottom: 6px;">Tu Look de Gala de Esta Noche</h2>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 20px;">
+          Sacate una selfie con tu vestuario de fiesta para participar de los <strong>miFiestAPP Awards</strong> y salir en la pantalla gigante 🏆
+        </p>
+
+        <div class="look-camera-box">
+          <video id="look-video" class="look-camera-preview" autoplay playsinline muted></video>
+          <img id="look-image-preview" class="look-camera-preview" style="display: none;" alt="Look Preview">
+          <canvas id="look-canvas" style="display: none;"></canvas>
+          <div class="look-frame-badge">VIP GUEST</div>
+        </div>
+
+        <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 20px;">
+          <button id="btn-capture-look" class="btn-gold-primary" style="width: auto; padding: 10px 20px;">
+            <span>📸 Sacar Selfie</span>
+          </button>
+          <button id="btn-retake-look" class="btn-scan-qr" style="width: auto; padding: 10px 18px; display: none;">
+            <span>🔄 Reintentar</span>
+          </button>
+          <label class="btn-scan-qr" style="width: auto; padding: 10px 18px; cursor: pointer;">
+            <span>Galería</span>
+            <input type="file" id="look-file-input" accept="image/*" style="display: none;">
+          </label>
+        </div>
+
+        <button id="btn-save-look-profile" class="btn-gold-primary" style="margin-top: 6px;">
+          <span>Guardar Mi Look de Gala ✓</span>
+        </button>
+
+        <button type="button" class="btn-scan-qr" style="margin-top: 10px; border: none; background: transparent; font-size: 0.78rem; color: var(--text-muted);" onclick="showAppHub();">
+          <span>Volver al menú principal</span>
+        </button>
+      </div>
+    </main>
+
+    <!-- SCREEN 4: APP HUB PRINCIPAL (SECCIONES) -->
+    <main class="app-screen" id="screen-app-hub">
+
+      <!-- SUB-SECTION: HOME / HERO -->
+      <div id="section-home" class="app-sub-section">
+        <div class="event-hero-card">
+          <div class="hero-tag"><span class="dot"></span> EVENTO EN VIVO</div>
+          <h2 class="event-hero-title" id="hub-event-title">Nuestra Fiesta</h2>
+          <p class="event-hero-date" id="hub-event-date">Cargando fecha...</p>
+
+          <div style="display: flex; gap: 8px;">
+            <button class="btn-gold-primary" style="padding: 10px 16px; font-size: 0.78rem;" onclick="navigateToSection('awards');">
+              <span>🏆 Votar Awards</span>
+            </button>
+            <button class="btn-scan-qr" style="padding: 10px 16px; font-size: 0.78rem;" onclick="navigateToSection('credencial');">
+              <span>🎟️ Mi Pase</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Banner Dinámico: Foto de Look Oficial de la Noche -->
+        <div id="hub-look-banner" class="look-studio-card" style="margin-bottom: 24px; padding: 18px; border: 1px solid var(--border-gold); background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.12) 0%, rgba(13, 13, 18, 0.8) 100%);">
+          <div style="display: flex; align-items: center; gap: 14px; text-align: left;">
+            <div id="hub-look-badge-icon" style="font-size: 2rem;">📸</div>
+            <div style="flex: 1;">
+              <h4 id="hub-look-title" style="font-size: 0.95rem; font-weight: 700; color: var(--gold-primary); margin-bottom: 2px;">¿Listo/a para la fiesta?</h4>
+              <p id="hub-look-subtitle" style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3;">Sacate tu foto con el Look Oficial de gala para participar de los miFiestAPP Awards.</p>
+            </div>
+          </div>
+          <button class="btn-gold-primary" style="margin-top: 14px; padding: 10px 16px; font-size: 0.82rem;" onclick="showLookStudio();">
+            <span id="hub-look-btn-text">📸 Sacar Foto con Mi Look</span>
+          </button>
+        </div>
+
+        <!-- Quick Access Grid -->
+        <div class="quick-action-grid">
+          <div class="action-card" onclick="navigateToSection('awards');">
+            <span class="action-card-icon">🏆</span>
+            <div class="action-card-title">Awards</div>
+            <div class="action-card-desc">Votación en vivo y ternas de la noche</div>
+          </div>
+          <div class="action-card" onclick="navigateToSection('dj-box');">
+            <span class="action-card-icon">🎵</span>
+            <div class="action-card-title">DJ Box</div>
+            <div class="action-card-desc">Pedí tu canción y votá la tanda</div>
+          </div>
+          <div class="action-card" onclick="navigateToSection('muro-fotos');">
+            <span class="action-card-icon">📸</span>
+            <div class="action-card-title">Muro de Fotos</div>
+            <div class="action-card-desc">Subí fotos a la pantalla gigante</div>
+          </div>
+          <div class="action-card" onclick="navigateToSection('mi-mesa');">
+            <span class="action-card-icon">🍽️</span>
+            <div class="action-card-title">Mi Mesa</div>
+            <div class="action-card-desc">Conocé quiénes te acompañan</div>
+          </div>
+          <div class="action-card" onclick="navigateToSection('cronograma');">
+            <span class="action-card-icon">⏰</span>
+            <div class="action-card-title">Itinerario</div>
+            <div class="action-card-desc">Cronograma minuto a minuto</div>
+          </div>
+          <div class="action-card" onclick="navigateToSection('regalos');">
+            <span class="action-card-icon">🎁</span>
+            <div class="action-card-title">Regalos</div>
+            <div class="action-card-desc">Alias y CBU con copia rápida</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SUB-SECTION: MI CREDENCIAL / PASE VIP -->
+      <div id="section-credencial" class="app-sub-section" style="display: none;">
+        <div class="look-studio-card vip-credential-card" style="border: 1.5px solid var(--gold-primary); background: linear-gradient(180deg, #161622 0%, #0c0c10 100%); padding: 26px 18px; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.8), 0 0 25px rgba(var(--primary-rgb), 0.15);">
+          <div class="hero-tag" style="margin-bottom: 12px;"><span class="dot"></span> PASE DE ACCESO OFICIAL</div>
+          <h3 id="pass-event-title" style="font-family: 'Cinzel', serif; font-size: 1.2rem; color: var(--gold-primary); margin-bottom: 16px;">miFiestAPP VIP</h3>
+          
+          <div id="pass-avatar-container" style="display: flex; justify-content: center; margin-bottom: 12px;">
+            <img id="pass-avatar" src="/assets/coronamain.png" style="width: 85px; height: 85px; border-radius: 50%; border: 3px solid var(--gold-primary); object-fit: cover; box-shadow: var(--gold-glow); display: block;" alt="Avatar">
+          </div>
+          <h2 id="pass-guest-name" style="font-size: 1.35rem; font-weight: 700; color: #fff; margin-bottom: 6px;">Invitado VIP</h2>
+          
+          <div style="display: flex; justify-content: center; margin-bottom: 18px;">
+            <div id="pass-table-badge" class="sidebar-table-tag" style="font-size: 0.85rem; padding: 4px 16px;">Mesa en Asignación</div>
+          </div>
+
+          <!-- Contenedor de Código QR Real -->
+          <div class="vip-qr-container" style="background: #ffffff; padding: 14px; border-radius: 16px; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 10px 30px rgba(0,0,0,0.7), 0 0 20px rgba(var(--primary-rgb), 0.25); border: 2px solid var(--gold-primary); margin-bottom: 16px;">
+            <img id="pass-qr-image" src="" style="width: 175px; height: 175px; display: block; border-radius: 6px;" alt="Código QR de Acceso VIP">
+            <span style="font-size: 0.65rem; font-weight: 800; color: #0b0b0c; letter-spacing: 1.5px; text-transform: uppercase; margin-top: 8px;">Escanear en Recepción</span>
+          </div>
+
+          <p style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.45; max-width: 290px; margin: 0 auto 16px;">
+            Presentá este código QR en la entrada al salón para registrar tu llegada y en las estaciones de fotos y juegos.
+          </p>
+
+          <button class="btn-gold-primary" style="font-size: 0.82rem; padding: 11px 16px; width: 100%; max-width: 280px; margin: 0 auto;" onclick="showLookStudio();">
+            <span>📸 Actualizar Foto de Gala</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- SUB-SECTION: MIS DATOS & LOOK -->
+      <div id="section-mis-datos" class="app-sub-section" style="display: none;">
+        <div class="look-studio-card">
+          <h3 style="font-family: 'Cinzel', serif; font-size: 1.15rem; color: var(--gold-primary); margin-bottom: 16px;">Editar Mis Datos & Look</h3>
+          <button class="btn-gold-primary" onclick="showLookOnboarding();" style="margin-bottom: 20px;">
+            <span>📸 Actualizar Foto de Hoy</span>
+          </button>
+          <div class="field-group">
+            <label class="field-label">Restricciones Alimentarias / Menú Especial</label>
+            <input type="text" id="dietary-input" class="field-input" placeholder="Ej: Celíaco, Vegano, etc.">
+          </div>
+          <button class="btn-scan-qr" onclick="showToast('Preferencias alimentarias guardadas.');">
+            <span>Guardar Preferencias</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- SUB-SECTION: MI MESA & COMPAÑEROS -->
+      <div id="section-mi-mesa" class="app-sub-section" style="display: none;">
+        <h3 style="font-family: 'Cinzel', serif; font-size: 1.2rem; color: var(--gold-primary); margin-bottom: 12px;">Compañeros de Mesa</h3>
+        <div id="table-companions-list" class="nominees-list">
+          <p style="font-size: 0.8rem; color: var(--text-muted); text-align: center; padding: 20px;">Cargando compañeros de tu mesa...</p>
+        </div>
+      </div>
+
+      <!-- SUB-SECTION: AWARDS & VOTACIÓN -->
+      <div id="section-awards" class="app-sub-section" style="display: none;">
+        <div class="award-card" style="background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.15) 0%, rgba(20, 20, 26, 0.8) 100%); border-color: var(--gold-primary);">
+          <h2 style="font-family: 'Cinzel', serif; font-size: 1.3rem; color: var(--gold-light); margin-bottom: 4px;">🏆 miFiestAPP Awards</h2>
+          <p style="font-size: 0.78rem; color: var(--text-muted);">Votá a tus amigos en cada categoría. Los ganadores se proyectarán en la pantalla del salón en vivo.</p>
+        </div>
+
+        <div id="awards-list-container">
+          <!-- Populated dynamically via JS -->
+        </div>
+      </div>
+
+      <!-- SUB-SECTION: DJ BOX (Pedir Canción / Tandas) -->
+      <div id="section-dj-box" class="app-sub-section" style="display: none;">
+        <div class="award-card">
+          <h2 style="font-family: 'Cinzel', serif; font-size: 1.2rem; color: var(--gold-primary); margin-bottom: 6px;">🎵 DJ Box & Pedir Canción</h2>
+          <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 16px;">Sugerí canciones al DJ o votá qué género musical sonará en la próxima tanda.</p>
+          <a href="/pedir-cancion.html" class="btn-gold-primary" style="text-decoration: none;">
+            <span>Abrir DJ Box Completo ➔</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- SUB-SECTION: MURO DE FOTOS -->
+      <div id="section-muro-fotos" class="app-sub-section" style="display: none;">
+        <div class="award-card">
+          <h2 style="font-family: 'Cinzel', serif; font-size: 1.2rem; color: var(--gold-primary); margin-bottom: 6px;">📸 Muro de Fotos en Vivo</h2>
+          <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 16px;">Subí fotos desde tu celular para que aparezcan proyectadas en el salón.</p>
+          <a href="/fotos.html" class="btn-gold-primary" style="text-decoration: none;">
+            <span>Subir Fotos al Muro ➔</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- SUB-SECTION: JUEGOS (Trivia & Capitanes) -->
+      <div id="section-juegos" class="app-sub-section" style="display: none;">
+        <div class="quick-action-grid" style="grid-template-columns: 1fr; margin-top: 10px;">
+          <a href="/trivia-client.html" class="action-card" style="border-color: var(--gold-primary);">
+            <span class="action-card-icon">🧠</span>
+            <div class="action-card-title">Jugar a la Trivia en Vivo</div>
+            <div class="action-card-desc">Respondé preguntas sobre los homenajeados y ganá puntos.</div>
+          </a>
+          <a href="/capitanes-client.html" class="action-card">
+            <span class="action-card-icon">👑</span>
+            <div class="action-card-title">Capitanes de Mesa</div>
+            <div class="action-card-desc">Desafíos fotográficos en equipo durante la fiesta.</div>
+          </a>
+        </div>
+      </div>
+
+      <!-- SUB-SECTION: INFORMACIÓN DEL EVENTO & MAPA -->
+      <div id="section-info-evento" class="app-sub-section" style="display: none;">
+        <div class="award-card">
+          <h3 style="font-family: 'Cinzel', serif; font-size: 1.15rem; color: var(--gold-primary); margin-bottom: 12px;">📍 Ubicación del Salón</h3>
+          <h4 id="info-location-name" style="font-size: 1rem; color: #fff;">Salón Principal</h4>
+          <p id="info-location-address" style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 14px;"></p>
+          <a id="info-map-btn" href="#" target="_blank" class="btn-scan-qr" style="text-decoration: none;">
+            <span>🗺️ Abrir en Google Maps</span>
+          </a>
+        </div>
+
+        <div class="award-card">
+          <h3 style="font-family: 'Cinzel', serif; font-size: 1.15rem; color: var(--gold-primary); margin-bottom: 8px;">👗 Código de Vestimenta</h3>
+          <h4 id="info-dress-title" style="font-size: 0.95rem; color: #fff; margin-bottom: 4px;">Elegante</h4>
+          <p id="info-dress-desc" style="font-size: 0.8rem; color: var(--text-muted);"></p>
+        </div>
+      </div>
+
+      <!-- SUB-SECTION: CRONOGRAMA -->
+      <div id="section-cronograma" class="app-sub-section" style="display: none;">
+        <h3 style="font-family: 'Cinzel', serif; font-size: 1.2rem; color: var(--gold-primary); margin-bottom: 6px;">⏰ Cronograma de la Noche</h3>
+        <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 14px;">Seguí el minuto a minuto del evento.</p>
+        
+        <div id="timeline-container" class="timeline-track">
+          <!-- Populated dynamically via JS -->
+        </div>
+      </div>
+
+      <!-- SUB-SECTION: COFRE DE REGALOS -->
+      <div id="section-regalos" class="app-sub-section" style="display: none;">
+        <div class="gift-card">
+          <div class="gift-box-icon">🎁</div>
+          <h3 style="font-family: 'Cinzel', serif; font-size: 1.25rem; color: var(--gold-light); margin-bottom: 6px;">Cofre de Regalos</h3>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 18px;">Si deseás hacernos un presente por transferencia bancaria:</p>
+
+          <div class="copy-pill-box" onclick="copyToClipboard(document.getElementById('gift-alias-text').textContent, 'Alias');">
+            <div class="copy-info">
+              <span>ALIAS MERCADO PAGO / BANCARIO</span>
+              <strong id="gift-alias-text">MIFIESTAPP.ALIAS</strong>
+            </div>
+            <div class="copy-badge-btn">COPIAR</div>
+          </div>
+
+          <div class="copy-pill-box" onclick="copyToClipboard(document.getElementById('gift-cbu-text').textContent, 'CBU');">
+            <div class="copy-info">
+              <span>CBU / CVU</span>
+              <strong id="gift-cbu-text">0000003100012345678901</strong>
+            </div>
+            <div class="copy-badge-btn">COPIAR</div>
+          </div>
+
+          <p id="gift-holder-text" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 10px;"></p>
+        </div>
+      </div>
+
+      <!-- SUB-SECTION: TRANSPORTE SEGURO / CÓMO VOLVER -->
+      <div id="section-transporte" class="app-sub-section" style="display: none;">
+        <div class="award-card">
+          <h3 style="font-family: 'Cinzel', serif; font-size: 1.15rem; color: var(--gold-primary); margin-bottom: 8px;">🚕 Transporte Seguro</h3>
+          <p id="transport-notes-text" style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 16px;">Recomendamos utilizar Uber, Cabify o remiserías autorizadas de la zona.</p>
+          
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <a href="https://m.uber.com/ul/" target="_blank" class="btn-gold-primary" style="text-decoration: none;">
+              <span>Pedir Uber con Destino Salón ➔</span>
+            </a>
+            <a id="transport-call-remises" href="tel:+5491140000000" class="btn-scan-qr" style="text-decoration: none;">
+              <span>📞 Llamar a Remises del Salón</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="app-toast" class="app-toast">
+    <span>✨</span>
+    <span id="toast-message">Operación completada</span>
+  </div>
+
+  <script src="/js/app-mobile.js"></script>
+</body>
+</html>

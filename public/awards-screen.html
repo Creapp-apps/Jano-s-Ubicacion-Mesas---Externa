@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>miFiestAPP Awards | Pantalla del Salón</title>
+  <link rel="icon" type="image/png" href="/assets/coronamain.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Montserrat:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <!-- Canvas Confetti for winning fanfare -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <style>
+    :root {
+      --bg: #070709;
+      --gold-primary: #d4af37;
+      --gold-light: #fdf3c6;
+      --gold-gradient: linear-gradient(135deg, #fff2b2 0%, #d4af37 50%, #8a6408 100%);
+      --gold-glow: 0 0 40px rgba(212, 175, 55, 0.45);
+      --card-bg: rgba(18, 18, 24, 0.85);
+      --border-gold: rgba(212, 175, 55, 0.35);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: #fff;
+      font-family: 'Montserrat', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Ambient Lighting */
+    .glow-sphere {
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(212, 175, 55, 0.15) 0%, transparent 70%);
+      filter: blur(60px);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .glow-1 { top: -200px; left: -100px; }
+    .glow-2 { bottom: -200px; right: -100px; }
+
+    #screen-root {
+      position: relative;
+      z-index: 1;
+      width: 90vw;
+      max-width: 1400px;
+      text-align: center;
+    }
+
+    /* Header */
+    .awards-header {
+      margin-bottom: 30px;
+      animation: fadeInDown 1s ease both;
+    }
+    .awards-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 4px;
+      color: var(--gold-primary);
+      text-transform: uppercase;
+      background: rgba(212, 175, 55, 0.12);
+      border: 1px solid var(--border-gold);
+      padding: 6px 20px;
+      border-radius: 9999px;
+      margin-bottom: 12px;
+    }
+    .awards-main-title {
+      font-family: 'Cinzel', serif;
+      font-size: 3.2rem;
+      font-weight: 900;
+      background: var(--gold-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      filter: drop-shadow(var(--gold-glow));
+    }
+    .awards-event-title {
+      font-size: 1.1rem;
+      color: #a0a0ab;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    /* STATE 1: IDLE / GALA WELCOME */
+    #view-idle {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 0;
+      animation: zoomIn 0.8s ease both;
+    }
+    .trophy-hero {
+      width: 160px;
+      height: 160px;
+      margin-bottom: 24px;
+      filter: drop-shadow(0 0 50px rgba(212, 175, 55, 0.6));
+      animation: float 4s ease-in-out infinite;
+    }
+    .idle-desc {
+      font-size: 1.25rem;
+      color: #e4e4e7;
+      max-width: 600px;
+      line-height: 1.6;
+    }
+
+    /* STATE 2: VOTING EN VIVO */
+    #view-voting {
+      display: none;
+      animation: fadeIn 0.6s ease both;
+    }
+    .category-banner {
+      background: rgba(212, 175, 55, 0.1);
+      border: 1.5px solid var(--gold-primary);
+      border-radius: 16px;
+      padding: 16px 30px;
+      display: inline-flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 40px;
+      box-shadow: var(--gold-glow);
+    }
+    .category-icon { font-size: 2.2rem; }
+    .category-name {
+      font-family: 'Cinzel', serif;
+      font-size: 1.8rem;
+      color: var(--gold-light);
+      font-weight: 700;
+    }
+    .voting-timer-pill {
+      background: #ef4444;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 800;
+      padding: 6px 16px;
+      border-radius: 9999px;
+      letter-spacing: 1px;
+    }
+
+    .nominees-grid {
+      display: flex;
+      justify-content: center;
+      gap: 28px;
+      flex-wrap: wrap;
+    }
+    .screen-nominee-card {
+      background: var(--card-bg);
+      border: 2px solid var(--border-gold);
+      border-radius: 20px;
+      width: 240px;
+      padding: 24px 18px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: all 0.3s ease;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+    }
+    .screen-nominee-card.leading {
+      border-color: var(--gold-primary);
+      box-shadow: var(--gold-glow);
+      transform: translateY(-8px);
+    }
+    .screen-nominee-avatar {
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      border: 3px solid var(--gold-primary);
+      object-fit: cover;
+      margin-bottom: 14px;
+      box-shadow: var(--gold-glow);
+    }
+    .screen-nominee-name {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 4px;
+      text-align: center;
+    }
+    .screen-nominee-table {
+      font-size: 0.85rem;
+      color: var(--gold-primary);
+      font-weight: 600;
+      margin-bottom: 14px;
+    }
+    .screen-vote-bar-bg {
+      width: 100%;
+      height: 12px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 6px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+    .screen-vote-bar-fill {
+      height: 100%;
+      background: var(--gold-gradient);
+      border-radius: 6px;
+      transition: width 0.4s ease;
+    }
+    .screen-vote-count {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--gold-light);
+    }
+
+    /* STATE 3: WINNER REVEAL */
+    #view-winner {
+      display: none;
+      animation: zoomIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    .winner-plaque-giant {
+      background: radial-gradient(circle, rgba(212, 175, 55, 0.25) 0%, rgba(18, 18, 24, 0.95) 100%);
+      border: 3px solid var(--gold-primary);
+      border-radius: 30px;
+      padding: 50px 40px;
+      max-width: 650px;
+      margin: 0 auto;
+      box-shadow: 0 0 100px rgba(212, 175, 55, 0.6);
+      position: relative;
+    }
+    .winner-crown {
+      font-size: 3.5rem;
+      margin-bottom: 10px;
+      animation: pulseLive 1.5s infinite;
+    }
+    .winner-avatar-giant {
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      border: 5px solid var(--gold-primary);
+      object-fit: cover;
+      margin: 0 auto 20px;
+      box-shadow: var(--gold-glow);
+      display: block;
+    }
+    .winner-name-giant {
+      font-family: 'Cinzel', serif;
+      font-size: 2.6rem;
+      font-weight: 900;
+      color: #fff;
+      margin-bottom: 8px;
+      letter-spacing: 2px;
+    }
+    .winner-category-giant {
+      font-size: 1.15rem;
+      color: var(--gold-light);
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+
+    /* Animations */
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-12px); }
+    }
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translateY(-30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes zoomIn {
+      from { opacity: 0; transform: scale(0.85); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    @keyframes pulseLive {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="glow-sphere glow-1"></div>
+  <div class="glow-sphere glow-2"></div>
+
+  <main id="screen-root">
+    
+    <!-- Screen Header -->
+    <header class="awards-header">
+      <div class="awards-badge">🏆 GALA DE PREMIACIÓN</div>
+      <h1 class="awards-main-title">miFiestAPP Awards</h1>
+      <p class="awards-event-title" id="screen-event-title">Cargando Evento...</p>
+    </header>
+
+    <!-- 1. VIEW IDLE (Bienvenida / Espera) -->
+    <section id="view-idle">
+      <img src="/assets/coronamain.png" class="trophy-hero" alt="Trophy">
+      <h2 style="font-family: 'Cinzel', serif; font-size: 2rem; color: var(--gold-light); margin-bottom: 12px;">Premios a los Mejores de la Noche</h2>
+      <p class="idle-desc">
+        Preparate para votar desde la app de tu celular a los nominados en cada categoría.
+      </p>
+    </section>
+
+    <!-- 2. VIEW VOTING (Votación en Vivo) -->
+    <section id="view-voting">
+      <div class="category-banner">
+        <span class="category-icon" id="voting-category-icon">🔥</span>
+        <div class="category-name" id="voting-category-title">El Más Manija</div>
+        <span class="voting-timer-pill" id="voting-timer">VOTANDO</span>
+      </div>
+
+      <div class="nominees-grid" id="voting-nominees-grid">
+        <!-- Injected dynamically via JS -->
+      </div>
+    </section>
+
+    <!-- 3. VIEW WINNER (Ganador Oficial) -->
+    <section id="view-winner">
+      <div class="winner-plaque-giant">
+        <div class="winner-crown">👑</div>
+        <img id="winner-avatar-img" src="/assets/coronamain.png" class="winner-avatar-giant" alt="Winner Avatar">
+        <h2 class="winner-name-giant" id="winner-name-text">Sofía Gómez</h2>
+        <p class="winner-category-giant" id="winner-category-text">Ganador: El Más Manija</p>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const eventId = urlParams.get('event') || 'default';
+
+    const viewIdle = document.getElementById('view-idle');
+    const viewVoting = document.getElementById('view-voting');
+    const viewWinner = document.getElementById('view-winner');
+    const eventTitleEl = document.getElementById('screen-event-title');
+
+    // Load initial event info
+    fetch(`/api/app/event-info/${eventId}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.info) {
+          eventTitleEl.textContent = data.info.eventTitle || data.info.clientName || 'Nuestra Fiesta';
+        }
+      }).catch(() => {});
+
+    // SSE Stream Connection
+    const sse = new EventSource(`/api/app/awards-stream/${eventId}`);
+
+    let lastActiveAward = null;
+
+    sse.onmessage = (event) => {
+      try {
+        const state = JSON.parse(event.data);
+        if (!state || !state.awards) return;
+
+        const awards = state.awards;
+        const activeAward = awards.find(a => a.status === 'voting') || awards.find(a => a.status === 'awarded' && a.id === state.activeAwardId);
+
+        if (!activeAward) {
+          showView('idle');
+          return;
+        }
+
+        if (activeAward.status === 'voting') {
+          renderVotingView(activeAward);
+        } else if (activeAward.status === 'awarded' && activeAward.winner) {
+          renderWinnerView(activeAward);
+        }
+      } catch (e) {
+        console.error('SSE Parse Error:', e);
+      }
+    };
+
+    function showView(viewName) {
+      viewIdle.style.display = viewName === 'idle' ? 'flex' : 'none';
+      viewVoting.style.display = viewName === 'voting' ? 'block' : 'none';
+      viewWinner.style.display = viewName === 'winner' ? 'block' : 'none';
+    }
+
+    function renderVotingView(award) {
+      showView('voting');
+      document.getElementById('voting-category-icon').textContent = award.icon || '🏆';
+      document.getElementById('voting-category-title').textContent = award.title;
+
+      const grid = document.getElementById('voting-nominees-grid');
+      const maxVotes = Math.max(1, ...(award.nominees || []).map(n => n.votesCount || 0));
+
+      grid.innerHTML = (award.nominees || []).map(nom => {
+        const pct = Math.round(((nom.votesCount || 0) / maxVotes) * 100);
+        const isLeading = nom.votesCount > 0 && nom.votesCount === maxVotes;
+        return `
+          <div class="screen-nominee-card ${isLeading ? 'leading' : ''}">
+            <img src="${nom.avatarUrl || '/assets/coronamain.png'}" class="screen-nominee-avatar" alt="${nom.name}">
+            <div class="screen-nominee-name">${nom.name}</div>
+            <div class="screen-nominee-table">${nom.tableNumber || 'Invitado'}</div>
+            <div class="screen-vote-bar-bg">
+              <div class="screen-vote-bar-fill" style="width: ${pct}%;"></div>
+            </div>
+            <div class="screen-vote-count">${nom.votesCount || 0} votos</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderWinnerView(award) {
+      showView('winner');
+      document.getElementById('winner-avatar-img').src = award.winner.avatarUrl || '/assets/coronamain.png';
+      document.getElementById('winner-name-text').textContent = award.winner.name;
+      document.getElementById('winner-category-text').textContent = `🏆 ${award.title} 🏆`;
+
+      // Trigger Confetti explosion
+      if (typeof confetti === 'function') {
+        confetti({
+          particleCount: 150,
+          spread: 80,
+          origin: { y: 0.6 },
+          colors: ['#d4af37', '#ffffff', '#f59e0b', '#ec4899', '#8b5cf6']
+        });
+      }
+    }
+  </script>
+</body>
+</html>

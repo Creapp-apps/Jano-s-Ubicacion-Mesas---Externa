@@ -7,9 +7,9 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.75);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
+      background: rgba(0, 0, 0, 0.82);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -21,15 +21,15 @@
       opacity: 1;
     }
     .custom-modal-card {
-      background: rgba(18, 18, 18, 0.95);
-      border: 1px solid #d4af37;
-      border-radius: 20px;
+      background: linear-gradient(180deg, rgba(22, 20, 28, 0.98) 0%, rgba(12, 10, 16, 0.98) 100%);
+      border: 1.5px solid var(--gold-primary, #d4af37);
+      border-radius: 22px;
       width: 90%;
-      max-width: 440px;
-      padding: 30px 25px;
-      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6), 0 0 35px rgba(212, 175, 55, 0.15);
+      max-width: 460px;
+      padding: 32px 26px;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.7), 0 0 35px rgba(var(--primary-rgb, 212, 175, 55), 0.25);
       transform: scale(0.9);
-      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.3s ease;
       text-align: center;
       color: #ffffff;
     }
@@ -37,32 +37,33 @@
       transform: scale(1);
     }
     .custom-modal-title {
-      font-family: 'Cinzel', serif;
-      color: #d4af37;
-      font-size: 1.4rem;
+      font-family: var(--accent-font, 'Cinzel', serif);
+      color: var(--gold-primary, #d4af37);
+      font-size: 1.35rem;
       margin-top: 0;
-      margin-bottom: 18px;
-      font-weight: 600;
-      letter-spacing: 1px;
+      margin-bottom: 16px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-shadow: 0 0 16px rgba(var(--primary-rgb, 212, 175, 55), 0.35);
     }
     .custom-modal-text {
       font-family: 'Montserrat', sans-serif;
       color: #cbd5e0;
-      font-size: 0.95rem;
+      font-size: 0.92rem;
       line-height: 1.6;
-      margin-bottom: 28px;
+      margin-bottom: 26px;
     }
     .custom-modal-footer {
       display: flex;
       justify-content: center;
-      gap: 15px;
+      gap: 14px;
     }
     .custom-modal-btn {
       font-family: 'Montserrat', sans-serif;
-      padding: 10px 26px;
+      padding: 11px 28px;
       border-radius: 20px;
       font-size: 0.85rem;
-      font-weight: 600;
+      font-weight: 700;
       cursor: pointer;
       transition: all 0.2s ease;
       outline: none;
@@ -78,15 +79,17 @@
       background: rgba(255, 255, 255, 0.05);
     }
     .custom-modal-btn-confirm {
-      background: linear-gradient(135deg, #d4af37, #aa8c2c);
+      background: var(--gold-gradient, linear-gradient(135deg, #d4af37, #aa8c2c));
       border: none;
       color: #000000;
-      box-shadow: 0 4px 10px rgba(212, 175, 55, 0.2);
+      box-shadow: 0 4px 14px rgba(var(--primary-rgb, 212, 175, 55), 0.3);
+      font-family: var(--accent-font, 'Montserrat', sans-serif);
+      letter-spacing: 0.5px;
     }
     .custom-modal-btn-confirm:hover {
       transform: translateY(-1px);
-      box-shadow: 0 6px 14px rgba(212, 175, 55, 0.3);
-      filter: brightness(1.1);
+      box-shadow: 0 6px 18px rgba(var(--primary-rgb, 212, 175, 55), 0.45);
+      filter: brightness(1.08);
     }
     
     /* Toast alerts */
@@ -98,21 +101,21 @@
       display: flex;
       flex-direction: column;
       gap: 10px;
-      max-width: 350px;
+      max-width: 380px;
       width: 90%;
     }
     .custom-toast {
-      background: rgba(18, 18, 18, 0.95);
-      border: 1px solid var(--card-border, #d4af37);
-      border-left: 4px solid #d4af37;
-      border-radius: 12px;
+      background: rgba(18, 18, 22, 0.96);
+      border: 1px solid rgba(var(--primary-rgb, 212, 175, 55), 0.35);
+      border-left: 4px solid var(--gold-primary, #d4af37);
+      border-radius: 14px;
       padding: 15px 20px;
       color: #ffffff;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 20px rgba(var(--primary-rgb, 212, 175, 55), 0.15);
       font-family: 'Montserrat', sans-serif;
-      font-size: 0.85rem;
+      font-size: 0.86rem;
       font-weight: 500;
-      line-height: 1.4;
+      line-height: 1.45;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -127,17 +130,21 @@
     }
     .custom-toast-success {
       border-left-color: #2ec4b6;
-      border-color: rgba(46, 196, 182, 0.3);
+      border-color: rgba(46, 196, 182, 0.4);
     }
     .custom-toast-error {
       border-left-color: #e71d54;
-      border-color: rgba(231, 29, 54, 0.3);
+      border-color: rgba(231, 29, 54, 0.4);
+    }
+    .custom-toast-warning {
+      border-left-color: #ffaa00;
+      border-color: rgba(255, 170, 0, 0.4);
     }
     .custom-toast-close {
       background: transparent;
       border: none;
       color: #a0aec0;
-      font-size: 1.1rem;
+      font-size: 1.2rem;
       cursor: pointer;
       line-height: 1;
       padding: 0;

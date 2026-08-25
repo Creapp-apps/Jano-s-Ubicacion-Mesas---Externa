@@ -169,4 +169,56 @@ ALTER TABLE public.tanda_battles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tanda_genres ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tanda_nominations ENABLE ROW LEVEL SECURITY;
 
+-- 11. miFiestAPP Mobile App Tables (Guest Profiles, Awards & Timeline)
+CREATE TABLE IF NOT EXISTS public.guest_profiles (
+    id TEXT PRIMARY KEY,
+    event_id TEXT NOT NULL REFERENCES public.events(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    table_number TEXT DEFAULT 'Sin Mesa',
+    avatar_url TEXT DEFAULT '/assets/coronamain.png',
+    dietary TEXT,
+    phone TEXT,
+    device_token TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_guest_profiles_event_id ON public.guest_profiles(event_id);
+
+CREATE TABLE IF NOT EXISTS public.event_awards (
+    id TEXT NOT NULL,
+    event_id TEXT NOT NULL REFERENCES public.events(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    icon TEXT DEFAULT '🏆',
+    description TEXT,
+    status TEXT DEFAULT 'idle' NOT NULL,
+    nominees JSONB DEFAULT '[]'::jsonb NOT NULL,
+    winner JSONB,
+    timer_ends_at BIGINT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    PRIMARY KEY (event_id, id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_event_awards_event_id ON public.event_awards(event_id);
+
+CREATE TABLE IF NOT EXISTS public.event_timeline (
+    id TEXT NOT NULL,
+    event_id TEXT NOT NULL REFERENCES public.events(id) ON DELETE CASCADE,
+    time_label TEXT NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT,
+    icon TEXT DEFAULT '✨',
+    is_current BOOLEAN DEFAULT FALSE,
+    order_index INT DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    PRIMARY KEY (event_id, id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_event_timeline_event_id ON public.event_timeline(event_id);
+
+ALTER TABLE public.guest_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.event_awards ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.event_timeline ENABLE ROW LEVEL SECURITY;
+
+
 

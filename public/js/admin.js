@@ -546,12 +546,206 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // --- INVITATION WIZARD ONBOARDING STEP CONTROLLER ---
+  const WIZARD_SUBTABS_ORDER = ['informacion', 'diseno', 'fotos-inv', 'regalos', 'confirmaciones', 'respuestas', 'invitados'];
+  const WIZARD_SUBTAB_NAMES = {
+    'informacion': 'Información',
+    'diseno': 'Diseño',
+    'fotos-inv': 'Fotos',
+    'regalos': 'Regalos',
+    'confirmaciones': 'Confirmaciones',
+    'respuestas': 'Respuestas',
+    'invitados': 'Invitados'
+  };
+
+  let wizardUnlockedSubtabs = new Set(['informacion']);
+  let wizardCompletedSubtabs = new Set();
+
+  function getWizardStorageKey() {
+    return 'mifiestapp_wizard_progress_' + (typeof eventId !== 'undefined' && eventId ? eventId : 'default');
+  }
+
+  function initWizardState(configData) {
+    wizardUnlockedSubtabs = new Set(['informacion']);
+    wizardCompletedSubtabs = new Set();
+
+    let loaded = false;
+
+    // 1. If explicitly marked as all completed in DB
+    if (configData && configData.invitationWizardCompleted === true) {
+      WIZARD_SUBTABS_ORDER.forEach(s => {
+        wizardUnlockedSubtabs.add(s);
+        wizardCompletedSubtabs.add(s);
+      });
+      loaded = true;
+    } else if (configData && configData.invitationWizardUnlocked) {
+      try {
+        const parsed = typeof configData.invitationWizardUnlocked === 'string' 
+          ? JSON.parse(configData.invitationWizardUnlocked) 
+          : configData.invitationWizardUnlocked;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          parsed.forEach(s => wizardUnlockedSubtabs.add(s));
+          const maxIdx = Math.max(...parsed.map(s => WIZARD_SUBTABS_ORDER.indexOf(s)).filter(idx => idx !== -1));
+          for (let i = 0; i < maxIdx; i++) {
+            wizardCompletedSubtabs.add(WIZARD_SUBTABS_ORDER[i]);
+          }
+          loaded = true;
+        }
+      } catch (e) {}
+    }
+
+    // 2. If not in DB, check localStorage for this specific event
+    if (!loaded) {
+      try {
+        const saved = localStorage.getItem(getWizardStorageKey());
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed.unlocked) && parsed.unlocked.length > 0) {
+            parsed.unlocked.forEach(s => wizardUnlockedSubtabs.add(s));
+            loaded = true;
+          }
+          if (Array.isArray(parsed.completed) && parsed.completed.length > 0) {
+            parsed.completed.forEach(s => wizardCompletedSubtabs.add(s));
+          }
+        }
+      } catch (e) {}
+    }
+
+    // Always ensure the first step is unlocked
+    wizardUnlockedSubtabs.add('informacion');
+
+    renderWizardSubtabsUI();
+  }
+
+  function saveWizardProgress() {
+    const unlockedArr = Array.from(wizardUnlockedSubtabs);
+    const completedArr = Array.from(wizardCompletedSubtabs);
+    const isCompleted = WIZARD_SUBTABS_ORDER.every(s => 
+      wizardCompletedSubtabs.has(s) || 
+      (s === 'respuestas' && wizardUnlockedSubtabs.has(s)) || 
+      (s === 'invitados' && wizardUnlockedSubtabs.has(s))
+    );
+
+    try {
+      localStorage.setItem(getWizardStorageKey(), JSON.stringify({
+        unlocked: unlockedArr,
+        completed: completedArr
+      }));
+    } catch (e) {}
+
+    // Sync to backend config in background
+    fetch(`/api/config?event=${encodeURIComponent(eventId)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        eventTitle: document.getElementById('event-title-input')?.value || 'Mi Fiesta',
+        invitation_wizard_unlocked: JSON.stringify(unlockedArr),
+        invitation_wizard_completed: isCompleted ? 'true' : 'false'
+      })
+    }).catch(() => {});
+  }
+
+  function renderWizardSubtabsUI() {
+    WIZARD_SUBTABS_ORDER.forEach(s => {
+      const btn = document.getElementById(`subtab-btn-${s}`);
+      if (!btn) return;
+
+      const isUnlocked = wizardUnlockedSubtabs.has(s);
+      const isCompleted = wizardCompletedSubtabs.has(s);
+
+      let statusIcon = btn.querySelector('.subtab-status-icon');
+      if (!statusIcon) {
+        statusIcon = document.createElement('span');
+        statusIcon.className = 'subtab-status-icon';
+        btn.appendChild(statusIcon);
+      }
+
+      if (isUnlocked) {
+        btn.classList.remove('locked');
+        btn.removeAttribute('aria-disabled');
+        btn.title = '';
+        if (isCompleted) {
+          btn.classList.add('completed');
+          statusIcon.textContent = '✓';
+        } else {
+          btn.classList.remove('completed');
+          statusIcon.textContent = '';
+        }
+      } else {
+        btn.classList.add('locked');
+        btn.classList.remove('completed');
+        btn.setAttribute('aria-disabled', 'true');
+        btn.title = 'Completá y guardá el paso anterior para desbloquear';
+        statusIcon.textContent = '🔒';
+      }
+    });
+  }
+
+  function unlockNextWizardStep(currentSubTabId) {
+    const currentIdx = WIZARD_SUBTABS_ORDER.indexOf(currentSubTabId);
+    if (currentIdx !== -1) {
+      wizardCompletedSubtabs.add(currentSubTabId);
+      if (currentIdx + 1 < WIZARD_SUBTABS_ORDER.length) {
+        const nextSubTabId = WIZARD_SUBTABS_ORDER[currentIdx + 1];
+        wizardUnlockedSubtabs.add(nextSubTabId);
+        // When confirmaciones is unlocked, also unlock respuestas and invitados
+        if (nextSubTabId === 'confirmaciones') {
+          wizardUnlockedSubtabs.add('respuestas');
+          wizardUnlockedSubtabs.add('invitados');
+        }
+      }
+      saveWizardProgress();
+      renderWizardSubtabsUI();
+    }
+  }
+
+  window.isWizardStepUnlocked = function(subTabId) {
+    return wizardUnlockedSubtabs.has(subTabId);
+  };
+
+  window.unlockWizardStep = function(subTabId) {
+    wizardUnlockedSubtabs.add(subTabId);
+    saveWizardProgress();
+    renderWizardSubtabsUI();
+  };
+
+  window.unlockAllWizardSteps = function() {
+    WIZARD_SUBTABS_ORDER.forEach(s => {
+      wizardUnlockedSubtabs.add(s);
+      wizardCompletedSubtabs.add(s);
+    });
+    saveWizardProgress();
+    renderWizardSubtabsUI();
+  };
+
   window.switchSubTab = function(subTabId) {
+    if (!wizardUnlockedSubtabs.has(subTabId)) {
+      const currentActiveSubtab = document.querySelector('#tab-invitacion .subtab-content-wrapper.active-subtab');
+      let currentName = 'Información';
+      if (currentActiveSubtab) {
+        const activeId = currentActiveSubtab.id.replace('subtab-', '');
+        currentName = WIZARD_SUBTAB_NAMES[activeId] || 'el paso actual';
+      }
+      const targetName = WIZARD_SUBTAB_NAMES[subTabId] || subTabId;
+      
+      const targetBtn = document.getElementById(`subtab-btn-${subTabId}`);
+      if (targetBtn) {
+        targetBtn.classList.remove('shake-locked');
+        void targetBtn.offsetHeight; // Force reflow
+        targetBtn.classList.add('shake-locked');
+        setTimeout(() => targetBtn.classList.remove('shake-locked'), 450);
+      }
+
+      showToast('warning', 'Paso Bloqueado 🔒', `Completá y guardá ${currentName} para desbloquear ${targetName}.`, 3500);
+      return;
+    }
+
     if (isFormDirty) {
       showUnsavedChangesModal(
         () => {
-          saveInvitationConfig();
-          performSwitchSubTab(subTabId);
+          saveInvitationConfig(() => {
+            performSwitchSubTab(subTabId);
+          });
         },
         () => {
           restoreFormState();
@@ -3021,11 +3215,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const invBankHolderInput = document.getElementById('inv-bank-holder-input');
   const invCbuInput = document.getElementById('inv-cbu-input');
   const invAliasInput = document.getElementById('inv-alias-input');
+  const invCardModel = document.getElementById('inv-card-model');
   const invTemplate = document.getElementById('inv-template');
   const invThemeFont = document.getElementById('inv-theme-font');
   const invThemeColor = document.getElementById('inv-theme-color');
   const invBgEffect = document.getElementById('inv-bg-effect');
   const invWaxSeal = document.getElementById('inv-wax-seal');
+  const invWaxSealInitials = document.getElementById('inv-wax-seal-initials');
   const invBgUrl = document.getElementById('inv-bg-url');
   const invPhoto1 = document.getElementById('inv-photo-1');
   const invPhoto2 = document.getElementById('inv-photo-2');
@@ -3545,6 +3741,123 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   }
 
+  function hexToRgb(hex) {
+    if (!hex) return '212, 175, 55';
+    let c = hex.replace('#', '');
+    if (c.length === 3) c = c.split('').map(x => x + x).join('');
+    const num = parseInt(c, 16);
+    if (isNaN(num)) return '212, 175, 55';
+    return `${(num >> 16) & 255}, ${(num >> 8) & 255}, ${num & 255}`;
+  }
+
+  function applyAdminTheme(theme) {
+    if (!theme) return;
+    const root = document.documentElement;
+    
+    let themeObj = theme;
+    if (typeof theme === 'string') {
+      const THEME_FALLBACKS = {
+        'golden-luxury': { primaryColor: '#d4af37', secondaryColor: '#aa7c11', bgColor: '#0b0b0c', fontFamily: "'Cinzel', serif", crownFilter: 'drop-shadow(0 0 16px rgba(212, 175, 55, 0.55))' },
+        'rose-gold': { primaryColor: '#e0a899', secondaryColor: '#b76e79', bgColor: '#0d0b0f', fontFamily: "'Playfair Display', serif", crownFilter: 'hue-rotate(305deg) saturate(1.4) brightness(1.1) drop-shadow(0 0 18px rgba(224, 168, 153, 0.6))' },
+        'cyber-neon': { primaryColor: '#00f3ff', secondaryColor: '#ff007f', bgColor: '#080511', fontFamily: "'Montserrat', sans-serif", crownFilter: 'hue-rotate(145deg) saturate(2.6) brightness(1.15) drop-shadow(0 0 22px rgba(0, 243, 255, 0.75))' },
+        'emerald-royal': { primaryColor: '#2ec4b6', secondaryColor: '#0d5c46', bgColor: '#060d0a', fontFamily: "'Cinzel', serif", crownFilter: 'hue-rotate(95deg) saturate(1.9) brightness(1.05) drop-shadow(0 0 18px rgba(46, 196, 182, 0.65))' },
+        'midnight-navy': { primaryColor: '#4cc9f0', secondaryColor: '#1e3a8a', bgColor: '#050a14', fontFamily: "'Cinzel', serif", crownFilter: 'hue-rotate(185deg) saturate(2.2) brightness(1.1) drop-shadow(0 0 20px rgba(76, 201, 240, 0.7))' },
+        'boho-rust': { primaryColor: '#e07a5f', secondaryColor: '#81b29a', bgColor: '#0e0b09', fontFamily: "'Outfit', sans-serif", crownFilter: 'hue-rotate(335deg) saturate(1.3) sepia(0.25) drop-shadow(0 0 16px rgba(224, 122, 95, 0.55))' },
+        'retro-disco': { primaryColor: '#ff0080', secondaryColor: '#7928ca', bgColor: '#0b0614', fontFamily: "'Syncopate', sans-serif", crownFilter: 'hue-rotate(265deg) saturate(2.8) brightness(1.2) drop-shadow(0 0 22px rgba(255, 0, 128, 0.75))' }
+      };
+      themeObj = THEME_FALLBACKS[theme] || THEME_FALLBACKS['golden-luxury'];
+    }
+
+    try {
+      if (typeof eventId !== 'undefined' && eventId && eventId !== 'default') {
+        localStorage.setItem('mifiestapp_theme_' + eventId, JSON.stringify(themeObj));
+      }
+      localStorage.setItem('mifiestapp_last_theme', JSON.stringify(themeObj));
+    } catch (e) {}
+
+    const primColor = themeObj.primaryColor || '#d4af37';
+    const secColor = themeObj.secondaryColor || '#aa7c11';
+    const primRgb = hexToRgb(primColor);
+    const secRgb = hexToRgb(secColor);
+
+    root.style.setProperty('--primary-rgb', primRgb);
+    root.style.setProperty('--secondary-rgb', secRgb);
+    root.style.setProperty('--gold-primary', primColor);
+    root.style.setProperty('--gold-light', primColor);
+    root.style.setProperty('--gold-gradient', `linear-gradient(135deg, #ffffff 0%, ${primColor} 50%, ${secColor} 100%)`);
+    root.style.setProperty('--card-border', `rgba(${primRgb}, 0.15)`);
+    root.style.setProperty('--card-border-active', `rgba(${primRgb}, 0.5)`);
+    root.style.setProperty('--gold-glow', `0 0 25px rgba(${primRgb}, 0.25)`);
+
+    if (themeObj.fontFamily) {
+      root.style.setProperty('--accent-font', themeObj.fontFamily);
+    }
+    if (themeObj.bgColor) {
+      root.style.setProperty('--bg-color', themeObj.bgColor);
+      root.style.setProperty('--bg-radial', `radial-gradient(circle at 50% 10%, rgba(${primRgb}, 0.12) 0%, ${themeObj.bgColor} 90%)`);
+    }
+
+    const adminCrown = document.getElementById('admin-header-crown');
+    if (adminCrown && themeObj.crownFilter) {
+      adminCrown.style.filter = themeObj.crownFilter;
+    }
+
+    const currentThemeId = typeof theme === 'string' ? theme : (theme && theme.id ? theme.id : '');
+    syncInvitationCardModelWithTheme(currentThemeId, themeObj);
+  }
+
+  function syncInvitationCardModelWithTheme(themeId, themeDetails) {
+    if (!invCardModel) return;
+    
+    const THEME_TO_CARD_MODEL = {
+      'golden-luxury': { model: 'imperial-gold', name: 'Golden Luxury (Imperial Gold)' },
+      'rose-gold': { model: 'editorial-luxe', name: 'Rose Gold Glam (Editorial Luxe)' },
+      'cyber-neon': { model: 'cyber-neon', name: 'Cyber Neon Party' },
+      'emerald-royal': { model: 'botanical', name: 'Emerald Royal (Botanical)' },
+      'midnight-navy': { model: 'editorial-luxe', name: 'Midnight Navy (Celestial Luxe)' },
+      'boho-rust': { model: 'terracotta', name: 'Boho Chic Rust (Terracotta)' },
+      'retro-disco': { model: 'retro-disco', name: 'Retro Disco Wave' }
+    };
+
+    const currentThemeKey = themeId || (themeDetails && themeDetails.id) || 'golden-luxury';
+    const themeConfig = THEME_TO_CARD_MODEL[currentThemeKey];
+
+    if (themeConfig) {
+      invCardModel.value = themeConfig.model;
+      invCardModel.disabled = true;
+      invCardModel.style.opacity = '0.55';
+      invCardModel.style.cursor = 'not-allowed';
+      invCardModel.style.background = 'rgba(255, 255, 255, 0.05)';
+      invCardModel.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+      invCardModel.style.filter = 'grayscale(0.4)';
+      invCardModel.setAttribute('title', `Fijado automáticamente por la temática oficial: ${themeConfig.name}`);
+
+      let lockedMsg = document.getElementById('inv-card-model-locked-msg');
+      if (!lockedMsg) {
+        lockedMsg = document.createElement('div');
+        lockedMsg.id = 'inv-card-model-locked-msg';
+        lockedMsg.style.cssText = 'margin-top: 8px; padding: 7px 12px; background: rgba(255, 255, 255, 0.04); border: 1px dashed rgba(255, 255, 255, 0.2); border-radius: 12px; font-size: 0.73rem; color: #a1a1aa; display: flex; align-items: center; gap: 6px; font-family: "Montserrat", sans-serif;';
+        if (invCardModel.parentNode) {
+          invCardModel.parentNode.appendChild(lockedMsg);
+        }
+      }
+      lockedMsg.innerHTML = `🔒 <span>Fijado por la temática del evento (<strong>${themeConfig.name}</strong>).</span>`;
+      lockedMsg.style.display = 'flex';
+      
+      invCardModel.dispatchEvent(new Event('change'));
+    } else {
+      invCardModel.disabled = false;
+      invCardModel.style.opacity = '1';
+      invCardModel.style.cursor = 'pointer';
+      invCardModel.style.background = 'rgba(0,0,0,0.3)';
+      invCardModel.style.borderColor = 'var(--card-border)';
+      invCardModel.style.filter = 'none';
+      invCardModel.removeAttribute('title');
+      const lockedMsg = document.getElementById('inv-card-model-locked-msg');
+      if (lockedMsg) lockedMsg.style.display = 'none';
+    }
+  }
+
   // Load Config from API
   function loadConfig() {
     fetch(`/api/config?event=${encodeURIComponent(eventId)}`)
@@ -3552,6 +3865,9 @@ document.addEventListener('DOMContentLoaded', () => {
       .then(data => {
         if (data && data.error) {
           throw new Error(data.error);
+        }
+        if (data) {
+          applyAdminTheme(data.themeDetails || data.eventTheme);
         }
         if (data && data.maxUploadSize) {
           maxUploadSize = data.maxUploadSize;
@@ -3625,6 +3941,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (invBankHolderInput) invBankHolderInput.value = data.invitationBankHolder || '';
         if (invCbuInput) invCbuInput.value = data.invitationCbu || '';
         if (invAliasInput) invAliasInput.value = data.invitationAlias || '';
+        if (invCardModel) {
+          syncInvitationCardModelWithTheme(data.eventTheme, data.themeDetails);
+        }
         if (invTemplate) {
           invTemplate.value = data.invitationTemplate || 'interactivo-3d';
           invTemplate.dispatchEvent(new Event('change'));
@@ -3645,6 +3964,7 @@ document.addEventListener('DOMContentLoaded', () => {
           invWaxSeal.value = data.invitationWaxSealDesign || 'rings';
           invWaxSeal.dispatchEvent(new Event('change'));
         }
+        if (invWaxSealInitials) invWaxSealInitials.value = data.invitationWaxSealInitials || '';
         if (invBgUrl) invBgUrl.value = data.invitationBgUrl || '';
         if (invPhoto1) invPhoto1.value = data.invitationPhoto1 || '';
         if (invPhoto2) invPhoto2.value = data.invitationPhoto2 || '';
@@ -3653,7 +3973,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (invPhoto5) invPhoto5.value = data.invitationPhoto5 || '';
 
         const enabledMods = data.enabledModules || {};
-        const modKeys = ['countdown', 'location', 'dresscode', 'photos', 'gifts', 'chest', 'rsvp', 'music', 'farewell'];
+        const modKeys = ['countdown', 'location', 'dresscode', 'photos', 'gifts', 'chest', 'rsvp', 'music', 'farewell', 'messages'];
         modKeys.forEach(key => {
           const el = document.getElementById(`mod-${key}`);
           if (el) {
@@ -3692,6 +4012,9 @@ document.addEventListener('DOMContentLoaded', () => {
             invForm.addEventListener('input', checkFormDirtyState);
             invForm.addEventListener('change', checkFormDirtyState);
           }
+
+          // Initialize Wizard Onboarding Steps state with loaded configuration
+          initWizardState(data);
         }, 150);
 
         const driveLoadingContainer = document.getElementById('drive-loading-container');
@@ -3766,8 +4089,16 @@ document.addEventListener('DOMContentLoaded', () => {
           if (isMusic) pageTitle = 'Control DJ & Batalla Musical';
           document.title = `${pageTitle} | ${data.clientName}`;
         }
+        if (typeof window.hideMiFiestappPreloader === 'function') {
+          window.hideMiFiestappPreloader();
+        }
       })
-      .catch(err => console.error('Error config:', err));
+      .catch(err => {
+        console.error('Error config:', err);
+        if (typeof window.hideMiFiestappPreloader === 'function') {
+          window.hideMiFiestappPreloader();
+        }
+      });
   }
 
   // Load Stats from API
@@ -4586,7 +4917,11 @@ Tu presencia hará que esta celebración sea aún más significativa.
     return true;
   }
   
-  function saveInvitationConfig(e) {
+  function saveInvitationConfig(callback, nextSubTabId) {
+    if (typeof callback === 'object' && callback && callback.preventDefault) {
+      // Event object passed from addEventListener
+      callback = null;
+    }
     if (!validateMandatoryInvitationFields()) {
       return;
     }
@@ -4635,10 +4970,12 @@ Tu presencia hará que esta celebración sea aún más significativa.
       invitationBankHolder: invBankHolderInput ? invBankHolderInput.value.trim() : '',
       invitationDressCode: invDressInput ? invDressInput.value.trim() : '',
       invitationTemplate: invTemplate ? invTemplate.value : 'interactivo-3d',
+      invitationCardModel: invCardModel ? invCardModel.value : 'imperial-gold',
       invitationThemeFont: invThemeFont ? invThemeFont.value : 'classic-editorial',
       invitationThemeColor: invThemeColor ? invThemeColor.value : 'golden-luxury',
       invitationBgEffect: invBgEffect ? invBgEffect.value : 'golden-dust',
       invitationWaxSealDesign: invWaxSeal ? invWaxSeal.value : 'rings',
+      invitationWaxSealInitials: invWaxSealInitials ? invWaxSealInitials.value.trim() : '',
       invitationBgUrl: invBgUrl ? invBgUrl.value.trim() : '',
       invitationPhoto1: invPhoto1 ? invPhoto1.value.trim() : '',
       invitationPhoto2: invPhoto2 ? invPhoto2.value.trim() : '',
@@ -4654,7 +4991,8 @@ Tu presencia hará que esta celebración sea aún más significativa.
         chest: document.getElementById('mod-chest') ? document.getElementById('mod-chest').checked : true,
         rsvp: document.getElementById('mod-rsvp') ? document.getElementById('mod-rsvp').checked : true,
         music: document.getElementById('mod-music') ? document.getElementById('mod-music').checked : true,
-        farewell: document.getElementById('mod-farewell') ? document.getElementById('mod-farewell').checked : true
+        farewell: document.getElementById('mod-farewell') ? document.getElementById('mod-farewell').checked : true,
+        messages: document.getElementById('mod-messages') ? document.getElementById('mod-messages').checked : true
       }
     };
 
@@ -4682,6 +5020,23 @@ Tu presencia hará que esta celebración sea aún más significativa.
         if (eventTitlePhotosInput) eventTitlePhotosInput.value = payload.eventTitle;
         if (printEventTitle) printEventTitle.textContent = payload.eventTitle;
 
+        // Unlock current step and next step in Wizard flow
+        const currentActiveSubtab = document.querySelector('#tab-invitacion .subtab-content-wrapper.active-subtab');
+        const activeSubtabId = currentActiveSubtab ? currentActiveSubtab.id.replace('subtab-', '') : 'informacion';
+        unlockNextWizardStep(activeSubtabId);
+
+        if (typeof nextSubTabId === 'string' && nextSubTabId) {
+          wizardUnlockedSubtabs.add(nextSubTabId);
+          renderWizardSubtabsUI();
+          setTimeout(() => {
+            performSwitchSubTab(nextSubTabId);
+            const container = document.getElementById('tab-invitacion');
+            if (container) container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 300);
+        } else if (typeof callback === 'function') {
+          callback();
+        }
+
         setTimeout(() => {
           initialFormState = captureFormState();
           clearDirtyHighlights();
@@ -4697,6 +5052,10 @@ Tu presencia hará que esta celebración sea aún más significativa.
       showToast('error', 'Error', 'Error de red al intentar guardar.', 4000);
     });
   }
+
+  window.saveAndAdvanceWizard = function(nextSubTabId) {
+    saveInvitationConfig(null, nextSubTabId);
+  };
 
   function loadRsvps() {
     fetch(`/api/rsvps?event=${encodeURIComponent(eventId)}`)
@@ -4719,6 +5078,7 @@ Tu presencia hará que esta celebración sea aún más significativa.
         renderInvitadosTable();
         renderGuestsTable();
         renderModalGuestList();
+        loadMessagesList();
       })
       .catch(err => {
         console.error('Error fetching RSVPs:', err);
@@ -4908,6 +5268,148 @@ Tu presencia hará que esta celebración sea aún más significativa.
         const id = btn.getAttribute('data-id');
         deleteRsvpEntry(id);
       });
+    });
+  }
+
+  let allGuestMessages = [];
+
+  function loadMessagesList() {
+    const tableBody = document.getElementById('messages-table-body');
+    fetch(`/api/messages?event=${encodeURIComponent(eventId)}&all=true`)
+      .then(res => res.json())
+      .then(data => {
+        allGuestMessages = (data && data.messages) ? data.messages : [];
+        renderMessagesTable();
+      })
+      .catch(err => {
+        console.error('Error fetching guest messages:', err);
+        if (tableBody) {
+          tableBody.innerHTML = `
+            <tr>
+              <td colspan="5" style="text-align: center; color: var(--error); padding: 20px;">
+                Error al cargar dedicatorias: ${err.message || err}
+              </td>
+            </tr>
+          `;
+        }
+      });
+  }
+
+  function renderMessagesTable() {
+    const tableBody = document.getElementById('messages-table-body');
+    if (!tableBody) return;
+
+    if (allGuestMessages.length === 0) {
+      tableBody.innerHTML = `
+        <tr>
+          <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 25px;">
+            No hay dedicatorias de invitados registradas aún. Aparecerán aquí automáticamente cuando tus invitados confirmen su asistencia.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tableBody.innerHTML = allGuestMessages.map(msg => {
+      const isApproved = msg.approved !== false;
+      const isFeatured = !!msg.featured;
+      const sourceBadge = msg.source === 'rsvp' 
+        ? `<span class="badge" style="background: rgba(37,211,102,0.15); color: #25D366; font-size: 0.72rem; padding: 3px 8px; border-radius: 8px;">RSVP</span>`
+        : `<span class="badge" style="background: rgba(0,240,255,0.15); color: #00f0ff; font-size: 0.72rem; padding: 3px 8px; border-radius: 8px;">Directo</span>`;
+
+      const statusBadge = isApproved 
+        ? `<span class="badge" style="background: rgba(46,204,113,0.15); color: #2ecc71; font-size: 0.72rem; padding: 4px 10px; border-radius: 12px; font-weight: 600;">✓ Aprobado</span>`
+        : `<span class="badge" style="background: rgba(231,76,60,0.15); color: #e74c3c; font-size: 0.72rem; padding: 4px 10px; border-radius: 12px; font-weight: 600;">Oculto</span>`;
+
+      const featuredStar = isFeatured ? '⭐ ' : '';
+
+      return `
+        <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
+          <td style="font-weight: 600; color: white;">
+            ${featuredStar}${escapeHtml(msg.author || 'Invitado')}
+            ${msg.phone ? `<div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 400;">${escapeHtml(msg.phone)}</div>` : ''}
+          </td>
+          <td style="color: var(--text-muted); font-size: 0.8rem; line-height: 1.4;">
+            "${escapeHtml(msg.message || '')}"
+          </td>
+          <td>${sourceBadge}</td>
+          <td style="text-align: center;">${statusBadge}</td>
+          <td style="text-align: center;">
+            <div style="display: flex; gap: 6px; justify-content: center; align-items: center;">
+              <button type="button" class="btn btn-secondary btn-toggle-msg-status" data-id="${msg.id}" data-approved="${!isApproved}" title="${isApproved ? 'Ocultar de pantalla' : 'Aprobar para pantalla'}" style="padding: 4px 8px; font-size: 0.75rem;">
+                ${isApproved ? '👁️ Ocultar' : '✅ Aprobar'}
+              </button>
+              <button type="button" class="btn btn-secondary btn-toggle-msg-featured" data-id="${msg.id}" data-featured="${!isFeatured}" title="${isFeatured ? 'Quitar destacado' : 'Destacar en pantalla'}" style="padding: 4px 8px; font-size: 0.75rem; color: ${isFeatured ? 'var(--gold-primary)' : 'var(--text-muted)'};">
+                ${isFeatured ? '★' : '☆'}
+              </button>
+              <button type="button" class="btn btn-danger btn-delete-msg" data-id="${msg.id}" title="Eliminar mensaje" style="padding: 4px 8px; font-size: 0.75rem;">
+                🗑️
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    tableBody.querySelectorAll('.btn-toggle-msg-status').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-id');
+        const approved = btn.getAttribute('data-approved') === 'true';
+        moderateMessageInAdmin(id, { approved });
+      });
+    });
+
+    tableBody.querySelectorAll('.btn-toggle-msg-featured').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-id');
+        const featured = btn.getAttribute('data-featured') === 'true';
+        moderateMessageInAdmin(id, { featured });
+      });
+    });
+
+    tableBody.querySelectorAll('.btn-delete-msg').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-id');
+        deleteMessageInAdmin(id);
+      });
+    });
+  }
+
+  function moderateMessageInAdmin(id, updates) {
+    fetch(`/api/admin/messages/moderate?event=${encodeURIComponent(eventId)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, ...updates })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        loadMessagesList();
+      } else {
+        alert(data.error || 'Error al actualizar mensaje');
+      }
+    })
+    .catch(err => {
+      console.error('Error moderating message:', err);
+    });
+  }
+
+  function deleteMessageInAdmin(id) {
+    if (!confirm('¿Estás seguro de que deseas eliminar este mensaje definitivamente?')) return;
+
+    fetch(`/api/admin/messages/${encodeURIComponent(id)}?event=${encodeURIComponent(eventId)}`, {
+      method: 'DELETE'
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        loadMessagesList();
+      } else {
+        alert(data.error || 'Error al eliminar mensaje');
+      }
+    })
+    .catch(err => {
+      console.error('Error deleting message:', err);
     });
   }
 
@@ -5394,7 +5896,9 @@ Tu presencia hará que esta celebración sea aún más significativa.
       printQrImg.src = printQrUrl;
     }
 
-    const titleInput = document.getElementById('event-title-input');
+    const titleInput = isInvitation 
+      ? (document.getElementById('inv-title-input') || document.getElementById('event-title-input'))
+      : (document.getElementById('event-title-input') || document.getElementById('inv-title-input'));
     const subtitleInput = document.getElementById('qr-poster-subtitle-input');
     const customTitle = titleInput ? titleInput.value.trim() : '';
     const customSubtitle = subtitleInput ? subtitleInput.value.trim() : '';
@@ -5500,7 +6004,7 @@ Tu presencia hará que esta celebración sea aún más significativa.
         <div class="audio-up-progress-text" id="audio-up-text">0%</div>
       </div>
       <div class="audio-up-status-title" id="audio-up-status-title">Iniciando...</div>
-      <div class="audio-up-friendly-msg" id="audio-up-friendly-msg" style="font-size: 0.84rem; color: var(--gold-light); margin-top: -18px; margin-bottom: 22px; font-weight: 500; font-style: italic; opacity: 1; transition: opacity 0.3s ease, transform 0.3s ease; text-shadow: 0 0 10px rgba(212,175,55,0.3);">
+      <div class="audio-up-friendly-msg" id="audio-up-friendly-msg" style="font-size: 0.84rem; color: var(--gold-light); margin-top: -18px; margin-bottom: 22px; font-weight: 500; font-style: italic; opacity: 1; transition: opacity 0.3s ease, transform 0.3s ease; text-shadow: 0 0 10px rgba(var(--primary-rgb, 212, 175, 55), 0.35);">
         Calibrando tu pista de audio... 🎵
       </div>
       
@@ -5613,6 +6117,8 @@ Tu presencia hará que esta celebración sea aún más significativa.
       setSuccess: () => {
         clearInterval(friendlyMsgInterval);
         if (friendlyMsgEl) friendlyMsgEl.style.display = 'none';
+        modal.classList.remove('is-error');
+        modal.classList.add('is-success');
         setProgress(100);
         statusTitle.textContent = '¡Pista guardada con éxito!';
         statusTitle.style.color = 'var(--success)';
@@ -5635,6 +6141,8 @@ Tu presencia hará que esta celebración sea aún más significativa.
       setError: (msg) => {
         clearInterval(friendlyMsgInterval);
         if (friendlyMsgEl) friendlyMsgEl.style.display = 'none';
+        modal.classList.remove('is-success');
+        modal.classList.add('is-error');
         statusTitle.textContent = msg;
         statusTitle.style.color = 'var(--error)';
         fillCircle.style.stroke = 'var(--error)';
@@ -6357,10 +6865,13 @@ Tu presencia hará que esta celebración sea aún más significativa.
     if (!previewIframe || !isIframeLoaded) return;
 
     const configPayload = {
+      invCardModel: invCardModel ? invCardModel.value : 'imperial-gold',
+      invitationCardModel: invCardModel ? invCardModel.value : 'imperial-gold',
       invTemplate: invTemplate ? invTemplate.value : 'interactivo-3d',
       invThemeColor: invThemeColor ? invThemeColor.value : 'golden-luxury',
       invThemeFont: invThemeFont ? invThemeFont.value : 'classic-editorial',
       invWaxSeal: invWaxSeal ? invWaxSeal.value : 'rings',
+      invWaxSealInitials: invWaxSealInitials ? invWaxSealInitials.value.trim() : '',
       invBgEffect: invBgEffect ? invBgEffect.value : 'none',
       invBgUrl: invBgUrl ? invBgUrl.value.trim() : '',
       invPhoto1: invPhoto1 ? invPhoto1.value.trim() : '',
@@ -6381,7 +6892,8 @@ Tu presencia hará que esta celebración sea aún más significativa.
         chest: document.getElementById('mod-chest') ? document.getElementById('mod-chest').checked : true,
         rsvp: document.getElementById('mod-rsvp') ? document.getElementById('mod-rsvp').checked : true,
         music: document.getElementById('mod-music') ? document.getElementById('mod-music').checked : true,
-        farewell: document.getElementById('mod-farewell') ? document.getElementById('mod-farewell').checked : true
+        farewell: document.getElementById('mod-farewell') ? document.getElementById('mod-farewell').checked : true,
+        messages: document.getElementById('mod-messages') ? document.getElementById('mod-messages').checked : true
       }
     };
 
@@ -6393,7 +6905,7 @@ Tu presencia hará que esta celebración sea aún más significativa.
 
   // --- Real-time preview input listeners ---
   const inputsToListen = [
-    invTemplate, invThemeFont, invThemeColor, invBgEffect, invWaxSeal,
+    invCardModel, invTemplate, invThemeFont, invThemeColor, invBgEffect, invWaxSeal, invWaxSealInitials,
     invBgUrl, invTitleInput, invDateOnlyInput, invTimeOnlyInput, invTimeEndInput,
     invPhoto1, invPhoto2, invPhoto3, invPhoto4, invPhoto5,
     ...Array.from(document.querySelectorAll('.inv-module-toggle'))
@@ -7185,19 +7697,32 @@ Tu presencia hará que esta celebración sea aún más significativa.
   function getDefaultQuestions() {
     return [
       {
-        question: "¿Dónde se conocieron los novios/agasajados?",
-        options: ["En el colegio/universidad", "En una fiesta/boliche", "Por redes sociales", "En el trabajo"],
-        correctIndex: 0
+        question: "¿Dónde y cómo se conocieron los novios/agasajados?",
+        options: ["En el colegio/universidad", "En una fiesta o boliche", "Por redes sociales / amigos", "En el trabajo"],
+        correctIndex: 0,
+        timeLimit: 20,
+        doublePoints: false
       },
       {
         question: "¿Cuál es el plato de comida preferido del agasajado/a?",
-        options: ["Asado", "Pastas", "Sushi", "Hamburguesa"],
-        correctIndex: 1
+        options: ["Asado completo", "Pastas caseras", "Sushi", "Hamburguesa gourmet"],
+        correctIndex: 1,
+        timeLimit: 15,
+        doublePoints: false
       },
       {
-        question: "¿Cuál es su destino soñado para viajar?",
-        options: ["Caribe/Playa", "Europa/Histórico", "Asia/Aventura", "Bariloche/Nieve"],
-        correctIndex: 0
+        question: "¿Cuál es el destino soñado para su próximo gran viaje?",
+        options: ["Caribe / Playas", "Europa histórica", "Aventura en Asia", "Nieve en la Patagonia"],
+        correctIndex: 0,
+        timeLimit: 20,
+        doublePoints: false
+      },
+      {
+        question: "🌟 PREGUNTA DE ORO: ¿Quién es más propenso a quedarse dormido viendo una película?",
+        options: ["Él / Novio", "Ella / Novia", "Ambos a los 10 minutos", "Ninguno, son noctámbulos"],
+        correctIndex: 0,
+        timeLimit: 20,
+        doublePoints: true
       }
     ];
   }
@@ -7223,6 +7748,7 @@ Tu presencia hará que esta celebración sea aún más significativa.
         }
 
         renderTriviaQuestionsEditor();
+        setActiveTriviaTemplateUI(detectTriviaThemeFromQuestions(triviaQuestionsData));
       })
       .catch(err => {
         console.error('Error loading trivia config:', err);
@@ -7233,52 +7759,107 @@ Tu presencia hará que esta celebración sea aún más significativa.
 
   function renderTriviaQuestionsEditor() {
     const listContainer = document.getElementById('trivia-questions-list');
+    const countEl = document.getElementById('admin-trivia-q-count');
+    if (countEl) countEl.textContent = triviaQuestionsData.length;
     if (!listContainer) return;
 
     listContainer.innerHTML = '';
 
     triviaQuestionsData.forEach((q, qIndex) => {
       const qDiv = document.createElement('div');
-      qDiv.className = 'question-editor-card';
-      qDiv.style.background = 'rgba(255,255,255,0.03)';
-      qDiv.style.padding = '15px';
-      qDiv.style.borderRadius = '15px';
-      qDiv.style.border = '1px solid var(--card-border)';
-      qDiv.style.position = 'relative';
-      qDiv.style.marginBottom = '15px';
+      qDiv.className = `question-editor-card ${q.doublePoints ? 'gold-round' : ''}`;
+
+      const isFirst = qIndex === 0;
+      const isLast = qIndex === triviaQuestionsData.length - 1;
 
       qDiv.innerHTML = `
-        <button type="button" class="btn-delete-q" onclick="deleteTriviaQuestion(${qIndex})" style="position: absolute; right: 10px; top: 10px; background: transparent; border: none; color: #ff4d4d; font-size: 1.5rem; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; padding: 0;">&times;</button>
-        <div style="margin-bottom: 10px;">
-          <label style="display: block; font-size: 0.7rem; text-transform: uppercase; color: var(--gold-light); margin-bottom: 4px; font-weight:600;">Pregunta ${qIndex + 1}</label>
-          <input type="text" class="form-control-admin q-text-input" value="${q.question.replace(/"/g, '&quot;')}" style="width: 100%;" onchange="updateTriviaQuestionText(${qIndex}, this.value)">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="q-header-title" style="font-size: 0.75rem; text-transform: uppercase; color: var(--trivia-theme-accent, #38bdf8); font-weight:700; letter-spacing: 0.5px; transition: color 0.3s ease;">
+              ${q.doublePoints ? '🌟 PREGUNTA ESPECIAL (2X) #' + (qIndex + 1) : 'PREGUNTA #' + (qIndex + 1)}
+            </span>
+            <div style="display: inline-flex; gap: 4px;">
+              <button type="button" class="btn-trivia-reorder" onclick="moveTriviaQuestion(${qIndex}, -1)" ${isFirst ? 'disabled' : ''} title="Subir">▲</button>
+              <button type="button" class="btn-trivia-reorder" onclick="moveTriviaQuestion(${qIndex}, 1)" ${isLast ? 'disabled' : ''} title="Bajar">▼</button>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <button type="button" class="btn-trivia-duplicate" onclick="duplicateTriviaQuestion(${qIndex})" title="Duplicar Pregunta">📋 Duplicar</button>
+            <button type="button" class="btn-trivia-delete" onclick="deleteTriviaQuestion(${qIndex})" title="Eliminar">&times;</button>
+          </div>
         </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
-          ${q.options.map((opt, oIndex) => `
+
+        <div style="margin-bottom: 10px;">
+          <input type="text" class="form-control-admin q-text-input" value="${(q.questionText || q.question || '').replace(/"/g, '&quot;')}" style="width: 100%; font-weight:600;" onchange="updateTriviaQuestionText(${qIndex}, this.value)" placeholder="Escribí el texto de la pregunta...">
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+          ${(q.options || ['','','','']).map((opt, oIndex) => `
             <div>
               <label style="display: block; font-size: 0.65rem; color: var(--text-muted); margin-bottom: 2px;">Opción ${String.fromCharCode(65 + oIndex)}</label>
-              <input type="text" class="form-control-admin q-opt-input" value="${opt.replace(/"/g, '&quot;')}" style="width:100%; font-size:0.75rem; padding:8px 10px;" onchange="updateTriviaOptionText(${qIndex}, ${oIndex}, this.value)">
+              <input type="text" class="form-control-admin q-opt-input" value="${opt.replace(/"/g, '&quot;')}" style="width:100%; font-size:0.75rem; padding:7px 10px;" onchange="updateTriviaOptionText(${qIndex}, ${oIndex}, this.value)">
             </div>
           `).join('')}
         </div>
-        <div>
-          <label style="display: block; font-size: 0.7rem; text-transform: uppercase; color: var(--gold-light); margin-bottom: 4px; font-weight:600;">Respuesta Correcta</label>
-          <select class="form-control-admin trivia-correct-select" style="width: 100%;" onchange="updateTriviaCorrectIndex(${qIndex}, parseInt(this.value))">
-            ${q.options.map((opt, oIndex) => `
-              <option value="${oIndex}" ${oIndex === q.correctIndex ? 'selected' : ''}>Opción ${String.fromCharCode(65 + oIndex)}: ${opt.substring(0, 30)}</option>
-            `).join('')}
-          </select>
+
+        <div style="display: grid; grid-template-columns: 1.4fr 0.8fr 1fr; gap: 8px; align-items: center;">
+          <div>
+            <label style="display: block; font-size: 0.65rem; text-transform: uppercase; color: var(--gold-light); margin-bottom: 2px; font-weight:600;">Correcta</label>
+            <select class="form-control-admin trivia-correct-select" style="width: 100%; font-size: 0.75rem; padding: 6px;" onchange="updateTriviaCorrectIndex(${qIndex}, parseInt(this.value))">
+              ${(q.options || []).map((opt, oIndex) => `
+                <option value="${oIndex}" ${oIndex === (q.correctOptionIndex !== undefined ? q.correctOptionIndex : q.correctIndex) ? 'selected' : ''}>Opción ${String.fromCharCode(65 + oIndex)}: ${opt.substring(0, 20)}</option>
+              `).join('')}
+            </select>
+          </div>
+
+          <div>
+            <label style="display: block; font-size: 0.65rem; text-transform: uppercase; color: var(--gold-light); margin-bottom: 2px; font-weight:600;">Tiempo</label>
+            <select class="form-control-admin" style="width: 100%; font-size: 0.75rem; padding: 6px;" onchange="updateTriviaQuestionTime(${qIndex}, parseInt(this.value))">
+              <option value="10" ${q.timeLimit === 10 ? 'selected' : ''}>10s</option>
+              <option value="15" ${q.timeLimit === 15 ? 'selected' : ''}>15s</option>
+              <option value="20" ${(q.timeLimit === 20 || !q.timeLimit) ? 'selected' : ''}>20s</option>
+              <option value="30" ${q.timeLimit === 30 ? 'selected' : ''}>30s</option>
+              <option value="45" ${q.timeLimit === 45 ? 'selected' : ''}>45s</option>
+            </select>
+          </div>
+
+          <div style="text-align: right; padding-top: 12px;">
+            <label class="trivia-switch-label" title="Doble puntaje en esta pregunta">
+              <input type="checkbox" class="trivia-switch-input" ${q.doublePoints ? 'checked' : ''} onchange="updateTriviaQuestionDouble(${qIndex}, this.checked, this)">
+              <span class="trivia-switch-track"><span class="trivia-switch-knob"></span></span>
+              <span>🌟 Ronda 2X</span>
+            </label>
+          </div>
         </div>
       `;
 
       listContainer.appendChild(qDiv);
     });
 
-    // Initialize custom dropdowns for each question's select
     listContainer.querySelectorAll('.trivia-correct-select').forEach(select => {
       initCustomDropdown(select);
     });
   }
+
+  window.moveTriviaQuestion = function(index, direction) {
+    const targetIdx = index + direction;
+    if (targetIdx < 0 || targetIdx >= triviaQuestionsData.length) return;
+    const temp = triviaQuestionsData[index];
+    triviaQuestionsData[index] = triviaQuestionsData[targetIdx];
+    triviaQuestionsData[targetIdx] = temp;
+    renderTriviaQuestionsEditor();
+  };
+
+  window.duplicateTriviaQuestion = function(index) {
+    const original = triviaQuestionsData[index];
+    if (!original) return;
+    const copy = JSON.parse(JSON.stringify(original));
+    copy.questionText = (copy.questionText || copy.question || '') + ' (Copia)';
+    copy.question = copy.questionText;
+    triviaQuestionsData.splice(index + 1, 0, copy);
+    renderTriviaQuestionsEditor();
+    showToast('Pregunta duplicada', 'info');
+  };
 
   window.deleteTriviaQuestion = function(index) {
     triviaQuestionsData.splice(index, 1);
@@ -7288,19 +7869,41 @@ Tu presencia hará que esta celebración sea aún más significativa.
   window.updateTriviaQuestionText = function(qIndex, val) {
     if (triviaQuestionsData[qIndex]) {
       triviaQuestionsData[qIndex].question = val;
+      triviaQuestionsData[qIndex].questionText = val;
     }
   };
 
   window.updateTriviaOptionText = function(qIndex, oIndex, val) {
     if (triviaQuestionsData[qIndex] && triviaQuestionsData[qIndex].options) {
       triviaQuestionsData[qIndex].options[oIndex] = val;
-      renderTriviaQuestionsEditor(); // Refresh dropdown labels
+      renderTriviaQuestionsEditor();
     }
   };
 
   window.updateTriviaCorrectIndex = function(qIndex, val) {
     if (triviaQuestionsData[qIndex]) {
       triviaQuestionsData[qIndex].correctIndex = val;
+      triviaQuestionsData[qIndex].correctOptionIndex = val;
+    }
+  };
+
+  window.updateTriviaQuestionTime = function(qIndex, val) {
+    if (triviaQuestionsData[qIndex]) {
+      triviaQuestionsData[qIndex].timeLimit = val;
+    }
+  };
+
+  window.updateTriviaQuestionDouble = function(qIndex, val, inputEl) {
+    if (triviaQuestionsData[qIndex]) {
+      triviaQuestionsData[qIndex].doublePoints = val;
+      const card = inputEl ? inputEl.closest('.question-editor-card') : document.querySelectorAll('.question-editor-card')[qIndex];
+      if (card) {
+        card.classList.toggle('gold-round', val);
+        const titleEl = card.querySelector('.q-header-title');
+        if (titleEl) {
+          titleEl.textContent = val ? '🌟 PREGUNTA ESPECIAL (2X) #' + (qIndex + 1) : 'PREGUNTA #' + (qIndex + 1);
+        }
+      }
     }
   };
 
@@ -7310,8 +7913,12 @@ Tu presencia hará que esta celebración sea aún más significativa.
     btnAddTriviaQuestion.addEventListener('click', () => {
       triviaQuestionsData.push({
         question: "Nueva Pregunta",
+        questionText: "Nueva Pregunta",
         options: ["Opción A", "Opción B", "Opción C", "Opción D"],
-        correctIndex: 0
+        correctIndex: 0,
+        correctOptionIndex: 0,
+        timeLimit: 20,
+        doublePoints: false
       });
       renderTriviaQuestionsEditor();
       
@@ -7333,10 +7940,14 @@ Tu presencia hará que esta celebración sea aún más significativa.
       const currentTitle = titleEl ? titleEl.value.trim() : 'Mi Gran Fiesta';
 
       const cleanedQuestions = triviaQuestionsData.map(q => ({
-        question: q.question.trim(),
-        options: q.options.map(opt => opt.trim()),
-        correctIndex: q.correctIndex
-      })).filter(q => q.question !== '');
+        questionText: (q.questionText || q.question || '').trim(),
+        question: (q.questionText || q.question || '').trim(),
+        options: (q.options || []).map(opt => opt.trim()),
+        correctOptionIndex: q.correctOptionIndex !== undefined ? q.correctOptionIndex : (q.correctIndex !== undefined ? q.correctIndex : 0),
+        correctIndex: q.correctOptionIndex !== undefined ? q.correctOptionIndex : (q.correctIndex !== undefined ? q.correctIndex : 0),
+        timeLimit: parseInt(q.timeLimit) || 20,
+        doublePoints: !!q.doublePoints
+      })).filter(q => q.questionText !== '');
 
       setButtonLoading(btnSaveTriviaQuestions, true, 'Guardando...');
 
@@ -7355,13 +7966,10 @@ Tu presencia hará que esta celebración sea aún más significativa.
 
         const data = await response.json();
         if (data.success) {
-          showToast('Configuración de Trivia guardada correctamente', 'success');
-          // Reload state in memory coordinator!
+          showToast('Preguntas de Trivia guardadas con éxito', 'success');
           await fetch(`/api/trivia/control?event=${encodeURIComponent(eventId)}`, {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'init' })
           });
         } else {
@@ -7376,15 +7984,170 @@ Tu presencia hará que esta celebración sea aún más significativa.
     });
   }
 
+  // Helper to dynamically theme the quick templates container and active card
+  function setActiveTriviaTemplateUI(tplId) {
+    const themeClasses = ['theme-casamiento', 'theme-quince_anos', 'theme-cumple_adultos', 'theme-cumpleanos', 'theme-corporativo', 'theme-musica_fiesta'];
+    const container = document.querySelector('.trivia-templates-box');
+    const editorSection = document.getElementById('trivia-questions-editor-section');
+    const questionsList = document.getElementById('trivia-questions-list');
+    const parentPanel = container ? container.closest('.panel') : null;
+
+    let themeColor = '#38bdf8';
+    let themeGlow = 'rgba(56, 189, 248, 0.4)';
+    if (tplId === 'casamiento') {
+      themeColor = '#f472b6';
+      themeGlow = 'rgba(244, 114, 182, 0.4)';
+    } else if (tplId === 'quince_anos') {
+      themeColor = '#c084fc';
+      themeGlow = 'rgba(192, 132, 252, 0.4)';
+    } else if (tplId === 'cumple_adultos' || tplId === 'cumpleanos') {
+      themeColor = '#f59e0b';
+      themeGlow = 'rgba(245, 158, 11, 0.4)';
+    } else if (tplId === 'corporativo') {
+      themeColor = '#38bdf8';
+      themeGlow = 'rgba(56, 189, 248, 0.4)';
+    } else if (tplId === 'musica_fiesta') {
+      themeColor = '#10b981';
+      themeGlow = 'rgba(16, 185, 129, 0.4)';
+    }
+
+    [container, editorSection, questionsList, parentPanel].forEach(el => {
+      if (!el) return;
+      themeClasses.forEach(cls => el.classList.remove(cls));
+      if (tplId) {
+        el.classList.add(`theme-${tplId}`);
+        el.setAttribute('data-active-theme', tplId);
+        el.style.setProperty('--trivia-theme-accent', themeColor);
+        el.style.setProperty('--trivia-theme-glow', themeGlow);
+      }
+    });
+
+    document.querySelectorAll('.btn-trivia-tpl').forEach(btn => {
+      const isMatch = btn.getAttribute('data-tpl') === tplId;
+      btn.classList.toggle('active', isMatch);
+      const pill = btn.querySelector('.tpl-card-pill');
+      if (pill) {
+        if (!pill.hasAttribute('data-orig-text')) {
+          pill.setAttribute('data-orig-text', pill.textContent.trim());
+        }
+        if (isMatch) {
+          pill.textContent = '✓ ACTIVA';
+        } else {
+          pill.textContent = pill.getAttribute('data-orig-text') || '5 Qs';
+        }
+      }
+    });
+  }
+
+  function detectTriviaThemeFromQuestions(questions) {
+    if (!Array.isArray(questions) || questions.length === 0) return 'casamiento';
+    const firstQ = (questions[0].questionText || questions[0].question || '').toLowerCase();
+    if (firstQ.includes('novios') || firstQ.includes('cita') || firstQ.includes('luna de miel')) return 'casamiento';
+    if (firstQ.includes('quinceañera') || firstQ.includes('infancia') || firstQ.includes('15')) return 'quince_anos';
+    if (firstQ.includes('cumpleañero') || firstQ.includes('trabajo') || firstQ.includes('brindis')) return 'cumple_adultos';
+    if (firstQ.includes('fundó') || firstQ.includes('compañía') || firstQ.includes('empresa')) return 'corporativo';
+    if (firstQ.includes('canción') || firstQ.includes('karaoke') || firstQ.includes('baile') || firstQ.includes('música')) return 'musica_fiesta';
+    return 'casamiento';
+  }
+
+  // Template Buttons
+  document.querySelectorAll('.btn-trivia-tpl').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const tplId = btn.getAttribute('data-tpl');
+      setActiveTriviaTemplateUI(tplId);
+      setButtonLoading(btn, true);
+      try {
+        const res = await fetch(`/api/trivia/control?event=${encodeURIComponent(eventId)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'load_template', templateId: tplId })
+        });
+        const data = await res.json();
+        if (data.success && data.questions) {
+          triviaQuestionsData = data.questions;
+          renderTriviaQuestionsEditor();
+          setActiveTriviaTemplateUI(tplId);
+          showToast('¡Plantilla cargada y activada con éxito!', 'success');
+        } else {
+          showToast(data.error || 'Error al cargar plantilla', 'error');
+        }
+      } catch (e) {
+        showToast('Error de conexión', 'error');
+      } finally {
+        setButtonLoading(btn, false);
+      }
+    });
+  });
+
+  // AI Modal Handlers
+  const modalAi = document.getElementById('modal-trivia-ai');
+  const btnOpenAiModal = document.getElementById('btn-open-trivia-ai-modal');
+  const btnCloseAiModal = document.getElementById('btn-close-trivia-ai-modal');
+  const btnCancelAi = document.getElementById('btn-cancel-trivia-ai');
+  const btnSubmitAi = document.getElementById('btn-submit-trivia-ai');
+
+  if (btnOpenAiModal && modalAi) {
+    btnOpenAiModal.addEventListener('click', () => { modalAi.style.display = 'flex'; });
+  }
+  if (btnCloseAiModal && modalAi) {
+    btnCloseAiModal.addEventListener('click', () => { modalAi.style.display = 'none'; });
+  }
+  if (btnCancelAi && modalAi) {
+    btnCancelAi.addEventListener('click', () => { modalAi.style.display = 'none'; });
+  }
+
+  if (btnSubmitAi) {
+    btnSubmitAi.addEventListener('click', async () => {
+      const eventType = document.getElementById('trivia-ai-event-type')?.value || 'casamiento';
+      const names = document.getElementById('trivia-ai-names')?.value || '';
+      const details = document.getElementById('trivia-ai-details')?.value || '';
+
+      setButtonLoading(btnSubmitAi, true, 'Generando...');
+      try {
+        const res = await fetch('/api/trivia/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ eventType, names, details, count: 5 })
+        });
+        const data = await res.json();
+        if (data.success && data.questions) {
+          triviaQuestionsData = data.questions;
+          renderTriviaQuestionsEditor();
+          setActiveTriviaTemplateUI(eventType === '15anos' ? 'quince_anos' : (eventType === 'cumpleanos' ? 'cumple_adultos' : eventType));
+          if (modalAi) modalAi.style.display = 'none';
+          showToast('¡Preguntas generadas con éxito! Hacé clic en "Guardar Preguntas"', 'success');
+        } else {
+          showToast(data.error || 'Error al generar preguntas', 'error');
+        }
+      } catch (e) {
+        showToast('Error al conectar con el asistente', 'error');
+      } finally {
+        setButtonLoading(btnSubmitAi, false);
+      }
+    });
+  }
+
+  // Export Results Handler
+  const btnExportTrivia = document.getElementById('btn-admin-trivia-export');
+  if (btnExportTrivia) {
+    btnExportTrivia.addEventListener('click', () => {
+      window.open(`/api/trivia/export?event=${encodeURIComponent(eventId)}&format=csv`, '_blank');
+    });
+  }
+
+  // Jump to Podium Handler
+  const btnJumpPodium = document.getElementById('btn-admin-trivia-jump-podium');
+  if (btnJumpPodium) {
+    btnJumpPodium.addEventListener('click', () => triggerTriviaAction('jump_podium', btnJumpPodium));
+  }
+
   // Console control actions
   async function triggerTriviaAction(actionName, clickedBtn) {
     if (clickedBtn) setButtonLoading(clickedBtn, true);
     try {
       const res = await fetch(`/api/trivia/control?event=${encodeURIComponent(eventId)}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: actionName })
       });
       const data = await res.json();
@@ -7419,15 +8182,9 @@ Tu presencia hará que esta celebración sea aún más significativa.
       }
     };
 
-    triviaEventSource.onerror = (e) => {
-      console.warn('SSE Error/Disconnect, waiting for fallback polling...');
-    };
-
     if (!adminTriviaPollInterval) {
       adminTriviaPollInterval = setInterval(() => {
-        const silenceDuration = Date.now() - lastTriviaSseTime;
-        if (silenceDuration > 5000) {
-          console.log('Admin SSE silent for 5s. Running fallback state poll.');
+        if (Date.now() - lastTriviaSseTime > 5000) {
           syncAdminTriviaStateWithPoll();
         }
       }, 3000);
@@ -7448,9 +8205,8 @@ Tu presencia hará que esta celebración sea aún más significativa.
           renderAdminTriviaState(data.state);
         }
       })
-      .catch(err => {
+      .catch(() => {
         window.isAdminPolling = false;
-        console.error('Error syncing admin state via poll:', err);
       });
   }
 
@@ -7467,37 +8223,6 @@ Tu presencia hará que esta celebración sea aún más significativa.
   window.stopTriviaPolling = stopTriviaPolling;
 
   function renderAdminTriviaState(state) {
-    // Update autoMode slider UI
-    const checkAuto = document.getElementById('check-admin-trivia-auto');
-    const sliderAuto = document.getElementById('slider-admin-trivia-auto');
-    const durationContainer = document.getElementById('container-admin-trivia-timer-duration');
-    const inputDuration = document.getElementById('input-admin-trivia-duration');
-
-    if (checkAuto) {
-      checkAuto.checked = state.autoMode;
-      if (sliderAuto) {
-        const circle = sliderAuto.querySelector('span');
-        if (state.autoMode) {
-          sliderAuto.style.backgroundColor = 'var(--gold-primary)';
-          sliderAuto.style.borderColor = 'var(--gold-primary)';
-          circle.style.backgroundColor = '#0b0b0c';
-          circle.style.transform = 'translateX(24px)';
-        } else {
-          sliderAuto.style.backgroundColor = 'rgba(255,255,255,0.15)';
-          sliderAuto.style.borderColor = 'rgba(212, 175, 55, 0.4)';
-          circle.style.backgroundColor = 'var(--text-muted)';
-          circle.style.transform = 'translateX(0)';
-        }
-      }
-      if (durationContainer) {
-        // En el modo simplificado, el timer siempre está visible
-        durationContainer.classList.add('visible');
-      }
-      if (inputDuration && state.customDuration && !inputDuration.matches(':focus')) {
-        inputDuration.value = state.customDuration;
-      }
-    }
-
     const badge = document.getElementById('admin-trivia-status-badge');
     if (badge) {
       badge.textContent = state.status;
@@ -7528,11 +8253,11 @@ Tu presencia hará que esta celebración sea aún más significativa.
     const qIndexEl = document.getElementById('admin-trivia-question-index');
     if (qIndexEl) {
       if (state.status === 'LOBBY') {
-        qIndexEl.textContent = 'Esperando jugadores (Lobby)';
+        qIndexEl.textContent = 'Lobby de Invitados';
       } else if (state.status === 'COUNTDOWN') {
-        qIndexEl.textContent = 'Cuenta regresiva inicial...';
+        qIndexEl.textContent = 'Cuenta Regresiva (10s)';
       } else if (state.status === 'PODIUM') {
-        qIndexEl.textContent = 'Juego Terminado (Podio)';
+        qIndexEl.textContent = 'Podio Final 👑';
       } else {
         const total = state.totalQuestions || 0;
         const current = (state.currentQuestionIndex !== undefined) ? (state.currentQuestionIndex + 1) : '-';
@@ -7540,109 +8265,40 @@ Tu presencia hará que esta celebración sea aún más significativa.
       }
     }
 
-    // Actualizar el estado visual de los tres botones de juego
+    // Live Response Meter
+    const meterText = document.getElementById('admin-trivia-meter-text');
+    const progressBar = document.getElementById('admin-trivia-progress-bar');
+    const answered = state.answeredPlayersCount || 0;
+    const totalConnected = state.connectedPlayersCount || (state.players ? state.players.length : 0);
+    const pct = totalConnected > 0 ? Math.round((answered / totalConnected) * 100) : 0;
+
+    if (meterText) meterText.textContent = `${answered} / ${totalConnected} (${pct}%)`;
+    if (progressBar) progressBar.style.width = `${pct}%`;
+
+    // Button states
     const btnPlay = document.getElementById('btn-admin-trivia-play');
     const btnStop = document.getElementById('btn-admin-trivia-stop');
     const btnReset = document.getElementById('btn-admin-trivia-reset');
 
-    if (btnPlay && btnStop && btnReset) {
-      // Defaults
-      btnPlay.disabled = false;
-      btnPlay.style.opacity = '1';
-      btnPlay.style.pointerEvents = 'auto';
-      btnPlay.style.background = 'var(--gold-primary)';
-      btnPlay.style.borderColor = 'var(--gold-primary)';
-      btnPlay.style.color = '#000';
-      btnPlay.style.boxShadow = '0 4px 15px rgba(212, 175, 55, 0.3)';
-      btnPlay.innerHTML = 'Iniciar Juego ▶️';
-
-      btnStop.disabled = false;
-      btnStop.style.opacity = '1';
-      btnStop.style.pointerEvents = 'auto';
-
-      btnReset.disabled = false;
-      btnReset.style.opacity = '1';
-      btnReset.style.pointerEvents = 'auto';
-
-      if (state.status === 'LOBBY' || state.status === 'INACTIVE' || state.status === 'Inactivo') {
-        btnStop.disabled = true;
-        btnStop.style.opacity = '0.4';
-        btnStop.style.pointerEvents = 'none';
+    if (btnPlay) {
+      if (state.status === 'LOBBY' || state.status === 'INACTIVE') {
+        btnPlay.disabled = false;
+        btnPlay.innerHTML = 'Iniciar Juego ▶️';
       } else if (state.status === 'COUNTDOWN') {
         btnPlay.disabled = true;
-        btnPlay.style.opacity = '0.4';
-        btnPlay.style.pointerEvents = 'none';
-        btnPlay.style.boxShadow = 'none';
         btnPlay.innerHTML = 'Iniciando... ⏳';
-        
-        btnStop.disabled = true;
-        btnStop.style.opacity = '0.4';
-        btnStop.style.pointerEvents = 'none';
       } else if (state.paused) {
+        btnPlay.disabled = false;
         btnPlay.innerHTML = 'Reanudar Juego ▶️';
-        btnStop.disabled = true;
-        btnStop.style.opacity = '0.4';
-        btnStop.style.pointerEvents = 'none';
       } else if (state.status === 'QUESTION_ACTIVE') {
         btnPlay.disabled = true;
-        btnPlay.style.opacity = '0.4';
-        btnPlay.style.pointerEvents = 'none';
-        btnPlay.style.boxShadow = 'none';
+        btnPlay.innerHTML = 'Pregunta en Curso ⏱️';
       } else if (state.status === 'REVEAL_ANSWER' || state.status === 'LEADERBOARD') {
-        if (!state.autoMode) {
-          btnPlay.innerHTML = 'Continuar Juego ▶️';
-          btnStop.disabled = true;
-          btnStop.style.opacity = '0.4';
-          btnStop.style.pointerEvents = 'none';
-        } else {
-          btnPlay.disabled = true;
-          btnPlay.style.opacity = '0.4';
-          btnPlay.style.pointerEvents = 'none';
-          btnPlay.style.boxShadow = 'none';
-        }
+        btnPlay.disabled = false;
+        btnPlay.innerHTML = 'Continuar ▶️';
       } else if (state.status === 'PODIUM') {
         btnPlay.disabled = true;
-        btnPlay.style.opacity = '0.4';
-        btnPlay.style.pointerEvents = 'none';
-        btnPlay.style.boxShadow = 'none';
-        
-        btnStop.disabled = true;
-        btnStop.style.opacity = '0.4';
-        btnStop.style.pointerEvents = 'none';
-      }
-
-      // Tooltip handling and disabled override for 0 questions
-      const tooltip = document.getElementById('trivia-play-tooltip');
-      const totalQuestions = state.totalQuestions || 0;
-
-      if (totalQuestions === 0) {
-        btnPlay.disabled = true;
-        btnPlay.style.opacity = '0.4';
-        btnPlay.style.pointerEvents = 'none';
-        btnPlay.style.boxShadow = 'none';
-        btnPlay.style.cursor = 'not-allowed';
-
-        const wrapper = document.getElementById('btn-admin-trivia-play-wrapper');
-        if (wrapper && tooltip) {
-          wrapper.onmouseenter = () => {
-            tooltip.style.display = 'block';
-            setTimeout(() => { tooltip.style.opacity = '1'; }, 10);
-          };
-          wrapper.onmouseleave = () => {
-            tooltip.style.opacity = '0';
-            setTimeout(() => { tooltip.style.display = 'none'; }, 200);
-          };
-        }
-      } else {
-        const wrapper = document.getElementById('btn-admin-trivia-play-wrapper');
-        if (wrapper) {
-          wrapper.onmouseenter = null;
-          wrapper.onmouseleave = null;
-        }
-        if (tooltip) {
-          tooltip.style.opacity = '0';
-          tooltip.style.display = 'none';
-        }
+        btnPlay.innerHTML = 'Juego Terminado 🏆';
       }
     }
 
@@ -7656,17 +8312,19 @@ Tu presencia hará que esta celebración sea aún más significativa.
       if (players.length === 0) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="3" style="text-align: center; padding: 15px; color: var(--text-muted);">Ningún jugador conectado.</td>
+            <td colspan="4" style="text-align: center; padding: 15px; color: var(--text-muted);">Ningún jugador conectado.</td>
           </tr>
         `;
       } else {
         const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
         sortedPlayers.forEach((p, idx) => {
           const row = document.createElement('tr');
+          const streakHtml = p.streak >= 2 ? `🔥 x${p.streak}` : '-';
           row.innerHTML = `
             <td style="font-weight: bold; color: var(--gold-light);">${idx + 1}</td>
             <td style="color: white; font-weight: 500;">${p.nickname}</td>
-            <td style="text-align: right; color: var(--gold-primary); font-weight: 600;">${p.score} pts</td>
+            <td style="color: #ffb703; font-weight: 600;">${streakHtml}</td>
+            <td style="text-align: right; color: var(--gold-primary); font-weight: 700;">${p.score} pts</td>
           `;
           tbody.appendChild(row);
         });
@@ -7674,171 +8332,53 @@ Tu presencia hará que esta celebración sea aún más significativa.
     }
   }
 
-  // Bind console controls
-  const btnTriviaInit = document.getElementById('btn-admin-trivia-init');
-  const btnTriviaStart = document.getElementById('btn-admin-trivia-start');
-  const btnTriviaReveal = document.getElementById('btn-admin-trivia-reveal');
-  const btnTriviaLeaderboard = document.getElementById('btn-admin-trivia-leaderboard');
-  const btnTriviaNext = document.getElementById('btn-admin-trivia-next');
-
-  // Keep hidden manual controls functional for fallback/testing
-  if (btnTriviaInit) btnTriviaInit.addEventListener('click', (e) => triggerTriviaAction('init', e.currentTarget));
-  if (btnTriviaStart) btnTriviaStart.addEventListener('click', (e) => {
-    const inputDuration = document.getElementById('input-admin-trivia-duration');
-    const duration = inputDuration ? parseInt(inputDuration.value) : null;
-    const clickedBtn = e.currentTarget;
-    if (clickedBtn) setButtonLoading(clickedBtn, true);
-    fetch(`/api/trivia/control?event=${encodeURIComponent(eventId)}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'start', autoMode: true, duration })
-    })
-    .then(res => res.json())
-    .then(data => {
-      if (!data.success) {
-        showToast(data.error || 'Error al lanzar la pregunta', 'error');
-      } else {
-        showToast('Pregunta lanzada con éxito (Modo Automático)', 'success');
-      }
-    })
-    .catch(err => {
-      console.error(err);
-      showToast('Error de comunicación', 'error');
-    })
-    .finally(() => {
-      if (clickedBtn) setButtonLoading(clickedBtn, false);
-    });
-  });
-  if (btnTriviaReveal) btnTriviaReveal.addEventListener('click', (e) => triggerTriviaAction('reveal', e.currentTarget));
-  if (btnTriviaLeaderboard) btnTriviaLeaderboard.addEventListener('click', (e) => triggerTriviaAction('leaderboard', e.currentTarget));
-  if (btnTriviaNext) btnTriviaNext.addEventListener('click', (e) => triggerTriviaAction('next', e.currentTarget));
-
-  // Bind the static three control buttons
-  const btnTriviaPlay = document.getElementById('btn-admin-trivia-play');
-  if (btnTriviaPlay) {
-    btnTriviaPlay.addEventListener('click', (e) => {
+  // Play / Pause / Reset button listeners
+  const btnAdminTriviaPlay = document.getElementById('btn-admin-trivia-play');
+  if (btnAdminTriviaPlay) {
+    btnAdminTriviaPlay.addEventListener('click', (e) => {
       const clickedBtn = e.currentTarget;
-      const inputDuration = document.getElementById('input-admin-trivia-duration');
-      const duration = inputDuration ? parseInt(inputDuration.value) : 20;
-
-      if (clickedBtn) setButtonLoading(clickedBtn, true, 'Iniciando...');
+      if (clickedBtn) setButtonLoading(clickedBtn, true);
       fetch(`/api/trivia/control?event=${encodeURIComponent(eventId)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'start', duration })
+        body: JSON.stringify({ action: 'start' })
       })
       .then(res => res.json())
       .then(data => {
         if (!data.success) {
-          showToast(data.error || 'Error al iniciar la trivia', 'error');
+          showToast(data.error || 'Error al iniciar juego', 'error');
         } else {
-          showToast('¡Juego iniciado/continuado con éxito!', 'success');
+          showToast('¡Juego en marcha!', 'success');
         }
       })
-      .catch(err => {
-        console.error(err);
-        showToast('Error de comunicación', 'error');
-      })
+      .catch(() => showToast('Error de conexión', 'error'))
       .finally(() => {
         if (clickedBtn) setButtonLoading(clickedBtn, false);
       });
     });
   }
 
-  const btnTriviaStop = document.getElementById('btn-admin-trivia-stop');
-  if (btnTriviaStop) {
-    btnTriviaStop.addEventListener('click', (e) => {
-      const clickedBtn = e.currentTarget;
-      if (clickedBtn) setButtonLoading(clickedBtn, true, 'Deteniendo...');
-      fetch(`/api/trivia/control?event=${encodeURIComponent(eventId)}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'stop' })
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (!data.success) {
-          showToast(data.error || 'Error al detener la trivia', 'error');
-        } else {
-          showToast('¡Juego detenido con éxito!', 'success');
-        }
-      })
-      .catch(err => {
-        console.error(err);
-        showToast('Error de comunicación', 'error');
-      })
-      .finally(() => {
-        if (clickedBtn) setButtonLoading(clickedBtn, false);
-      });
-    });
+  const btnAdminTriviaStop = document.getElementById('btn-admin-trivia-stop');
+  if (btnAdminTriviaStop) {
+    btnAdminTriviaStop.addEventListener('click', (e) => triggerTriviaAction('stop', e.currentTarget));
   }
 
-  const btnTriviaReset = document.getElementById('btn-admin-trivia-reset');
-  if (btnTriviaReset) {
-    btnTriviaReset.addEventListener('click', (e) => {
-      if (confirm('¿Estás seguro de que deseas reiniciar la trivia? Se perderán todos los puntajes actuales.')) {
-        const clickedBtn = e.currentTarget;
-        if (clickedBtn) setButtonLoading(clickedBtn, true, 'Reiniciando...');
-        fetch(`/api/trivia/control?event=${encodeURIComponent(eventId)}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'init' })
-        })
-        .then(res => res.json())
-        .then(data => {
-          if (!data.success) {
-            showToast(data.error || 'Error al reiniciar la trivia', 'error');
-          } else {
-            showToast('Trivia reiniciada correctamente', 'success');
-          }
-        })
-        .catch(err => {
-          console.error(err);
-          showToast('Error de comunicación', 'error');
-        })
-        .finally(() => {
-          if (clickedBtn) setButtonLoading(clickedBtn, false);
-        });
+  const btnAdminTriviaReset = document.getElementById('btn-admin-trivia-reset');
+  if (btnAdminTriviaReset) {
+    btnAdminTriviaReset.addEventListener('click', (e) => {
+      if (confirm('¿Estás seguro de reiniciar el juego de trivia y el puntaje de los jugadores?')) {
+        triggerTriviaAction('init', e.currentTarget);
       }
     });
   }
 
-  const inputDuration = document.getElementById('input-admin-trivia-duration');
-  if (inputDuration) {
-    let durationTimer = null;
-    inputDuration.addEventListener('input', () => {
-      clearTimeout(durationTimer);
-      durationTimer = setTimeout(() => {
-        const val = parseInt(inputDuration.value);
-        if (isNaN(val) || val < 5) return;
-        
-        fetch(`/api/trivia/control?event=${encodeURIComponent(eventId)}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'set_duration', duration: val })
-        })
-        .then(res => res.json())
-        .then(data => {
-          if (!data.success) {
-            showToast(data.error || 'Error al actualizar duración', 'error');
-          } else {
-            showToast('Duración de timer actualizada', 'success');
-          }
-        })
-        .catch(err => {
-          console.error(err);
-          showToast('Error de comunicación', 'error');
-        });
-      }, 500);
-    });
-  }
-
-  const btnTriviaProjector = document.getElementById('btn-admin-trivia-projector');
-  if (btnTriviaProjector) {
-    btnTriviaProjector.addEventListener('click', () => {
+  const btnAdminTriviaProjector = document.getElementById('btn-admin-trivia-projector');
+  if (btnAdminTriviaProjector) {
+    btnAdminTriviaProjector.addEventListener('click', () => {
       window.open(`/trivia-screen.html?event=${encodeURIComponent(eventId)}`, '_blank');
     });
   }
+
 
   window.copyGuestUrl = (index, btnElement) => {
     const inputElement = document.getElementById(`guest-url-${index}`);

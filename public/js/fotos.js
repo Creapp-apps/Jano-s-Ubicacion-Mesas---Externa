@@ -232,28 +232,97 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // 1. Load dynamic event title
+  function hexToRgb(hex) {
+    if (!hex) return '212, 175, 55';
+    let c = hex.replace('#', '');
+    if (c.length === 3) c = c.split('').map(x => x + x).join('');
+    const num = parseInt(c, 16);
+    if (isNaN(num)) return '212, 175, 55';
+    return `${(num >> 16) & 255}, ${(num >> 8) & 255}, ${num & 255}`;
+  }
+
+  function applyGuestAppTheme(theme) {
+    if (!theme) return;
+    const root = document.documentElement;
+    let themeObj = theme;
+    if (typeof theme === 'string') {
+      const THEME_FALLBACKS = {
+        'golden-luxury': { primaryColor: '#d4af37', secondaryColor: '#aa7c11', bgColor: '#0b0b0c', fontFamily: "'Cinzel', serif", crownFilter: 'drop-shadow(0 0 16px rgba(212, 175, 55, 0.55))' },
+        'rose-gold': { primaryColor: '#e0a899', secondaryColor: '#b76e79', bgColor: '#0d0b0f', fontFamily: "'Playfair Display', serif", crownFilter: 'hue-rotate(305deg) saturate(1.4) brightness(1.1) drop-shadow(0 0 18px rgba(224, 168, 153, 0.6))' },
+        'cyber-neon': { primaryColor: '#00f3ff', secondaryColor: '#ff007f', bgColor: '#080511', fontFamily: "'Montserrat', sans-serif", crownFilter: 'hue-rotate(145deg) saturate(2.6) brightness(1.15) drop-shadow(0 0 22px rgba(0, 243, 255, 0.75))' },
+        'emerald-royal': { primaryColor: '#2ec4b6', secondaryColor: '#0d5c46', bgColor: '#060d0a', fontFamily: "'Cinzel', serif", crownFilter: 'hue-rotate(95deg) saturate(1.9) brightness(1.05) drop-shadow(0 0 18px rgba(46, 196, 182, 0.65))' },
+        'midnight-navy': { primaryColor: '#4cc9f0', secondaryColor: '#1e3a8a', bgColor: '#050a14', fontFamily: "'Cinzel', serif", crownFilter: 'hue-rotate(185deg) saturate(2.2) brightness(1.1) drop-shadow(0 0 20px rgba(76, 201, 240, 0.7))' },
+        'boho-rust': { primaryColor: '#e07a5f', secondaryColor: '#81b29a', bgColor: '#0e0b09', fontFamily: "'Outfit', sans-serif", crownFilter: 'hue-rotate(335deg) saturate(1.3) sepia(0.25) drop-shadow(0 0 16px rgba(224, 122, 95, 0.55))' },
+        'retro-disco': { primaryColor: '#ff0080', secondaryColor: '#7928ca', bgColor: '#0b0614', fontFamily: "'Syncopate', sans-serif", crownFilter: 'hue-rotate(265deg) saturate(2.8) brightness(1.2) drop-shadow(0 0 22px rgba(255, 0, 128, 0.75))' }
+      };
+      themeObj = THEME_FALLBACKS[theme] || THEME_FALLBACKS['golden-luxury'];
+    }
+
+    try {
+      const qEv = new URLSearchParams(window.location.search).get('event') || 'default';
+      if (qEv && qEv !== 'default') {
+        localStorage.setItem('mifiestapp_theme_' + qEv, JSON.stringify(themeObj));
+      }
+      localStorage.setItem('mifiestapp_last_theme', JSON.stringify(themeObj));
+    } catch (e) {}
+
+    const primColor = themeObj.primaryColor || '#d4af37';
+    const secColor = themeObj.secondaryColor || '#aa7c11';
+    const primRgb = hexToRgb(primColor);
+    const secRgb = hexToRgb(secColor);
+    root.style.setProperty('--primary-rgb', primRgb);
+    root.style.setProperty('--secondary-rgb', secRgb);
+    root.style.setProperty('--gold-primary', primColor);
+    root.style.setProperty('--gold-light', primColor);
+    root.style.setProperty('--gold-gradient', `linear-gradient(135deg, #ffffff 0%, ${primColor} 50%, ${secColor} 100%)`);
+    root.style.setProperty('--card-border', `rgba(${primRgb}, 0.15)`);
+    root.style.setProperty('--card-border-active', `rgba(${primRgb}, 0.5)`);
+    root.style.setProperty('--gold-glow', `0 0 25px rgba(${primRgb}, 0.25)`);
+    root.style.setProperty('--glow-shadow', `0 0 25px rgba(${primRgb}, 0.25)`);
+    if (themeObj.fontFamily) {
+      root.style.setProperty('--accent-font', themeObj.fontFamily);
+    }
+    if (themeObj.bgColor) {
+      root.style.setProperty('--bg-color', themeObj.bgColor);
+      root.style.setProperty('--bg-radial', `radial-gradient(circle at 50% 10%, rgba(${primRgb}, 0.12) 0%, ${themeObj.bgColor} 90%)`);
+    }
+    const crown = document.querySelector('.logo-container img');
+    if (crown && themeObj.crownFilter) {
+      crown.style.filter = themeObj.crownFilter;
+    }
+  }
+
+  // 1. Load dynamic event title & theme
   fetch(`/api/config?event=${encodeURIComponent(eventId)}`)
     .then(r => r.json())
     .then(data => {
-      if (data && data.eventTitle) {
-        subtitleEl.textContent = data.eventTitle;
+      if (data) {
+        if (data.eventTitle) {
+          subtitleEl.textContent = data.eventTitle;
+        }
+        applyGuestAppTheme(data.themeDetails || data.eventTheme);
+        if (data.maxUploadSize) {
+          maxUploadSize = data.maxUploadSize;
+        }
+        if (data.snapApiToken) {
+          snapApiToken = data.snapApiToken;
+          snapGroupId = data.snapGroupId || '';
+          snapLenses = data.snapLenses || {};
+          console.log("Snap API Token loaded successfully.");
+        }
+        if (data.selectedFilters && Array.isArray(data.selectedFilters) && data.selectedFilters.length > 0) {
+          buildDynamicFilterCarousel(data.selectedFilters);
+        }
       }
-      if (data && data.maxUploadSize) {
-        maxUploadSize = data.maxUploadSize;
-      }
-      if (data && data.snapApiToken) {
-        snapApiToken = data.snapApiToken;
-        snapGroupId = data.snapGroupId || '';
-        snapLenses = data.snapLenses || {};
-        console.log("Snap API Token loaded successfully.");
-      }
-      if (data && data.selectedFilters && Array.isArray(data.selectedFilters) && data.selectedFilters.length > 0) {
-        buildDynamicFilterCarousel(data.selectedFilters);
+      if (typeof window.hideMiFiestappPreloader === 'function') {
+        window.hideMiFiestappPreloader();
       }
     })
     .catch(() => {
       subtitleEl.textContent = "Salón de Eventos";
+      if (typeof window.hideMiFiestappPreloader === 'function') {
+        window.hideMiFiestappPreloader();
+      }
     });
 
   // Loader helpers

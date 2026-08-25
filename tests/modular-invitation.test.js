@@ -17,13 +17,14 @@ const expectedModules = [
   'mod-chest',
   'mod-rsvp',
   'mod-music',
-  'mod-farewell'
+  'mod-farewell',
+  'mod-messages'
 ];
 
 expectedModules.forEach(modId => {
   assert.ok(adminHtmlContent.includes(modId), `admin.html must contain switch input with id="${modId}"`);
 });
-console.log('  ✓ Test 1 Passed: admin.html contains all 8 module toggle switches.');
+console.log('  ✓ Test 1 Passed: admin.html contains all 9 module toggle switches.');
 
 // 2. Verify admin.css contains .luxury-module-toggle rules
 const adminCssPath = path.join(__dirname, '..', 'public', 'css', 'admin.css');

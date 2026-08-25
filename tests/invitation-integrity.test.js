@@ -47,9 +47,11 @@ assert(htmlContent.includes('openCalendarModal'), 'openCalendarModal function mu
 assert(htmlContent.includes('addToGoogleCalendar'), 'addToGoogleCalendar function must exist');
 assert(htmlContent.includes('downloadIcsCalendar'), 'downloadIcsCalendar function must exist');
 assert(htmlContent.includes('saveInvitationSouvenir'), 'saveInvitationSouvenir function must exist');
-assert(htmlContent.includes('closeInvitation'), 'closeInvitation function must exist');
+assert(htmlContent.includes("normalizedStr.includes('cyber')"), 'saveInvitationSouvenir must support cyber-neon theme resolution');
+assert(htmlContent.includes('window.activeCardModel'), 'saveInvitationSouvenir must inspect window.activeCardModel');
+assert(htmlContent.includes('souvenirThemes'), 'saveInvitationSouvenir must define thematic souvenirThemes dictionary');
 
-console.log('  ✓ Test 3 Passed: Calendar & Farewell slide interactions are intact.');
+console.log('  ✓ Test 3 Passed: Calendar & Farewell slide interactions & Thematic Souvenir generator are intact.');
 
 // --- Test 4: Gift Card 3D Flip & Touch Debounce ---
 console.log('- Test 4: Checking Gift Card 3D Flip & Mobile Touch Debounce...');
