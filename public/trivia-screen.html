@@ -34,6 +34,7 @@
   <style>
     :root {
       --bg-dark: #040404;
+      --bg-radial: radial-gradient(circle at 50% 15%, #1c150b 0%, #030303 100%);
       --panel-bg: rgba(18, 14, 10, 0.78);
       --panel-border: rgba(212, 175, 55, 0.28);
       --card-bg: linear-gradient(135deg, rgba(22, 17, 12, 0.9) 0%, rgba(10, 8, 6, 0.98) 100%);
@@ -54,7 +55,7 @@
     /* 15 AÑOS THEME (Royal Violet & Magenta Princess) */
     html.theme-quince_anos, html.theme-15anos,
     body.theme-quince_anos, body.theme-15anos {
-      background: radial-gradient(circle at 50% 15%, #240d38 0%, #06020a 100%) !important;
+      --bg-radial: radial-gradient(circle at 50% 15%, #240d38 0%, #06020a 100%);
       --panel-bg: rgba(22, 9, 34, 0.88);
       --panel-border: rgba(192, 132, 252, 0.35);
       --card-bg: linear-gradient(135deg, rgba(32, 14, 48, 0.92) 0%, rgba(16, 6, 26, 0.98) 100%);
@@ -70,7 +71,7 @@
     /* CASAMIENTOS THEME (Rose Gold Romance) */
     html.theme-casamiento, html.theme-boda,
     body.theme-casamiento, body.theme-boda {
-      background: radial-gradient(circle at 50% 15%, #2e1022 0%, #080205 100%) !important;
+      --bg-radial: radial-gradient(circle at 50% 15%, #2e1022 0%, #080205 100%);
       --panel-bg: rgba(32, 10, 24, 0.88);
       --panel-border: rgba(244, 114, 182, 0.35);
       --card-bg: linear-gradient(135deg, rgba(42, 14, 30, 0.92) 0%, rgba(20, 6, 14, 0.98) 100%);
@@ -86,7 +87,7 @@
     /* CUMPLEAÑOS THEME (Festive Warm Amber) */
     html.theme-cumple_adultos, html.theme-cumpleanos,
     body.theme-cumple_adultos, body.theme-cumpleanos {
-      background: radial-gradient(circle at 50% 15%, #2e1a04 0%, #080401 100%) !important;
+      --bg-radial: radial-gradient(circle at 50% 15%, #2e1a04 0%, #080401 100%);
       --panel-bg: rgba(32, 18, 6, 0.88);
       --panel-border: rgba(245, 158, 11, 0.35);
       --card-bg: linear-gradient(135deg, rgba(42, 24, 8, 0.92) 0%, rgba(20, 10, 4, 0.98) 100%);
@@ -102,7 +103,7 @@
     /* CORPORATIVO THEME (Sapphire Cyan Executive) */
     html.theme-corporativo,
     body.theme-corporativo {
-      background: radial-gradient(circle at 50% 15%, #0c233c 0%, #02070e 100%) !important;
+      --bg-radial: radial-gradient(circle at 50% 15%, #0c233c 0%, #02070e 100%);
       --panel-bg: rgba(8, 22, 38, 0.88);
       --panel-border: rgba(56, 189, 248, 0.35);
       --card-bg: linear-gradient(135deg, rgba(12, 30, 52, 0.92) 0%, rgba(6, 15, 26, 0.98) 100%);
@@ -118,7 +119,7 @@
     /* MÚSICA & FIESTA THEME (Emerald Neon Disco) */
     html.theme-musica_fiesta,
     body.theme-musica_fiesta {
-      background: radial-gradient(circle at 50% 15%, #0b2e20 0%, #010c07 100%) !important;
+      --bg-radial: radial-gradient(circle at 50% 15%, #0b2e20 0%, #010c07 100%);
       --panel-bg: rgba(8, 30, 20, 0.88);
       --panel-border: rgba(16, 185, 129, 0.35);
       --card-bg: linear-gradient(135deg, rgba(12, 40, 28, 0.92) 0%, rgba(6, 20, 14, 0.98) 100%);
@@ -137,9 +138,9 @@
       padding: 0;
     }
 
-    body {
+    html, body {
       font-family: 'Outfit', 'Montserrat', sans-serif;
-      background: radial-gradient(circle at 50% 15%, #1c150b 0%, #030303 100%);
+      background: var(--bg-radial) !important;
       color: var(--text-main);
       min-height: 100vh;
       display: flex;
@@ -199,7 +200,7 @@
       font-weight: 800;
       letter-spacing: 1.5px;
       font-size: 0.95rem;
-      box-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
+      box-shadow: var(--gold-glow);
     }
 
     .event-title {
@@ -208,19 +209,19 @@
       background: var(--gold-gradient);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      text-shadow: 0 0 15px rgba(212, 175, 55, 0.2);
+      text-shadow: var(--gold-glow);
     }
 
     .qr-banner {
       display: flex;
       align-items: center;
       gap: 1.2rem;
-      background: rgba(18, 14, 9, 0.7);
+      background: var(--panel-bg);
       padding: 0.6rem 1.4rem;
       border-radius: 18px;
       border: 1px solid var(--panel-border);
       backdrop-filter: blur(15px);
-      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5), var(--gold-glow);
       transition: opacity 0.5s ease;
     }
 
@@ -280,6 +281,12 @@
 
     .view-panel.active {
       display: flex;
+      animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(12px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
     }
 
     /* 0. COUNTDOWN VIEW */
@@ -305,7 +312,7 @@
       font-size: 10.5rem;
       font-weight: 900;
       color: var(--gold);
-      text-shadow: 0 0 60px rgba(212, 175, 55, 0.7);
+      text-shadow: var(--gold-glow);
       animation: numberPulse 1s infinite ease-in-out;
       line-height: 1;
       margin-bottom: 1.5rem;
@@ -314,7 +321,7 @@
 
     @keyframes numberPulse {
       0%, 100% { transform: scale(1); opacity: 0.95; }
-      50% { transform: scale(1.15); opacity: 1; text-shadow: 0 0 90px rgba(212, 175, 55, 0.9); }
+      50% { transform: scale(1.15); opacity: 1; text-shadow: var(--gold-glow); }
     }
 
     /* 1. LOBBY SPLIT LAYOUT */
@@ -358,8 +365,8 @@
     }
 
     @keyframes counterPulse {
-      0%, 100% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(212, 175, 55, 0.2)); }
-      50% { transform: scale(1.04); filter: drop-shadow(0 0 20px rgba(212, 175, 55, 0.5)); }
+      0%, 100% { transform: scale(1); filter: drop-shadow(0 0 8px var(--panel-border)); }
+      50% { transform: scale(1.04); filter: drop-shadow(0 0 22px var(--gold)); }
     }
 
     .lobby-subtitle {
@@ -509,7 +516,7 @@
     .double-points-screen-badge {
       display: none;
       font-family: 'Cinzel', serif;
-      background: linear-gradient(135deg, rgba(212, 175, 55, 0.3) 0%, rgba(151, 110, 15, 0.45) 100%);
+      background: var(--card-bg);
       border: 1.5px solid var(--gold);
       color: var(--gold-light);
       padding: 0.5rem 1.4rem;
@@ -517,18 +524,18 @@
       font-size: 1rem;
       font-weight: 800;
       letter-spacing: 1.5px;
-      box-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
+      box-shadow: var(--gold-glow);
       animation: doublePointsGlow 1.5s infinite alternate ease-in-out;
     }
 
     @keyframes doublePointsGlow {
-      0% { box-shadow: 0 0 10px rgba(212, 175, 55, 0.3); }
-      100% { box-shadow: 0 0 30px rgba(212, 175, 55, 0.8); }
+      0% { box-shadow: 0 0 10px var(--panel-border); }
+      100% { box-shadow: 0 0 30px var(--gold); }
     }
 
     .live-answers-meter {
       background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(212, 175, 55, 0.25);
+      border: 1px solid var(--panel-border);
       padding: 0.45rem 1.2rem;
       border-radius: 20px;
       font-size: 1rem;
@@ -561,7 +568,7 @@
       stroke-width: 8;
       stroke-linecap: round;
       transition: stroke-dashoffset 0.1s linear;
-      filter: drop-shadow(0 0 6px rgba(212, 175, 55, 0.6));
+      filter: drop-shadow(0 0 6px var(--gold));
     }
 
     .timer-text {
@@ -642,21 +649,21 @@
     /* Reveal States */
     .option-card.incorrect {
       opacity: 0.2;
-      transform: scale(0.96);
-      filter: grayscale(0.7);
+      filter: grayscale(80%);
+      transform: scale(0.97);
     }
 
     .option-card.correct {
       border-color: var(--correct-green);
+      background: linear-gradient(135deg, rgba(46, 204, 113, 0.25) 0%, rgba(39, 174, 96, 0.1) 100%);
       box-shadow: var(--correct-glow);
-      background: rgba(46, 204, 113, 0.12);
       transform: scale(1.03);
     }
 
     .option-card.correct .option-pill-badge {
       background: var(--correct-green);
-      color: #000;
-      border-color: #fff;
+      color: #ffffff;
+      border-color: var(--correct-green);
       box-shadow: 0 0 20px rgba(46, 204, 113, 0.7);
     }
 
@@ -684,10 +691,16 @@
     }
 
     /* 3. LEADERBOARD VIEW */
+    #view-leaderboard {
+      align-items: center;
+      min-height: 520px;
+    }
+
     .leaderboard-title {
       font-family: 'Cinzel', serif;
       font-size: 2.3rem;
       font-weight: 800;
+      letter-spacing: 2px;
       margin-bottom: 2rem;
       background: var(--gold-gradient);
       -webkit-background-clip: text;
@@ -734,7 +747,7 @@
       font-size: 1.1rem;
     }
 
-    .rank-1 .rank-number { background: var(--gold-gradient); color: #000; box-shadow: 0 0 15px rgba(212, 175, 55, 0.5); }
+    .rank-1 .rank-number { background: var(--gold-gradient); color: #000; box-shadow: var(--gold-glow); }
     .rank-2 .rank-number { background: #dcdde1; color: #000; }
     .rank-3 .rank-number { background: #cd7f32; color: #000; }
 
@@ -811,10 +824,10 @@
 
     .block-1 .podium-pillar {
       height: 220px;
-      background: linear-gradient(180deg, rgba(212, 175, 55, 0.45) 0%, rgba(212, 175, 55, 0.08) 100%);
+      background: linear-gradient(180deg, var(--card-border) 0%, rgba(0, 0, 0, 0.08) 100%);
       border-color: var(--gold);
       color: var(--gold-light);
-      box-shadow: 0 0 35px rgba(212, 175, 55, 0.35);
+      box-shadow: var(--gold-glow);
     }
 
     .block-2 .podium-pillar {
